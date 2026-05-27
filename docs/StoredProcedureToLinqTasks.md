@@ -40,9 +40,9 @@ Progress counts:
 
 - Database procedures discovered: 108.
 - Likely LINQ files to create: 83.
-- Converted: 7.
+- Converted: 12.
 - In process: 0.
-- To do: 76.
+- To do: 71.
 - Manual review: 1.
 - Not `IQueryable` / excluded for now: 24.
 
@@ -60,12 +60,12 @@ Progress counts:
 | sp_ActualAmendReport | sp_ActualAmendReport.cs | Converted | LINQ conversion exists in `Backend/StoredProcedureToLinq/sp_ActualAmendReport.cs`. |
 | sp_AmendReport | sp_AmendReport.cs | Converted | LINQ conversion exists; one stored procedure Sakhan filter oddity is preserved in the border export licence Pa Tha Ka branch. |
 | sp_ApplicationHistory | sp_ApplicationHistory.cs | Manual Review | Not matched by report/list/search naming; inspect SQL definition first. |
-| sp_AutoCancelDataList | sp_AutoCancelDataList.cs | To Do | List/query procedure. |
-| sp_BusinessServiceAgencyByPaThakaReport | sp_BusinessServiceAgencyByPaThakaReport.cs | To Do | Report procedure. |
-| sp_BusinessServiceAgencyRegistrationReport | sp_BusinessServiceAgencyRegistrationReport.cs | To Do | Report procedure. |
-| sp_BusinessServiceAgencyReport | sp_BusinessServiceAgencyReport.cs | To Do | Report procedure. |
+| sp_AutoCancelDataList | sp_AutoCancelDataList.cs | Converted | LINQ conversion exists; SQL `DATEDIFF(day, ApproveDate, CURRENT_TIMESTAMP)` represented with `EF.Functions.DateDiffDay`. |
+| sp_BusinessServiceAgencyByPaThakaReport | sp_BusinessServiceAgencyByPaThakaReport.cs | Converted | LINQ conversion exists. |
+| sp_BusinessServiceAgencyRegistrationReport | sp_BusinessServiceAgencyRegistrationReport.cs | Converted | LINQ conversion exists. |
+| sp_BusinessServiceAgencyReport | sp_BusinessServiceAgencyReport.cs | Converted | LINQ conversion exists; summary/detail result shapes represented by one superset result class. |
 | sp_CancelReport | sp_CancelReport.cs | To Do | Report procedure. |
-| sp_CardListsByPaThaKaReport | sp_CardListsByPaThaKaReport.cs | To Do | Report/list procedure. |
+| sp_CardListsByPaThaKaReport | sp_CardListsByPaThaKaReport.cs | Converted | LINQ conversion exists. |
 | sp_ChequeNoDetailReport | sp_ChequeNoDetailReport.cs | To Do | Report procedure. |
 | sp_ChequeNoReport | sp_ChequeNoReport.cs | To Do | Report procedure. |
 | sp_CompanyProfileReport | sp_CompanyProfileReport.cs | To Do | Report procedure. |
@@ -206,6 +206,11 @@ Progress counts:
 - [x] Convert `GetRequestByIdImport` into `Backend/StoredProcedureToLinq/GetRequestByIdImport.cs`.
 - [x] Convert `sp_AccountSummaryReport` into `Backend/StoredProcedureToLinq/sp_AccountSummaryReport.cs`.
 - [x] Convert `sp_AmendReport` into `Backend/StoredProcedureToLinq/sp_AmendReport.cs`.
+- [x] Convert `sp_AutoCancelDataList` into `Backend/StoredProcedureToLinq/sp_AutoCancelDataList.cs`.
+- [x] Convert `sp_BusinessServiceAgencyByPaThakaReport` into `Backend/StoredProcedureToLinq/sp_BusinessServiceAgencyByPaThakaReport.cs`.
+- [x] Convert `sp_BusinessServiceAgencyRegistrationReport` into `Backend/StoredProcedureToLinq/sp_BusinessServiceAgencyRegistrationReport.cs`.
+- [x] Convert `sp_BusinessServiceAgencyReport` into `Backend/StoredProcedureToLinq/sp_BusinessServiceAgencyReport.cs`.
+- [x] Convert `sp_CardListsByPaThaKaReport` into `Backend/StoredProcedureToLinq/sp_CardListsByPaThaKaReport.cs`.
 - [ ] Create one `.cs` file for each convertible stored procedure.
 - [ ] Add request classes for procedures with parameters.
 - [ ] Add result classes for report projections that do not map directly to an EF entity.
@@ -234,3 +239,6 @@ Progress counts:
 - Latest batch verification succeeded with the same alternate output path. The build still reports existing migration naming warnings for `intial`; no converter errors were reported.
 - `sp_AmendReport` mostly mirrors `sp_ActualAmendReport` with `ApplyType='Amend'`. Its SQL compares `BorderExportLicence.ExportImportSectionId` to Sakhan values in one border export licence Pa Tha Ka branch; the LINQ conversion preserves that behavior and documents it in the tracker.
 - `sp_AccountSummaryReport` uses many `UNION ALL` branches. The LINQ conversion uses `Concat` and preserves branch labels, including the original SQL spelling `Wine Imporation`, final `FormType` filtering, final `SakhanId` filtering, and ordering by `PaymentDate` then account-title `SortOrder`.
+- `sp_AutoCancelDataList` uses database current timestamp semantics in SQL. The LINQ conversion uses `DateTime.Now` inside `EF.Functions.DateDiffDay` so SQL Server can translate the date difference in the query.
+- `sp_BusinessServiceAgencyReport` returns summary rows for `@Type='Summary'` and detail rows otherwise. The LINQ conversion uses a single superset result type with nullable fields to preserve one `IQueryable` return type.
+- `sp_CancelReport` was inspected but intentionally left for a separate batch because it is a large branch-heavy licence/permit report.
