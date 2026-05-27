@@ -22,7 +22,9 @@ internal class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
-        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            options.UseSqlServer(builder.Configuration.GetConnectionString("TemplateDB") ?? builder.Configuration.GetConnectionString("DefaultConnection")));
+        builder.Services.AddDbContextPool<TradeNetDbContext>(options =>
+            options.UseSqlServer(builder.Configuration.GetConnectionString("TradeNetDBTest")));
         builder.Services.AddAuthentication(x =>
         {
             x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

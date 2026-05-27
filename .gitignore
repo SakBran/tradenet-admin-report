@@ -7,17 +7,62 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Environment and local settings
+.env
+.env.*
+!.env.example
 *.local
+
+# React / Vite / Node
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/.vite/
+**/.turbo/
+**/.next/
+**/.cache/
+**/coverage/
+storybook-static/
+
+# Package manager caches
+.npm/
+.pnpm-store/
+.yarn/*
+!.yarn/releases
+!.yarn/patches
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+
+# .NET Core / ASP.NET Core
+**/bin/
+**/obj/
+**/TestResults/
+**/GeneratedFiles/
+**/wwwroot/
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+*.nupkg
+*.snupkg
+*.pdb
+*.vspscc
+*.vssscc
+project.lock.json
+project.fragment.lock.json
+artifacts/
+packages/
+
+# Visual Studio
+.vs/
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
-*.suo
 *.ntvs*
 *.njsproj
 *.sln
@@ -111,14 +156,5 @@ fabric.properties
 !.idea/codeStyles
 !.idea/runConfigurations
 
-### StorybookJs ###
-# gitignore template for the Storybook, UI guide for front apps
-# website: https://storybook.js.org/
-
-storybook-static/
-
 # End of https://www.toptal.com/developers/gitignore/api/webstorm+all
 *.zip
-obj/
-bin/
-wwwroot/
