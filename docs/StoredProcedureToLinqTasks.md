@@ -40,9 +40,9 @@ Progress counts:
 
 - Database procedures discovered: 108.
 - Likely LINQ files to create: 83.
-- Converted: 12.
+- Converted: 13.
 - In process: 0.
-- To do: 71.
+- To do: 70.
 - Manual review: 1.
 - Not `IQueryable` / excluded for now: 24.
 
@@ -64,7 +64,7 @@ Progress counts:
 | sp_BusinessServiceAgencyByPaThakaReport | sp_BusinessServiceAgencyByPaThakaReport.cs | Converted | LINQ conversion exists. |
 | sp_BusinessServiceAgencyRegistrationReport | sp_BusinessServiceAgencyRegistrationReport.cs | Converted | LINQ conversion exists. |
 | sp_BusinessServiceAgencyReport | sp_BusinessServiceAgencyReport.cs | Converted | LINQ conversion exists; summary/detail result shapes represented by one superset result class. |
-| sp_CancelReport | sp_CancelReport.cs | To Do | Report procedure. |
+| sp_CancelReport | sp_CancelReport.cs | Converted | LINQ conversion exists; large branch-heavy cancellation report represented with typed result projection. |
 | sp_CardListsByPaThaKaReport | sp_CardListsByPaThaKaReport.cs | Converted | LINQ conversion exists. |
 | sp_ChequeNoDetailReport | sp_ChequeNoDetailReport.cs | To Do | Report procedure. |
 | sp_ChequeNoReport | sp_ChequeNoReport.cs | To Do | Report procedure. |
@@ -210,6 +210,7 @@ Progress counts:
 - [x] Convert `sp_BusinessServiceAgencyByPaThakaReport` into `Backend/StoredProcedureToLinq/sp_BusinessServiceAgencyByPaThakaReport.cs`.
 - [x] Convert `sp_BusinessServiceAgencyRegistrationReport` into `Backend/StoredProcedureToLinq/sp_BusinessServiceAgencyRegistrationReport.cs`.
 - [x] Convert `sp_BusinessServiceAgencyReport` into `Backend/StoredProcedureToLinq/sp_BusinessServiceAgencyReport.cs`.
+- [x] Convert `sp_CancelReport` into `Backend/StoredProcedureToLinq/sp_CancelReport.cs`.
 - [x] Convert `sp_CardListsByPaThaKaReport` into `Backend/StoredProcedureToLinq/sp_CardListsByPaThaKaReport.cs`.
 - [ ] Create one `.cs` file for each convertible stored procedure.
 - [ ] Add request classes for procedures with parameters.
@@ -241,4 +242,4 @@ Progress counts:
 - `sp_AccountSummaryReport` uses many `UNION ALL` branches. The LINQ conversion uses `Concat` and preserves branch labels, including the original SQL spelling `Wine Imporation`, final `FormType` filtering, final `SakhanId` filtering, and ordering by `PaymentDate` then account-title `SortOrder`.
 - `sp_AutoCancelDataList` uses database current timestamp semantics in SQL. The LINQ conversion uses `DateTime.Now` inside `EF.Functions.DateDiffDay` so SQL Server can translate the date difference in the query.
 - `sp_BusinessServiceAgencyReport` returns summary rows for `@Type='Summary'` and detail rows otherwise. The LINQ conversion uses a single superset result type with nullable fields to preserve one `IQueryable` return type.
-- `sp_CancelReport` was inspected but intentionally left for a separate batch because it is a large branch-heavy licence/permit report.
+- `sp_CancelReport` follows the licence/permit branch pattern and includes a `Remark` column from each source table. The LINQ conversion uses one superset result type with nullable Sakhan fields for a stable typed `IQueryable` result.
