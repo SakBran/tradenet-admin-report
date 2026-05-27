@@ -40,9 +40,9 @@ Progress counts:
 
 - Database procedures discovered: 108.
 - Likely LINQ files to create: 83.
-- Converted: 1.
+- Converted: 7.
 - In process: 0.
-- To do: 82.
+- To do: 76.
 - Manual review: 1.
 - Not `IQueryable` / excluded for now: 24.
 
@@ -52,13 +52,13 @@ Progress counts:
 | DeleteExpiredSessions | DeleteExpiredSessions.cs | Not IQueryable | Session cleanup mutation; no query-only LINQ file planned. |
 | GetHashCode | GetHashCode.cs | Not IQueryable | ASP.NET session helper/output procedure; no query-only LINQ file planned. |
 | GetMajorVersion | GetMajorVersion.cs | Not IQueryable | Helper/output procedure; no query-only LINQ file planned. |
-| GetRequestAutoApproveDescriptions | GetRequestAutoApproveDescriptions.cs | To Do | Likely query procedure. |
-| GetRequestAutoApproveDescriptionsImport | GetRequestAutoApproveDescriptionsImport.cs | To Do | Likely query procedure. |
-| GetRequestById | GetRequestById.cs | To Do | Likely query procedure. |
-| GetRequestByIdImport | GetRequestByIdImport.cs | To Do | Likely query procedure. |
-| sp_AccountSummaryReport | sp_AccountSummaryReport.cs | To Do | Report procedure. |
+| GetRequestAutoApproveDescriptions | GetRequestAutoApproveDescriptions.cs | Converted | Entity-shaped LINQ conversion exists. |
+| GetRequestAutoApproveDescriptionsImport | GetRequestAutoApproveDescriptionsImport.cs | Converted | Entity-shaped LINQ conversion exists. |
+| GetRequestById | GetRequestById.cs | Converted | Entity-shaped LINQ conversion exists; SQL `TOP 1` represented with `Take(1)`. |
+| GetRequestByIdImport | GetRequestByIdImport.cs | Converted | Entity-shaped LINQ conversion exists; SQL `TOP 1` represented with `Take(1)`. |
+| sp_AccountSummaryReport | sp_AccountSummaryReport.cs | Converted | LINQ conversion exists; large `UNION ALL` report represented with `Concat` branches. |
 | sp_ActualAmendReport | sp_ActualAmendReport.cs | Converted | LINQ conversion exists in `Backend/StoredProcedureToLinq/sp_ActualAmendReport.cs`. |
-| sp_AmendReport | sp_AmendReport.cs | To Do | Report procedure. |
+| sp_AmendReport | sp_AmendReport.cs | Converted | LINQ conversion exists; one stored procedure Sakhan filter oddity is preserved in the border export licence Pa Tha Ka branch. |
 | sp_ApplicationHistory | sp_ApplicationHistory.cs | Manual Review | Not matched by report/list/search naming; inspect SQL definition first. |
 | sp_AutoCancelDataList | sp_AutoCancelDataList.cs | To Do | List/query procedure. |
 | sp_BusinessServiceAgencyByPaThakaReport | sp_BusinessServiceAgencyByPaThakaReport.cs | To Do | Report procedure. |
@@ -200,6 +200,12 @@ Progress counts:
 - [x] Convert `sp_ActualAmendReport` into `Backend/StoredProcedureToLinq/sp_ActualAmendReport.cs`.
 - [x] Add `sp_ActualAmendReportRequest` with the stored procedure parameters.
 - [x] Add `sp_ActualAmendReportResult` for the report projection.
+- [x] Convert `GetRequestAutoApproveDescriptions` into `Backend/StoredProcedureToLinq/GetRequestAutoApproveDescriptions.cs`.
+- [x] Convert `GetRequestAutoApproveDescriptionsImport` into `Backend/StoredProcedureToLinq/GetRequestAutoApproveDescriptionsImport.cs`.
+- [x] Convert `GetRequestById` into `Backend/StoredProcedureToLinq/GetRequestById.cs`.
+- [x] Convert `GetRequestByIdImport` into `Backend/StoredProcedureToLinq/GetRequestByIdImport.cs`.
+- [x] Convert `sp_AccountSummaryReport` into `Backend/StoredProcedureToLinq/sp_AccountSummaryReport.cs`.
+- [x] Convert `sp_AmendReport` into `Backend/StoredProcedureToLinq/sp_AmendReport.cs`.
 - [ ] Create one `.cs` file for each convertible stored procedure.
 - [ ] Add request classes for procedures with parameters.
 - [ ] Add result classes for report projections that do not map directly to an EF entity.
@@ -225,3 +231,6 @@ Progress counts:
 - `IQueryable` output means the caller is responsible for execution, paging, and materialization.
 - `sp_ActualAmendReport` returns different column counts by form type in SQL. The LINQ conversion uses one superset result class with nullable Sakhan fields for a stable typed `IQueryable` result.
 - Normal build output is currently locked by process `API (8076)`. Verification build succeeded with `dotnet build Backend\API.csproj -p:OutputPath=C:\Code\Ministry_of_Commerce_Tradenet_build_verify\API\`.
+- Latest batch verification succeeded with the same alternate output path. The build still reports existing migration naming warnings for `intial`; no converter errors were reported.
+- `sp_AmendReport` mostly mirrors `sp_ActualAmendReport` with `ApplyType='Amend'`. Its SQL compares `BorderExportLicence.ExportImportSectionId` to Sakhan values in one border export licence Pa Tha Ka branch; the LINQ conversion preserves that behavior and documents it in the tracker.
+- `sp_AccountSummaryReport` uses many `UNION ALL` branches. The LINQ conversion uses `Concat` and preserves branch labels, including the original SQL spelling `Wine Imporation`, final `FormType` filtering, final `SakhanId` filtering, and ordering by `PaymentDate` then account-title `SortOrder`.
