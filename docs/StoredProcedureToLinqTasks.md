@@ -169,6 +169,18 @@ Progress counts:
 - Do not use `FromSql`, `ExecuteSql`, raw SQL strings, or stored procedure calls in the converted LINQ.
 - Do not convert procedures that mutate data, manage ASP.NET session state, write temp tables without a final query shape, or depend on procedural side effects unless they are first split into a query-only equivalent.
 
+## Batch Guidance For LLM
+
+- Recommended default batch size: convert 3 stored procedures per work session.
+- Simple list/search/report procedures can be converted in batches of 5-10 if their SQL is short and has no branching, temp tables, dynamic SQL, unions, or grouping.
+- Medium reports with multiple joins, optional filters, grouping, or report projections should be converted in batches of 3-5.
+- Large procedures with many `IF` branches, `UNION`/`UNION ALL`, repeated projections, or different result shapes should be converted in batches of 1-2.
+- After every batch:
+  - Run a build or compile validation.
+  - Update the tracker statuses and counts in this document.
+  - Add notes for any procedure that needs manual review, cannot be represented as pure `IQueryable`, or has a behavior difference from SQL.
+- Prefer smaller batches when unsure. Correctness is more important than converting many files at once.
+
 ## Procedure Classification Tasks
 
 - [x] Connect to `TradeNetDBTest` and count stored procedures.
