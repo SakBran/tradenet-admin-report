@@ -1,0 +1,114 @@
+﻿using System;
+using System.Threading.Tasks;
+using API.DBContext;
+using API.Model;
+using API.Service.Reports;
+using API.StoredProcedureToLinq;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Backend.Controllers.Report
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class BorderImportLicencePendingReportController : ControllerBase
+    {
+        private readonly TradeNetDbContext _context;
+
+        public BorderImportLicencePendingReportController(TradeNetDbContext context)
+        {
+            _context = context;
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<ApiResult<sp_PendingReportResult>>> Post([FromBody] BorderImportLicencePendingReportRequest? request)
+        {
+            if (!TryCreateReportRequest(request, out var procedureRequest, out var errorResult))
+            {
+                return errorResult!;
+            }
+
+            var query = sp_PendingReport.Query(_context, procedureRequest!);
+            var result = await ReportQueryService.CreatePagedResultAsync(query, request!);
+
+            return Ok(result);
+        }
+
+        [HttpPost("Excel")]
+        public async Task<IActionResult> Excel([FromBody] BorderImportLicencePendingReportRequest? request)
+        {
+            if (!TryCreateReportRequest(request, out var procedureRequest, out var errorResult))
+            {
+                return errorResult!;
+            }
+
+            var query = sp_PendingReport.Query(_context, procedureRequest!);
+            byte[] fileBytes;
+            try
+            {
+                fileBytes = await ExcelGenerator.CreateWorkbookAsync(
+                    query,
+                    request!,
+                    "Border Import Licence Pending Report");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
+            return File(
+                fileBytes,
+                ExcelGenerator.ContentType,
+                "BorderImportLicencePendingReport.xlsx");
+        }
+
+        private bool TryCreateReportRequest(
+            BorderImportLicencePendingReportRequest? request,
+            out sp_PendingReportRequest? procedureRequest,
+            out ActionResult? errorResult)
+        {
+            procedureRequest = null;
+            errorResult = null;
+
+            if (request == null)
+            {
+                errorResult = BadRequest("Request body is required.");
+                return false;
+            }
+
+            if (request.FromDate == default)
+            {
+                errorResult = BadRequest("FromDate is required.");
+                return false;
+            }
+
+            if (request.ToDate == default)
+            {
+                errorResult = BadRequest("ToDate is required.");
+                return false;
+            }
+
+            if (request.ToDate < request.FromDate)
+            {
+                errorResult = BadRequest("ToDate must be greater than or equal to FromDate.");
+                return false;
+            }
+            procedureRequest = new sp_PendingReportRequest
+            {
+                FromDate = request.FromDate,
+                ToDate = request.ToDate,
+                FormType = request.FormType,
+                ExportImportSectionId = request.ExportImportSectionId,
+            };
+
+            return true;
+        }
+    }
+
+    public sealed class BorderImportLicencePendingReportRequest : ReportQueryRequest
+    {
+        public DateTime FromDate { get; set; }
+        public DateTime ToDate { get; set; }
+        public string FormType { get; set; } = string.Empty;
+        public int ExportImportSectionId { get; set; }
+    }
+}
