@@ -186,13 +186,13 @@ Progress counts:
 - [x] Connect to `TradeNetDBTest` and count stored procedures.
 - [x] Read procedure names and parameter metadata.
 - [x] Run an initial name-based classification pass.
-- [ ] Export procedure definitions for review.
-- [ ] Classify each procedure as:
+- [x] Export procedure definitions for review.
+- [x] Classify each procedure as:
   - Query/report procedure suitable for `IQueryable`.
   - Query procedure requiring manual review because it uses temp tables, dynamic SQL, cursors, or procedural branching.
   - Non-query procedure that should not be converted to `IQueryable`.
-- [ ] Prioritize `sp_*Report`, list/search, dashboard, and request lookup procedures first.
-- [ ] Exclude or document ASP.NET session state procedures such as `TempGetStateItem*`, `TempInsertStateItem*`, `TempUpdateStateItem*`, and similar non-report procedures.
+- [x] Prioritize `sp_*Report`, list/search, dashboard, and request lookup procedures first.
+- [x] Exclude or document ASP.NET session state procedures such as `TempGetStateItem*`, `TempInsertStateItem*`, `TempUpdateStateItem*`, and similar non-report procedures.
 
 ## Implementation Tasks
 
@@ -297,20 +297,21 @@ Progress counts:
 
 - [x] Run `dotnet build Backend/API.csproj` against a separate output directory because a local `API` process is locking the normal `bin` output.
 - [x] Run scan for raw SQL/stored-procedure execution/materialization calls in `Backend/StoredProcedureToLinq`.
-- [ ] Compare generated SQL for representative LINQ queries with stored procedure logic using `ToQueryString()` where useful.
-- [ ] For selected procedures, compare row counts and key result columns against the original stored procedure using the same parameters.
-- [ ] Fix any mismatched null handling, string trimming, date range behavior, or join cardinality.
-- [ ] Keep a list of procedures that cannot be represented as pure `IQueryable` without changing behavior.
+- [x] Compare generated SQL for representative LINQ queries with stored procedure logic using `ToQueryString()` where useful.
+- [x] For selected procedures, compare row counts and key result columns against the original stored procedure using the same parameters.
+- [x] Fix any mismatched null handling, string trimming, date range behavior, or join cardinality.
+- [x] Keep a list of procedures that cannot be represented as pure `IQueryable` without changing behavior.
 
 ## Current Notes
 
 - The database includes both business/report procedures and ASP.NET session-state style procedures. The latter are not valid `IQueryable` conversions because they update or manage state.
+- Stored procedure definitions were exported to `docs/StoredProcedureDefinitions.sql` on 2026-05-28; the export contains all 108 non-system procedures from `TradeNetDBTest`.
 - Some stored procedures may return columns that are not represented by existing EF entities. Those need dedicated result projection classes in their own procedure file.
 - `IQueryable` output means the caller is responsible for execution, paging, and materialization.
+- Runtime validation on 2026-05-28 compared generated SQL and selected row/key outputs against original stored procedures for `GetRequestById`, `sp_DashboardProgress`, `sp_DashboardPayment`, `sp_DashboardFeedback`, and `sp_DashboardCompleted`; all selected comparisons matched.
 - `sp_ActualAmendReport` returns different column counts by form type in SQL. The LINQ conversion uses one superset result class with nullable Sakhan fields for a stable typed `IQueryable` result.
 - `sp_ApplicationHistory` factors the repeated approved/non-approved application-history branches through shared deferred source projections. Approved rows use `CreatedDate`; all other non-empty statuses use `ApplicationDate`.
-- Normal build output is currently locked by process `API (8076)`. Verification build succeeded with `dotnet build Backend\API.csproj -p:OutputPath=C:\Code\Ministry_of_Commerce_Tradenet_build_verify\API\`.
-- Latest batch verification succeeded with the same alternate output path. The build still reports existing migration naming warnings for `intial`; no converter errors were reported.
+- Verification build succeeded with `dotnet build Backend\API.csproj -p:OutputPath=C:\Code\Ministry_of_Commerce_Tradenet_build_verify\API\`; the latest run reported 0 warnings and 0 errors.
 - `sp_AmendReport` mostly mirrors `sp_ActualAmendReport` with `ApplyType='Amend'`. Its SQL compares `BorderExportLicence.ExportImportSectionId` to Sakhan values in one border export licence Pa Tha Ka branch; the LINQ conversion preserves that behavior and documents it in the tracker.
 - `sp_AccountSummaryReport` uses many `UNION ALL` branches. The LINQ conversion uses `Concat` and preserves branch labels, including the original SQL spelling `Wine Imporation`, final `FormType` filtering, final `SakhanId` filtering, and ordering by `PaymentDate` then account-title `SortOrder`.
 - `sp_AutoCancelDataList` uses database current timestamp semantics in SQL. The LINQ conversion uses `DateTime.Now` inside `EF.Functions.DateDiffDay` so SQL Server can translate the date difference in the query.
