@@ -49,9 +49,8 @@ const ChatBox: React.FC = () => {
 
     client.on('message', (_topic, messageBuffer) => {
       try {
-        const room: string = JSON.parse(messageBuffer.toString());
-
-        // if (room !== FixedRoomNo) return; // Only handle messages for the fixed room
+        // Parse first so malformed MQTT payloads do not trigger a chat reload.
+        JSON.parse(messageBuffer.toString());
         (async () => {
           const res = await axiosInstance.get(`chat?room=${FixedRoomNo}`);
           setChatMessages(res.data);

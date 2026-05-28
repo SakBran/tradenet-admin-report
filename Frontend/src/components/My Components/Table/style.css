@@ -73,6 +73,23 @@ tbody tr:hover {
 
 }
 
+.basic-table-extra-filters {
+    margin-bottom: 16px;
+}
+
+.action-column-header,
+.action-column-cell {
+    text-align: center;
+    white-space: nowrap;
+}
+
+.skeleton {
+    display: inline-flex;
+    width: 100%;
+    min-width: 72px;
+    opacity: 0.7;
+}
+
 .table-container table {
     width: 100%;
     border-collapse: collapse;

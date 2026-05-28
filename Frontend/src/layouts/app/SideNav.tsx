@@ -1,11 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ConfigProvider, Layout, Menu, MenuProps, SiderProps } from 'antd';
-import { BranchesOutlined, PieChartOutlined } from '@ant-design/icons';
+import {
+  BranchesOutlined,
+  FileSearchOutlined,
+  PieChartOutlined,
+} from '@ant-design/icons';
 import { Logo } from '../../components';
 import { Link, useLocation } from 'react-router-dom';
 import { PATH_LANDING } from '../../constants';
 import { COLOR } from '../../App.tsx';
-import { PATH_DASHBOARD } from '../../constants/routes.ts';
+import { PATH_DASHBOARD, PATH_REPORT } from '../../constants/routes.ts';
 import { useMediaQuery } from 'react-responsive';
 
 const { Sider } = Layout;
@@ -38,6 +42,13 @@ const items: MenuProps['items'] = [
     getItem(<Link to="/User/List">List</Link>, 'List', null),
     getItem(<Link to="/User/New">New</Link>, 'New', null),
   ]),
+  getItem('Reports', 'Reports', <FileSearchOutlined />, [
+    getItem(
+      <Link to={PATH_REPORT.memberRegistration}>Member Registration</Link>,
+      'MemberRegistrationReport',
+      null
+    ),
+  ]),
 
   getItem(
     <Link to={'/Timeline/Detail'}>Timeline</Link>,
@@ -48,7 +59,13 @@ const items: MenuProps['items'] = [
   getItem(<Link to={'/Test/New'}>Test</Link>, 'test', <BranchesOutlined />),
 ];
 
-const rootSubmenuKeys = ['dashboards', 'corporate', 'user-profile', 'users'];
+const rootSubmenuKeys = [
+  'dashboards',
+  'corporate',
+  'user-profile',
+  'Users',
+  'Reports',
+];
 
 type SideNavProps = SiderProps & {
   setCollapse: (value: React.SetStateAction<boolean>) => void;
@@ -79,7 +96,11 @@ const SideNav = ({ setCollapse, ...others }: SideNavProps) => {
 
   useEffect(() => {
     const paths = pathname.split('/');
-    // setOpenKeys(paths);
+    if (paths[1] === 'Report') {
+      setOpenKeys(['Reports']);
+    } else if (paths[1] === 'User') {
+      setOpenKeys(['Users']);
+    }
     setCurrent(paths[paths.length - 1]);
   }, [pathname]);
 

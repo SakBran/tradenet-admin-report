@@ -1,8 +1,7 @@
-import { AnyObject } from "./AnyObject";
+import { AnyObject } from './AnyObject';
 
-
-export interface PaginationType {
-  data: AnyObject[];
+export interface PaginationType<T extends AnyObject = AnyObject> {
+  data: T[];
   pageIndex: number;
   pageSize: number;
   totalCount: number;

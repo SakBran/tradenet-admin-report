@@ -14,6 +14,7 @@ const ROOTS_BLOG = '/blog';
 const ROOTS_CAREERS = '/careers';
 const ROOTS_ACCOUNT = '/account';
 const ROOTS_AUTH = '/auth';
+const ROOTS_REPORT = '/Report';
 const ROOTS_PROJECTS = '/projects';
 const ROOTS_CONTACTS = '/contacts';
 const ROOTS_USER_MGMT = '/user-management';
@@ -68,6 +69,11 @@ export const PATH_USER = {
   root: ROOTS_USER,
   list: path(ROOTS_USER, '/List'),
   new: path(ROOTS_USER, '/New'),
+};
+
+export const PATH_REPORT = {
+  root: ROOTS_REPORT,
+  memberRegistration: path(ROOTS_REPORT, '/MemberRegistrationReport'),
 };
 
 export const PATH_CORPORATE = {
