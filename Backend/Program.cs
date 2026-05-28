@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System;
 using System.Text;
 
@@ -20,7 +21,42 @@ internal class Program
         builder.Services.AddControllers();
         builder.Services.AddMemoryCache();
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
+        builder.Services.AddSwaggerGen(options =>
+        {
+            options.SwaggerDoc("v1", new OpenApiInfo
+            {
+                Title = "TradeNet Admin Report API",
+                Version = "v1",
+                Description = "Swagger UI for testing report pagination and Excel export APIs."
+            });
+
+            options.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
+
+            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Name = "Authorization",
+                Type = SecuritySchemeType.Http,
+                Scheme = JwtBearerDefaults.AuthenticationScheme,
+                BearerFormat = "JWT",
+                In = ParameterLocation.Header,
+                Description = "Enter a JWT bearer token to test authorized endpoints."
+            });
+
+            options.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    Array.Empty<string>()
+                }
+            });
+        });
         builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("TemplateDB") ?? builder.Configuration.GetConnectionString("DefaultConnection")));
         builder.Services.AddDbContextPool<TradeNetDbContext>(options =>
@@ -57,15 +93,20 @@ internal class Program
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
-            app.UseSwagger();
             app.UseDeveloperExceptionPage();
-            app.UseSwaggerUI();
         }
         else
         {
-            app.UseDeveloperExceptionPage();
             app.UseHsts();
         }
+
+        app.UseSwagger();
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "TradeNet Admin Report API v1");
+            options.RoutePrefix = "swagger";
+            options.DisplayRequestDuration();
+        });
 
         app.UseHttpsRedirection();
         #region Cors

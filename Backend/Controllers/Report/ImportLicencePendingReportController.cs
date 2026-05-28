@@ -4,10 +4,12 @@ using API.DBContext;
 using API.Model;
 using API.Service.Reports;
 using API.StoredProcedureToLinq;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers.Report
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class ImportLicencePendingReportController : ControllerBase
@@ -112,3 +114,4 @@ namespace Backend.Controllers.Report
         public int ExportImportSectionId { get; set; }
     }
 }
+

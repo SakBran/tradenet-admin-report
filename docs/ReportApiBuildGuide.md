@@ -16,6 +16,8 @@ Create one API controller for one report row.
   - `POST /api/{ControllerName}` for paginated JSON.
   - `POST /api/{ControllerName}/Excel` for `.xlsx` export.
 - The controller file must be created under `Backend/Controllers/Report`.
+- The controller must require authentication with `[Authorize]`.
+- Report controllers must not use `[AllowAnonymous]`.
 
 Do not combine multiple report rows into one controller unless the user explicitly asks for that.
 
@@ -139,6 +141,7 @@ If the LINQ `Query(...)` method has no request parameter, the API request DTO sh
 
 Each controller must:
 
+- Use `[Authorize]` at the controller class level.
 - Use `[ApiController]`.
 - Use `[Route("api/[controller]")]`.
 - Inject `TradeNetDbContext`.
@@ -183,10 +186,12 @@ using API.DBContext;
 using API.Model;
 using API.Service.Reports;
 using API.StoredProcedureToLinq;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers.Report
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class {ReportName}Controller : ControllerBase
@@ -286,20 +291,22 @@ Before marking a row complete:
 
 1. Confirm the controller file exists under `Backend/Controllers/Report`.
 2. Confirm it creates exactly one report API.
-3. Confirm it uses `TradeNetDbContext`.
-4. Confirm it calls the mapped LINQ converter.
-5. Confirm it has both endpoints:
+3. Confirm it has `[Authorize]` at controller class level.
+4. Confirm it does not use `[AllowAnonymous]`.
+5. Confirm it uses `TradeNetDbContext`.
+6. Confirm it calls the mapped LINQ converter.
+7. Confirm it has both endpoints:
    - `[HttpPost]` paginated JSON endpoint.
    - `[HttpPost("Excel")]` Excel export endpoint.
-6. Confirm it uses `ReportQueryService.CreatePagedResultAsync(...)`.
-7. Confirm it uses `ExcelGenerator.CreateWorkbookAsync(...)`.
-8. Run:
+8. Confirm it uses `ReportQueryService.CreatePagedResultAsync(...)`.
+9. Confirm it uses `ExcelGenerator.CreateWorkbookAsync(...)`.
+10. Run:
 
 ```powershell
 dotnet build Backend\API.csproj
 ```
 
-9. Only if the build succeeds, update `docs/ReportAndLinqMappingList.md`:
+11. Only if the build succeeds, update `docs/ReportAndLinqMappingList.md`:
    - Change the report row `API Status` from `To Do` to `Completed`.
    - Increase `API completed` by `1`.
    - Decrease `API remaining` by `1`.

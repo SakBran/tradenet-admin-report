@@ -1,13 +1,15 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using API.DBContext;
 using API.Model;
 using API.Service.Reports;
 using API.StoredProcedureToLinq;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers.Report
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class MemberRegistrationReportController : ControllerBase
@@ -134,3 +136,4 @@ namespace Backend.Controllers.Report
         public string? ApplyType { get; set; } = "All";
     }
 }
+
