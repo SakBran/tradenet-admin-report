@@ -23,7 +23,7 @@ import ProtectedRoute from './ProtectedRoute.tsx';
 import TimelinePage from '../pages/Timeline/Timeline.tsx';
 import Certificate from '../pages/certificate/Certificate.tsx';
 import Test from '../pages/Test.tsx';
-import MemberRegistrationReport from '../Report/Page/MemberRegistrationReport.tsx';
+import { reportRoutes } from '../Report/reportRoutes.tsx';
 
 // Custom scroll restoration function
 export const ScrollToTop: React.FC = () => {
@@ -167,12 +167,7 @@ const router = createBrowserRouter([
           </PageWrapper>
         ),
         errorElement: <ErrorPage />,
-        children: [
-          {
-            path: 'MemberRegistrationReport',
-            element: <MemberRegistrationReport />,
-          },
-        ],
+        children: reportRoutes,
       },
     ],
   },

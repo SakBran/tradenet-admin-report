@@ -9,8 +9,9 @@ import { Logo } from '../../components';
 import { Link, useLocation } from 'react-router-dom';
 import { PATH_LANDING } from '../../constants';
 import { COLOR } from '../../App.tsx';
-import { PATH_DASHBOARD, PATH_REPORT } from '../../constants/routes.ts';
+import { PATH_DASHBOARD } from '../../constants/routes.ts';
 import { useMediaQuery } from 'react-responsive';
+import { reportNavItems } from '../../Report/reportNavItems.tsx';
 
 const { Sider } = Layout;
 
@@ -42,13 +43,7 @@ const items: MenuProps['items'] = [
     getItem(<Link to="/User/List">List</Link>, 'List', null),
     getItem(<Link to="/User/New">New</Link>, 'New', null),
   ]),
-  getItem('Reports', 'Reports', <FileSearchOutlined />, [
-    getItem(
-      <Link to={PATH_REPORT.memberRegistration}>Member Registration</Link>,
-      'MemberRegistrationReport',
-      null
-    ),
-  ]),
+  getItem('Reports', 'Reports', <FileSearchOutlined />, reportNavItems),
 
   getItem(
     <Link to={'/Timeline/Detail'}>Timeline</Link>,

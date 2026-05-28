@@ -74,6 +74,8 @@ export const PATH_USER = {
 export const PATH_REPORT = {
   root: ROOTS_REPORT,
   memberRegistration: path(ROOTS_REPORT, '/MemberRegistrationReport'),
+  detail: (controllerName: string): string =>
+    path(ROOTS_REPORT, `/${controllerName}`),
 };
 
 export const PATH_CORPORATE = {
