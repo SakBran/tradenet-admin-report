@@ -77,10 +77,18 @@ public static class sp_ExportLicenceDetailReport
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
-        return OverseaRows(db, request)
-            .Concat(BorderPaThaKaRows(db, request))
-            .Concat(BorderIndividualTradingRows(db, request))
-            .OrderBy(row => row.LicenceDate);
+        return request.Type switch
+        {
+            "Oversea" => OverseaRows(db, request).OrderBy(row => row.LicenceDate),
+            "Border" => BorderPaThaKaRows(db, request)
+                .AsEnumerable()
+                .Concat(BorderIndividualTradingRows(db, request).AsEnumerable())
+                .OrderBy(row => row.LicenceDate)
+                .AsQueryable(),
+            _ => OverseaRows(db, request)
+                .Where(_ => false)
+                .OrderBy(row => row.LicenceDate)
+        };
     }
 
     private static IQueryable<sp_ExportLicenceDetailReportResult> OverseaRows(

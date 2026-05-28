@@ -407,6 +407,18 @@ public static class sp_HSCodeReport
     {
         return db.Hscodes
             .Where(_ => false)
-            .Select(_ => new sp_HSCodeReportResult());
+            .Select(hsCode => new sp_HSCodeReportResult
+            {
+                SakhanId = hsCode.Id,
+                SectionCode = hsCode.Code,
+                HSCodeId = hsCode.Id,
+                HSCode = hsCode.Code,
+                HSDescription = hsCode.Description,
+                Amount = 0m,
+                Currency = hsCode.Code,
+                LicenceNo = hsCode.Code,
+                CompanyRegistrationNo = hsCode.Code,
+                CompanyName = hsCode.Description
+            });
     }
 }

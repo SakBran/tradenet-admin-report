@@ -72,7 +72,12 @@ public static class sp_ImportPermitDetailReport
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
-        return OverseaRows(db, request).Concat(BorderRows(db, request));
+        return request.Type switch
+        {
+            "Oversea" => OverseaRows(db, request),
+            "Border" => BorderRows(db, request),
+            _ => OverseaRows(db, request).Where(_ => false)
+        };
     }
 
     private static IQueryable<sp_ImportPermitDetailReportResult> OverseaRows(

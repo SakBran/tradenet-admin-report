@@ -637,7 +637,32 @@ public static class sp_VoucherReport
     {
         return db.AccountTransactions
             .Where(_ => false)
-            .Select(_ => new VoucherRow());
+            .Select(account => new VoucherRow
+            {
+                ApplicationNo = account.TransactionId,
+                ApplicationDate = account.CreatedDate,
+                ApprovedUser = account.TransactionFormType,
+                Date = account.PaymentDate,
+                SectionCode = account.TransactionFormType,
+                ApplyType = account.TransactionFormType,
+                OldLicenceNo = account.TransactionId,
+                LicenceNo = account.TransactionId,
+                LicenceDate = account.CreatedDate,
+                CompanyRegistrationNo = account.MemberId ?? account.TransactionId,
+                CompanyName = account.TransactionFormType,
+                VoucherNo = account.VoucherNo,
+                VoucherDate = account.VoucherDate,
+                Amount = account.TotalAmount,
+                PaymentType = account.PaymentType,
+                SakhanId = account.CreatedUserId,
+                SakhanCode = account.TransactionFormType,
+                SakhanName = account.TransactionFormType,
+                Currency = account.PaymentType,
+                TotalAmount = 0m,
+                CommodityType = account.TransactionFormType,
+                ExchangeRate = 0m,
+                TotalCIF = account.TotalAmount
+            });
     }
 
     private sealed class VoucherRow

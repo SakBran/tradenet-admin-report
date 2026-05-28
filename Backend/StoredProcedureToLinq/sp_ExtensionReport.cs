@@ -607,6 +607,27 @@ public static class sp_ExtensionReport
     {
         return db.ExportLicences
             .Where(_ => false)
-            .Select(_ => new sp_ExtensionReportResult());
+            .Select(licence => new sp_ExtensionReportResult
+            {
+                Date = licence.CreatedDate,
+                SectionCode = licence.ExportImportSectionId.ToString(),
+                SectionName = licence.ExportImportSectionId.ToString(),
+                OldLicenceNo = licence.OldExportLicenceNo,
+                LicenceNo = licence.ExportLicenceNo,
+                SDate = licence.ApplicationNo,
+                CompanyRegistrationNo = licence.PaThaKaId,
+                CompanyName = licence.PaThaKaId,
+                UnitLevel = licence.PaThaKaId,
+                StreetNumberStreetName = licence.PaThaKaId,
+                QuarterCityTownship = licence.PaThaKaId,
+                State = licence.PaThaKaId,
+                Country = licence.PaThaKaId,
+                PostalCode = licence.PaThaKaId,
+                Currency = licence.ApplyType,
+                Amount = 0m,
+                SakhanId = licence.ExportImportSectionId,
+                SakhanCode = licence.ExportImportSectionId.ToString(),
+                SakhanName = licence.ExportImportSectionId.ToString()
+            });
     }
 }
