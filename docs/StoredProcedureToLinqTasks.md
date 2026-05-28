@@ -20,9 +20,9 @@
 - Local SQL access is available through `sqlcmd`.
 - `TradeNetDBTest` currently has 108 non-system stored procedures.
 - Initial name-based classification:
-  - 83 likely query/report/list/search/dashboard procedures.
-  - 24 likely non-`IQueryable` helper or mutation procedures.
-  - 1 manual-review procedure: `sp_ApplicationHistory`.
+- 84 likely query/report/list/search/dashboard procedures.
+- 24 likely non-`IQueryable` helper or mutation procedures.
+- 0 manual-review procedures.
 
 ## Conversion Progress Tracker
 
@@ -39,11 +39,11 @@ Status values:
 Progress counts:
 
 - Database procedures discovered: 108.
-- Likely LINQ files to create: 83.
-- Converted: 55.
+- Likely LINQ files to create: 84.
+- Converted: 66.
 - In process: 0.
-- To do: 28.
-- Manual review: 1.
+- To do: 18.
+- Manual review: 0.
 - Not `IQueryable` / excluded for now: 24.
 
 | Stored procedure | Target `.cs` file | Status | Note |
@@ -59,7 +59,7 @@ Progress counts:
 | sp_AccountSummaryReport | sp_AccountSummaryReport.cs | Converted | LINQ conversion exists; large `UNION ALL` report represented with `Concat` branches. |
 | sp_ActualAmendReport | sp_ActualAmendReport.cs | Converted | LINQ conversion exists in `Backend/StoredProcedureToLinq/sp_ActualAmendReport.cs`. |
 | sp_AmendReport | sp_AmendReport.cs | Converted | LINQ conversion exists; one stored procedure Sakhan filter oddity is preserved in the border export licence Pa Tha Ka branch. |
-| sp_ApplicationHistory | sp_ApplicationHistory.cs | Manual Review | Not matched by report/list/search naming; inspect SQL definition first. |
+| sp_ApplicationHistory | sp_ApplicationHistory.cs | To Do | Read-only application-history query, but very large `UNION ALL`; convert in a dedicated batch. |
 | sp_AutoCancelDataList | sp_AutoCancelDataList.cs | Converted | LINQ conversion exists; SQL `DATEDIFF(day, ApproveDate, CURRENT_TIMESTAMP)` represented with `EF.Functions.DateDiffDay`. |
 | sp_BusinessServiceAgencyByPaThakaReport | sp_BusinessServiceAgencyByPaThakaReport.cs | Converted | LINQ conversion exists. |
 | sp_BusinessServiceAgencyRegistrationReport | sp_BusinessServiceAgencyRegistrationReport.cs | Converted | LINQ conversion exists. |
@@ -78,12 +78,12 @@ Progress counts:
 | sp_DutyFreeShopByReport | sp_DutyFreeShopByReport.cs | Converted | LINQ conversion exists; SQL `fn_GetNRCNo` expanded with prefix joins. |
 | sp_DutyFreeShopRegistrationReport | sp_DutyFreeShopRegistrationReport.cs | Converted | LINQ conversion exists; SQL `fn_GetNRCNo` expanded with prefix joins. |
 | sp_DutyFreeShopReport | sp_DutyFreeShopReport.cs | Converted | LINQ conversion exists; summary/detail result shapes represented by one superset result class. |
-| sp_EICCBalanceCertificateList | sp_EICCBalanceCertificateList.cs | To Do | List/query procedure. |
-| sp_EICCPendingCertificateList | sp_EICCPendingCertificateList.cs | To Do | List/query procedure. |
+| sp_EICCBalanceCertificateList | sp_EICCBalanceCertificateList.cs | Converted | LINQ conversion exists; repeated certificate branches share a normalized deferred row projection. |
+| sp_EICCPendingCertificateList | sp_EICCPendingCertificateList.cs | Converted | LINQ conversion exists; preserves `Certificate`, `LicencePermit`, and `BorderLicencePermit` type branches. |
 | sp_EICCReport | sp_EICCReport.cs | To Do | Report procedure. |
-| sp_EICCSubmitBorderLicencePermitList | sp_EICCSubmitBorderLicencePermitList.cs | To Do | List/query procedure. |
-| sp_EICCSubmitCertificateList | sp_EICCSubmitCertificateList.cs | To Do | List/query procedure. |
-| sp_EICCSubmitLicencePermitList | sp_EICCSubmitLicencePermitList.cs | To Do | List/query procedure. |
+| sp_EICCSubmitBorderLicencePermitList | sp_EICCSubmitBorderLicencePermitList.cs | Converted | LINQ conversion exists; Approved status keeps the extra `IsApprove=0` filter from the stored procedure branch. |
+| sp_EICCSubmitCertificateList | sp_EICCSubmitCertificateList.cs | Converted | LINQ conversion exists; preserves Business Service Agency approved-branch omission of `IsApprove=0`. |
+| sp_EICCSubmitLicencePermitList | sp_EICCSubmitLicencePermitList.cs | Converted | LINQ conversion exists; Approved status keeps the extra `IsApprove=0` filter from the stored procedure branch. |
 | sp_EVCycleShowRoomRegistrationReport | sp_EVCycleShowRoomRegistrationReport.cs | Converted | LINQ conversion exists; SQL `fn_GetNRCNo` and business-service-agency lookup expanded with LINQ. |
 | sp_EVCycleShowRoomReport | sp_EVCycleShowRoomReport.cs | Converted | LINQ conversion exists; summary/detail result shapes represented by one superset result class. |
 | sp_EVShowRoomRegistrationReport | sp_EVShowRoomRegistrationReport.cs | Converted | LINQ conversion exists; SQL `fn_GetNRCNo` and business-service-agency lookup expanded with LINQ. |
@@ -101,16 +101,16 @@ Progress counts:
 | sp_LicencePermitSearch | sp_LicencePermitSearch.cs | Converted | LINQ conversion exists; SQL `UNION ALL`, `ORDER BY CreatedDate DESC`, and `TOP 1` represented with `Concat`, `OrderByDescending`, and `Take(1)`. |
 | sp_LicencePermitSearch_old | sp_LicencePermitSearch_old.cs | Converted | LINQ conversion exists; delegates to current search conversion because SQL differs only by index hints. |
 | sp_MemberRegistrationReport | sp_MemberRegistrationReport.cs | Converted | LINQ conversion exists; preserves different `IssuedDate` projection behavior in `All` vs `Extension` branches. |
-| sp_MPUReport | sp_MPUReport.cs | To Do | Report procedure. |
-| sp_MPUReport_Seperated_OnineFee | sp_MPUReport_Seperated_OnineFee.cs | To Do | Report procedure; preserve original spelling. |
+| sp_MPUReport | sp_MPUReport.cs | Converted | LINQ conversion exists; preserves pre/post 2025-11-15 online-fee threshold branches. |
+| sp_MPUReport_Seperated_OnineFee | sp_MPUReport_Seperated_OnineFee.cs | Converted | LINQ conversion exists; preserves original stored procedure spelling and unused `ReportType` parameter. |
 | sp_MPUReport_V3 | sp_MPUReport_V3.cs | To Do | Report procedure. |
 | sp_MPUReportV2 | sp_MPUReportV2.cs | To Do | Report procedure. |
 | sp_NewReport | sp_NewReport.cs | To Do | Report procedure. |
 | sp_NewReport_old | sp_NewReport_old.cs | To Do | Report procedure; legacy version. |
 | sp_NotificationDataList | sp_NotificationDataList.cs | Converted | LINQ conversion exists; SQL date-warning logic represented with `EF.Functions.DateDiffDay`. |
-| sp_OGARecommendationHistoryReport | sp_OGARecommendationHistoryReport.cs | To Do | Report procedure. |
-| sp_OGARecommendationListReport | sp_OGARecommendationListReport.cs | To Do | Report/list procedure. |
-| sp_OGARecommendationReport | sp_OGARecommendationReport.cs | To Do | Report procedure. |
+| sp_OGARecommendationHistoryReport | sp_OGARecommendationHistoryReport.cs | Converted | LINQ conversion exists; licence/permit history branches are combined with `Concat` to preserve SQL `UNION ALL`. |
+| sp_OGARecommendationListReport | sp_OGARecommendationListReport.cs | Converted | LINQ conversion exists; SQL date-string columns are represented with deferred date-part string projections. |
+| sp_OGARecommendationReport | sp_OGARecommendationReport.cs | Converted | LINQ conversion exists; `ReferenceNo` uses `"0"` as the no-filter sentinel matching the SQL comparison to `0`. |
 | sp_OnlineFeesReport | sp_OnlineFeesReport.cs | To Do | Report procedure. |
 | sp_PaThaKaAllReport | sp_PaThaKaAllReport.cs | Converted | LINQ conversion exists; owner `fn_GetNRCNo` expanded with prefix joins. |
 | sp_PathakaBindReport | sp_PathakaBindReport.cs | Converted | LINQ conversion exists. |
@@ -118,7 +118,7 @@ Progress counts:
 | sp_PaThaKaRegistrationReport | sp_PaThaKaRegistrationReport.cs | Converted | LINQ conversion exists. |
 | sp_PaThaKaReport | sp_PaThaKaReport.cs | Converted | LINQ conversion exists. |
 | sp_PaThaKaValidInvalidReport | sp_PaThaKaValidInvalidReport.cs | Converted | LINQ conversion exists. |
-| sp_PendingReport | sp_PendingReport.cs | To Do | Report procedure. |
+| sp_PendingReport | sp_PendingReport.cs | Converted | LINQ conversion exists; preserves the stored procedure's three-form branching and scalar item subqueries. |
 | sp_PermitBusinessByPaThaKaReport | sp_PermitBusinessByPaThaKaReport.cs | Converted | LINQ conversion exists; SQL full joins represented with PaThaKa-rooted left joins. |
 | sp_ReExportByPaThaKaReport | sp_ReExportByPaThaKaReport.cs | Converted | LINQ conversion exists; preserves SQL address alias behavior. |
 | sp_ReExportReport | sp_ReExportReport.cs | Converted | LINQ conversion exists; summary/detail result shapes represented by one superset result class. |
@@ -223,6 +223,8 @@ Progress counts:
 - [x] Convert `sp_DutyFreeShopByReport` into `Backend/StoredProcedureToLinq/sp_DutyFreeShopByReport.cs`.
 - [x] Convert `sp_DutyFreeShopRegistrationReport` into `Backend/StoredProcedureToLinq/sp_DutyFreeShopRegistrationReport.cs`.
 - [x] Convert `sp_DutyFreeShopReport` into `Backend/StoredProcedureToLinq/sp_DutyFreeShopReport.cs`.
+- [x] Convert `sp_EICCBalanceCertificateList` into `Backend/StoredProcedureToLinq/sp_EICCBalanceCertificateList.cs`.
+- [x] Convert `sp_EICCPendingCertificateList` into `Backend/StoredProcedureToLinq/sp_EICCPendingCertificateList.cs`.
 - [x] Convert `sp_EVCycleShowRoomReport` into `Backend/StoredProcedureToLinq/sp_EVCycleShowRoomReport.cs`.
 - [x] Convert `sp_EVCycleShowRoomRegistrationReport` into `Backend/StoredProcedureToLinq/sp_EVCycleShowRoomRegistrationReport.cs`.
 - [x] Convert `sp_EVShowRoomReport` into `Backend/StoredProcedureToLinq/sp_EVShowRoomReport.cs`.
@@ -232,7 +234,15 @@ Progress counts:
 - [x] Convert `sp_LicencePermitSearch` into `Backend/StoredProcedureToLinq/sp_LicencePermitSearch.cs`.
 - [x] Convert `sp_LicencePermitSearch_old` into `Backend/StoredProcedureToLinq/sp_LicencePermitSearch_old.cs`.
 - [x] Convert `sp_MemberRegistrationReport` into `Backend/StoredProcedureToLinq/sp_MemberRegistrationReport.cs`.
+- [x] Convert `sp_MPUReport` into `Backend/StoredProcedureToLinq/sp_MPUReport.cs`.
+- [x] Convert `sp_MPUReport_Seperated_OnineFee` into `Backend/StoredProcedureToLinq/sp_MPUReport_Seperated_OnineFee.cs`.
 - [x] Convert `sp_NotificationDataList` into `Backend/StoredProcedureToLinq/sp_NotificationDataList.cs`.
+- [x] Convert `sp_EICCSubmitBorderLicencePermitList` into `Backend/StoredProcedureToLinq/sp_EICCSubmitBorderLicencePermitList.cs`.
+- [x] Convert `sp_EICCSubmitCertificateList` into `Backend/StoredProcedureToLinq/sp_EICCSubmitCertificateList.cs`.
+- [x] Convert `sp_EICCSubmitLicencePermitList` into `Backend/StoredProcedureToLinq/sp_EICCSubmitLicencePermitList.cs`.
+- [x] Convert `sp_OGARecommendationHistoryReport` into `Backend/StoredProcedureToLinq/sp_OGARecommendationHistoryReport.cs`.
+- [x] Convert `sp_OGARecommendationListReport` into `Backend/StoredProcedureToLinq/sp_OGARecommendationListReport.cs`.
+- [x] Convert `sp_OGARecommendationReport` into `Backend/StoredProcedureToLinq/sp_OGARecommendationReport.cs`.
 - [x] Convert `sp_PathakaBindReport` into `Backend/StoredProcedureToLinq/sp_PathakaBindReport.cs`.
 - [x] Convert `sp_PaThaKaAllReport` into `Backend/StoredProcedureToLinq/sp_PaThaKaAllReport.cs`.
 - [x] Convert `sp_PaThaKaByBusinessTypeReport` into `Backend/StoredProcedureToLinq/sp_PaThaKaByBusinessTypeReport.cs`.
@@ -240,6 +250,7 @@ Progress counts:
 - [x] Convert `sp_PaThaKaReport` into `Backend/StoredProcedureToLinq/sp_PaThaKaReport.cs`.
 - [x] Convert `sp_PaThaKaValidInvalidReport` into `Backend/StoredProcedureToLinq/sp_PaThaKaValidInvalidReport.cs`.
 - [x] Convert `sp_PermitBusinessByPaThaKaReport` into `Backend/StoredProcedureToLinq/sp_PermitBusinessByPaThaKaReport.cs`.
+- [x] Convert `sp_PendingReport` into `Backend/StoredProcedureToLinq/sp_PendingReport.cs`.
 - [x] Convert `sp_ReExportByPaThaKaReport` into `Backend/StoredProcedureToLinq/sp_ReExportByPaThaKaReport.cs`.
 - [x] Convert `sp_ReExportReport` into `Backend/StoredProcedureToLinq/sp_ReExportReport.cs`.
 - [x] Convert `sp_SaleCenterByPaThaKaReport` into `Backend/StoredProcedureToLinq/sp_SaleCenterByPaThaKaReport.cs`.
@@ -278,6 +289,7 @@ Progress counts:
 - Some stored procedures may return columns that are not represented by existing EF entities. Those need dedicated result projection classes in their own procedure file.
 - `IQueryable` output means the caller is responsible for execution, paging, and materialization.
 - `sp_ActualAmendReport` returns different column counts by form type in SQL. The LINQ conversion uses one superset result class with nullable Sakhan fields for a stable typed `IQueryable` result.
+- `sp_ApplicationHistory` was inspected and is query-only, but its many status/date branches make it large enough for a dedicated conversion batch.
 - Normal build output is currently locked by process `API (8076)`. Verification build succeeded with `dotnet build Backend\API.csproj -p:OutputPath=C:\Code\Ministry_of_Commerce_Tradenet_build_verify\API\`.
 - Latest batch verification succeeded with the same alternate output path. The build still reports existing migration naming warnings for `intial`; no converter errors were reported.
 - `sp_AmendReport` mostly mirrors `sp_ActualAmendReport` with `ApplyType='Amend'`. Its SQL compares `BorderExportLicence.ExportImportSectionId` to Sakhan values in one border export licence Pa Tha Ka branch; the LINQ conversion preserves that behavior and documents it in the tracker.
@@ -308,7 +320,17 @@ Progress counts:
 - `sp_HSCodeSearch` preserves the stored procedure's export-branch section-filter oddity: for `ExportImportSectionId > 0`, the SQL pattern is a literal `%'+@ExportImportSectionCode+'%` rather than concatenating the variable.
 - `sp_LicencePermitSearch_old` delegates to `sp_LicencePermitSearch` because the SQL body is equivalent except for `WITH(INDEX(...))` hints, which are not represented in provider-neutral LINQ.
 - `sp_MemberRegistrationReport` preserves the stored procedure behavior where the `All` branch projects `ExtensionDate` as `IssuedDate` for extension rows, while the `Extension` branch projects the actual `IssuedDate`.
+- `sp_MPUReport` follows the stored procedure threshold switch at `2025-11-15`: before that date it separates `3000`, and from that date onward it separates `10000`. `MOCAmount` is scaffolded as a string, so the LINQ filter compares that amount column to the same string values.
+- `sp_MPUReport_Seperated_OnineFee` keeps the stored procedure's unused `@ReportType` parameter in the request class and filters only the import-side form types used by the SQL.
 - `sp_NotificationDataList` uses `EF.Functions.DateDiffDay` to preserve SQL `DATEDIFF(day, EndDate, CURRENT_TIMESTAMP)` semantics and keeps warning-date calculation in the query projection.
+- `sp_EICCSubmitLicencePermitList` and `sp_EICCSubmitBorderLicencePermitList` preserve the stored procedure branch behavior where `@EICCStatus='Approved'` adds an `IsApprove=0` filter, while other statuses do not.
+- `sp_EICCBalanceCertificateList` normalizes all certificate/licence/permit branches before the final date-string projection; the final form-type filter preserves the stored procedure's prefix match when `@FormType` is provided.
+- `sp_EICCPendingCertificateList` keeps the stored procedure's three `@Type` branches. Its `Certificate` branch includes the Show Room-specific `FormType LIKE 'Show Room%'` condition.
+- `sp_EICCSubmitCertificateList` preserves the stored procedure's approved-branch oddity: the Business Service Agency branch does not add `IsApprove=0`, but the other certificate branches do.
+- `sp_OGARecommendationHistoryReport` preserves the stored procedure's eight licence/permit branches and final `CreatedDate` ordering.
+- `sp_OGARecommendationListReport` keeps the stored procedure's exact filters and ordering; SQL `CONVERT(varchar, date, 103)` display columns are represented as deferred day/month/year string projections.
+- `sp_OGARecommendationReport` treats request `ReferenceNo == "0"` as the no-filter sentinel, matching the stored procedure's `@ReferenceNo=0` comparison despite the SQL parameter being `nvarchar`.
+- `sp_PendingReport` only returns rows for the three stored procedure branches (`Import Licence`, `Export Licence`, and `Border Import Licence`); other form types return an empty deferred query.
 - `sp_PermitBusinessByPaThaKaReport` uses a PaThaKa-rooted left-join shape to preserve the effective rows of the stored procedure's `FULL JOIN` plus `WHERE pathaka.CompanyRegistrationNo=...` filter.
 - `sp_PaThaKaAllReport` expands the owner `dbo.fn_GetNRCNo` call with LINQ joins to `Nrcprefixes` and `NrcprefixCodes`.
 - `sp_WholeSaleRetailRegistrationReport` uses `Concat` to preserve SQL `UNION ALL`; its second branch joins through `PaThaKaRegistration` and account transactions for wholesale Pa Tha Ka payments.
