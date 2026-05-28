@@ -297,7 +297,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
 
   return (
     <>
-      {(searchable || extraFilters) && (
+      {/* {(searchable || extraFilters) && (
         <Card bodyStyle={{ paddingBottom: isSmOrBelow ? 15 : 0 }}>
           <Form>
             {extraFilters && (
@@ -369,7 +369,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
             )}
           </Form>
         </Card>
-      )}
+      )} */}
 
       <br />
 

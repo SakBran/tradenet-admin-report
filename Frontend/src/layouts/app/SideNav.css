@@ -1,0 +1,41 @@
+.app-side-nav .ant-layout-sider-children {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.app-side-nav-menu {
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-bottom: 16px;
+}
+
+.app-side-nav-menu.ant-menu-inline .ant-menu-item,
+.app-side-nav-menu.ant-menu-inline .ant-menu-submenu-title {
+  align-items: flex-start;
+  height: auto;
+  min-height: 40px;
+  line-height: 1.35;
+  padding-bottom: 9px;
+  padding-top: 9px;
+  white-space: normal;
+}
+
+.app-side-nav-menu .ant-menu-item .ant-menu-title-content,
+.app-side-nav-menu .ant-menu-submenu-title .ant-menu-title-content {
+  line-height: 1.35;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.app-side-nav-menu .ant-menu-title-content a {
+  display: block;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.app-side-nav-menu .ant-menu-submenu-arrow {
+  top: 20px;
+}

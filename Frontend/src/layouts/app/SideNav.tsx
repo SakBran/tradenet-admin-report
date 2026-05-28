@@ -11,7 +11,11 @@ import { PATH_LANDING } from '../../constants';
 import { COLOR } from '../../App.tsx';
 import { PATH_DASHBOARD } from '../../constants/routes.ts';
 import { useMediaQuery } from 'react-responsive';
-import { reportNavItems } from '../../Report/reportNavItems.tsx';
+import {
+  getReportCategoryKey,
+  reportNavItems,
+} from '../../Report/reportNavItems.tsx';
+import './SideNav.css';
 
 const { Sider } = Layout;
 
@@ -66,7 +70,7 @@ type SideNavProps = SiderProps & {
   setCollapse: (value: React.SetStateAction<boolean>) => void;
 };
 
-const SideNav = ({ setCollapse, ...others }: SideNavProps) => {
+const SideNav = ({ setCollapse, className, ...others }: SideNavProps) => {
   const nodeRef = useRef(null);
   const { pathname } = useLocation();
   const [openKeys, setOpenKeys] = useState(['']);
@@ -92,7 +96,10 @@ const SideNav = ({ setCollapse, ...others }: SideNavProps) => {
   useEffect(() => {
     const paths = pathname.split('/');
     if (paths[1] === 'Report') {
-      setOpenKeys(['Reports']);
+      const reportCategoryKey = getReportCategoryKey(paths[2]);
+      setOpenKeys(
+        reportCategoryKey ? ['Reports', reportCategoryKey] : ['Reports']
+      );
     } else if (paths[1] === 'User') {
       setOpenKeys(['Users']);
     }
@@ -100,7 +107,13 @@ const SideNav = ({ setCollapse, ...others }: SideNavProps) => {
   }, [pathname]);
 
   return (
-    <Sider ref={nodeRef} breakpoint="lg" collapsedWidth="0" {...others}>
+    <Sider
+      ref={nodeRef}
+      breakpoint="lg"
+      collapsedWidth="0"
+      className={`app-side-nav ${className ?? ''}`.trim()}
+      {...others}
+    >
       <Logo
         color="blue"
         asLink
@@ -123,6 +136,7 @@ const SideNav = ({ setCollapse, ...others }: SideNavProps) => {
         }}
       >
         <Menu
+          className="app-side-nav-menu"
           mode="inline"
           items={items}
           onClick={onClick}

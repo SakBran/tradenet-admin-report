@@ -37,6 +37,7 @@ import AuthContext from '../../context/AuthContext.tsx';
 import axiosInstance from '../../services/AxiosInstance.ts';
 import Apply from './Apply.tsx';
 const { Content } = Layout;
+const SIDE_NAV_WIDTH = 320;
 
 type AppLayoutProps = {
   children: ReactNode;
@@ -182,6 +183,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
         <SideNav
           trigger={null}
           collapsible
+          width={isMobile ? '86vw' : SIDE_NAV_WIDTH}
           setCollapse={setCollapsed}
           collapsed={collapsed}
           onCollapse={(value) => {
@@ -207,7 +209,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
         >
           <HeaderNav
             style={{
-              marginLeft: collapsed ? 0 : '200px',
+              marginLeft: collapsed ? 0 : isMobile ? 0 : SIDE_NAV_WIDTH,
               padding: '0 2rem 0 0',
               backgroundColor: navFill
                 ? 'rgba(255, 255, 255, 0.5)'
@@ -264,7 +266,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
           </HeaderNav>
           <Content
             style={{
-              margin: `0 0 0 ${collapsed ? 0 : isMobile ? 0 : '200px'}`,
+              margin: `0 0 0 ${collapsed ? 0 : isMobile ? 0 : `${SIDE_NAV_WIDTH}px`}`,
               borderRadius: collapsed ? 0 : borderRadius,
               transition: 'all .25s',
               padding: isMobile ? '5px 5px' : '24px 32px',
@@ -303,7 +305,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
           <FooterNav
             style={{
               textAlign: 'center',
-              marginLeft: collapsed ? 0 : '200px',
+              marginLeft: collapsed ? 0 : isMobile ? 0 : SIDE_NAV_WIDTH,
               background: 'none',
             }}
           />
