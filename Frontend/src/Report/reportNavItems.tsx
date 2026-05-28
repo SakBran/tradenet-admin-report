@@ -99,6 +99,10 @@ export const getReportCategoryKey = (controllerName: string) =>
   reportCategoryDefinitions.find((category) => category.matches(controllerName))
     ?.key;
 
+export const reportCategoryKeys = reportCategoryDefinitions.map(
+  (category) => category.key
+);
+
 export const reportNavItems: Required<MenuProps>['items'] = [
   ...reportCategoryDefinitions
     .map((category) => ({

@@ -1,70 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ConfigProvider, Layout, Menu, MenuProps, SiderProps } from 'antd';
-import {
-  BranchesOutlined,
-  FileSearchOutlined,
-  PieChartOutlined,
-} from '@ant-design/icons';
 import { Logo } from '../../components';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { PATH_LANDING } from '../../constants';
 import { COLOR } from '../../App.tsx';
-import { PATH_DASHBOARD } from '../../constants/routes.ts';
 import { useMediaQuery } from 'react-responsive';
 import {
   getReportCategoryKey,
+  reportCategoryKeys,
   reportNavItems,
 } from '../../Report/reportNavItems.tsx';
 import './SideNav.css';
 
 const { Sider } = Layout;
 
-type MenuItem = Required<MenuProps>['items'][number];
-
-const getItem = (
-  label: React.ReactNode,
-  key: React.Key,
-  icon?: React.ReactNode,
-  children?: MenuItem[],
-  type?: 'group'
-): MenuItem => {
-  return {
-    key,
-    icon,
-    children,
-    label,
-    type,
-  } as MenuItem;
-};
-
-const items: MenuProps['items'] = [
-  getItem(
-    <Link to={PATH_DASHBOARD.default}>Dashboard</Link>,
-    'default',
-    <PieChartOutlined />
-  ),
-  getItem('Users', 'Users', <PieChartOutlined />, [
-    getItem(<Link to="/User/List">List</Link>, 'List', null),
-    getItem(<Link to="/User/New">New</Link>, 'New', null),
-  ]),
-  getItem('Reports', 'Reports', <FileSearchOutlined />, reportNavItems),
-
-  getItem(
-    <Link to={'/Timeline/Detail'}>Timeline</Link>,
-    'timeline',
-    <BranchesOutlined />
-  ),
-
-  getItem(<Link to={'/Test/New'}>Test</Link>, 'test', <BranchesOutlined />),
-];
-
-const rootSubmenuKeys = [
-  'dashboards',
-  'corporate',
-  'user-profile',
-  'Users',
-  'Reports',
-];
+const items: MenuProps['items'] = reportNavItems;
+const rootSubmenuKeys = reportCategoryKeys;
 
 type SideNavProps = SiderProps & {
   setCollapse: (value: React.SetStateAction<boolean>) => void;
@@ -97,11 +48,7 @@ const SideNav = ({ setCollapse, className, ...others }: SideNavProps) => {
     const paths = pathname.split('/');
     if (paths[1] === 'Report') {
       const reportCategoryKey = getReportCategoryKey(paths[2]);
-      setOpenKeys(
-        reportCategoryKey ? ['Reports', reportCategoryKey] : ['Reports']
-      );
-    } else if (paths[1] === 'User') {
-      setOpenKeys(['Users']);
+      setOpenKeys(reportCategoryKey ? [reportCategoryKey] : []);
     }
     setCurrent(paths[paths.length - 1]);
   }, [pathname]);
