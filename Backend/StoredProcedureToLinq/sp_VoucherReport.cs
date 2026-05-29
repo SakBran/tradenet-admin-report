@@ -133,12 +133,31 @@ public static class sp_VoucherReport
         TradeNetDbContext db,
         sp_VoucherReportRequest request)
     {
+        var amountByLicence =
+            from item in db.ExportLicenceItems
+            group item by item.ExportLicenceId into grouped
+            select new { LicenceId = grouped.Key, Amount = grouped.Sum(item => (decimal?)item.Amount) };
+
+        var currencyByLicence =
+            from firstItem in
+                (from item in db.ExportLicenceItems
+                 where db.Currencies.Any(currency => currency.Id == item.CurrencyId)
+                 group item by item.ExportLicenceId into grouped
+                 select new { LicenceId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.ExportLicenceItems on firstItem.ItemId equals item.Id
+            join currency in db.Currencies on item.CurrencyId equals currency.Id
+            select new { firstItem.LicenceId, currency.Code };
+
         return
             from licence in db.ExportLicences
             join account in db.AccountTransactions on licence.Id equals account.TransactionId
             join paThaKa in db.PaThaKas on licence.PaThaKaId equals paThaKa.Id
             join section in db.ExportImportSections on licence.ExportImportSectionId equals section.Id
             join user in db.Users on licence.ApproveUserId equals (int?)user.Id
+            join amountRow in amountByLicence on licence.Id equals amountRow.LicenceId into amountJoin
+            from amountRow in amountJoin.DefaultIfEmpty()
+            join currencyRow in currencyByLicence on licence.Id equals currencyRow.LicenceId into currencyJoin
+            from currencyRow in currencyJoin.DefaultIfEmpty()
             where account.IsPayment
                 && account.PaymentDate >= request.FromDate
                 && account.PaymentDate <= request.ToDate
@@ -164,14 +183,8 @@ public static class sp_VoucherReport
                 VoucherDate = account.VoucherDate,
                 Amount = account.TotalAmount,
                 PaymentType = account.PaymentType,
-                Currency = (
-                    from item in db.ExportLicenceItems
-                    join currency in db.Currencies on item.CurrencyId equals currency.Id
-                    where item.ExportLicenceId == licence.Id
-                    select currency.Code).FirstOrDefault(),
-                TotalAmount = db.ExportLicenceItems
-                    .Where(item => item.ExportLicenceId == licence.Id)
-                    .Sum(item => (decimal?)item.Amount),
+                Currency = currencyRow.Code,
+                TotalAmount = amountRow.Amount,
                 CommodityType = licence.CommodityType
             };
     }
@@ -180,12 +193,31 @@ public static class sp_VoucherReport
         TradeNetDbContext db,
         sp_VoucherReportRequest request)
     {
+        var amountByLicence =
+            from item in db.ImportLicenceItems
+            group item by item.ImportLicenceId into grouped
+            select new { LicenceId = grouped.Key, Amount = grouped.Sum(item => (decimal?)item.Amount) };
+
+        var currencyByLicence =
+            from firstItem in
+                (from item in db.ImportLicenceItems
+                 where db.Currencies.Any(currency => currency.Id == item.CurrencyId)
+                 group item by item.ImportLicenceId into grouped
+                 select new { LicenceId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.ImportLicenceItems on firstItem.ItemId equals item.Id
+            join currency in db.Currencies on item.CurrencyId equals currency.Id
+            select new { firstItem.LicenceId, currency.Code };
+
         return
             from licence in db.ImportLicences
             join account in db.AccountTransactions on licence.Id equals account.TransactionId
             join paThaKa in db.PaThaKas on licence.PaThaKaId equals paThaKa.Id
             join section in db.ExportImportSections on licence.ExportImportSectionId equals section.Id
             join user in db.Users on licence.ApproveUserId equals (int?)user.Id
+            join amountRow in amountByLicence on licence.Id equals amountRow.LicenceId into amountJoin
+            from amountRow in amountJoin.DefaultIfEmpty()
+            join currencyRow in currencyByLicence on licence.Id equals currencyRow.LicenceId into currencyJoin
+            from currencyRow in currencyJoin.DefaultIfEmpty()
             where account.IsPayment
                 && account.PaymentDate >= request.FromDate
                 && account.PaymentDate <= request.ToDate
@@ -211,14 +243,8 @@ public static class sp_VoucherReport
                 VoucherDate = account.VoucherDate,
                 Amount = account.TotalAmount,
                 PaymentType = account.PaymentType,
-                Currency = (
-                    from item in db.ImportLicenceItems
-                    join currency in db.Currencies on item.CurrencyId equals currency.Id
-                    where item.ImportLicenceId == licence.Id
-                    select currency.Code).FirstOrDefault(),
-                TotalAmount = db.ImportLicenceItems
-                    .Where(item => item.ImportLicenceId == licence.Id)
-                    .Sum(item => (decimal?)item.Amount),
+                Currency = currencyRow.Code,
+                TotalAmount = amountRow.Amount,
                 CommodityType = licence.CommodityType,
                 ExchangeRate = licence.ExchangeRate,
                 TotalCIF = licence.TotalCif
@@ -229,12 +255,31 @@ public static class sp_VoucherReport
         TradeNetDbContext db,
         sp_VoucherReportRequest request)
     {
+        var amountByPermit =
+            from item in db.ExportPermitItems
+            group item by item.ExportPermitId into grouped
+            select new { PermitId = grouped.Key, Amount = grouped.Sum(item => (decimal?)item.Amount) };
+
+        var currencyByPermit =
+            from firstItem in
+                (from item in db.ExportPermitItems
+                 where db.Currencies.Any(currency => currency.Id == item.CurrencyId)
+                 group item by item.ExportPermitId into grouped
+                 select new { PermitId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.ExportPermitItems on firstItem.ItemId equals item.Id
+            join currency in db.Currencies on item.CurrencyId equals currency.Id
+            select new { firstItem.PermitId, currency.Code };
+
         return
             from permit in db.ExportPermits
             join account in db.AccountTransactions on permit.Id equals account.TransactionId
             join paThaKa in db.PaThaKas on permit.PaThaKaId equals paThaKa.Id
             join section in db.ExportImportSections on permit.ExportImportSectionId equals section.Id
             join user in db.Users on permit.ApproveUserId equals (int?)user.Id
+            join amountRow in amountByPermit on permit.Id equals amountRow.PermitId into amountJoin
+            from amountRow in amountJoin.DefaultIfEmpty()
+            join currencyRow in currencyByPermit on permit.Id equals currencyRow.PermitId into currencyJoin
+            from currencyRow in currencyJoin.DefaultIfEmpty()
             where account.IsPayment
                 && account.PaymentDate >= request.FromDate
                 && account.PaymentDate <= request.ToDate
@@ -260,14 +305,8 @@ public static class sp_VoucherReport
                 VoucherDate = account.VoucherDate,
                 Amount = account.TotalAmount,
                 PaymentType = account.PaymentType,
-                Currency = (
-                    from item in db.ExportPermitItems
-                    join currency in db.Currencies on item.CurrencyId equals currency.Id
-                    where item.ExportPermitId == permit.Id
-                    select currency.Code).FirstOrDefault(),
-                TotalAmount = db.ExportPermitItems
-                    .Where(item => item.ExportPermitId == permit.Id)
-                    .Sum(item => (decimal?)item.Amount),
+                Currency = currencyRow.Code,
+                TotalAmount = amountRow.Amount,
                 CommodityType = permit.CommodityType
             };
     }
@@ -276,12 +315,31 @@ public static class sp_VoucherReport
         TradeNetDbContext db,
         sp_VoucherReportRequest request)
     {
+        var amountByPermit =
+            from item in db.ImportPermitItems
+            group item by item.ImportPermitId into grouped
+            select new { PermitId = grouped.Key, Amount = grouped.Sum(item => (decimal?)item.Amount) };
+
+        var currencyByPermit =
+            from firstItem in
+                (from item in db.ImportPermitItems
+                 where db.Currencies.Any(currency => currency.Id == item.CurrencyId)
+                 group item by item.ImportPermitId into grouped
+                 select new { PermitId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.ImportPermitItems on firstItem.ItemId equals item.Id
+            join currency in db.Currencies on item.CurrencyId equals currency.Id
+            select new { firstItem.PermitId, currency.Code };
+
         return
             from permit in db.ImportPermits
             join account in db.AccountTransactions on permit.Id equals account.TransactionId
             join paThaKa in db.PaThaKas on permit.PaThaKaId equals paThaKa.Id
             join section in db.ExportImportSections on permit.ExportImportSectionId equals section.Id
             join user in db.Users on permit.ApproveUserId equals (int?)user.Id
+            join amountRow in amountByPermit on permit.Id equals amountRow.PermitId into amountJoin
+            from amountRow in amountJoin.DefaultIfEmpty()
+            join currencyRow in currencyByPermit on permit.Id equals currencyRow.PermitId into currencyJoin
+            from currencyRow in currencyJoin.DefaultIfEmpty()
             where account.IsPayment
                 && account.PaymentDate >= request.FromDate
                 && account.PaymentDate <= request.ToDate
@@ -307,14 +365,8 @@ public static class sp_VoucherReport
                 VoucherDate = account.VoucherDate,
                 Amount = account.TotalAmount,
                 PaymentType = account.PaymentType,
-                Currency = (
-                    from item in db.ImportPermitItems
-                    join currency in db.Currencies on item.CurrencyId equals currency.Id
-                    where item.ImportPermitId == permit.Id
-                    select currency.Code).FirstOrDefault(),
-                TotalAmount = db.ImportPermitItems
-                    .Where(item => item.ImportPermitId == permit.Id)
-                    .Sum(item => (decimal?)item.Amount),
+                Currency = currencyRow.Code,
+                TotalAmount = amountRow.Amount,
                 CommodityType = permit.CommodityType
             };
     }
@@ -323,6 +375,21 @@ public static class sp_VoucherReport
         TradeNetDbContext db,
         sp_VoucherReportRequest request)
     {
+        var amountByLicence =
+            from item in db.BorderExportLicenceItems
+            group item by item.BorderExportLicenceId into grouped
+            select new { LicenceId = grouped.Key, Amount = grouped.Sum(item => (decimal?)item.Amount) };
+
+        var currencyByLicence =
+            from firstItem in
+                (from item in db.BorderExportLicenceItems
+                 where db.Currencies.Any(currency => currency.Id == item.CurrencyId)
+                 group item by item.BorderExportLicenceId into grouped
+                 select new { LicenceId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.BorderExportLicenceItems on firstItem.ItemId equals item.Id
+            join currency in db.Currencies on item.CurrencyId equals currency.Id
+            select new { firstItem.LicenceId, currency.Code };
+
         var paThaKaRows =
             from licence in db.BorderExportLicences
             join account in db.AccountTransactions on licence.Id equals account.TransactionId
@@ -330,6 +397,10 @@ public static class sp_VoucherReport
             join section in db.ExportImportSections on licence.ExportImportSectionId equals section.Id
             join sakhan in db.Sakhans on licence.SakhanId equals sakhan.Id
             join user in db.Users on licence.ApproveUserId equals (int?)user.Id
+            join amountRow in amountByLicence on licence.Id equals amountRow.LicenceId into amountJoin
+            from amountRow in amountJoin.DefaultIfEmpty()
+            join currencyRow in currencyByLicence on licence.Id equals currencyRow.LicenceId into currencyJoin
+            from currencyRow in currencyJoin.DefaultIfEmpty()
             where account.IsPayment
                 && account.PaymentDate >= request.FromDate
                 && account.PaymentDate <= request.ToDate
@@ -360,14 +431,8 @@ public static class sp_VoucherReport
                 SakhanId = sakhan.Id,
                 SakhanCode = sakhan.Code,
                 SakhanName = sakhan.Name,
-                Currency = (
-                    from item in db.BorderExportLicenceItems
-                    join currency in db.Currencies on item.CurrencyId equals currency.Id
-                    where item.BorderExportLicenceId == licence.Id
-                    select currency.Code).FirstOrDefault(),
-                TotalAmount = db.BorderExportLicenceItems
-                    .Where(item => item.BorderExportLicenceId == licence.Id)
-                    .Sum(item => (decimal?)item.Amount),
+                Currency = currencyRow.Code,
+                TotalAmount = amountRow.Amount,
                 CommodityType = licence.CommodityType
             };
 
@@ -378,6 +443,10 @@ public static class sp_VoucherReport
             join section in db.ExportImportSections on licence.ExportImportSectionId equals section.Id
             join sakhan in db.Sakhans on licence.SakhanId equals sakhan.Id
             join user in db.Users on licence.ApproveUserId equals (int?)user.Id
+            join amountRow in amountByLicence on licence.Id equals amountRow.LicenceId into amountJoin
+            from amountRow in amountJoin.DefaultIfEmpty()
+            join currencyRow in currencyByLicence on licence.Id equals currencyRow.LicenceId into currencyJoin
+            from currencyRow in currencyJoin.DefaultIfEmpty()
             where account.IsPayment
                 && account.PaymentDate >= request.FromDate
                 && account.PaymentDate <= request.ToDate
@@ -408,14 +477,8 @@ public static class sp_VoucherReport
                 SakhanId = sakhan.Id,
                 SakhanCode = sakhan.Code,
                 SakhanName = sakhan.Name,
-                Currency = (
-                    from item in db.BorderExportLicenceItems
-                    join currency in db.Currencies on item.CurrencyId equals currency.Id
-                    where item.BorderExportLicenceId == licence.Id
-                    select currency.Code).FirstOrDefault(),
-                TotalAmount = db.BorderExportLicenceItems
-                    .Where(item => item.BorderExportLicenceId == licence.Id)
-                    .Sum(item => (decimal?)item.Amount),
+                Currency = currencyRow.Code,
+                TotalAmount = amountRow.Amount,
                 CommodityType = licence.CommodityType
             };
 
@@ -426,6 +489,21 @@ public static class sp_VoucherReport
         TradeNetDbContext db,
         sp_VoucherReportRequest request)
     {
+        var amountByLicence =
+            from item in db.BorderImportLicenceItems
+            group item by item.BorderImportLicenceId into grouped
+            select new { LicenceId = grouped.Key, Amount = grouped.Sum(item => (decimal?)item.Amount) };
+
+        var currencyByLicence =
+            from firstItem in
+                (from item in db.BorderImportLicenceItems
+                 where db.Currencies.Any(currency => currency.Id == item.CurrencyId)
+                 group item by item.BorderImportLicenceId into grouped
+                 select new { LicenceId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.BorderImportLicenceItems on firstItem.ItemId equals item.Id
+            join currency in db.Currencies on item.CurrencyId equals currency.Id
+            select new { firstItem.LicenceId, currency.Code };
+
         var paThaKaRows =
             from licence in db.BorderImportLicences
             join account in db.AccountTransactions on licence.Id equals account.TransactionId
@@ -433,6 +511,10 @@ public static class sp_VoucherReport
             join section in db.ExportImportSections on licence.ExportImportSectionId equals section.Id
             join sakhan in db.Sakhans on licence.SakhanId equals sakhan.Id
             join user in db.Users on licence.ApproveUserId equals (int?)user.Id
+            join amountRow in amountByLicence on licence.Id equals amountRow.LicenceId into amountJoin
+            from amountRow in amountJoin.DefaultIfEmpty()
+            join currencyRow in currencyByLicence on licence.Id equals currencyRow.LicenceId into currencyJoin
+            from currencyRow in currencyJoin.DefaultIfEmpty()
             where account.IsPayment
                 && account.PaymentDate >= request.FromDate
                 && account.PaymentDate <= request.ToDate
@@ -463,14 +545,8 @@ public static class sp_VoucherReport
                 SakhanId = sakhan.Id,
                 SakhanCode = sakhan.Code,
                 SakhanName = sakhan.Name,
-                Currency = (
-                    from item in db.BorderImportLicenceItems
-                    join currency in db.Currencies on item.CurrencyId equals currency.Id
-                    where item.BorderImportLicenceId == licence.Id
-                    select currency.Code).FirstOrDefault(),
-                TotalAmount = db.BorderImportLicenceItems
-                    .Where(item => item.BorderImportLicenceId == licence.Id)
-                    .Sum(item => (decimal?)item.Amount),
+                Currency = currencyRow.Code,
+                TotalAmount = amountRow.Amount,
                 CommodityType = licence.CommodityType,
                 ExchangeRate = licence.ExchangeRate,
                 TotalCIF = licence.TotalCif
@@ -483,6 +559,10 @@ public static class sp_VoucherReport
             join section in db.ExportImportSections on licence.ExportImportSectionId equals section.Id
             join sakhan in db.Sakhans on licence.SakhanId equals sakhan.Id
             join user in db.Users on licence.ApproveUserId equals (int?)user.Id
+            join amountRow in amountByLicence on licence.Id equals amountRow.LicenceId into amountJoin
+            from amountRow in amountJoin.DefaultIfEmpty()
+            join currencyRow in currencyByLicence on licence.Id equals currencyRow.LicenceId into currencyJoin
+            from currencyRow in currencyJoin.DefaultIfEmpty()
             where account.IsPayment
                 && account.PaymentDate >= request.FromDate
                 && account.PaymentDate <= request.ToDate
@@ -513,14 +593,8 @@ public static class sp_VoucherReport
                 SakhanId = sakhan.Id,
                 SakhanCode = sakhan.Code,
                 SakhanName = sakhan.Name,
-                Currency = (
-                    from item in db.BorderImportLicenceItems
-                    join currency in db.Currencies on item.CurrencyId equals currency.Id
-                    where item.BorderImportLicenceId == licence.Id
-                    select currency.Code).FirstOrDefault(),
-                TotalAmount = db.BorderImportLicenceItems
-                    .Where(item => item.BorderImportLicenceId == licence.Id)
-                    .Sum(item => (decimal?)item.Amount),
+                Currency = currencyRow.Code,
+                TotalAmount = amountRow.Amount,
                 CommodityType = licence.CommodityType,
                 ExchangeRate = licence.ExchangeRate,
                 TotalCIF = licence.TotalCif
@@ -533,6 +607,21 @@ public static class sp_VoucherReport
         TradeNetDbContext db,
         sp_VoucherReportRequest request)
     {
+        var amountByPermit =
+            from item in db.BorderExportPermitItems
+            group item by item.BorderExportPermitId into grouped
+            select new { PermitId = grouped.Key, Amount = grouped.Sum(item => (decimal?)item.Amount) };
+
+        var currencyByPermit =
+            from firstItem in
+                (from item in db.BorderExportPermitItems
+                 where db.Currencies.Any(currency => currency.Id == item.CurrencyId)
+                 group item by item.BorderExportPermitId into grouped
+                 select new { PermitId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.BorderExportPermitItems on firstItem.ItemId equals item.Id
+            join currency in db.Currencies on item.CurrencyId equals currency.Id
+            select new { firstItem.PermitId, currency.Code };
+
         return
             from permit in db.BorderExportPermits
             join account in db.AccountTransactions on permit.Id equals account.TransactionId
@@ -540,6 +629,10 @@ public static class sp_VoucherReport
             join section in db.ExportImportSections on permit.ExportImportSectionId equals section.Id
             join sakhan in db.Sakhans on permit.SakhanId equals sakhan.Id
             join user in db.Users on permit.ApproveUserId equals (int?)user.Id
+            join amountRow in amountByPermit on permit.Id equals amountRow.PermitId into amountJoin
+            from amountRow in amountJoin.DefaultIfEmpty()
+            join currencyRow in currencyByPermit on permit.Id equals currencyRow.PermitId into currencyJoin
+            from currencyRow in currencyJoin.DefaultIfEmpty()
             where account.IsPayment
                 && account.PaymentDate >= request.FromDate
                 && account.PaymentDate <= request.ToDate
@@ -569,14 +662,8 @@ public static class sp_VoucherReport
                 SakhanId = sakhan.Id,
                 SakhanCode = sakhan.Code,
                 SakhanName = sakhan.Name,
-                Currency = (
-                    from item in db.BorderExportPermitItems
-                    join currency in db.Currencies on item.CurrencyId equals currency.Id
-                    where item.BorderExportPermitId == permit.Id
-                    select currency.Code).FirstOrDefault(),
-                TotalAmount = db.BorderExportPermitItems
-                    .Where(item => item.BorderExportPermitId == permit.Id)
-                    .Sum(item => (decimal?)item.Amount),
+                Currency = currencyRow.Code,
+                TotalAmount = amountRow.Amount,
                 CommodityType = permit.CommodityType
             };
     }
@@ -585,6 +672,21 @@ public static class sp_VoucherReport
         TradeNetDbContext db,
         sp_VoucherReportRequest request)
     {
+        var amountByPermit =
+            from item in db.BorderImportPermitItems
+            group item by item.BorderImportPermitId into grouped
+            select new { PermitId = grouped.Key, Amount = grouped.Sum(item => (decimal?)item.Amount) };
+
+        var currencyByPermit =
+            from firstItem in
+                (from item in db.BorderImportPermitItems
+                 where db.Currencies.Any(currency => currency.Id == item.CurrencyId)
+                 group item by item.BorderImportPermitId into grouped
+                 select new { PermitId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.BorderImportPermitItems on firstItem.ItemId equals item.Id
+            join currency in db.Currencies on item.CurrencyId equals currency.Id
+            select new { firstItem.PermitId, currency.Code };
+
         return
             from permit in db.BorderImportPermits
             join account in db.AccountTransactions on permit.Id equals account.TransactionId
@@ -592,6 +694,10 @@ public static class sp_VoucherReport
             join section in db.ExportImportSections on permit.ExportImportSectionId equals section.Id
             join sakhan in db.Sakhans on permit.SakhanId equals sakhan.Id
             join user in db.Users on permit.ApproveUserId equals (int?)user.Id
+            join amountRow in amountByPermit on permit.Id equals amountRow.PermitId into amountJoin
+            from amountRow in amountJoin.DefaultIfEmpty()
+            join currencyRow in currencyByPermit on permit.Id equals currencyRow.PermitId into currencyJoin
+            from currencyRow in currencyJoin.DefaultIfEmpty()
             where account.IsPayment
                 && account.PaymentDate >= request.FromDate
                 && account.PaymentDate <= request.ToDate
@@ -621,14 +727,8 @@ public static class sp_VoucherReport
                 SakhanId = sakhan.Id,
                 SakhanCode = sakhan.Code,
                 SakhanName = sakhan.Name,
-                Currency = (
-                    from item in db.BorderImportPermitItems
-                    join currency in db.Currencies on item.CurrencyId equals currency.Id
-                    where item.BorderImportPermitId == permit.Id
-                    select currency.Code).FirstOrDefault(),
-                TotalAmount = db.BorderImportPermitItems
-                    .Where(item => item.BorderImportPermitId == permit.Id)
-                    .Sum(item => (decimal?)item.Amount),
+                Currency = currencyRow.Code,
+                TotalAmount = amountRow.Amount,
                 CommodityType = permit.CommodityType
             };
     }

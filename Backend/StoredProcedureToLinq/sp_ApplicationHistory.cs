@@ -67,10 +67,22 @@ public static class sp_ApplicationHistory
             .Select(paThaKa => paThaKa.CompanyRegistrationNo)
             .FirstOrDefault();
 
+        // First message per transaction (lowest message Id), resolved via a single
+        // GROUP BY join instead of a per-row correlated subquery in the projection.
+        var messageByTransaction =
+            from firstMessage in
+                (from message in db.Messages
+                 group message by message.TransactionId into grouped
+                 select new { TransactionId = grouped.Key, MessageId = grouped.Min(message => message.Id) })
+            join message in db.Messages on firstMessage.MessageId equals message.Id
+            select new { firstMessage.TransactionId, message.Message1 };
+
         var nonApprovedRows =
             from source in sources
             join status in db.Statuses on source.Status equals status.Status1
             join member in db.Members on source.MemberId equals member.Id
+            join messageRow in messageByTransaction on source.Id equals messageRow.TransactionId into messageJoin
+            from messageRow in messageJoin.DefaultIfEmpty()
             where source.CompanyRegistrationNo == companyRegistrationNo
                 && source.Status != Approved
                 && source.Status != string.Empty
@@ -87,10 +99,7 @@ public static class sp_ApplicationHistory
                 CompanyName = source.CompanyName,
                 CardLicencePermitNo = source.CardLicencePermitNo,
                 Message = source.Status == Reject
-                    ? db.Messages
-                        .Where(message => message.TransactionId == source.Id)
-                        .Select(message => message.Message1)
-                        .FirstOrDefault()
+                    ? messageRow.Message1
                     : status.Message,
                 MemberId = source.MemberId,
                 Status = source.Status,
@@ -101,6 +110,8 @@ public static class sp_ApplicationHistory
             from source in sources
             join status in db.Statuses on source.Status equals status.Status1
             join member in db.Members on source.MemberId equals member.Id
+            join messageRow in messageByTransaction on source.Id equals messageRow.TransactionId into messageJoin
+            from messageRow in messageJoin.DefaultIfEmpty()
             where source.CompanyRegistrationNo == companyRegistrationNo
                 && source.Status == Approved
                 && source.CreatedDate >= request.FromDate
@@ -116,10 +127,7 @@ public static class sp_ApplicationHistory
                 CompanyName = source.CompanyName,
                 CardLicencePermitNo = source.CardLicencePermitNo,
                 Message = source.Status == Reject
-                    ? db.Messages
-                        .Where(message => message.TransactionId == source.Id)
-                        .Select(message => message.Message1)
-                        .FirstOrDefault()
+                    ? messageRow.Message1
                     : status.Message,
                 MemberId = source.MemberId,
                 Status = source.Status,

@@ -6,6 +6,7 @@ using API.Service.Reports;
 using API.StoredProcedureToLinq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Backend.Controllers.Report
 {
@@ -15,10 +16,12 @@ namespace Backend.Controllers.Report
     public class ImportPermitBySectionReportController : ControllerBase
     {
         private readonly TradeNetDbContext _context;
+        private readonly IMemoryCache _cache;
 
-        public ImportPermitBySectionReportController(TradeNetDbContext context)
+        public ImportPermitBySectionReportController(TradeNetDbContext context, IMemoryCache cache)
         {
             _context = context;
+            _cache = cache;
         }
 
         [HttpPost]
@@ -29,8 +32,7 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var query = sp_ImportPermitDetailReport.Query(_context, procedureRequest!);
-            var result = await ReportQueryService.CreatePagedResultAsync(query, request!);
+            var result = await sp_ImportPermitDetailReport_Fast.CreatePagedResultAsync(_context, _cache, procedureRequest!, request!);
 
             return Ok(result);
         }

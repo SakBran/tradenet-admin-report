@@ -70,10 +70,32 @@ public static class sp_ActualAmendReport
         TradeNetDbContext db,
         sp_ActualAmendReportRequest request)
     {
+        var currencyByLicence =
+            from firstItem in
+                (from item in db.ExportLicenceItems
+                 where db.Currencies.Any(currency => currency.Id == item.CurrencyId)
+                 group item by item.ExportLicenceId into grouped
+                 select new { LicenceId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.ExportLicenceItems on firstItem.ItemId equals item.Id
+            join currency in db.Currencies on item.CurrencyId equals currency.Id
+            select new { firstItem.LicenceId, currency.Code };
+
+        var firstItemByLicence =
+            from grouped in
+                (from item in db.ExportLicenceItems
+                 group item by item.ExportLicenceId into g
+                 select new { LicenceId = g.Key, ItemId = g.Min(item => item.Id) })
+            join item in db.ExportLicenceItems on grouped.ItemId equals item.Id
+            select new { grouped.LicenceId, item.Amount };
+
         return
             from licence in db.ExportLicences
             join paThaKa in db.PaThaKas on licence.PaThaKaId equals paThaKa.Id
             join section in db.ExportImportSections on licence.ExportImportSectionId equals section.Id
+            join currencyRow in currencyByLicence on licence.Id equals currencyRow.LicenceId into currencyJoin
+            from currencyRow in currencyJoin.DefaultIfEmpty()
+            join firstItemRow in firstItemByLicence on licence.Id equals firstItemRow.LicenceId into firstItemJoin
+            from firstItemRow in firstItemJoin.DefaultIfEmpty()
             where licence.ApplyType == ActualAmend
                 && licence.Status == Approved
                 && licence.CreatedDate >= request.FromDate
@@ -107,15 +129,8 @@ public static class sp_ActualAmendReport
                 State = paThaKa.State,
                 Country = paThaKa.Country,
                 PostalCode = paThaKa.PostalCode,
-                Currency = (
-                    from item in db.ExportLicenceItems
-                    join currency in db.Currencies on item.CurrencyId equals currency.Id
-                    where item.ExportLicenceId == licence.Id
-                    select currency.Code).FirstOrDefault(),
-                Amount = db.ExportLicenceItems
-                    .Where(item => item.ExportLicenceId == licence.Id)
-                    .Select(item => (decimal?)item.Amount)
-                    .FirstOrDefault()
+                Currency = currencyRow.Code,
+                Amount = (decimal?)firstItemRow.Amount
             };
     }
 
@@ -123,10 +138,32 @@ public static class sp_ActualAmendReport
         TradeNetDbContext db,
         sp_ActualAmendReportRequest request)
     {
+        var currencyByLicence =
+            from firstItem in
+                (from item in db.ImportLicenceItems
+                 where db.Currencies.Any(currency => currency.Id == item.CurrencyId)
+                 group item by item.ImportLicenceId into grouped
+                 select new { LicenceId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.ImportLicenceItems on firstItem.ItemId equals item.Id
+            join currency in db.Currencies on item.CurrencyId equals currency.Id
+            select new { firstItem.LicenceId, currency.Code };
+
+        var firstItemByLicence =
+            from grouped in
+                (from item in db.ImportLicenceItems
+                 group item by item.ImportLicenceId into g
+                 select new { LicenceId = g.Key, ItemId = g.Min(item => item.Id) })
+            join item in db.ImportLicenceItems on grouped.ItemId equals item.Id
+            select new { grouped.LicenceId, item.Amount };
+
         return
             from licence in db.ImportLicences
             join paThaKa in db.PaThaKas on licence.PaThaKaId equals paThaKa.Id
             join section in db.ExportImportSections on licence.ExportImportSectionId equals section.Id
+            join currencyRow in currencyByLicence on licence.Id equals currencyRow.LicenceId into currencyJoin
+            from currencyRow in currencyJoin.DefaultIfEmpty()
+            join firstItemRow in firstItemByLicence on licence.Id equals firstItemRow.LicenceId into firstItemJoin
+            from firstItemRow in firstItemJoin.DefaultIfEmpty()
             where licence.ApplyType == ActualAmend
                 && licence.Status == Approved
                 && licence.CreatedDate >= request.FromDate
@@ -160,15 +197,8 @@ public static class sp_ActualAmendReport
                 State = paThaKa.State,
                 Country = paThaKa.Country,
                 PostalCode = paThaKa.PostalCode,
-                Currency = (
-                    from item in db.ImportLicenceItems
-                    join currency in db.Currencies on item.CurrencyId equals currency.Id
-                    where item.ImportLicenceId == licence.Id
-                    select currency.Code).FirstOrDefault(),
-                Amount = db.ImportLicenceItems
-                    .Where(item => item.ImportLicenceId == licence.Id)
-                    .Select(item => (decimal?)item.Amount)
-                    .FirstOrDefault()
+                Currency = currencyRow.Code,
+                Amount = (decimal?)firstItemRow.Amount
             };
     }
 
@@ -176,10 +206,32 @@ public static class sp_ActualAmendReport
         TradeNetDbContext db,
         sp_ActualAmendReportRequest request)
     {
+        var currencyByPermit =
+            from firstItem in
+                (from item in db.ExportPermitItems
+                 where db.Currencies.Any(currency => currency.Id == item.CurrencyId)
+                 group item by item.ExportPermitId into grouped
+                 select new { PermitId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.ExportPermitItems on firstItem.ItemId equals item.Id
+            join currency in db.Currencies on item.CurrencyId equals currency.Id
+            select new { firstItem.PermitId, currency.Code };
+
+        var firstItemByPermit =
+            from grouped in
+                (from item in db.ExportPermitItems
+                 group item by item.ExportPermitId into g
+                 select new { PermitId = g.Key, ItemId = g.Min(item => item.Id) })
+            join item in db.ExportPermitItems on grouped.ItemId equals item.Id
+            select new { grouped.PermitId, item.Amount };
+
         return
             from permit in db.ExportPermits
             join paThaKa in db.PaThaKas on permit.PaThaKaId equals paThaKa.Id
             join section in db.ExportImportSections on permit.ExportImportSectionId equals section.Id
+            join currencyRow in currencyByPermit on permit.Id equals currencyRow.PermitId into currencyJoin
+            from currencyRow in currencyJoin.DefaultIfEmpty()
+            join firstItemRow in firstItemByPermit on permit.Id equals firstItemRow.PermitId into firstItemJoin
+            from firstItemRow in firstItemJoin.DefaultIfEmpty()
             where permit.ApplyType == ActualAmend
                 && permit.Status == Approved
                 && permit.CreatedDate >= request.FromDate
@@ -213,15 +265,8 @@ public static class sp_ActualAmendReport
                 State = paThaKa.State,
                 Country = paThaKa.Country,
                 PostalCode = paThaKa.PostalCode,
-                Currency = (
-                    from item in db.ExportPermitItems
-                    join currency in db.Currencies on item.CurrencyId equals currency.Id
-                    where item.ExportPermitId == permit.Id
-                    select currency.Code).FirstOrDefault(),
-                Amount = db.ExportPermitItems
-                    .Where(item => item.ExportPermitId == permit.Id)
-                    .Select(item => (decimal?)item.Amount)
-                    .FirstOrDefault()
+                Currency = currencyRow.Code,
+                Amount = (decimal?)firstItemRow.Amount
             };
     }
 
@@ -229,10 +274,32 @@ public static class sp_ActualAmendReport
         TradeNetDbContext db,
         sp_ActualAmendReportRequest request)
     {
+        var currencyByPermit =
+            from firstItem in
+                (from item in db.ImportPermitItems
+                 where db.Currencies.Any(currency => currency.Id == item.CurrencyId)
+                 group item by item.ImportPermitId into grouped
+                 select new { PermitId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.ImportPermitItems on firstItem.ItemId equals item.Id
+            join currency in db.Currencies on item.CurrencyId equals currency.Id
+            select new { firstItem.PermitId, currency.Code };
+
+        var firstItemByPermit =
+            from grouped in
+                (from item in db.ImportPermitItems
+                 group item by item.ImportPermitId into g
+                 select new { PermitId = g.Key, ItemId = g.Min(item => item.Id) })
+            join item in db.ImportPermitItems on grouped.ItemId equals item.Id
+            select new { grouped.PermitId, item.Amount };
+
         return
             from permit in db.ImportPermits
             join paThaKa in db.PaThaKas on permit.PaThaKaId equals paThaKa.Id
             join section in db.ExportImportSections on permit.ExportImportSectionId equals section.Id
+            join currencyRow in currencyByPermit on permit.Id equals currencyRow.PermitId into currencyJoin
+            from currencyRow in currencyJoin.DefaultIfEmpty()
+            join firstItemRow in firstItemByPermit on permit.Id equals firstItemRow.PermitId into firstItemJoin
+            from firstItemRow in firstItemJoin.DefaultIfEmpty()
             where permit.ApplyType == ActualAmend
                 && permit.Status == Approved
                 && permit.CreatedDate >= request.FromDate
@@ -266,15 +333,8 @@ public static class sp_ActualAmendReport
                 State = paThaKa.State,
                 Country = paThaKa.Country,
                 PostalCode = paThaKa.PostalCode,
-                Currency = (
-                    from item in db.ImportPermitItems
-                    join currency in db.Currencies on item.CurrencyId equals currency.Id
-                    where item.ImportPermitId == permit.Id
-                    select currency.Code).FirstOrDefault(),
-                Amount = db.ImportPermitItems
-                    .Where(item => item.ImportPermitId == permit.Id)
-                    .Select(item => (decimal?)item.Amount)
-                    .FirstOrDefault()
+                Currency = currencyRow.Code,
+                Amount = (decimal?)firstItemRow.Amount
             };
     }
 
@@ -282,11 +342,33 @@ public static class sp_ActualAmendReport
         TradeNetDbContext db,
         sp_ActualAmendReportRequest request)
     {
+        var currencyByLicence =
+            from firstItem in
+                (from item in db.BorderExportLicenceItems
+                 where db.Currencies.Any(currency => currency.Id == item.CurrencyId)
+                 group item by item.BorderExportLicenceId into grouped
+                 select new { LicenceId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.BorderExportLicenceItems on firstItem.ItemId equals item.Id
+            join currency in db.Currencies on item.CurrencyId equals currency.Id
+            select new { firstItem.LicenceId, currency.Code };
+
+        var firstItemByLicence =
+            from grouped in
+                (from item in db.BorderExportLicenceItems
+                 group item by item.BorderExportLicenceId into g
+                 select new { LicenceId = g.Key, ItemId = g.Min(item => item.Id) })
+            join item in db.BorderExportLicenceItems on grouped.ItemId equals item.Id
+            select new { grouped.LicenceId, item.Amount };
+
         var paThaKaQuery =
             from licence in db.BorderExportLicences
             join paThaKa in db.PaThaKas on licence.PaThaKaId equals paThaKa.Id
             join section in db.ExportImportSections on licence.ExportImportSectionId equals section.Id
             join sakhan in db.Sakhans on licence.SakhanId equals sakhan.Id
+            join currencyRow in currencyByLicence on licence.Id equals currencyRow.LicenceId into currencyJoin
+            from currencyRow in currencyJoin.DefaultIfEmpty()
+            join firstItemRow in firstItemByLicence on licence.Id equals firstItemRow.LicenceId into firstItemJoin
+            from firstItemRow in firstItemJoin.DefaultIfEmpty()
             where licence.ApplyType == ActualAmend
                 && licence.Status == Approved
                 && licence.CardType == PaThaKaCardType
@@ -322,15 +404,8 @@ public static class sp_ActualAmendReport
                 State = paThaKa.State,
                 Country = paThaKa.Country,
                 PostalCode = paThaKa.PostalCode,
-                Currency = (
-                    from item in db.BorderExportLicenceItems
-                    join currency in db.Currencies on item.CurrencyId equals currency.Id
-                    where item.BorderExportLicenceId == licence.Id
-                    select currency.Code).FirstOrDefault(),
-                Amount = db.BorderExportLicenceItems
-                    .Where(item => item.BorderExportLicenceId == licence.Id)
-                    .Select(item => (decimal?)item.Amount)
-                    .FirstOrDefault(),
+                Currency = currencyRow.Code,
+                Amount = (decimal?)firstItemRow.Amount,
                 SakhanId = sakhan.Id,
                 SakhanCode = sakhan.Code,
                 SakhanName = sakhan.Name
@@ -341,6 +416,10 @@ public static class sp_ActualAmendReport
             join individualTrading in db.IndividualTradings on licence.IndividualTradingId equals individualTrading.Id
             join section in db.ExportImportSections on licence.ExportImportSectionId equals section.Id
             join sakhan in db.Sakhans on licence.SakhanId equals sakhan.Id
+            join currencyRow in currencyByLicence on licence.Id equals currencyRow.LicenceId into currencyJoin
+            from currencyRow in currencyJoin.DefaultIfEmpty()
+            join firstItemRow in firstItemByLicence on licence.Id equals firstItemRow.LicenceId into firstItemJoin
+            from firstItemRow in firstItemJoin.DefaultIfEmpty()
             where licence.ApplyType == ActualAmend
                 && licence.Status == Approved
                 && licence.CardType == IndividualTradingCardType
@@ -376,15 +455,8 @@ public static class sp_ActualAmendReport
                 State = individualTrading.State,
                 Country = individualTrading.Country,
                 PostalCode = individualTrading.PostalCode,
-                Currency = (
-                    from item in db.BorderExportLicenceItems
-                    join currency in db.Currencies on item.CurrencyId equals currency.Id
-                    where item.BorderExportLicenceId == licence.Id
-                    select currency.Code).FirstOrDefault(),
-                Amount = db.BorderExportLicenceItems
-                    .Where(item => item.BorderExportLicenceId == licence.Id)
-                    .Select(item => (decimal?)item.Amount)
-                    .FirstOrDefault(),
+                Currency = currencyRow.Code,
+                Amount = (decimal?)firstItemRow.Amount,
                 SakhanId = sakhan.Id,
                 SakhanCode = sakhan.Code,
                 SakhanName = sakhan.Name
@@ -397,11 +469,33 @@ public static class sp_ActualAmendReport
         TradeNetDbContext db,
         sp_ActualAmendReportRequest request)
     {
+        var currencyByLicence =
+            from firstItem in
+                (from item in db.BorderImportLicenceItems
+                 where db.Currencies.Any(currency => currency.Id == item.CurrencyId)
+                 group item by item.BorderImportLicenceId into grouped
+                 select new { LicenceId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.BorderImportLicenceItems on firstItem.ItemId equals item.Id
+            join currency in db.Currencies on item.CurrencyId equals currency.Id
+            select new { firstItem.LicenceId, currency.Code };
+
+        var firstItemByLicence =
+            from grouped in
+                (from item in db.BorderImportLicenceItems
+                 group item by item.BorderImportLicenceId into g
+                 select new { LicenceId = g.Key, ItemId = g.Min(item => item.Id) })
+            join item in db.BorderImportLicenceItems on grouped.ItemId equals item.Id
+            select new { grouped.LicenceId, item.Amount };
+
         var paThaKaQuery =
             from licence in db.BorderImportLicences
             join paThaKa in db.PaThaKas on licence.PaThaKaId equals paThaKa.Id
             join section in db.ExportImportSections on licence.ExportImportSectionId equals section.Id
             join sakhan in db.Sakhans on licence.SakhanId equals sakhan.Id
+            join currencyRow in currencyByLicence on licence.Id equals currencyRow.LicenceId into currencyJoin
+            from currencyRow in currencyJoin.DefaultIfEmpty()
+            join firstItemRow in firstItemByLicence on licence.Id equals firstItemRow.LicenceId into firstItemJoin
+            from firstItemRow in firstItemJoin.DefaultIfEmpty()
             where licence.ApplyType == ActualAmend
                 && licence.Status == Approved
                 && licence.CardType == PaThaKaCardType
@@ -437,15 +531,8 @@ public static class sp_ActualAmendReport
                 State = paThaKa.State,
                 Country = paThaKa.Country,
                 PostalCode = paThaKa.PostalCode,
-                Currency = (
-                    from item in db.BorderImportLicenceItems
-                    join currency in db.Currencies on item.CurrencyId equals currency.Id
-                    where item.BorderImportLicenceId == licence.Id
-                    select currency.Code).FirstOrDefault(),
-                Amount = db.BorderImportLicenceItems
-                    .Where(item => item.BorderImportLicenceId == licence.Id)
-                    .Select(item => (decimal?)item.Amount)
-                    .FirstOrDefault(),
+                Currency = currencyRow.Code,
+                Amount = (decimal?)firstItemRow.Amount,
                 SakhanId = sakhan.Id,
                 SakhanCode = sakhan.Code,
                 SakhanName = sakhan.Name
@@ -456,6 +543,10 @@ public static class sp_ActualAmendReport
             join individualTrading in db.IndividualTradings on licence.IndividualTradingId equals individualTrading.Id
             join section in db.ExportImportSections on licence.ExportImportSectionId equals section.Id
             join sakhan in db.Sakhans on licence.SakhanId equals sakhan.Id
+            join currencyRow in currencyByLicence on licence.Id equals currencyRow.LicenceId into currencyJoin
+            from currencyRow in currencyJoin.DefaultIfEmpty()
+            join firstItemRow in firstItemByLicence on licence.Id equals firstItemRow.LicenceId into firstItemJoin
+            from firstItemRow in firstItemJoin.DefaultIfEmpty()
             where licence.ApplyType == ActualAmend
                 && licence.Status == Approved
                 && licence.CardType == IndividualTradingCardType
@@ -491,15 +582,8 @@ public static class sp_ActualAmendReport
                 State = individualTrading.State,
                 Country = individualTrading.Country,
                 PostalCode = individualTrading.PostalCode,
-                Currency = (
-                    from item in db.BorderImportLicenceItems
-                    join currency in db.Currencies on item.CurrencyId equals currency.Id
-                    where item.BorderImportLicenceId == licence.Id
-                    select currency.Code).FirstOrDefault(),
-                Amount = db.BorderImportLicenceItems
-                    .Where(item => item.BorderImportLicenceId == licence.Id)
-                    .Select(item => (decimal?)item.Amount)
-                    .FirstOrDefault(),
+                Currency = currencyRow.Code,
+                Amount = (decimal?)firstItemRow.Amount,
                 SakhanId = sakhan.Id,
                 SakhanCode = sakhan.Code,
                 SakhanName = sakhan.Name
@@ -512,11 +596,33 @@ public static class sp_ActualAmendReport
         TradeNetDbContext db,
         sp_ActualAmendReportRequest request)
     {
+        var currencyByPermit =
+            from firstItem in
+                (from item in db.BorderExportPermitItems
+                 where db.Currencies.Any(currency => currency.Id == item.CurrencyId)
+                 group item by item.BorderExportPermitId into grouped
+                 select new { PermitId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.BorderExportPermitItems on firstItem.ItemId equals item.Id
+            join currency in db.Currencies on item.CurrencyId equals currency.Id
+            select new { firstItem.PermitId, currency.Code };
+
+        var firstItemByPermit =
+            from grouped in
+                (from item in db.BorderExportPermitItems
+                 group item by item.BorderExportPermitId into g
+                 select new { PermitId = g.Key, ItemId = g.Min(item => item.Id) })
+            join item in db.BorderExportPermitItems on grouped.ItemId equals item.Id
+            select new { grouped.PermitId, item.Amount };
+
         return
             from permit in db.BorderExportPermits
             join paThaKa in db.PaThaKas on permit.PaThaKaId equals paThaKa.Id
             join section in db.ExportImportSections on permit.ExportImportSectionId equals section.Id
             join sakhan in db.Sakhans on permit.SakhanId equals sakhan.Id
+            join currencyRow in currencyByPermit on permit.Id equals currencyRow.PermitId into currencyJoin
+            from currencyRow in currencyJoin.DefaultIfEmpty()
+            join firstItemRow in firstItemByPermit on permit.Id equals firstItemRow.PermitId into firstItemJoin
+            from firstItemRow in firstItemJoin.DefaultIfEmpty()
             where permit.ApplyType == ActualAmend
                 && permit.Status == Approved
                 && permit.CreatedDate >= request.FromDate
@@ -551,15 +657,8 @@ public static class sp_ActualAmendReport
                 State = paThaKa.State,
                 Country = paThaKa.Country,
                 PostalCode = paThaKa.PostalCode,
-                Currency = (
-                    from item in db.BorderExportPermitItems
-                    join currency in db.Currencies on item.CurrencyId equals currency.Id
-                    where item.BorderExportPermitId == permit.Id
-                    select currency.Code).FirstOrDefault(),
-                Amount = db.BorderExportPermitItems
-                    .Where(item => item.BorderExportPermitId == permit.Id)
-                    .Select(item => (decimal?)item.Amount)
-                    .FirstOrDefault(),
+                Currency = currencyRow.Code,
+                Amount = (decimal?)firstItemRow.Amount,
                 SakhanId = sakhan.Id,
                 SakhanCode = sakhan.Code,
                 SakhanName = sakhan.Name
@@ -570,11 +669,33 @@ public static class sp_ActualAmendReport
         TradeNetDbContext db,
         sp_ActualAmendReportRequest request)
     {
+        var currencyByPermit =
+            from firstItem in
+                (from item in db.BorderImportPermitItems
+                 where db.Currencies.Any(currency => currency.Id == item.CurrencyId)
+                 group item by item.BorderImportPermitId into grouped
+                 select new { PermitId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.BorderImportPermitItems on firstItem.ItemId equals item.Id
+            join currency in db.Currencies on item.CurrencyId equals currency.Id
+            select new { firstItem.PermitId, currency.Code };
+
+        var firstItemByPermit =
+            from grouped in
+                (from item in db.BorderImportPermitItems
+                 group item by item.BorderImportPermitId into g
+                 select new { PermitId = g.Key, ItemId = g.Min(item => item.Id) })
+            join item in db.BorderImportPermitItems on grouped.ItemId equals item.Id
+            select new { grouped.PermitId, item.Amount };
+
         return
             from permit in db.BorderImportPermits
             join paThaKa in db.PaThaKas on permit.PaThaKaId equals paThaKa.Id
             join section in db.ExportImportSections on permit.ExportImportSectionId equals section.Id
             join sakhan in db.Sakhans on permit.SakhanId equals sakhan.Id
+            join currencyRow in currencyByPermit on permit.Id equals currencyRow.PermitId into currencyJoin
+            from currencyRow in currencyJoin.DefaultIfEmpty()
+            join firstItemRow in firstItemByPermit on permit.Id equals firstItemRow.PermitId into firstItemJoin
+            from firstItemRow in firstItemJoin.DefaultIfEmpty()
             where permit.ApplyType == ActualAmend
                 && permit.Status == Approved
                 && permit.CreatedDate >= request.FromDate
@@ -609,15 +730,8 @@ public static class sp_ActualAmendReport
                 State = paThaKa.State,
                 Country = paThaKa.Country,
                 PostalCode = paThaKa.PostalCode,
-                Currency = (
-                    from item in db.BorderImportPermitItems
-                    join currency in db.Currencies on item.CurrencyId equals currency.Id
-                    where item.BorderImportPermitId == permit.Id
-                    select currency.Code).FirstOrDefault(),
-                Amount = db.BorderImportPermitItems
-                    .Where(item => item.BorderImportPermitId == permit.Id)
-                    .Select(item => (decimal?)item.Amount)
-                    .FirstOrDefault(),
+                Currency = currencyRow.Code,
+                Amount = (decimal?)firstItemRow.Amount,
                 SakhanId = sakhan.Id,
                 SakhanCode = sakhan.Code,
                 SakhanName = sakhan.Name

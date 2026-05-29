@@ -43,28 +43,70 @@ public sealed class ReportQueryTranslationTests
         Assert.Contains("ORDER BY", sql, StringComparison.OrdinalIgnoreCase);
     }
 
+    public static readonly string[] StandardFormTypes =
+    [
+        "Export Licence",
+        "Import Licence",
+        "Export Permit",
+        "Import Permit",
+        "Border Export Licence",
+        "Border Import Licence",
+        "Border Export Permit",
+        "Border Import Permit"
+    ];
+
+    public static IEnumerable<object[]> AggregateReportFormTypes()
+    {
+        var reports = new[]
+        {
+            "New", "Amend", "ActualAmend", "Cancel", "Extension", "Voucher"
+        };
+        foreach (var report in reports)
+        {
+            foreach (var formType in StandardFormTypes)
+            {
+                yield return [report, formType];
+            }
+        }
+    }
+
     [Theory]
-    [InlineData("Export Licence")]
-    [InlineData("Import Licence")]
-    [InlineData("Export Permit")]
-    [InlineData("Import Permit")]
-    [InlineData("Border Export Licence")]
-    [InlineData("Border Import Licence")]
-    [InlineData("Border Export Permit")]
-    [InlineData("Border Import Permit")]
-    public void New_report_form_type_branch_translates_to_sql(string formType)
+    [MemberData(nameof(AggregateReportFormTypes))]
+    public void Aggregate_report_form_type_branch_translates_to_sql(string report, string formType)
     {
         using var db = ReportTestHelper.CreateSqlServerDbContext();
-        var query = sp_NewReport.Query(
+        var from = ReportTestHelper.FromDate;
+        var to = ReportTestHelper.ToDate;
+
+        IQueryable query = report switch
+        {
+            "New" => sp_NewReport.Query(db, new sp_NewReportRequest { FormType = formType, FromDate = from, ToDate = to }),
+            "Amend" => sp_AmendReport.Query(db, new sp_AmendReportRequest { FormType = formType, FromDate = from, ToDate = to }),
+            "ActualAmend" => sp_ActualAmendReport.Query(db, new sp_ActualAmendReportRequest { FormType = formType, FromDate = from, ToDate = to }),
+            "Cancel" => sp_CancelReport.Query(db, new sp_CancelReportRequest { FormType = formType, FromDate = from, ToDate = to }),
+            "Extension" => sp_ExtensionReport.Query(db, new sp_ExtensionReportRequest { FormType = formType, FromDate = from, ToDate = to }),
+            "Voucher" => sp_VoucherReport.Query(db, new sp_VoucherReportRequest { FormType = formType, FromDate = from, ToDate = to }),
+            _ => throw new ArgumentOutOfRangeException(nameof(report))
+        };
+
+        // ToQueryString throws if EF cannot translate the LINQ to SQL.
+        var sql = query.Skip(0).Take(10).ToQueryString();
+
+        Assert.False(string.IsNullOrWhiteSpace(sql));
+    }
+
+    [Fact]
+    public void Pending_report_translates_to_sql()
+    {
+        using var db = ReportTestHelper.CreateSqlServerDbContext();
+        var query = sp_PendingReport.Query(
             db,
-            new sp_NewReportRequest
+            new sp_PendingReportRequest
             {
-                FormType = formType,
                 FromDate = ReportTestHelper.FromDate,
                 ToDate = ReportTestHelper.ToDate
             });
 
-        // ToQueryString throws if EF cannot translate the LINQ to SQL.
         var sql = query.Skip(0).Take(10).ToQueryString();
 
         Assert.False(string.IsNullOrWhiteSpace(sql));
