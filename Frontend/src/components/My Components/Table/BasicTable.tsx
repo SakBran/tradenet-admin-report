@@ -5,16 +5,10 @@ import TableAction from '../TableAction/TableAction';
 import {
   Alert,
   Button,
-  Card,
-  Col,
   Empty,
   Flex,
-  Form,
-  Grid,
-  Input,
   Pagination,
-  Row,
-  Select,
+  Skeleton,
   Typography,
 } from 'antd';
 
@@ -25,13 +19,8 @@ import {
   CaretDownOutlined,
   CaretUpOutlined,
   FileExcelOutlined,
-  QuestionCircleOutlined,
-  SearchOutlined,
 } from '@ant-design/icons';
 import * as XLSX from 'xlsx';
-
-const { useBreakpoint } = Grid;
-const { Option } = Select;
 
 export type SortOrder = 'asc' | 'desc';
 
@@ -79,6 +68,8 @@ interface PropsType<T extends AnyObject = AnyObject> {
   initialSortOrder?: SortOrder;
   initialPageSize?: number;
   emptyText?: string;
+  enabled?: boolean;
+  idleText?: string;
 }
 
 const emptyPage = <T extends AnyObject>(): PaginationType<T> => ({
@@ -125,8 +116,6 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   tableId = 'reportTable',
   rowKey,
   showActions,
-  searchable = true,
-  extraFilters,
   onExcel,
   excelFileName = 'Report.xlsx',
   refreshKey,
@@ -134,6 +123,8 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   initialSortOrder = 'desc',
   initialPageSize = 10,
   emptyText = 'No data',
+  enabled = true,
+  idleText = 'Set filters, then click Filter to load data',
 }: PropsType<T>) => {
   const normalizedColumns = useMemo<BasicTableColumn<T>[]>(() => {
     if (columns?.length) {
@@ -173,14 +164,11 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   const [sortDirection, setSortDirection] =
     useState<SortOrder>(initialSortOrder);
   const [filterColumn, setFilterColumn] = useState(firstDataColumn);
-  const [filterQuery, setFilterQuery] = useState('');
-  const [searchValue, setSearchValue] = useState('');
+  const [filterQuery] = useState('');
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(initialPageSize);
   const [data, setData] = useState<PaginationType<T>>(emptyPage<T>());
 
-  const screens = useBreakpoint();
-  const isSmOrBelow = !screens.lg;
   const shouldShowActions =
     showActions ??
     Boolean(actionComponent || (!fetchData && (displayData ?? []).includes('id')));
@@ -222,6 +210,13 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
 
   useEffect(() => {
     const load = async () => {
+      if (!enabled) {
+        setLoading(false);
+        setError(null);
+        setData(emptyPage<T>());
+        return;
+      }
+
       if (!fetchData && (!fetch || !api)) {
         return;
       }
@@ -243,7 +238,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
     };
 
     load();
-  }, [api, fetch, fetchData, query, refreshKey]);
+  }, [api, enabled, fetch, fetchData, query, refreshKey]);
 
   const exportClientTableToExcel = () => {
     const table = document.getElementById(tableId);
@@ -294,85 +289,10 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
 
   const columnCount =
     1 + normalizedColumns.length + (shouldShowActions ? 1 : 0);
+  const skeletonRowCount = Math.min(Math.max(pageSize, 5), 12);
 
   return (
     <>
-      {/* {(searchable || extraFilters) && (
-        <Card bodyStyle={{ paddingBottom: isSmOrBelow ? 15 : 0 }}>
-          <Form>
-            {extraFilters && (
-              <div className="basic-table-extra-filters">{extraFilters}</div>
-            )}
-
-            {searchable && (
-              <Row gutter={[16, 16]}>
-                <Col xs={24} sm={24} md={24} lg={10}>
-                  <Form.Item
-                    label={
-                      <>
-                        <Typography.Text style={{ paddingRight: 4 }}>
-                          Search Column
-                        </Typography.Text>
-                        <QuestionCircleOutlined />
-                      </>
-                    }
-                    name="Column"
-                  >
-                    <Select
-                      value={filterColumn || undefined}
-                      onChange={(value) => setFilterColumn(value)}
-                      placeholder="Please select"
-                    >
-                      {searchableColumns.map((column) => (
-                        <Option
-                          key={column.key.toString()}
-                          value={
-                            column.filterKey ??
-                            column.sortKey ??
-                            column.key.toString()
-                          }
-                        >
-                          {column.title ?? NameConvert(column.key.toString())}
-                        </Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col xs={24} sm={24} md={24} lg={10}>
-                  <Form.Item label="Search Value" name="value">
-                    <Input
-                      value={searchValue}
-                      onChange={(event) => {
-                        setSearchValue(event.target.value);
-                      }}
-                      onPressEnter={() => {
-                        setPageIndex(0);
-                        setFilterQuery(searchValue.trim());
-                      }}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} sm={24} md={24} lg={4}>
-                  <Button
-                    type="primary"
-                    icon={<SearchOutlined />}
-                    onClick={() => {
-                      setPageIndex(0);
-                      setFilterQuery(searchValue.trim());
-                    }}
-                    style={{ width: '100%' }}
-                  >
-                    Search
-                  </Button>
-                </Col>
-              </Row>
-            )}
-          </Form>
-        </Card>
-      )} */}
-
-      <br />
-
       <div className="container">
         <Flex
           justify="space-between"
@@ -389,6 +309,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
             type="primary"
             icon={<FileExcelOutlined />}
             loading={excelLoading}
+            disabled={!enabled}
             onClick={handleExcel}
           >
             Excel
@@ -405,6 +326,24 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
         )}
 
         <div className="table-container">
+          {loading && (
+            <Flex
+              className="table-loading-banner"
+              align="center"
+              justify="space-between"
+              gap="middle"
+              wrap="wrap"
+            >
+              <Flex vertical gap={4}>
+                <Typography.Text strong>Loading table data</Typography.Text>
+                <Typography.Text type="secondary">
+                  Preparing rows and totals...
+                </Typography.Text>
+              </Flex>
+              <Skeleton.Button active size="small" className="loading-pill" />
+            </Flex>
+          )}
+
           <table id={tableId}>
             <thead>
               <tr>
@@ -469,7 +408,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
                 ) : (
                   <tr>
                     <td colSpan={columnCount}>
-                      <Empty description={emptyText} />
+                      <Empty description={enabled ? emptyText : idleText} />
                     </td>
                   </tr>
                 )}
@@ -477,25 +416,24 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
             )}
 
             {loading && (
-              <tbody>
-                {Array.from({ length: Math.min(pageSize, 20) }).map(
-                  (_, rowIndex) => (
-                    <tr key={rowIndex}>
-                      {Array.from({ length: columnCount }).map((__, colIndex) => (
-                        <td key={colIndex}>
-                          <div className="skeleton skeleton-text">
-                            <img
-                              src="/layout/images/table-skeleton.svg"
-                              alt="Loading"
-                              height="12"
-                              className="mr-2"
-                            />
-                          </div>
-                        </td>
-                      ))}
-                    </tr>
-                  )
-                )}
+              <tbody className="table-skeleton-body" aria-busy="true">
+                {Array.from({ length: skeletonRowCount }).map((_, rowIndex) => (
+                  <tr key={rowIndex}>
+                    {Array.from({ length: columnCount }).map((__, colIndex) => (
+                      <td key={colIndex}>
+                        <Skeleton.Input
+                          active
+                          size="small"
+                          className={
+                            colIndex === 0
+                              ? 'table-skeleton-index'
+                              : 'table-skeleton-cell'
+                          }
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
               </tbody>
             )}
           </table>

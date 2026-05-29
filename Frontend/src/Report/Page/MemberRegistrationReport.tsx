@@ -160,6 +160,7 @@ const MemberRegistrationReport = () => {
   const [filters, setFilters] = useState<MemberRegistrationFilters>(() =>
     toFilters(initialFormValues)
   );
+  const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const fetchRows = useCallback(
@@ -194,12 +195,14 @@ const MemberRegistrationReport = () => {
 
   const applyFilters = (values: MemberRegistrationFormValues) => {
     setFilters(toFilters(values));
+    setHasAppliedFilters(true);
     setRefreshKey((current) => current + 1);
   };
 
   const resetFilters = () => {
     form.setFieldsValue(initialFormValues);
     setFilters(toFilters(initialFormValues));
+    setHasAppliedFilters(false);
     setRefreshKey((current) => current + 1);
   };
 
@@ -265,6 +268,8 @@ const MemberRegistrationReport = () => {
         fetchData={fetchRows}
         onExcel={generateExcel}
         showActions={false}
+        enabled={hasAppliedFilters}
+        idleText="Set filters, then click Filter to load the report."
         refreshKey={refreshKey}
         initialSortColumn="IssuedDate"
         initialSortOrder="desc"

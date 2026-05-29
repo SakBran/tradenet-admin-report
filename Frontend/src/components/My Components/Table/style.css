@@ -70,7 +70,7 @@ tbody tr:hover {
 .table-container {
     overflow-x: auto;
     background-color: #ffffff;
-
+    position: relative;
 }
 
 .basic-table-extra-filters {
@@ -83,11 +83,46 @@ tbody tr:hover {
     white-space: nowrap;
 }
 
-.skeleton {
-    display: inline-flex;
-    width: 100%;
-    min-width: 72px;
-    opacity: 0.7;
+.table-loading-banner {
+    border: 1px solid #dbeafe;
+    background: linear-gradient(135deg, #f8fbff 0%, #eef6ff 100%);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    padding: 12px 16px;
+}
+
+.table-loading-banner .ant-typography {
+    line-height: 1.35;
+}
+
+.loading-pill {
+    width: 132px !important;
+}
+
+.table-skeleton-body tr {
+    pointer-events: none;
+}
+
+.table-skeleton-body tr:hover {
+    background-color: transparent;
+}
+
+.table-skeleton-body .ant-skeleton {
+    display: block;
+}
+
+.table-skeleton-body .ant-skeleton-input {
+    border-radius: 999px;
+    height: 14px !important;
+    min-width: 48px !important;
+}
+
+.table-skeleton-index {
+    width: 42px !important;
+}
+
+.table-skeleton-cell {
+    width: min(180px, 78%) !important;
 }
 
 .table-container table {

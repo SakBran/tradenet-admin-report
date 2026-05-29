@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Button,
   Card,
@@ -36,6 +36,56 @@ type FilterValue =
   | [Dayjs, Dayjs]
   | undefined;
 type FilterFormValues = Record<string, FilterValue>;
+
+const formTypePrefixes: Array<[string, string]> = [
+  ['BorderExportLicence', 'Border Export Licence'],
+  ['BorderImportLicence', 'Border Import Licence'],
+  ['BorderExportPermit', 'Border Export Permit'],
+  ['BorderImportPermit', 'Border Import Permit'],
+  ['ExportLicence', 'Export Licence'],
+  ['ImportLicence', 'Import Licence'],
+  ['ExportPermit', 'Export Permit'],
+  ['ImportPermit', 'Import Permit'],
+];
+
+interface LookupOption {
+  id: number;
+  code: string;
+  label: string;
+}
+
+interface LookupFilterConfig {
+  lookupName: string;
+  label: string;
+}
+
+const idFilterLookups: Record<string, LookupFilterConfig> = {
+  AmendRemarkId: { lookupName: 'amendRemarks', label: 'Amend Remark' },
+  BusinessTypeId: { lookupName: 'businessTypes', label: 'Business Type' },
+  BuyerCountryId: { lookupName: 'countries', label: 'Buyer Country' },
+  ChequeNoId: { lookupName: 'chequeNos', label: 'Cheque No' },
+  ExportImportIncotermId: {
+    lookupName: 'exportImportIncoterms',
+    label: 'Export Import Incoterm',
+  },
+  ExportImportMethodId: {
+    lookupName: 'exportImportMethods',
+    label: 'Export Import Method',
+  },
+  ExportImportSectionId: {
+    lookupName: 'exportImportSections',
+    label: 'Export Import Section',
+  },
+  LineofBusinessId: {
+    lookupName: 'lineofBusinesses',
+    label: 'Lineof Business',
+  },
+  NRCPrefixCodeId: { lookupName: 'nrcprefixCodes', label: 'NRC Prefix Code' },
+  NRCPrefixId: { lookupName: 'nrcprefixes', label: 'NRC Prefix' },
+  PaThaKaTypeId: { lookupName: 'paThaKaTypes', label: 'PaThaKa Type' },
+  SakhanId: { lookupName: 'sakhans', label: 'Sakhan' },
+  SellerCountryId: { lookupName: 'countries', label: 'Seller Country' },
+};
 
 const excelContentType =
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -96,6 +146,37 @@ const buildInitialValues = (filters: ReportFilterConfig[]) =>
     values[filter.name] = getInitialFilterValue(filter);
     return values;
   }, {});
+
+const getDerivedFilterValues = (
+  controllerName: string,
+  filters: ReportFilterConfig[]
+) => {
+  const values: FilterFormValues = {};
+  const hasFilter = (name: string) =>
+    filters.some((filter) => filter.name === name);
+  const formType = formTypePrefixes.find(([prefix]) =>
+    controllerName.startsWith(prefix)
+  )?.[1];
+
+  if (formType && hasFilter('FormType')) {
+    values.FormType = formType;
+  }
+
+  if (hasFilter('Type')) {
+    if (controllerName.startsWith('Border')) {
+      values.Type = 'Border';
+    } else if (
+      formType &&
+      ['Export Licence', 'Import Licence', 'Export Permit', 'Import Permit'].includes(
+        formType
+      )
+    ) {
+      values.Type = 'Oversea';
+    }
+  }
+
+  return values;
+};
 
 const normalizeFilters = (
   filters: ReportFilterConfig[],
@@ -169,7 +250,35 @@ const toTableColumn = (
   return column;
 };
 
-const renderFilter = (filter: ReportFilterConfig) => {
+const getLookupFilter = (filter: ReportFilterConfig) =>
+  filter.name.endsWith('Id') ? idFilterLookups[filter.name] : undefined;
+
+const toLookupSelectOptions = (options: LookupOption[] = []) => [
+  { label: 'All', value: 0 },
+  ...options.map((option) => ({
+    label: option.code ? `${option.label} (${option.code})` : option.label,
+    value: option.id,
+  })),
+];
+
+const renderFilter = (
+  filter: ReportFilterConfig,
+  lookupOptions: Record<string, LookupOption[]>,
+  loadingLookupNames: Set<string>
+) => {
+  const lookup = getLookupFilter(filter);
+
+  if (lookup) {
+    return (
+      <Select
+        showSearch
+        loading={loadingLookupNames.has(lookup.lookupName)}
+        optionFilterProp="label"
+        options={toLookupSelectOptions(lookupOptions[lookup.lookupName])}
+      />
+    );
+  }
+
   if (filter.type === 'dateRange') {
     return <DatePicker.RangePicker allowClear={false} style={{ width: '100%' }} />;
   }
@@ -206,14 +315,112 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
     () => config.columns.map(toTableColumn),
     [config.columns]
   );
+  const derivedFilterValues = useMemo(
+    () => getDerivedFilterValues(config.controllerName, config.filters),
+    [config.controllerName, config.filters]
+  );
   const initialFormValues = useMemo(
-    () => buildInitialValues(config.filters),
-    [config.filters]
+    () => ({
+      ...buildInitialValues(config.filters),
+      ...derivedFilterValues,
+    }),
+    [config.filters, derivedFilterValues]
+  );
+  const visibleFilters = useMemo(
+    () =>
+      config.filters.filter(
+        (filter) => derivedFilterValues[filter.name] === undefined
+      ),
+    [config.filters, derivedFilterValues]
+  );
+  const normalizeReportFilters = useCallback(
+    (values: FilterFormValues) =>
+      normalizeFilters(config.filters, {
+        ...values,
+        ...derivedFilterValues,
+      }),
+    [config.filters, derivedFilterValues]
   );
   const [filters, setFilters] = useState<Record<string, unknown>>(() =>
-    normalizeFilters(config.filters, initialFormValues)
+    normalizeReportFilters(initialFormValues)
   );
+  const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [lookupOptions, setLookupOptions] = useState<
+    Record<string, LookupOption[]>
+  >({});
+  const [loadingLookupNames, setLoadingLookupNames] = useState<Set<string>>(
+    () => new Set()
+  );
+
+  const reportLookupFilters = useMemo(() => {
+    const lookups = config.filters
+      .map(getLookupFilter)
+      .filter((lookup): lookup is LookupFilterConfig => Boolean(lookup));
+
+    return Array.from(
+      new Map(lookups.map((lookup) => [lookup.lookupName, lookup])).values()
+    );
+  }, [config.filters]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const missingLookups = reportLookupFilters.filter(
+      (lookup) => !lookupOptions[lookup.lookupName]
+    );
+
+    if (!missingLookups.length) {
+      return;
+    }
+
+    setLoadingLookupNames((current) => {
+      const next = new Set(current);
+      missingLookups.forEach((lookup) => next.add(lookup.lookupName));
+      return next;
+    });
+
+    const loadLookups = async () => {
+      const responses = await Promise.all(
+        missingLookups.map(async (lookup) => {
+          const response = await axiosInstance.get<LookupOption[]>(
+            `ReportLookups/${lookup.lookupName}`
+          );
+
+          return [lookup.lookupName, response.data] as const;
+        })
+      );
+
+      if (!isMounted) {
+        return;
+      }
+
+      setLookupOptions((current) => ({
+        ...current,
+        ...Object.fromEntries(responses),
+      }));
+      setLoadingLookupNames((current) => {
+        const next = new Set(current);
+        missingLookups.forEach((lookup) => next.delete(lookup.lookupName));
+        return next;
+      });
+    };
+
+    loadLookups().catch(() => {
+      if (!isMounted) {
+        return;
+      }
+
+      setLoadingLookupNames((current) => {
+        const next = new Set(current);
+        missingLookups.forEach((lookup) => next.delete(lookup.lookupName));
+        return next;
+      });
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [lookupOptions, reportLookupFilters]);
 
   const fetchRows = useCallback(
     async (query: BasicTableQuery): Promise<PaginationType<AnyObject>> => {
@@ -244,13 +451,15 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
   );
 
   const applyFilters = (values: FilterFormValues) => {
-    setFilters(normalizeFilters(config.filters, values));
+    setFilters(normalizeReportFilters(values));
+    setHasAppliedFilters(true);
     setRefreshKey((current) => current + 1);
   };
 
   const resetFilters = () => {
     form.setFieldsValue(initialFormValues);
-    setFilters(normalizeFilters(config.filters, initialFormValues));
+    setFilters(normalizeReportFilters(initialFormValues));
+    setHasAppliedFilters(false);
     setRefreshKey((current) => current + 1);
   };
 
@@ -258,7 +467,7 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
     <>
       <PageHeader title={config.title} />
 
-      {config.filters.length > 0 && (
+      {visibleFilters.length > 0 && (
         <Card>
           <Form
             form={form}
@@ -267,10 +476,10 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
             onFinish={applyFilters}
           >
             <Row gutter={[16, 16]} align="bottom">
-              {config.filters.map((filter) => (
+              {visibleFilters.map((filter) => (
                 <Col xs={24} md={12} lg={6} key={filter.name}>
                   <Form.Item
-                    label={filter.label}
+                    label={getLookupFilter(filter)?.label ?? filter.label}
                     name={filter.name}
                     rules={
                       filter.required
@@ -283,7 +492,7 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
                         : undefined
                     }
                   >
-                    {renderFilter(filter)}
+                    {renderFilter(filter, lookupOptions, loadingLookupNames)}
                   </Form.Item>
                 </Col>
               ))}
@@ -315,6 +524,8 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
         fetchData={fetchRows}
         onExcel={generateExcel}
         showActions={false}
+        enabled={hasAppliedFilters}
+        idleText="Set filters, then click Filter to load the report."
         refreshKey={refreshKey}
         initialSortColumn={config.initialSortColumn}
         initialSortOrder="desc"
