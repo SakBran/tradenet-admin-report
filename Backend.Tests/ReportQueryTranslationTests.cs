@@ -43,6 +43,33 @@ public sealed class ReportQueryTranslationTests
         Assert.Contains("ORDER BY", sql, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Theory]
+    [InlineData("Export Licence")]
+    [InlineData("Import Licence")]
+    [InlineData("Export Permit")]
+    [InlineData("Import Permit")]
+    [InlineData("Border Export Licence")]
+    [InlineData("Border Import Licence")]
+    [InlineData("Border Export Permit")]
+    [InlineData("Border Import Permit")]
+    public void New_report_form_type_branch_translates_to_sql(string formType)
+    {
+        using var db = ReportTestHelper.CreateSqlServerDbContext();
+        var query = sp_NewReport.Query(
+            db,
+            new sp_NewReportRequest
+            {
+                FormType = formType,
+                FromDate = ReportTestHelper.FromDate,
+                ToDate = ReportTestHelper.ToDate
+            });
+
+        // ToQueryString throws if EF cannot translate the LINQ to SQL.
+        var sql = query.Skip(0).Take(10).ToQueryString();
+
+        Assert.False(string.IsNullOrWhiteSpace(sql));
+    }
+
     public static IEnumerable<object[]> EmptySwitchBranchQueries()
     {
         var db = ReportTestHelper.CreateSqlServerDbContext();
