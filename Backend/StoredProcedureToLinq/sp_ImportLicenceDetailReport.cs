@@ -1,4 +1,5 @@
 using API.DBContext;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 
@@ -81,15 +82,16 @@ public static class sp_ImportLicenceDetailReport
 
         return request.Type switch
         {
-            "Oversea" => OverseaRows(db, request).OrderBy(row => row.LicenceDate),
+            "Oversea" => OverseaRows(db, request).AsSplitQuery(),
             "Border" => BorderPaThaKaRows(db, request)
+                .AsSplitQuery()
                 .AsEnumerable()
-                .Concat(BorderIndividualTradingRows(db, request).AsEnumerable())
+                .Concat(BorderIndividualTradingRows(db, request).AsSplitQuery().AsEnumerable())
                 .OrderBy(row => row.LicenceDate)
                 .AsQueryable(),
             _ => OverseaRows(db, request)
                 .Where(_ => false)
-                .OrderBy(row => row.LicenceDate)
+                .AsSplitQuery()
         };
     }
 
@@ -121,6 +123,7 @@ public static class sp_ImportLicenceDetailReport
                 && (request.ExportImportMethodId == 0 || licence.ExportImportMethodId == request.ExportImportMethodId)
                 && (request.ExportImportIncotermId == 0 || licence.ExportImportIncotermId == request.ExportImportIncotermId)
                 && (request.SellerCountryId == 0 || licence.SellerCountryId == request.SellerCountryId)
+            orderby licence.CreatedDate
             select new sp_ImportLicenceDetailReportResult
             {
                 PaThaKaTypeId = paThaKaType.Id,
@@ -202,6 +205,7 @@ public static class sp_ImportLicenceDetailReport
                 && (request.ExportImportIncotermId == 0 || licence.ExportImportIncotermId == request.ExportImportIncotermId)
                 && (request.SellerCountryId == 0 || licence.SellerCountryId == request.SellerCountryId)
                 && (request.SakhanId == 0 || licence.SakhanId == request.SakhanId)
+            orderby licence.CreatedDate
             select new sp_ImportLicenceDetailReportResult
             {
                 PaThaKaTypeId = paThaKaType.Id,
@@ -286,6 +290,7 @@ public static class sp_ImportLicenceDetailReport
                 && (request.ExportImportIncotermId == 0 || licence.ExportImportIncotermId == request.ExportImportIncotermId)
                 && (request.SellerCountryId == 0 || licence.SellerCountryId == request.SellerCountryId)
                 && (request.SakhanId == 0 || licence.SakhanId == request.SakhanId)
+            orderby licence.CreatedDate
             select new sp_ImportLicenceDetailReportResult
             {
                 PaThaKaTypeId = paThaKaType.Id,

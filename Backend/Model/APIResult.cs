@@ -10,6 +10,8 @@ namespace API.Model
 {
     public class ApiResult<T>
     {
+        private readonly bool? _hasNextPage;
+
         /// <summary>
         /// Private constructor called by the CreateAsync method.
         /// </summary>
@@ -21,13 +23,17 @@ namespace API.Model
             string sortColumn,
             string sortOrder,
             string filterColumn,
-            string filterQuery)
+            string filterQuery,
+            bool isTotalCountExact = true,
+            bool? hasNextPage = null)
         {
             Data = data;
             PageIndex = pageIndex;
             PageSize = pageSize;
             TotalCount = count;
             TotalPages = (int)Math.Ceiling(count / (double)pageSize);
+            IsTotalCountExact = isTotalCountExact;
+            _hasNextPage = hasNextPage;
             SortColumn = sortColumn;
             SortOrder = sortOrder;
             FilterColumn = filterColumn;
@@ -58,102 +64,19 @@ namespace API.Model
             string? filterColumn = null,
             string? filterQuery = null)
         {
-            if (!string.IsNullOrEmpty(filterColumn)
-                && !string.IsNullOrEmpty(filterQuery)
-                && IsValidProperty(filterColumn))
-            {
-                if (filterColumn.Contains("Date"))
-                {
-                    var endate = Convert.ToDateTime(filterQuery);
-                    endate = endate.AddDays(1);
-                    String EndDateSQLparam = filterColumn + " < @0";
-                    source = source.Where(EndDateSQLparam, endate);
+            pageIndex = Math.Max(0, pageIndex);
+            pageSize = NormalizePageSize(pageSize);
+            source = ApplyFilter(source, filterColumn, filterQuery);
 
-                    var startDate = Convert.ToDateTime(filterQuery);
-                    String StartDateSQLparam = filterColumn + " > @0";
-                    source = source.Where(StartDateSQLparam, startDate);
+            var count = await CountAsyncSafe(source);
 
-
-                }
-                else
-                {
-                    try
-                    {
-                        source = source.Where(
-                            string.Format("{0}.Contains(@0)",
-                            filterColumn),
-                            filterQuery);
-                    }
-                    catch
-                    {
-                        source = source.Where(
-                            string.Format("{0}==@0",
-                            filterColumn),
-                            filterQuery);
-                    }
-                }
-
-            }
-            var type = source.GetType();
-            var hasAsync = type.GetMethod("CountAsync") != null;
-            int count;
-            if (hasAsync)
-            {
-                count = await source.CountAsync();
-            }
-            else
-            {
-                count = source.Count();
-            }
-
-
-            if (!string.IsNullOrEmpty(sortColumn)
-                && IsValidProperty(sortColumn))
-            {
-                sortOrder = !string.IsNullOrEmpty(sortOrder)
-                    && sortOrder.ToUpper() == "ASC"
-                    ? "ASC"
-                    : "DESC";
-                source = source.OrderBy(
-                    string.Format(
-                        "{0} {1}",
-                        sortColumn,
-                        sortOrder)
-                    );
-            }
-
-            source = source
+            source = ApplySort(source, sortColumn, ref sortOrder)
                 .Skip(pageIndex * pageSize)
                 .Take(pageSize);
 
-            // retrieve the SQL query (for debug purposes)
-            // #if DEBUG
-            //             {
-            //                 var sql = source.ToParametrizedSql();
-            //                 // do something with the sql string
-            //             }
-            // #endif
-
-            type = source.GetType();
-            hasAsync = type.GetMethod("ToListAsync") != null;
-            List<T>? data;
-            if (hasAsync)
-            {
-                if (source != null)
-                {
-                    data = await source.ToListAsync();
-                }
-                else
-                {
-                    data = new List<T>();
-                }
-            }
-            else
-            {
-                data = source?.ToList();
-            }
+            var data = await ToListAsyncSafe(source);
             return new ApiResult<T>(
-                data ?? new List<T>(),
+                data,
                 count,
                 pageIndex,
                 pageSize,
@@ -161,6 +84,211 @@ namespace API.Model
                 sortOrder ?? "",
                 filterColumn ?? "",
                 filterQuery ?? "");
+        }
+
+        public static async Task<ApiResult<T>> CreateFastPageAsync(
+            IQueryable<T> source,
+            int pageIndex,
+            int pageSize,
+            string? sortColumn = null,
+            string? sortOrder = null,
+            string? filterColumn = null,
+            string? filterQuery = null,
+            bool includeTotalCount = false)
+        {
+            if (includeTotalCount)
+            {
+                return await CreateAsync(
+                    source,
+                    pageIndex,
+                    pageSize,
+                    sortColumn,
+                    sortOrder,
+                    filterColumn,
+                    filterQuery);
+            }
+
+            pageIndex = Math.Max(0, pageIndex);
+            pageSize = NormalizePageSize(pageSize);
+            source = ApplyFilter(source, filterColumn, filterQuery);
+            source = ApplySort(source, sortColumn, ref sortOrder);
+
+            var pageRows = await ToListAsyncSafe(
+                source
+                    .Skip(pageIndex * pageSize)
+                    .Take(pageSize + 1));
+            var hasNextPage = pageRows.Count > pageSize;
+
+            if (hasNextPage)
+            {
+                pageRows.RemoveRange(pageSize, pageRows.Count - pageSize);
+            }
+
+            var estimatedCount = pageIndex * pageSize
+                + pageRows.Count
+                + (hasNextPage ? 1 : 0);
+
+            return new ApiResult<T>(
+                pageRows,
+                estimatedCount,
+                pageIndex,
+                pageSize,
+                sortColumn ?? "",
+                sortOrder ?? "",
+                filterColumn ?? "",
+                filterQuery ?? "",
+                isTotalCountExact: false,
+                hasNextPage: hasNextPage);
+        }
+
+        public static ApiResult<T> CreateFastPageFromRows(
+            List<T> pageRows,
+            int pageIndex,
+            int pageSize,
+            string? sortColumn = null,
+            string? sortOrder = null,
+            string? filterColumn = null,
+            string? filterQuery = null)
+        {
+            pageIndex = Math.Max(0, pageIndex);
+            pageSize = NormalizePageSize(pageSize);
+
+            var hasNextPage = pageRows.Count > pageSize;
+            if (hasNextPage)
+            {
+                pageRows.RemoveRange(pageSize, pageRows.Count - pageSize);
+            }
+
+            var estimatedCount = pageIndex * pageSize
+                + pageRows.Count
+                + (hasNextPage ? 1 : 0);
+
+            return new ApiResult<T>(
+                pageRows,
+                estimatedCount,
+                pageIndex,
+                pageSize,
+                sortColumn ?? "",
+                sortOrder ?? "",
+                filterColumn ?? "",
+                filterQuery ?? "",
+                isTotalCountExact: false,
+                hasNextPage: hasNextPage);
+        }
+
+        public static ApiResult<T> CreatePageFromRows(
+            List<T> pageRows,
+            int totalCount,
+            int pageIndex,
+            int pageSize,
+            string? sortColumn = null,
+            string? sortOrder = null,
+            string? filterColumn = null,
+            string? filterQuery = null)
+        {
+            pageIndex = Math.Max(0, pageIndex);
+            pageSize = NormalizePageSize(pageSize);
+
+            return new ApiResult<T>(
+                pageRows,
+                Math.Max(0, totalCount),
+                pageIndex,
+                pageSize,
+                sortColumn ?? "",
+                sortOrder ?? "",
+                filterColumn ?? "",
+                filterQuery ?? "");
+        }
+
+        private static int NormalizePageSize(int pageSize)
+        {
+            return pageSize <= 0 ? 10 : pageSize;
+        }
+
+        private static IQueryable<T> ApplyFilter(
+            IQueryable<T> source,
+            string? filterColumn,
+            string? filterQuery)
+        {
+            if (string.IsNullOrEmpty(filterColumn)
+                || string.IsNullOrEmpty(filterQuery)
+                || !IsValidProperty(filterColumn))
+            {
+                return source;
+            }
+
+            if (filterColumn.Contains("Date"))
+            {
+                var endate = Convert.ToDateTime(filterQuery);
+                endate = endate.AddDays(1);
+                string EndDateSQLparam = filterColumn + " < @0";
+                source = source.Where(EndDateSQLparam, endate);
+
+                var startDate = Convert.ToDateTime(filterQuery);
+                string StartDateSQLparam = filterColumn + " > @0";
+                source = source.Where(StartDateSQLparam, startDate);
+
+                return source;
+            }
+
+            try
+            {
+                return source.Where(
+                    string.Format("{0}.Contains(@0)",
+                    filterColumn),
+                    filterQuery);
+            }
+            catch
+            {
+                return source.Where(
+                    string.Format("{0}==@0",
+                    filterColumn),
+                    filterQuery);
+            }
+        }
+
+        private static IQueryable<T> ApplySort(
+            IQueryable<T> source,
+            string? sortColumn,
+            ref string? sortOrder)
+        {
+            if (string.IsNullOrEmpty(sortColumn)
+                || !IsValidProperty(sortColumn))
+            {
+                return source;
+            }
+
+            sortOrder = !string.IsNullOrEmpty(sortOrder)
+                && sortOrder.ToUpper() == "ASC"
+                ? "ASC"
+                : "DESC";
+
+            return source.OrderBy(
+                string.Format(
+                    "{0} {1}",
+                    sortColumn,
+                    sortOrder)
+                );
+        }
+
+        private static async Task<int> CountAsyncSafe(IQueryable<T> source)
+        {
+            if (source.Provider is Microsoft.EntityFrameworkCore.Query.IAsyncQueryProvider)
+            {
+                return await source.CountAsync();
+            }
+
+            return source.Count();
+        }
+
+        private static async Task<List<T>> ToListAsyncSafe(IQueryable<T> source)
+        {
+            if (source.Provider is Microsoft.EntityFrameworkCore.Query.IAsyncQueryProvider)
+            {
+                return await source.ToListAsync();
+            }
+
+            return source.ToList();
         }
 
         /// <summary>
@@ -214,6 +342,11 @@ namespace API.Model
         public int TotalPages { get; private set; }
 
         /// <summary>
+        /// TRUE when TotalCount is exact, FALSE when it is estimated for fast pagination.
+        /// </summary>
+        public bool IsTotalCountExact { get; private set; }
+
+        /// <summary>
         /// TRUE if the current page has a previous page, FALSE otherwise.
         /// </summary>
         public bool HasPreviousPage
@@ -231,7 +364,7 @@ namespace API.Model
         {
             get
             {
-                return ((PageIndex + 1) < TotalPages);
+                return _hasNextPage ?? ((PageIndex + 1) < TotalPages);
             }
         }
 

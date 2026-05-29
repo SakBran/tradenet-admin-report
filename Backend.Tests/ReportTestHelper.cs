@@ -6,6 +6,7 @@ using Backend.Controllers.Report;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Backend.Tests;
 
@@ -67,8 +68,21 @@ internal static class ReportTestHelper
 
     internal static ControllerBase CreateController(Type controllerType, TradeNetDbContext db)
     {
+        var constructorArguments = controllerType
+            .GetConstructors()
+            .OrderByDescending(constructor => constructor.GetParameters().Length)
+            .Select(constructor => constructor.GetParameters())
+            .FirstOrDefault(parameters => parameters.All(parameter =>
+                parameter.ParameterType == typeof(TradeNetDbContext)
+                || parameter.ParameterType == typeof(IMemoryCache)))
+            ?.Select(parameter => parameter.ParameterType == typeof(IMemoryCache)
+                ? new MemoryCache(new MemoryCacheOptions())
+                : (object)db)
+            .ToArray()
+            ?? [db];
+
         var controller = Assert.IsAssignableFrom<ControllerBase>(
-            Activator.CreateInstance(controllerType, db));
+            Activator.CreateInstance(controllerType, constructorArguments));
 
         controller.ControllerContext = new ControllerContext
         {

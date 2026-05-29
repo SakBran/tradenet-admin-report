@@ -6,6 +6,7 @@ using API.Service.Reports;
 using API.StoredProcedureToLinq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Backend.Controllers.Report
 {
@@ -15,10 +16,12 @@ namespace Backend.Controllers.Report
     public class ImportLicenceDetailReportController : ControllerBase
     {
         private readonly TradeNetDbContext _context;
+        private readonly IMemoryCache _cache;
 
-        public ImportLicenceDetailReportController(TradeNetDbContext context)
+        public ImportLicenceDetailReportController(TradeNetDbContext context, IMemoryCache cache)
         {
             _context = context;
+            _cache = cache;
         }
 
         [HttpPost]
@@ -29,8 +32,11 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var query = sp_ImportLicenceDetailReport.Query(_context, procedureRequest!);
-            var result = await ReportQueryService.CreatePagedResultAsync(query, request!);
+            var result = await sp_ImportLicenceDetailReport_Fast.CreatePagedResultAsync(
+                _context,
+                _cache,
+                procedureRequest!,
+                request!);
 
             return Ok(result);
         }
@@ -96,7 +102,7 @@ namespace Backend.Controllers.Report
             }
             procedureRequest = new sp_ImportLicenceDetailReportRequest
             {
-                Type = request.Type,
+                Type = string.IsNullOrWhiteSpace(request.Type) ? "Oversea" : request.Type,
                 FromDate = request.FromDate,
                 ToDate = request.ToDate,
                 PaThaKaTypeId = request.PaThaKaTypeId,

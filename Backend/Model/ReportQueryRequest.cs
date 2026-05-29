@@ -8,5 +8,6 @@ namespace API.Model
         public string? SortOrder { get; set; }
         public string? FilterColumn { get; set; }
         public string? FilterQuery { get; set; }
+        public bool IncludeTotalCount { get; set; }
     }
 }

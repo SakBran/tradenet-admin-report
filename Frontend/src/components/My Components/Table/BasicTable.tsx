@@ -27,6 +27,7 @@ export interface BasicTableQuery {
   sortOrder: string;
   filterColumn: string;
   filterQuery: string;
+  includeTotalCount: boolean;
 }
 
 export interface BasicTableColumn<T extends AnyObject = AnyObject> {
@@ -80,6 +81,7 @@ const emptyPage = <T extends AnyObject>(): PaginationType<T> => ({
   sortOrder: '',
   filterColumn: '',
   filterQuery: '',
+  isTotalCountExact: true,
 });
 
 const buildLegacyUrl = (api: string, query: BasicTableQuery) => {
@@ -174,6 +176,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
       sortOrder: '',
       filterColumn,
       filterQuery,
+      includeTotalCount: false,
     }),
     [filterColumn, filterQuery, pageIndex, pageSize]
   );

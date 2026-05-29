@@ -22,14 +22,15 @@ namespace API.Service.Reports
                 ? DefaultPageSize
                 : Math.Min(request.PageSize, MaxPageSize);
 
-            return ApiResult<T>.CreateAsync(
+            return ApiResult<T>.CreateFastPageAsync(
                 query,
                 pageIndex,
                 pageSize,
                 null,
                 null,
                 request.FilterColumn,
-                request.FilterQuery);
+                request.FilterQuery,
+                request.IncludeTotalCount);
         }
     }
 }

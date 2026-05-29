@@ -6,6 +6,7 @@ export interface PaginationType<T extends AnyObject = AnyObject> {
   pageSize: number;
   totalCount: number;
   totalPages: number;
+  isTotalCountExact?: boolean;
   hasPreviousPage: boolean;
   hasNextPage: boolean;
   sortColumn: string;

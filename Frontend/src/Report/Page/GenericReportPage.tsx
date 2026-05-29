@@ -223,6 +223,7 @@ const buildRequest = (
   sortOrder: query.sortOrder.toUpperCase(),
   filterColumn: query.filterColumn,
   filterQuery: query.filterQuery,
+  includeTotalCount: query.includeTotalCount,
 });
 
 const downloadBlob = (blob: Blob, fileName: string) => {
