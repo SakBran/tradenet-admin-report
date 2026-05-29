@@ -28,24 +28,6 @@ th {
     /* Slightly bolder headers */
     color: #555;
     /* Slightly darker text for headers */
-    cursor: pointer;
-    /* Indicate sortable columns */
-    position: relative;
-    /* For sort icons */
-}
-
-th:hover {
-    background-color: #eee;
-    /* Subtle hover effect on headers */
-}
-
-/* Add sort icons styling */
-th span {
-    margin-left: 0.5rem;
-    font-size: 0.8em;
-    color: #3f90ff;
-    /* Keep your existing blue color */
-    transition: transform 0.2s ease-in-out;
 }
 
 /* Alternating row colors for better readability */

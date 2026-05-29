@@ -26,8 +26,8 @@ namespace API.Service.Reports
                 query,
                 pageIndex,
                 pageSize,
-                request.SortColumn,
-                request.SortOrder,
+                null,
+                null,
                 request.FilterColumn,
                 request.FilterQuery);
         }

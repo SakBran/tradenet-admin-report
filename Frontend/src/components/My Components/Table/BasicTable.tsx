@@ -15,11 +15,7 @@ import {
 import NameConvert from '../../../services/NameConvert';
 import { AnyObject } from '../../../types/AnyObject';
 import { PaginationType } from '../../../types/PaginationType';
-import {
-  CaretDownOutlined,
-  CaretUpOutlined,
-  FileExcelOutlined,
-} from '@ant-design/icons';
+import { FileExcelOutlined } from '@ant-design/icons';
 import * as XLSX from 'xlsx';
 
 export type SortOrder = 'asc' | 'desc';
@@ -28,7 +24,7 @@ export interface BasicTableQuery {
   pageIndex: number;
   pageSize: number;
   sortColumn: string;
-  sortOrder: SortOrder;
+  sortOrder: string;
   filterColumn: string;
   filterQuery: string;
 }
@@ -119,8 +115,6 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   onExcel,
   excelFileName = 'Report.xlsx',
   refreshKey,
-  initialSortColumn,
-  initialSortOrder = 'desc',
   initialPageSize = 10,
   emptyText = 'No data',
   enabled = true,
@@ -134,7 +128,6 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
     return (displayData ?? []).map((key) => ({
       key,
       title: NameConvert(key),
-      sortable: key.toLocaleLowerCase() !== 'id',
       searchable: key.toLocaleLowerCase() !== 'id',
     }));
   }, [columns, displayData]);
@@ -151,18 +144,12 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
 
   const firstDataColumn =
     searchableColumns[0]?.filterKey ??
-    searchableColumns[0]?.sortKey ??
     searchableColumns[0]?.key.toString() ??
     '';
 
   const [loading, setLoading] = useState<boolean>(false);
   const [excelLoading, setExcelLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [sortColumn, setSortColumn] = useState(
-    initialSortColumn ?? firstDataColumn
-  );
-  const [sortDirection, setSortDirection] =
-    useState<SortOrder>(initialSortOrder);
   const [filterColumn, setFilterColumn] = useState(firstDataColumn);
   const [filterQuery] = useState('');
   const [pageIndex, setPageIndex] = useState(0);
@@ -177,36 +164,19 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
     if (!filterColumn && firstDataColumn) {
       setFilterColumn(firstDataColumn);
     }
-
-    if (!sortColumn && firstDataColumn) {
-      setSortColumn(firstDataColumn);
-    }
-  }, [filterColumn, firstDataColumn, sortColumn]);
+  }, [filterColumn, firstDataColumn]);
 
   const query = useMemo<BasicTableQuery>(
     () => ({
       pageIndex: pageIndex < 0 ? 0 : pageIndex,
       pageSize,
-      sortColumn,
-      sortOrder: sortDirection,
+      sortColumn: '',
+      sortOrder: '',
       filterColumn,
       filterQuery,
     }),
-    [filterColumn, filterQuery, pageIndex, pageSize, sortColumn, sortDirection]
+    [filterColumn, filterQuery, pageIndex, pageSize]
   );
-
-  const handleSort = (column: BasicTableColumn<T>) => {
-    if (column.sortable === false) {
-      return;
-    }
-
-    const nextColumn = column.sortKey ?? column.key.toString();
-    setPageIndex(0);
-    setSortColumn(nextColumn);
-    setSortDirection((current) =>
-      sortColumn === nextColumn && current === 'asc' ? 'desc' : 'asc'
-    );
-  };
 
   useEffect(() => {
     const load = async () => {
@@ -350,28 +320,15 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
                 <th>No</th>
                 {normalizedColumns.map((column) => {
                   const key = column.key.toString();
-                  const sortKey = column.sortKey ?? key;
-                  const isSorted = sortColumn === sortKey;
 
                   return (
                     <th
                       key={key}
-                      onClick={() => handleSort(column)}
                       style={{
-                        cursor: column.sortable === false ? 'default' : 'pointer',
                         width: column.width,
                       }}
                     >
                       {column.title ?? NameConvert(key)}
-                      {isSorted && (
-                        <span>
-                          {sortDirection === 'asc' ? (
-                            <CaretUpOutlined />
-                          ) : (
-                            <CaretDownOutlined />
-                          )}
-                        </span>
-                      )}
                     </th>
                   );
                 })}
