@@ -6,6 +6,7 @@ using API.Service.Reports;
 using API.StoredProcedureToLinq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Backend.Controllers.Report
 {
@@ -15,10 +16,12 @@ namespace Backend.Controllers.Report
     public class ImportLicenceBySellerCountryReportController : ControllerBase
     {
         private readonly TradeNetDbContext _context;
+        private readonly IMemoryCache _cache;
 
-        public ImportLicenceBySellerCountryReportController(TradeNetDbContext context)
+        public ImportLicenceBySellerCountryReportController(TradeNetDbContext context, IMemoryCache cache)
         {
             _context = context;
+            _cache = cache;
         }
 
         [HttpPost]
@@ -29,8 +32,7 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var query = sp_ImportLicenceDetailReport.Query(_context, procedureRequest!);
-            var result = await ReportQueryService.CreatePagedResultAsync(query, request!);
+            var result = await sp_ImportLicenceDetailReport_Fast.CreatePagedResultAsync(_context, _cache, procedureRequest!, request!);
 
             return Ok(result);
         }
@@ -43,12 +45,13 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var query = sp_ImportLicenceDetailReport.Query(_context, procedureRequest!);
             byte[] fileBytes;
             try
             {
-                fileBytes = await ExcelGenerator.CreateWorkbookAsync(
-                    query,
+                fileBytes = await sp_ImportLicenceDetailReport_Fast.CreateExcelWorkbookAsync(
+                    _context,
+                    _cache,
+                    procedureRequest!,
                     request!,
                     "Import Licence By Seller Country Report");
             }

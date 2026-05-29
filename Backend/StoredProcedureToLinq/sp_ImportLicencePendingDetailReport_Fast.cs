@@ -38,13 +38,13 @@ public static class sp_ImportLicencePendingDetailReport_Fast
 
         var rows = Rows(db, request);
         var totalCount = pagingRequest.IncludeTotalCount
-            ? rows.Count()
+            ? await rows.CountAsync()
             : (int?)null;
 
-        var pageRows = rows
+        var pageRows = await rows
             .Skip(pageIndex * pageSize)
             .Take(pageSize + (totalCount.HasValue ? 0 : 1))
-            .ToList();
+            .ToListAsync();
 
         var results = pageRows
             .Select(row => row.ToResult(countries))
@@ -87,14 +87,16 @@ public static class sp_ImportLicencePendingDetailReport_Fast
 
         var countries = await ReportLookupCache.GetCountryNamesAsync(db, cache);
 
-        var resolved = Rows(db, request)
+        var rows = await Rows(db, request).ToListAsync();
+
+        var resolved = rows
             .Select(row => row.ToResult(countries))
             .ToList();
 
         return await ExcelGenerator.CreateWorkbookAsync(resolved.AsQueryable(), pagingRequest, worksheetName);
     }
 
-    private static IEnumerable<ImportLicencePendingDetailFastRow> Rows(
+    private static IQueryable<ImportLicencePendingDetailFastRow> Rows(
         TradeNetDbContext db,
         sp_ImportLicencePendingDetailReportRequest request)
     {
@@ -103,8 +105,7 @@ public static class sp_ImportLicencePendingDetailReport_Fast
             "Oversea" => OverseaRows(db, request)
                 .OrderBy(row => row.LicenceDate),
             "Border" => BorderPaThaKaRows(db, request)
-                .AsEnumerable()
-                .Concat(BorderIndividualTradingRows(db, request).AsEnumerable())
+                .Concat(BorderIndividualTradingRows(db, request))
                 .OrderBy(row => row.LicenceDate),
             _ => OverseaRows(db, request)
                 .Where(_ => false)

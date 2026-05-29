@@ -49,12 +49,13 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var query = sp_ImportLicenceDetailReport.Query(_context, procedureRequest!);
             byte[] fileBytes;
             try
             {
-                fileBytes = await ExcelGenerator.CreateWorkbookAsync(
-                    query,
+                fileBytes = await sp_ImportLicenceDetailReport_Fast.CreateExcelWorkbookAsync(
+                    _context,
+                    _cache,
+                    procedureRequest!,
                     request!,
                     "Import Licence Detail Report");
             }

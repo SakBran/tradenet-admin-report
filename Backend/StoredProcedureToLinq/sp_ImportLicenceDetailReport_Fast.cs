@@ -73,6 +73,28 @@ public static class sp_ImportLicenceDetailReport_Fast
             pagingRequest.FilterQuery);
     }
 
+    public static async Task<byte[]> CreateExcelWorkbookAsync(
+        TradeNetDbContext db,
+        IMemoryCache cache,
+        sp_ImportLicenceDetailReportRequest request,
+        ReportQueryRequest pagingRequest,
+        string worksheetName)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(cache);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(pagingRequest);
+
+        var countryNames = await ReportLookupCache.GetCountryNamesAsync(db, cache);
+        var rows = await Rows(db, request).ToListAsync();
+
+        var resolved = rows
+            .Select(row => row.ToResult(countryNames))
+            .ToList();
+
+        return await ExcelGenerator.CreateWorkbookAsync(resolved.AsQueryable(), pagingRequest, worksheetName);
+    }
+
     private static IQueryable<ImportLicenceDetailFastRow> Rows(
         TradeNetDbContext db,
         sp_ImportLicenceDetailReportRequest request)
