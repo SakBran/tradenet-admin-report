@@ -67,6 +67,7 @@ interface PropsType<T extends AnyObject = AnyObject> {
   emptyText?: string;
   enabled?: boolean;
   idleText?: string;
+  showRowNumber?: boolean;
 }
 
 const emptyPage = <T extends AnyObject>(): PaginationType<T> => ({
@@ -121,6 +122,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   emptyText = 'No data',
   enabled = true,
   idleText = 'Set filters, then click Filter to load data',
+  showRowNumber = true,
 }: PropsType<T>) => {
   const normalizedColumns = useMemo<BasicTableColumn<T>[]>(() => {
     if (columns?.length) {
@@ -261,7 +263,9 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   };
 
   const columnCount =
-    1 + normalizedColumns.length + (shouldShowActions ? 1 : 0);
+    (showRowNumber ? 1 : 0) +
+    normalizedColumns.length +
+    (shouldShowActions ? 1 : 0);
   const skeletonRowCount = Math.min(Math.max(pageSize, 5), 12);
 
   return (
@@ -320,7 +324,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
           <table id={tableId}>
             <thead>
               <tr>
-                <th>No</th>
+                {showRowNumber && <th>No</th>}
                 {normalizedColumns.map((column) => {
                   const key = column.key.toString();
 
@@ -346,7 +350,9 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
                 {data.data?.length ? (
                   data.data.map((row, index) => (
                     <tr key={getRowKey(row, index)}>
-                      <td>{index + 1 + query.pageIndex * pageSize}</td>
+                      {showRowNumber && (
+                        <td>{index + 1 + query.pageIndex * pageSize}</td>
+                      )}
                       {normalizedColumns.map((column) => (
                         <td key={column.key.toString()}>
                           {renderCell(column, row, index)}

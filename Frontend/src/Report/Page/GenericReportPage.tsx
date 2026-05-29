@@ -111,6 +111,28 @@ const formatBoolean = (value: unknown) => {
   return value?.toString() ?? 'N/A';
 };
 
+const hasValue = (value: unknown) =>
+  value !== undefined && value !== null && value.toString().trim() !== '';
+
+const formatColumnValue = (
+  value: unknown,
+  dataType?: ReportColumnConfig['dataType']
+) => {
+  if (!hasValue(value)) {
+    return 'N/A';
+  }
+
+  if (dataType === 'date') {
+    return formatDate(value);
+  }
+
+  if (dataType === 'boolean') {
+    return formatBoolean(value);
+  }
+
+  return value?.toString() ?? 'N/A';
+};
+
 const toApiDate = (value: Dayjs, edge: 'start' | 'end') =>
   (edge === 'start' ? value.startOf('day') : value.endOf('day')).format(
     'YYYY-MM-DDTHH:mm:ss'
@@ -240,6 +262,24 @@ const downloadBlob = (blob: Blob, fileName: string) => {
 const toTableColumn = (
   column: ReportColumnConfig
 ): BasicTableColumn<AnyObject> => {
+  if (column.fallbackDataIndexes?.length) {
+    return {
+      ...column,
+      render: (value, row) => {
+        if (hasValue(value)) {
+          return formatColumnValue(value, column.dataType);
+        }
+
+        const fallbackValue = column.fallbackDataIndexes
+          ?.map((dataIndex) => row[dataIndex])
+          .filter(hasValue)
+          .join(', ');
+
+        return formatColumnValue(fallbackValue, column.dataType);
+      },
+    };
+  }
+
   if (column.dataType === 'date') {
     return { ...column, render: formatDate };
   }
@@ -281,7 +321,16 @@ const renderFilter = (
   }
 
   if (filter.type === 'dateRange') {
-    return <DatePicker.RangePicker allowClear={false} style={{ width: '100%' }} />;
+    return (
+      <DatePicker.RangePicker
+        allowClear={false}
+        placeholder={[
+          filter.fromLabel ?? 'From Date',
+          filter.toLabel ?? 'To Date',
+        ]}
+        style={{ width: '100%' }}
+      />
+    );
   }
 
   if (filter.type === 'date') {
@@ -480,7 +529,7 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
               {visibleFilters.map((filter) => (
                 <Col xs={24} md={12} lg={6} key={filter.name}>
                   <Form.Item
-                    label={getLookupFilter(filter)?.label ?? filter.label}
+                    label={filter.label ?? getLookupFilter(filter)?.label}
                     name={filter.name}
                     rules={
                       filter.required
@@ -531,6 +580,7 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
         initialSortColumn={config.initialSortColumn}
         initialSortOrder="desc"
         excelFileName={config.excelFileName}
+        showRowNumber={config.showRowNumber ?? true}
       />
     </>
   );

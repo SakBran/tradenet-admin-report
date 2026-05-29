@@ -12,6 +12,7 @@ export interface ReportColumnConfig {
   dataIndex: string;
   title: string;
   dataType?: ReportColumnDataType;
+  fallbackDataIndexes?: string[];
 }
 
 export interface ReportFilterConfig {
@@ -20,6 +21,8 @@ export interface ReportFilterConfig {
   type: ReportFilterType;
   fromName?: string;
   toName?: string;
+  fromLabel?: string;
+  toLabel?: string;
   defaultValue?: string | number | boolean;
   required?: boolean;
 }
@@ -33,4 +36,5 @@ export interface ReportPageConfig {
   columns: ReportColumnConfig[];
   filters: ReportFilterConfig[];
   initialSortColumn?: string;
+  showRowNumber?: boolean;
 }
