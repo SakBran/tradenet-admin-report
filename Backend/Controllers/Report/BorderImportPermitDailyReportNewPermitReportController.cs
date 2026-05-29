@@ -25,14 +25,15 @@ namespace Backend.Controllers.Report
         }
 
         [HttpPost]
-        public async Task<ActionResult<ApiResult<sp_ImportPermitDetailReportResult>>> Post([FromBody] BorderImportPermitDailyReportNewPermitReportRequest? request)
+        public async Task<ActionResult<ApiResult<ReportAggregateResult>>> Post([FromBody] BorderImportPermitDailyReportNewPermitReportRequest? request)
         {
             if (!TryCreateReportRequest(request, out var procedureRequest, out var errorResult))
             {
                 return errorResult!;
             }
 
-            var result = await sp_ImportPermitDetailReport_Fast.CreatePagedResultAsync(_context, _cache, procedureRequest!, request!);
+            var result = await sp_ImportPermitDetailReport_Fast.CreateAggregateResultAsync(
+                _context, procedureRequest!, request!, ReportAggregateDimension.Daily, includeSakhan: true);
 
             return Ok(result);
         }
@@ -48,8 +49,12 @@ namespace Backend.Controllers.Report
             byte[] fileBytes;
             try
             {
-                fileBytes = await sp_ImportPermitDetailReport_Fast.CreateExcelWorkbookAsync(
-                    _context, _cache, procedureRequest!, request!, "Border Import Permit Daily Report (New Permit Report)");
+                fileBytes = await sp_ImportPermitDetailReport_Fast.CreateAggregateExcelWorkbookAsync(
+                    _context,
+                    procedureRequest!,
+                    request!,
+                    ReportAggregateDimension.Daily,
+                    includeSakhan: true, "Border Import Permit Daily Report (New Permit Report)");
             }
             catch (InvalidOperationException ex)
             {

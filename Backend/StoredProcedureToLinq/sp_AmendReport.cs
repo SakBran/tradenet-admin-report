@@ -32,6 +32,7 @@ public sealed class sp_AmendReportResult
     public string? Country { get; set; }
     public string? PostalCode { get; set; }
     public string? Currency { get; set; }
+    public string? HSCode { get; set; }
     public decimal? Amount { get; set; }
     public int? SakhanId { get; set; }
     public string? SakhanCode { get; set; }
@@ -88,6 +89,16 @@ public static class sp_AmendReport
             join item in db.ExportLicenceItems on grouped.ItemId equals item.Id
             select new { grouped.LicenceId, Amount = (decimal?)item.Amount };
 
+        var hsCodeByLicence =
+            from firstItem in
+                (from item in db.ExportLicenceItems
+                 where db.Hscodes.Any(hsCode => hsCode.Id == item.HscodeId)
+                 group item by item.ExportLicenceId into grouped
+                 select new { LicenceId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.ExportLicenceItems on firstItem.ItemId equals item.Id
+            join hsCode in db.Hscodes on item.HscodeId equals hsCode.Id
+            select new { firstItem.LicenceId, HSCode = hsCode.Code };
+
         return
             from licence in db.ExportLicences
             join paThaKa in db.PaThaKas on licence.PaThaKaId equals paThaKa.Id
@@ -96,6 +107,8 @@ public static class sp_AmendReport
             from currencyRow in currencyJoin.DefaultIfEmpty()
             join firstItemRow in firstItemByLicence on licence.Id equals firstItemRow.LicenceId into firstItemJoin
             from firstItemRow in firstItemJoin.DefaultIfEmpty()
+            join hsCodeRow in hsCodeByLicence on licence.Id equals hsCodeRow.LicenceId into hsCodeJoin
+            from hsCodeRow in hsCodeJoin.DefaultIfEmpty()
             where licence.ApplyType == Amend
                 && licence.Status == Approved
                 && licence.CreatedDate >= request.FromDate
@@ -130,6 +143,7 @@ public static class sp_AmendReport
                 Country = paThaKa.Country,
                 PostalCode = paThaKa.PostalCode,
                 Currency = currencyRow.Code,
+                HSCode = hsCodeRow.HSCode,
                 Amount = firstItemRow.Amount
             };
     }
@@ -156,6 +170,16 @@ public static class sp_AmendReport
             join item in db.ImportLicenceItems on grouped.ItemId equals item.Id
             select new { grouped.LicenceId, Amount = (decimal?)item.Amount };
 
+        var hsCodeByLicence =
+            from firstItem in
+                (from item in db.ImportLicenceItems
+                 where db.Hscodes.Any(hsCode => hsCode.Id == item.HscodeId)
+                 group item by item.ImportLicenceId into grouped
+                 select new { LicenceId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.ImportLicenceItems on firstItem.ItemId equals item.Id
+            join hsCode in db.Hscodes on item.HscodeId equals hsCode.Id
+            select new { firstItem.LicenceId, HSCode = hsCode.Code };
+
         return
             from licence in db.ImportLicences
             join paThaKa in db.PaThaKas on licence.PaThaKaId equals paThaKa.Id
@@ -164,6 +188,8 @@ public static class sp_AmendReport
             from currencyRow in currencyJoin.DefaultIfEmpty()
             join firstItemRow in firstItemByLicence on licence.Id equals firstItemRow.LicenceId into firstItemJoin
             from firstItemRow in firstItemJoin.DefaultIfEmpty()
+            join hsCodeRow in hsCodeByLicence on licence.Id equals hsCodeRow.LicenceId into hsCodeJoin
+            from hsCodeRow in hsCodeJoin.DefaultIfEmpty()
             where licence.ApplyType == Amend
                 && licence.Status == Approved
                 && licence.CreatedDate >= request.FromDate
@@ -198,6 +224,7 @@ public static class sp_AmendReport
                 Country = paThaKa.Country,
                 PostalCode = paThaKa.PostalCode,
                 Currency = currencyRow.Code,
+                HSCode = hsCodeRow.HSCode,
                 Amount = firstItemRow.Amount
             };
     }
@@ -224,6 +251,16 @@ public static class sp_AmendReport
             join item in db.ExportPermitItems on grouped.ItemId equals item.Id
             select new { grouped.PermitId, Amount = (decimal?)item.Amount };
 
+        var hsCodeByPermit =
+            from firstItem in
+                (from item in db.ExportPermitItems
+                 where db.Hscodes.Any(hsCode => hsCode.Id == item.HscodeId)
+                 group item by item.ExportPermitId into grouped
+                 select new { PermitId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.ExportPermitItems on firstItem.ItemId equals item.Id
+            join hsCode in db.Hscodes on item.HscodeId equals hsCode.Id
+            select new { firstItem.PermitId, HSCode = hsCode.Code };
+
         return
             from permit in db.ExportPermits
             join paThaKa in db.PaThaKas on permit.PaThaKaId equals paThaKa.Id
@@ -232,6 +269,8 @@ public static class sp_AmendReport
             from currencyRow in currencyJoin.DefaultIfEmpty()
             join firstItemRow in firstItemByPermit on permit.Id equals firstItemRow.PermitId into firstItemJoin
             from firstItemRow in firstItemJoin.DefaultIfEmpty()
+            join hsCodeRow in hsCodeByPermit on permit.Id equals hsCodeRow.PermitId into hsCodeJoin
+            from hsCodeRow in hsCodeJoin.DefaultIfEmpty()
             where permit.ApplyType == Amend
                 && permit.Status == Approved
                 && permit.CreatedDate >= request.FromDate
@@ -266,6 +305,7 @@ public static class sp_AmendReport
                 Country = paThaKa.Country,
                 PostalCode = paThaKa.PostalCode,
                 Currency = currencyRow.Code,
+                HSCode = hsCodeRow.HSCode,
                 Amount = firstItemRow.Amount
             };
     }
@@ -292,6 +332,16 @@ public static class sp_AmendReport
             join item in db.ImportPermitItems on grouped.ItemId equals item.Id
             select new { grouped.PermitId, Amount = (decimal?)item.Amount };
 
+        var hsCodeByPermit =
+            from firstItem in
+                (from item in db.ImportPermitItems
+                 where db.Hscodes.Any(hsCode => hsCode.Id == item.HscodeId)
+                 group item by item.ImportPermitId into grouped
+                 select new { PermitId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.ImportPermitItems on firstItem.ItemId equals item.Id
+            join hsCode in db.Hscodes on item.HscodeId equals hsCode.Id
+            select new { firstItem.PermitId, HSCode = hsCode.Code };
+
         return
             from permit in db.ImportPermits
             join paThaKa in db.PaThaKas on permit.PaThaKaId equals paThaKa.Id
@@ -300,6 +350,8 @@ public static class sp_AmendReport
             from currencyRow in currencyJoin.DefaultIfEmpty()
             join firstItemRow in firstItemByPermit on permit.Id equals firstItemRow.PermitId into firstItemJoin
             from firstItemRow in firstItemJoin.DefaultIfEmpty()
+            join hsCodeRow in hsCodeByPermit on permit.Id equals hsCodeRow.PermitId into hsCodeJoin
+            from hsCodeRow in hsCodeJoin.DefaultIfEmpty()
             where permit.ApplyType == Amend
                 && permit.Status == Approved
                 && permit.CreatedDate >= request.FromDate
@@ -334,6 +386,7 @@ public static class sp_AmendReport
                 Country = paThaKa.Country,
                 PostalCode = paThaKa.PostalCode,
                 Currency = currencyRow.Code,
+                HSCode = hsCodeRow.HSCode,
                 Amount = firstItemRow.Amount
             };
     }
@@ -360,6 +413,16 @@ public static class sp_AmendReport
             join item in db.BorderExportLicenceItems on grouped.ItemId equals item.Id
             select new { grouped.LicenceId, Amount = (decimal?)item.Amount };
 
+        var hsCodeByLicence =
+            from firstItem in
+                (from item in db.BorderExportLicenceItems
+                 where db.Hscodes.Any(hsCode => hsCode.Id == item.HscodeId)
+                 group item by item.BorderExportLicenceId into grouped
+                 select new { LicenceId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.BorderExportLicenceItems on firstItem.ItemId equals item.Id
+            join hsCode in db.Hscodes on item.HscodeId equals hsCode.Id
+            select new { firstItem.LicenceId, HSCode = hsCode.Code };
+
         var paThaKaQuery =
             from licence in db.BorderExportLicences
             join paThaKa in db.PaThaKas on licence.PaThaKaId equals paThaKa.Id
@@ -369,6 +432,8 @@ public static class sp_AmendReport
             from currencyRow in currencyJoin.DefaultIfEmpty()
             join firstItemRow in firstItemByLicence on licence.Id equals firstItemRow.LicenceId into firstItemJoin
             from firstItemRow in firstItemJoin.DefaultIfEmpty()
+            join hsCodeRow in hsCodeByLicence on licence.Id equals hsCodeRow.LicenceId into hsCodeJoin
+            from hsCodeRow in hsCodeJoin.DefaultIfEmpty()
             where licence.ApplyType == Amend
                 && licence.Status == Approved
                 && licence.CardType == PaThaKaCardType
@@ -407,6 +472,7 @@ public static class sp_AmendReport
                 Country = paThaKa.Country,
                 PostalCode = paThaKa.PostalCode,
                 Currency = currencyRow.Code,
+                HSCode = hsCodeRow.HSCode,
                 Amount = firstItemRow.Amount,
                 SakhanId = sakhan.Id,
                 SakhanCode = sakhan.Code,
@@ -422,6 +488,8 @@ public static class sp_AmendReport
             from currencyRow in currencyJoin.DefaultIfEmpty()
             join firstItemRow in firstItemByLicence on licence.Id equals firstItemRow.LicenceId into firstItemJoin
             from firstItemRow in firstItemJoin.DefaultIfEmpty()
+            join hsCodeRow in hsCodeByLicence on licence.Id equals hsCodeRow.LicenceId into hsCodeJoin
+            from hsCodeRow in hsCodeJoin.DefaultIfEmpty()
             where licence.ApplyType == Amend
                 && licence.Status == Approved
                 && licence.CardType == IndividualTradingCardType
@@ -458,6 +526,7 @@ public static class sp_AmendReport
                 Country = individualTrading.Country,
                 PostalCode = individualTrading.PostalCode,
                 Currency = currencyRow.Code,
+                HSCode = hsCodeRow.HSCode,
                 Amount = firstItemRow.Amount,
                 SakhanId = sakhan.Id,
                 SakhanCode = sakhan.Code,
@@ -489,6 +558,16 @@ public static class sp_AmendReport
             join item in db.BorderImportLicenceItems on grouped.ItemId equals item.Id
             select new { grouped.LicenceId, Amount = (decimal?)item.Amount };
 
+        var hsCodeByLicence =
+            from firstItem in
+                (from item in db.BorderImportLicenceItems
+                 where db.Hscodes.Any(hsCode => hsCode.Id == item.HscodeId)
+                 group item by item.BorderImportLicenceId into grouped
+                 select new { LicenceId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.BorderImportLicenceItems on firstItem.ItemId equals item.Id
+            join hsCode in db.Hscodes on item.HscodeId equals hsCode.Id
+            select new { firstItem.LicenceId, HSCode = hsCode.Code };
+
         var paThaKaQuery =
             from licence in db.BorderImportLicences
             join paThaKa in db.PaThaKas on licence.PaThaKaId equals paThaKa.Id
@@ -498,6 +577,8 @@ public static class sp_AmendReport
             from currencyRow in currencyJoin.DefaultIfEmpty()
             join firstItemRow in firstItemByLicence on licence.Id equals firstItemRow.LicenceId into firstItemJoin
             from firstItemRow in firstItemJoin.DefaultIfEmpty()
+            join hsCodeRow in hsCodeByLicence on licence.Id equals hsCodeRow.LicenceId into hsCodeJoin
+            from hsCodeRow in hsCodeJoin.DefaultIfEmpty()
             where licence.ApplyType == Amend
                 && licence.Status == Approved
                 && licence.CardType == PaThaKaCardType
@@ -534,6 +615,7 @@ public static class sp_AmendReport
                 Country = paThaKa.Country,
                 PostalCode = paThaKa.PostalCode,
                 Currency = currencyRow.Code,
+                HSCode = hsCodeRow.HSCode,
                 Amount = firstItemRow.Amount,
                 SakhanId = sakhan.Id,
                 SakhanCode = sakhan.Code,
@@ -549,6 +631,8 @@ public static class sp_AmendReport
             from currencyRow in currencyJoin.DefaultIfEmpty()
             join firstItemRow in firstItemByLicence on licence.Id equals firstItemRow.LicenceId into firstItemJoin
             from firstItemRow in firstItemJoin.DefaultIfEmpty()
+            join hsCodeRow in hsCodeByLicence on licence.Id equals hsCodeRow.LicenceId into hsCodeJoin
+            from hsCodeRow in hsCodeJoin.DefaultIfEmpty()
             where licence.ApplyType == Amend
                 && licence.Status == Approved
                 && licence.CardType == IndividualTradingCardType
@@ -585,6 +669,7 @@ public static class sp_AmendReport
                 Country = individualTrading.Country,
                 PostalCode = individualTrading.PostalCode,
                 Currency = currencyRow.Code,
+                HSCode = hsCodeRow.HSCode,
                 Amount = firstItemRow.Amount,
                 SakhanId = sakhan.Id,
                 SakhanCode = sakhan.Code,
@@ -616,6 +701,16 @@ public static class sp_AmendReport
             join item in db.BorderExportPermitItems on grouped.ItemId equals item.Id
             select new { grouped.PermitId, Amount = (decimal?)item.Amount };
 
+        var hsCodeByPermit =
+            from firstItem in
+                (from item in db.BorderExportPermitItems
+                 where db.Hscodes.Any(hsCode => hsCode.Id == item.HscodeId)
+                 group item by item.BorderExportPermitId into grouped
+                 select new { PermitId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.BorderExportPermitItems on firstItem.ItemId equals item.Id
+            join hsCode in db.Hscodes on item.HscodeId equals hsCode.Id
+            select new { firstItem.PermitId, HSCode = hsCode.Code };
+
         return
             from permit in db.BorderExportPermits
             join paThaKa in db.PaThaKas on permit.PaThaKaId equals paThaKa.Id
@@ -625,6 +720,8 @@ public static class sp_AmendReport
             from currencyRow in currencyJoin.DefaultIfEmpty()
             join firstItemRow in firstItemByPermit on permit.Id equals firstItemRow.PermitId into firstItemJoin
             from firstItemRow in firstItemJoin.DefaultIfEmpty()
+            join hsCodeRow in hsCodeByPermit on permit.Id equals hsCodeRow.PermitId into hsCodeJoin
+            from hsCodeRow in hsCodeJoin.DefaultIfEmpty()
             where permit.ApplyType == Amend
                 && permit.Status == Approved
                 && permit.CreatedDate >= request.FromDate
@@ -660,6 +757,7 @@ public static class sp_AmendReport
                 Country = paThaKa.Country,
                 PostalCode = paThaKa.PostalCode,
                 Currency = currencyRow.Code,
+                HSCode = hsCodeRow.HSCode,
                 Amount = firstItemRow.Amount,
                 SakhanId = sakhan.Id,
                 SakhanCode = sakhan.Code,
@@ -689,6 +787,16 @@ public static class sp_AmendReport
             join item in db.BorderImportPermitItems on grouped.ItemId equals item.Id
             select new { grouped.PermitId, Amount = (decimal?)item.Amount };
 
+        var hsCodeByPermit =
+            from firstItem in
+                (from item in db.BorderImportPermitItems
+                 where db.Hscodes.Any(hsCode => hsCode.Id == item.HscodeId)
+                 group item by item.BorderImportPermitId into grouped
+                 select new { PermitId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.BorderImportPermitItems on firstItem.ItemId equals item.Id
+            join hsCode in db.Hscodes on item.HscodeId equals hsCode.Id
+            select new { firstItem.PermitId, HSCode = hsCode.Code };
+
         return
             from permit in db.BorderImportPermits
             join paThaKa in db.PaThaKas on permit.PaThaKaId equals paThaKa.Id
@@ -698,6 +806,8 @@ public static class sp_AmendReport
             from currencyRow in currencyJoin.DefaultIfEmpty()
             join firstItemRow in firstItemByPermit on permit.Id equals firstItemRow.PermitId into firstItemJoin
             from firstItemRow in firstItemJoin.DefaultIfEmpty()
+            join hsCodeRow in hsCodeByPermit on permit.Id equals hsCodeRow.PermitId into hsCodeJoin
+            from hsCodeRow in hsCodeJoin.DefaultIfEmpty()
             where permit.ApplyType == Amend
                 && permit.Status == Approved
                 && permit.CreatedDate >= request.FromDate
@@ -733,6 +843,7 @@ public static class sp_AmendReport
                 Country = paThaKa.Country,
                 PostalCode = paThaKa.PostalCode,
                 Currency = currencyRow.Code,
+                HSCode = hsCodeRow.HSCode,
                 Amount = firstItemRow.Amount,
                 SakhanId = sakhan.Id,
                 SakhanCode = sakhan.Code,
@@ -761,6 +872,7 @@ public static class sp_AmendReport
                 Country = licence.PaThaKaId,
                 PostalCode = licence.PaThaKaId,
                 Currency = licence.ApplyType,
+                HSCode = licence.ApplyType,
                 Amount = 0m,
                 SakhanId = licence.ExportImportSectionId,
                 SakhanCode = licence.ExportImportSectionId.ToString(),

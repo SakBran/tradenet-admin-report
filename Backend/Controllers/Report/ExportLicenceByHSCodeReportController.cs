@@ -22,15 +22,14 @@ namespace Backend.Controllers.Report
         }
 
         [HttpPost]
-        public async Task<ActionResult<ApiResult<sp_HSCodeReportResult>>> Post([FromBody] ExportLicenceByHSCodeReportRequest? request)
+        public async Task<ActionResult<ApiResult<ReportAggregateResult>>> Post([FromBody] ExportLicenceByHSCodeReportRequest? request)
         {
             if (!TryCreateReportRequest(request, out var procedureRequest, out var errorResult))
             {
                 return errorResult!;
             }
 
-            var query = sp_HSCodeReport.Query(_context, procedureRequest!);
-            var result = await ReportQueryService.CreatePagedResultAsync(query, request!);
+            var result = await sp_HSCodeReport.CreateAggregateResultAsync(_context, procedureRequest!, request!);
 
             return Ok(result);
         }
@@ -43,12 +42,12 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var query = sp_HSCodeReport.Query(_context, procedureRequest!);
-            byte[] fileBytes;
+                        byte[] fileBytes;
             try
             {
-                fileBytes = await ExcelGenerator.CreateWorkbookAsync(
-                    query,
+                fileBytes = await sp_HSCodeReport.CreateAggregateExcelWorkbookAsync(
+                    _context,
+                    procedureRequest!,
                     request!,
                     "Export Licence By HS Code Report");
             }

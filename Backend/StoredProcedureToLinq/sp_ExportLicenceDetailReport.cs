@@ -58,5 +58,8 @@ public sealed class sp_ExportLicenceDetailReportResult
     public decimal Amount { get; set; }
     public string? Currency { get; set; }
     public string? Conditions { get; set; }
+    public string? ApplicationNo { get; set; }
+    public DateTime? ApplicationDate { get; set; }
+    public string? CommodityType { get; set; }
     public DateTime? ApproveDate { get; set; }
 }

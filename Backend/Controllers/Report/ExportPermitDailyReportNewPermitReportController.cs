@@ -25,14 +25,15 @@ namespace Backend.Controllers.Report
         }
 
         [HttpPost]
-        public async Task<ActionResult<ApiResult<sp_ExportPermitDetailReportResult>>> Post([FromBody] ExportPermitDailyReportNewPermitReportRequest? request)
+        public async Task<ActionResult<ApiResult<ReportAggregateResult>>> Post([FromBody] ExportPermitDailyReportNewPermitReportRequest? request)
         {
             if (!TryCreateReportRequest(request, out var procedureRequest, out var errorResult))
             {
                 return errorResult!;
             }
 
-            var result = await sp_ExportPermitDetailReport_Fast.CreatePagedResultAsync(_context, _cache, procedureRequest!, request!);
+            var result = await sp_ExportPermitDetailReport_Fast.CreateAggregateResultAsync(
+                _context, procedureRequest!, request!, ReportAggregateDimension.Daily, includeSakhan: false);
 
             return Ok(result);
         }
@@ -48,7 +49,12 @@ namespace Backend.Controllers.Report
             byte[] fileBytes;
             try
             {
-                fileBytes = await sp_ExportPermitDetailReport_Fast.CreateExcelWorkbookAsync(_context, _cache, procedureRequest!, request!, "Export Permit Daily Report (New Permit Report)");
+                fileBytes = await sp_ExportPermitDetailReport_Fast.CreateAggregateExcelWorkbookAsync(
+                    _context,
+                    procedureRequest!,
+                    request!,
+                    ReportAggregateDimension.Daily,
+                    includeSakhan: false, "Export Permit Daily Report (New Permit Report)");
             }
             catch (InvalidOperationException ex)
             {

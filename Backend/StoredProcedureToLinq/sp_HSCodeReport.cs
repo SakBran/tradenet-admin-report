@@ -1,7 +1,11 @@
 using API.DBContext;
+using API.Model;
+using API.Service.Reports;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
 
@@ -55,6 +59,55 @@ public static class sp_HSCodeReport
             "Border Import Permit" => BorderImportPermitRows(db, request),
             _ => EmptyRows(db)
         };
+    }
+
+    public static async Task<ApiResult<ReportAggregateResult>> CreateAggregateResultAsync(
+        TradeNetDbContext db,
+        sp_HSCodeReportRequest request,
+        ReportQueryRequest pagingRequest)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(pagingRequest);
+
+        var source = await AggregateSourceRowsAsync(db, request);
+        return ReportAggregationService.CreatePagedResult(
+            source, ReportAggregateDimension.HSCode, includeSakhan: false, pagingRequest);
+    }
+
+    public static async Task<byte[]> CreateAggregateExcelWorkbookAsync(
+        TradeNetDbContext db,
+        sp_HSCodeReportRequest request,
+        ReportQueryRequest pagingRequest,
+        string worksheetName)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(pagingRequest);
+
+        var source = await AggregateSourceRowsAsync(db, request);
+        return await ReportAggregationService.CreateExcelWorkbookAsync(
+            source, ReportAggregateDimension.HSCode, includeSakhan: false, pagingRequest, worksheetName);
+    }
+
+    private static async Task<List<AggregateSourceRow>> AggregateSourceRowsAsync(
+        TradeNetDbContext db,
+        sp_HSCodeReportRequest request)
+    {
+        var rows = await Query(db, request).ToListAsync();
+
+        return rows
+            .Select(row => new AggregateSourceRow
+            {
+                HSCode = row.HSCode,
+                HSDescription = row.HSDescription,
+                CompanyName = row.CompanyName,
+                CompanyRegistrationNo = row.CompanyRegistrationNo,
+                LicenceNo = row.LicenceNo,
+                Amount = row.Amount,
+                Currency = row.Currency,
+            })
+            .ToList();
     }
 
     private static IQueryable<sp_HSCodeReportResult> ExportLicenceRows(

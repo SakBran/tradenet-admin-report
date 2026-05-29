@@ -99,6 +99,64 @@ public static class sp_ExportPermitDetailReport_Fast
         return await ExcelGenerator.CreateWorkbookAsync(resolved.AsQueryable(), pagingRequest, worksheetName);
     }
 
+    public static async Task<ApiResult<ReportAggregateResult>> CreateAggregateResultAsync(
+        TradeNetDbContext db,
+        sp_ExportPermitDetailReportRequest request,
+        ReportQueryRequest pagingRequest,
+        ReportAggregateDimension dimension,
+        bool includeSakhan)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(pagingRequest);
+
+        var source = await AggregateSourceRowsAsync(db, request);
+        return ReportAggregationService.CreatePagedResult(source, dimension, includeSakhan, pagingRequest);
+    }
+
+    public static async Task<byte[]> CreateAggregateExcelWorkbookAsync(
+        TradeNetDbContext db,
+        sp_ExportPermitDetailReportRequest request,
+        ReportQueryRequest pagingRequest,
+        ReportAggregateDimension dimension,
+        bool includeSakhan,
+        string worksheetName)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(pagingRequest);
+
+        var source = await AggregateSourceRowsAsync(db, request);
+        return await ReportAggregationService.CreateExcelWorkbookAsync(
+            source, dimension, includeSakhan, pagingRequest, worksheetName);
+    }
+
+    private static async Task<List<AggregateSourceRow>> AggregateSourceRowsAsync(
+        TradeNetDbContext db,
+        sp_ExportPermitDetailReportRequest request)
+    {
+        var rows = await Rows(db, request).ToListAsync();
+
+        return rows
+            .Select(row => new AggregateSourceRow
+            {
+                SakhanCode = row.SakhanCode,
+                SakhanName = row.SakhanName,
+                SectionName = row.SectionName,
+                MethodName = null,
+                Country = row.BuyerCountry,
+                CompanyName = row.CompanyName,
+                CompanyRegistrationNo = row.CompanyRegistrationNo,
+                HSCode = row.HSCode,
+                HSDescription = row.HSDescription,
+                LicenceNo = row.LicenceNo,
+                LicenceDate = row.LicenceDate,
+                Amount = row.Amount,
+                Currency = row.Currency,
+            })
+            .ToList();
+    }
+
     private static IQueryable<ExportPermitDetailFastRow> Rows(
         TradeNetDbContext db,
         sp_ExportPermitDetailReportRequest request)

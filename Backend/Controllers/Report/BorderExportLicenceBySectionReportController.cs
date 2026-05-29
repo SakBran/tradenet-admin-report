@@ -25,14 +25,15 @@ namespace Backend.Controllers.Report
         }
 
         [HttpPost]
-        public async Task<ActionResult<ApiResult<sp_ExportLicenceDetailReportResult>>> Post([FromBody] BorderExportLicenceBySectionReportRequest? request)
+        public async Task<ActionResult<ApiResult<ReportAggregateResult>>> Post([FromBody] BorderExportLicenceBySectionReportRequest? request)
         {
             if (!TryCreateReportRequest(request, out var procedureRequest, out var errorResult))
             {
                 return errorResult!;
             }
 
-            var result = await sp_ExportLicenceDetailReport_Fast.CreatePagedResultAsync(_context, _cache, procedureRequest!, request!);
+            var result = await sp_ExportLicenceDetailReport_Fast.CreateAggregateResultAsync(
+                _context, procedureRequest!, request!, ReportAggregateDimension.Section, includeSakhan: false);
 
             return Ok(result);
         }
@@ -48,11 +49,12 @@ namespace Backend.Controllers.Report
             byte[] fileBytes;
             try
             {
-                fileBytes = await sp_ExportLicenceDetailReport_Fast.CreateExcelWorkbookAsync(
+                fileBytes = await sp_ExportLicenceDetailReport_Fast.CreateAggregateExcelWorkbookAsync(
                     _context,
-                    _cache,
                     procedureRequest!,
                     request!,
+                    ReportAggregateDimension.Section,
+                    includeSakhan: false,
                     "Border Export Licence By Section Report");
             }
             catch (InvalidOperationException ex)

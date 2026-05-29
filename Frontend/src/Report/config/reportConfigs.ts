@@ -929,8 +929,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'NoOfLicences',
-        dataIndex: 'sakhanCode',
+        dataIndex: 'noOfLicences',
         title: 'No of Licences',
+        dataType: 'number',
       },
       {
         key: 'TotalValue',
@@ -944,8 +945,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'TotalUSDValue',
-        dataIndex: 'currency',
+        dataIndex: 'totalUSDValue',
         title: 'Total USD Value',
+        dataType: 'number',
       },
     ],
   },
@@ -1032,6 +1034,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'ApplicationDate',
         dataIndex: 'applicationDate',
         title: 'Application Date',
+        dataType: 'date',
       },
       {
         key: 'ApplicationNo',
@@ -2275,9 +2278,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'NoOfLicences',
-        dataIndex: 'licenceDate',
+        dataIndex: 'noOfLicences',
         title: 'No of Licences',
-        dataType: 'date',
+        dataType: 'number',
       },
       {
         key: 'TotalValue',
@@ -2291,8 +2294,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'TotalUSDValue',
-        dataIndex: 'currency',
+        dataIndex: 'totalUSDValue',
         title: 'Total USD Value',
+        dataType: 'number',
       },
     ],
   },
@@ -3653,9 +3657,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'NoOfLicences',
-        dataIndex: 'licenceDate',
+        dataIndex: 'noOfLicences',
         title: 'No of Licences',
-        dataType: 'date',
+        dataType: 'number',
       },
       {
         key: 'TotalValue',
@@ -3669,8 +3673,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'TotalUSDValue',
-        dataIndex: 'currency',
+        dataIndex: 'totalUSDValue',
         title: 'Total USD Value',
+        dataType: 'number',
       },
     ],
   },
@@ -5314,9 +5319,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'NoOfLicences',
-        dataIndex: 'licenceDate',
+        dataIndex: 'noOfLicences',
         title: 'No of Licences',
-        dataType: 'date',
+        dataType: 'number',
       },
       {
         key: 'TotalValue',
@@ -5330,8 +5335,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'TotalUSDValue',
-        dataIndex: 'currency',
+        dataIndex: 'totalUSDValue',
         title: 'Total USD Value',
+        dataType: 'number',
       },
     ],
   },
@@ -6880,9 +6886,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'NoOfLicences',
-        dataIndex: 'licenceDate',
+        dataIndex: 'noOfLicences',
         title: 'No of Licences',
-        dataType: 'date',
+        dataType: 'number',
       },
       {
         key: 'TotalValue',
@@ -6896,8 +6902,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'TotalUSDValue',
-        dataIndex: 'currency',
+        dataIndex: 'totalUSDValue',
         title: 'Total USD Value',
+        dataType: 'number',
       },
     ],
   },
@@ -6979,6 +6986,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'ApplicationDate',
         dataIndex: 'applicationDate',
         title: 'Application Date',
+        dataType: 'date',
       },
       {
         key: 'ApplicationNo',
@@ -8223,9 +8231,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'NoOfLicences',
-        dataIndex: 'licenceDate',
+        dataIndex: 'noOfLicences',
         title: 'No of Licences',
-        dataType: 'date',
+        dataType: 'number',
       },
       {
         key: 'TotalValue',
@@ -8239,8 +8247,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'TotalUSDValue',
-        dataIndex: 'currency',
+        dataIndex: 'totalUSDValue',
         title: 'Total USD Value',
+        dataType: 'number',
       },
     ],
   },
@@ -9614,9 +9623,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'NoOfLicences',
-        dataIndex: 'licenceDate',
+        dataIndex: 'noOfLicences',
         title: 'No of Licences',
-        dataType: 'date',
+        dataType: 'number',
       },
       {
         key: 'TotalValue',
@@ -9630,8 +9639,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'TotalUSDValue',
-        dataIndex: 'currency',
+        dataIndex: 'totalUSDValue',
         title: 'Total USD Value',
+        dataType: 'number',
       },
     ],
   },
@@ -11260,9 +11270,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'NoOfLicences',
-        dataIndex: 'licenceDate',
+        dataIndex: 'noOfLicences',
         title: 'No of Licences',
-        dataType: 'date',
+        dataType: 'number',
       },
       {
         key: 'TotalValue',
@@ -11276,8 +11286,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'TotalUSDValue',
-        dataIndex: 'currency',
+        dataIndex: 'totalUSDValue',
         title: 'Total USD Value',
+        dataType: 'number',
       },
     ],
   },

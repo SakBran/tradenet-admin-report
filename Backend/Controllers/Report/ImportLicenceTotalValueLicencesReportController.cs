@@ -25,14 +25,15 @@ namespace Backend.Controllers.Report
         }
 
         [HttpPost]
-        public async Task<ActionResult<ApiResult<sp_ImportLicenceDetailReportResult>>> Post([FromBody] ImportLicenceTotalValueLicencesReportRequest? request)
+        public async Task<ActionResult<ApiResult<ReportAggregateResult>>> Post([FromBody] ImportLicenceTotalValueLicencesReportRequest? request)
         {
             if (!TryCreateReportRequest(request, out var procedureRequest, out var errorResult))
             {
                 return errorResult!;
             }
 
-            var result = await sp_ImportLicenceDetailReport_Fast.CreatePagedResultAsync(_context, _cache, procedureRequest!, request!);
+            var result = await sp_ImportLicenceDetailReport_Fast.CreateAggregateResultAsync(
+                _context, procedureRequest!, request!, ReportAggregateDimension.TotalValue, includeSakhan: false);
 
             return Ok(result);
         }
@@ -48,11 +49,12 @@ namespace Backend.Controllers.Report
             byte[] fileBytes;
             try
             {
-                fileBytes = await sp_ImportLicenceDetailReport_Fast.CreateExcelWorkbookAsync(
+                fileBytes = await sp_ImportLicenceDetailReport_Fast.CreateAggregateExcelWorkbookAsync(
                     _context,
-                    _cache,
                     procedureRequest!,
                     request!,
+                    ReportAggregateDimension.TotalValue,
+                    includeSakhan: false,
                     "Import Licence Total Value & Licences Report");
             }
             catch (InvalidOperationException ex)
