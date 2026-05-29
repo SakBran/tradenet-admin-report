@@ -1,4 +1,37 @@
-import { ReportPageConfig } from './reportTypes';
+import { ReportFilterOption, ReportPageConfig } from './reportTypes';
+
+// Shared PaThaKa State/Status filter options. '--- All ---' = no filter ('').
+const pathakaStateFilterOptions: ReportFilterOption[] = [
+  { label: '--- All ---', value: '' },
+  { label: 'Ayeyarwaddy Region', value: 'Ayeyarwaddy Region' },
+  { label: 'Bago Region', value: 'Bago Region' },
+  { label: 'Chin State', value: 'Chin State' },
+  { label: 'Eastern Shan State', value: 'Eastern Shan State' },
+  { label: 'Kachin State', value: 'Kachin State' },
+  { label: 'Kayah State', value: 'Kayah State' },
+  { label: 'Kayin State', value: 'Kayin State' },
+  { label: 'Magway Region', value: 'Magway Region' },
+  { label: 'Mandalay Region', value: 'Mandalay Region' },
+  { label: 'Mon State', value: 'Mon State' },
+  { label: 'Naypyitaw Region', value: 'Naypyitaw Region' },
+  { label: 'Northern Shan State', value: 'Northern Shan State' },
+  { label: 'Rakhine State', value: 'Rakhine State' },
+  { label: 'Sagaing Region', value: 'Sagaing Region' },
+  { label: 'Shan State', value: 'Shan State' },
+  { label: 'Southern Shan State', value: 'Southern Shan State' },
+  { label: 'Tanintharyi Region', value: 'Tanintharyi Region' },
+  { label: 'Yangon Region', value: 'Yangon Region' },
+];
+
+const pathakaStatusFilterOptions: ReportFilterOption[] = [
+  { label: '--- All ---', value: '' },
+  { label: 'Suspension', value: 'Suspension' },
+  { label: 'Extension', value: 'Extension' },
+  { label: 'Un_suspension', value: 'Un_suspension' },
+  { label: 'Blacklist', value: 'Blacklist' },
+  { label: 'New', value: 'New' },
+  { label: 'Amend', value: 'Amend' },
+];
 
 export const reportConfigs: Record<string, ReportPageConfig> = {
   AccountSummaryReport: {
@@ -11845,14 +11878,16 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'State',
         label: 'State',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: pathakaStateFilterOptions,
       },
       {
         name: 'Status',
         label: 'Status',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: pathakaStatusFilterOptions,
       },
     ],
     columns: [
@@ -12208,14 +12243,16 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'State',
         label: 'State',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: pathakaStateFilterOptions,
       },
       {
         name: 'Status',
         label: 'Status',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: pathakaStatusFilterOptions,
       },
     ],
     columns: [
@@ -12294,20 +12331,26 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'State',
         label: 'State',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: pathakaStateFilterOptions,
       },
       {
         name: 'Status',
         label: 'Status',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: pathakaStatusFilterOptions,
       },
       {
         name: 'Type',
         label: 'Type',
-        type: 'text',
-        defaultValue: '',
+        type: 'select',
+        defaultValue: 'valid',
+        options: [
+          { label: 'Valid', value: 'valid' },
+          { label: 'Invalid', value: 'invalid' },
+        ],
       },
     ],
     columns: [
@@ -12749,7 +12792,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   PaThaKaRegisteredBusinessOrganizationReport: {
     controllerName: 'PaThaKaRegisteredBusinessOrganizationReport',
-    title: 'PaThaKaRegisteredBusinessOrganizationReport',
+    title: 'PaThaKa Registered Business Organization Report',
     apiRoute: 'PaThaKaRegisteredBusinessOrganizationReport',
     excelRoute: 'PaThaKaRegisteredBusinessOrganizationReport/Excel',
     excelFileName: 'PaThaKaRegisteredBusinessOrganizationReport.xlsx',
@@ -12781,14 +12824,16 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'State',
         label: 'State',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: pathakaStateFilterOptions,
       },
       {
         name: 'Status',
         label: 'Status',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: pathakaStatusFilterOptions,
       },
     ],
     columns: [
@@ -12899,14 +12944,28 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'PaymentType',
         label: 'Payment Type',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: [
+          { label: '--- All ---', value: '' },
+          { label: 'Cash', value: 'Cash' },
+          { label: 'MPU', value: 'MPU' },
+          { label: 'Citizen Pay', value: 'Citizen Pay' },
+        ],
       },
       {
         name: 'ApplyType',
         label: 'Apply Type',
-        type: 'text',
-        defaultValue: '',
+        type: 'select',
+        defaultValue: 'New',
+        options: [
+          { label: 'New', value: 'New' },
+          { label: 'Amend', value: 'Amend' },
+          { label: 'Extension', value: 'Extension' },
+          { label: 'Cancel', value: 'Cancel' },
+          { label: 'Actual Amend', value: 'Actual Amend' },
+          { label: 'De-Cancel', value: 'De-Cancel' },
+        ],
       },
     ],
     columns: [

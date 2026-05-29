@@ -5,7 +5,13 @@ export type ReportFilterType =
   | 'number'
   | 'date'
   | 'dateRange'
-  | 'boolean';
+  | 'boolean'
+  | 'select';
+
+export interface ReportFilterOption {
+  label: string;
+  value: string | number;
+}
 
 export interface ReportColumnConfig {
   key: string;
@@ -25,6 +31,7 @@ export interface ReportFilterConfig {
   toLabel?: string;
   defaultValue?: string | number | boolean;
   required?: boolean;
+  options?: ReportFilterOption[];
 }
 
 export interface ReportPageConfig {

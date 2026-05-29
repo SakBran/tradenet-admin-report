@@ -1,6 +1,9 @@
 using API.DBContext;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System;
-using System.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
 
@@ -17,29 +20,53 @@ public sealed class sp_PaThaKaByBusinessTypeReportResult
     public int CompanyCount { get; set; }
 }
 
+public sealed class sp_PaThaKaByBusinessTypeReportRow
+{
+    public string BusinessType { get; set; } = null!;
+    public int CompanyCount { get; set; }
+    public int TotalCount { get; set; }
+
+    public sp_PaThaKaByBusinessTypeReportResult ToResult() => new()
+    {
+        BusinessType = BusinessType,
+        CompanyCount = CompanyCount,
+    };
+}
+
+/// <summary>
+/// Executes <c>dbo.sp_PaThaKaByBusinessTypeReport_pagination</c> directly (NOT the
+/// untouched original). See StoredProcedureMigrations/sp_PaThaKaByBusinessTypeReport_pagination.sql.
+/// </summary>
 public static class sp_PaThaKaByBusinessTypeReport
 {
-    private const string Registered = "Registered";
-
-    public static IQueryable<sp_PaThaKaByBusinessTypeReportResult> Query(
+    public static async Task<List<sp_PaThaKaByBusinessTypeReportRow>> ExecuteAsync(
         TradeNetDbContext db,
-        sp_PaThaKaByBusinessTypeReportRequest request)
+        sp_PaThaKaByBusinessTypeReportRequest request,
+        string? sortColumn = null,
+        string? sortOrder = null,
+        int? pageIndex = null,
+        int? pageSize = null)
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
-        return from businessType in db.BusinessTypes
-               join paThaKa in db.PaThaKas on businessType.Id equals paThaKa.BusinessTypeId
-               where paThaKa.IssuedDate >= request.FromDate
-                   && paThaKa.IssuedDate <= request.ToDate
-                   && (request.BusinessTypeId == 0 || paThaKa.BusinessTypeId == request.BusinessTypeId)
-                   && paThaKa.Status == Registered
-               group paThaKa by new { businessType.Name, businessType.SortOrder } into groupRows
-               orderby groupRows.Key.SortOrder
-               select new sp_PaThaKaByBusinessTypeReportResult
-               {
-                   BusinessType = groupRows.Key.Name,
-                   CompanyCount = groupRows.Count()
-               };
+        var parameters = new[]
+        {
+            new SqlParameter("@FromDate", request.FromDate),
+            new SqlParameter("@ToDate", request.ToDate),
+            new SqlParameter("@BusinessTypeId", request.BusinessTypeId),
+            new SqlParameter("@SortColumn", (object?)sortColumn ?? DBNull.Value),
+            new SqlParameter("@SortOrder", (object?)sortOrder ?? DBNull.Value),
+            new SqlParameter("@PageIndex", (object?)pageIndex ?? DBNull.Value),
+            new SqlParameter("@PageSize", (object?)pageSize ?? DBNull.Value),
+        };
+
+        const string sql =
+            "EXEC dbo.sp_PaThaKaByBusinessTypeReport_pagination @FromDate, @ToDate, @BusinessTypeId, " +
+            "@SortColumn, @SortOrder, @PageIndex, @PageSize";
+
+        return await db.Database
+            .SqlQueryRaw<sp_PaThaKaByBusinessTypeReportRow>(sql, parameters)
+            .ToListAsync();
     }
 }

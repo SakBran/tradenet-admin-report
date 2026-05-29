@@ -341,6 +341,16 @@ const renderFilter = (
     return <InputNumber min={0} style={{ width: '100%' }} />;
   }
 
+  if (filter.type === 'select') {
+    return (
+      <Select
+        showSearch
+        optionFilterProp="label"
+        options={filter.options ?? []}
+      />
+    );
+  }
+
   if (filter.type === 'boolean') {
     return (
       <Select

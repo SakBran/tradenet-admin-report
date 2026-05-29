@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using API.DBContext;
 using API.Model;
@@ -14,6 +15,12 @@ namespace Backend.Controllers.Report
     [Route("api/[controller]")]
     public class ListOfValidAndInvalidCompanyController : ControllerBase
     {
+        private const int DefaultPageSize = 10;
+        private const int MaxPageSize = 1000;
+
+        // Excel worksheets allow 1,048,576 rows including the header.
+        private const int MaxExcelDataRows = 1_048_576 - 1;
+
         private readonly TradeNetDbContext _context;
 
         public ListOfValidAndInvalidCompanyController(TradeNetDbContext context)
@@ -29,8 +36,36 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var query = sp_PaThaKaValidInvalidReport.Query(_context, procedureRequest!);
-            var result = await ReportQueryService.CreatePagedResultAsync(query, request!);
+            var pageIndex = Math.Max(0, request!.PageIndex);
+            var pageSize = request.PageSize <= 0
+                ? DefaultPageSize
+                : Math.Min(request.PageSize, MaxPageSize);
+
+            var sortColumn = string.IsNullOrWhiteSpace(request.SortColumn) ? null : request.SortColumn;
+            var sortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? null : request.SortOrder;
+
+            // Pagination is performed inside the stored procedure (OFFSET/FETCH);
+            // every row carries the total matching count via TotalCount.
+            var rows = await sp_PaThaKaValidInvalidReport.ExecuteAsync(
+                _context,
+                procedureRequest!,
+                sortColumn,
+                sortOrder,
+                pageIndex,
+                pageSize);
+
+            var totalCount = rows.Count > 0 ? rows[0].TotalCount : 0;
+            var data = rows.Select(row => row.ToResult()).ToList();
+
+            var result = ApiResult<sp_PaThaKaValidInvalidReportResult>.CreatePageFromRows(
+                data,
+                totalCount,
+                pageIndex,
+                pageSize,
+                request.SortColumn,
+                request.SortOrder,
+                request.FilterColumn,
+                request.FilterQuery);
 
             return Ok(result);
         }
@@ -43,19 +78,27 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var query = sp_PaThaKaValidInvalidReport.Query(_context, procedureRequest!);
-            byte[] fileBytes;
-            try
+            var sortColumn = string.IsNullOrWhiteSpace(request!.SortColumn) ? null : request.SortColumn;
+            var sortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? null : request.SortOrder;
+
+            // Null page size returns every matching row from the stored procedure.
+            var rows = await sp_PaThaKaValidInvalidReport.ExecuteAsync(
+                _context,
+                procedureRequest!,
+                sortColumn,
+                sortOrder,
+                pageIndex: null,
+                pageSize: null);
+
+            if (rows.Count > MaxExcelDataRows)
             {
-                fileBytes = await ExcelGenerator.CreateWorkbookAsync(
-                    query,
-                    request!,
-                    "List of Valid and Invalid Company");
+                return BadRequest($"Excel export supports up to {MaxExcelDataRows} data rows.");
             }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+
+            var data = rows.Select(row => row.ToResult()).ToList();
+            var fileBytes = ExcelGenerator.CreateWorkbook(
+                data,
+                "List of Valid and Invalid Company");
 
             return File(
                 fileBytes,

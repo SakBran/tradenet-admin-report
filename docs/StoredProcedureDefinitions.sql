@@ -7638,11 +7638,14 @@ GO
 /* dbo.sp_PaThaKaReport */
 -- =============================================
 -- Author:		Name
--- Create date: 
--- Description:	
+-- Create date:
+-- Description:
 -- =============================================
+-- NOTE: This existing procedure is intentionally left UNCHANGED.
+-- The paginated report APIs use a separate procedure,
+-- dbo.sp_PaThaKaReport_pagination (see StoredProcedureMigrations/).
 --exec sp_PaThaKaReport '2020-07-01','2020-07-28',0,0,'',''
-CREATE PROCEDURE [dbo].[sp_PaThaKaReport] 
+CREATE PROCEDURE [dbo].[sp_PaThaKaReport]
 	-- Add the parameters for the stored procedure here
 	@FromDate datetime,
 	@ToDate datetime,
@@ -7652,7 +7655,7 @@ CREATE PROCEDURE [dbo].[sp_PaThaKaReport]
 	@Status nvarchar(50)
 AS
 BEGIN
-	SELECT CompanyRegistrationNo,CompanyName,CompanyRegistrationDate,EndDate, 
+	SELECT CompanyRegistrationNo,CompanyName,CompanyRegistrationDate,EndDate,
 	businessType.Name BusinessType,lineofBusiness.Name LineofBusiness,
 	UnitLevel,StreetNumberStreetName,QuarterCityTownship,State,Country,PostalCode,Capital,MICPermitNo
 	FROM PaThaKa
