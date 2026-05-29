@@ -45,12 +45,13 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var query = sp_ImportLicencePendingDetailReport.Query(_context, procedureRequest!);
             byte[] fileBytes;
             try
             {
-                fileBytes = await ExcelGenerator.CreateWorkbookAsync(
-                    query,
+                fileBytes = await sp_ImportLicencePendingDetailReport_Fast.CreateExcelWorkbookAsync(
+                    _context,
+                    _cache,
+                    procedureRequest!,
                     request!,
                     "Border Import Licence Detail Report (Pending)");
             }

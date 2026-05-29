@@ -45,14 +45,10 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var query = sp_ExportPermitDetailReport.Query(_context, procedureRequest!);
             byte[] fileBytes;
             try
             {
-                fileBytes = await ExcelGenerator.CreateWorkbookAsync(
-                    query,
-                    request!,
-                    "Export Permit By Seller Country Report");
+                fileBytes = await sp_ExportPermitDetailReport_Fast.CreateExcelWorkbookAsync(_context, _cache, procedureRequest!, request!, "Export Permit By Seller Country Report");
             }
             catch (InvalidOperationException ex)
             {

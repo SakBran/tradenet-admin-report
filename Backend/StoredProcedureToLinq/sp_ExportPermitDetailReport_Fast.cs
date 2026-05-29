@@ -75,6 +75,30 @@ public static class sp_ExportPermitDetailReport_Fast
             pagingRequest.FilterQuery);
     }
 
+    public static async Task<byte[]> CreateExcelWorkbookAsync(
+        TradeNetDbContext db,
+        IMemoryCache cache,
+        sp_ExportPermitDetailReportRequest request,
+        ReportQueryRequest pagingRequest,
+        string worksheetName)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(cache);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(pagingRequest);
+
+        var ports = await ReportLookupCache.GetPortNamesAsync(db, cache);
+        var countries = await ReportLookupCache.GetCountryNamesAsync(db, cache);
+
+        var rows = await Rows(db, request).ToListAsync();
+
+        var resolved = rows
+            .Select(row => row.ToResult(ports, countries))
+            .ToList();
+
+        return await ExcelGenerator.CreateWorkbookAsync(resolved.AsQueryable(), pagingRequest, worksheetName);
+    }
+
     private static IQueryable<ExportPermitDetailFastRow> Rows(
         TradeNetDbContext db,
         sp_ExportPermitDetailReportRequest request)

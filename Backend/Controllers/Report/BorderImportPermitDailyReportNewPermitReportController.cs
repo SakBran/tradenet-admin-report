@@ -45,14 +45,11 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var query = sp_ImportPermitDetailReport.Query(_context, procedureRequest!);
             byte[] fileBytes;
             try
             {
-                fileBytes = await ExcelGenerator.CreateWorkbookAsync(
-                    query,
-                    request!,
-                    "Border Import Permit Daily Report (New Permit Report)");
+                fileBytes = await sp_ImportPermitDetailReport_Fast.CreateExcelWorkbookAsync(
+                    _context, _cache, procedureRequest!, request!, "Border Import Permit Daily Report (New Permit Report)");
             }
             catch (InvalidOperationException ex)
             {
