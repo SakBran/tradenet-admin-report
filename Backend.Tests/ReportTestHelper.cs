@@ -66,7 +66,10 @@ internal static class ReportTestHelper
         return parameters[1]!;
     }
 
-    internal static ControllerBase CreateController(Type controllerType, TradeNetDbContext db)
+    internal static ControllerBase CreateController(
+        Type controllerType,
+        TradeNetDbContext db,
+        IMemoryCache? memoryCache = null)
     {
         var constructorArguments = controllerType
             .GetConstructors()
@@ -76,7 +79,7 @@ internal static class ReportTestHelper
                 parameter.ParameterType == typeof(TradeNetDbContext)
                 || parameter.ParameterType == typeof(IMemoryCache)))
             ?.Select(parameter => parameter.ParameterType == typeof(IMemoryCache)
-                ? new MemoryCache(new MemoryCacheOptions())
+                ? memoryCache ?? new MemoryCache(new MemoryCacheOptions())
                 : (object)db)
             .ToArray()
             ?? [db];
