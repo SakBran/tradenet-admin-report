@@ -96,7 +96,7 @@ namespace Backend.Controllers.Report
             }
             procedureRequest = new sp_ImportLicenceDetailReportRequest
             {
-                Type = request.Type,
+                Type = "Oversea",
                 FromDate = request.FromDate,
                 ToDate = request.ToDate,
                 PaThaKaTypeId = request.PaThaKaTypeId,

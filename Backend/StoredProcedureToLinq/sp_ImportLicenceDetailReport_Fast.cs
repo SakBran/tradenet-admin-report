@@ -1,5 +1,6 @@
 using API.DBContext;
 using API.Model;
+using API.Service.Reports;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System;
@@ -15,10 +16,8 @@ public static class sp_ImportLicenceDetailReport_Fast
     private const string Approved = "Approved";
     private const string PaThaKaCardType = "Pa Tha Ka";
     private const string IndividualTradingCardType = "Individual Trading";
-    private const string CountriesCacheKey = "ReportLookups:Countries:AllNames:v1";
     private const int DefaultPageSize = 10;
     private const int MaxPageSize = 1000;
-    private static readonly TimeSpan CountriesCacheDuration = TimeSpan.FromDays(1);
 
     public static async Task<ApiResult<sp_ImportLicenceDetailReportResult>> CreatePagedResultAsync(
         TradeNetDbContext db,
@@ -31,7 +30,7 @@ public static class sp_ImportLicenceDetailReport_Fast
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
-        var countryNames = await GetCountryNamesAsync(db, cache);
+        var countryNames = await ReportLookupCache.GetCountryNamesAsync(db, cache);
         var pageIndex = Math.Max(0, pagingRequest.PageIndex);
         var pageSize = pagingRequest.PageSize <= 0
             ? DefaultPageSize
@@ -323,67 +322,6 @@ public static class sp_ImportLicenceDetailReport_Fast
             };
     }
 
-    private static async Task<IReadOnlyList<CountryName>> GetCountryNamesAsync(
-        TradeNetDbContext db,
-        IMemoryCache cache)
-    {
-        var countries = await cache.GetOrCreateAsync(
-            CountriesCacheKey,
-            async entry =>
-            {
-                entry.AbsoluteExpirationRelativeToNow = CountriesCacheDuration;
-                return await db.Countries
-                    .AsNoTracking()
-                    .OrderBy(country => country.Id)
-                    .Select(country => new CountryName
-                    {
-                        Id = country.Id,
-                        Name = country.Name ?? string.Empty
-                    })
-                    .ToListAsync();
-            });
-
-        return countries ?? new List<CountryName>();
-    }
-
-    private static string ResolveCountryNames(
-        string? countryIds,
-        IReadOnlyList<CountryName> countries)
-    {
-        var ids = ParseCountryIds(countryIds);
-        if (ids.Count == 0)
-        {
-            return string.Empty;
-        }
-
-        return string.Join(
-            ",",
-            countries
-                .Where(country => ids.Contains(country.Id))
-                .Select(country => country.Name));
-    }
-
-    private static HashSet<int> ParseCountryIds(string? countryIds)
-    {
-        if (string.IsNullOrWhiteSpace(countryIds))
-        {
-            return new HashSet<int>();
-        }
-
-        return countryIds
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(value => int.TryParse(value, out var id) ? id : (int?)null)
-            .Where(id => id.HasValue)
-            .Select(id => id!.Value)
-            .ToHashSet();
-    }
-
-    private sealed class CountryName
-    {
-        public int Id { get; init; }
-        public string Name { get; init; } = string.Empty;
-    }
-
     private sealed class ImportLicenceDetailFastRow
     {
         public DateTime? CreatedDate { get; init; }
@@ -431,7 +369,7 @@ public static class sp_ImportLicenceDetailReport_Fast
         public string? CommodityType { get; init; }
         public DateTime? ApproveDate { get; init; }
 
-        public sp_ImportLicenceDetailReportResult ToResult(IReadOnlyList<CountryName> countries)
+        public sp_ImportLicenceDetailReportResult ToResult(IReadOnlyList<ReportLookupEntry> countries)
         {
             return new sp_ImportLicenceDetailReportResult
             {
@@ -463,8 +401,8 @@ public static class sp_ImportLicenceDetailReport_Fast
                 PortofDischarge = PortofDischarge,
                 LastDate = LastDate,
                 MethodName = MethodName,
-                ConsignedCountry = ResolveCountryNames(ConsignedCountryIds, countries),
-                CountryofOrigin = ResolveCountryNames(CountryofOriginIds, countries),
+                ConsignedCountry = ReportLookupCache.ResolveCsv(ConsignedCountryIds, countries),
+                CountryofOrigin = ReportLookupCache.ResolveCsv(CountryofOriginIds, countries),
                 HSCode = HSCode,
                 HSDescription = HSDescription,
                 Unit = Unit,

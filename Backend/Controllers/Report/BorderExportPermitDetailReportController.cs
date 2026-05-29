@@ -94,7 +94,7 @@ namespace Backend.Controllers.Report
             }
             procedureRequest = new sp_ExportPermitDetailReportRequest
             {
-                Type = request.Type,
+                Type = "Border",
                 FromDate = request.FromDate,
                 ToDate = request.ToDate,
                 PaThaKaTypeId = request.PaThaKaTypeId,

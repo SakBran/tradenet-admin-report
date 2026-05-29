@@ -98,7 +98,7 @@ namespace Backend.Controllers.Report
             {
                 FromDate = request.FromDate,
                 ToDate = request.ToDate,
-                FormType = request.FormType,
+                FormType = "Border Import Licence",
                 FilterType = request.FilterType,
                 HSCode = request.HSCode,
                 SakhanId = request.SakhanId,

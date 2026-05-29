@@ -98,7 +98,7 @@ namespace Backend.Controllers.Report
             {
                 FromDate = request.FromDate,
                 ToDate = request.ToDate,
-                FormType = request.FormType,
+                FormType = "Import Licence",
                 ExportImportSectionId = request.ExportImportSectionId,
             };
 

@@ -96,7 +96,7 @@ namespace Backend.Controllers.Report
             }
             procedureRequest = new sp_VoucherReportRequest
             {
-                FormType = request.FormType,
+                FormType = "Export Licence",
                 FromDate = request.FromDate,
                 ToDate = request.ToDate,
                 ExportImportSectionId = request.ExportImportSectionId,

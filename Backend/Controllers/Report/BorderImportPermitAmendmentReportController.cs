@@ -96,7 +96,7 @@ namespace Backend.Controllers.Report
             }
             procedureRequest = new sp_AmendReportRequest
             {
-                FormType = request.FormType,
+                FormType = "Border Import Permit",
                 FromDate = request.FromDate,
                 ToDate = request.ToDate,
                 ExportImportSectionId = request.ExportImportSectionId,
