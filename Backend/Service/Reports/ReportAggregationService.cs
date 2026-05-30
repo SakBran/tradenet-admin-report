@@ -64,7 +64,7 @@ namespace API.Service.Reports
         public string? HSDescription { get; set; }
         public string? Date { get; set; }
         public int NoOfLicences { get; set; }
-        public decimal TotalValue { get; set; }
+        public decimal? TotalValue { get; set; }
         public string? Currency { get; set; }
 
         // NOTE: The old RDLC "Total USD Value" column converted each currency amount

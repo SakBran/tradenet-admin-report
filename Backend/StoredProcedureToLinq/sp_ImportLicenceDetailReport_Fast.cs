@@ -130,6 +130,103 @@ public static class sp_ImportLicenceDetailReport_Fast
     }
 
     /// <summary>
+    /// Import Licence By Section report. Groups the filtered detail rows by Section (+ Currency)
+    /// entirely in SQL — GROUP BY, ORDER BY and OFFSET/FETCH paging all run on the server, so only
+    /// one page of grouped rows is returned. Output columns: Section, No of Licences (distinct
+    /// non-empty licence numbers), Total Value (summed amount) and Currency. Honours all the
+    /// standard filters (date range, PaThaKa type, section, method, incoterm, seller country,
+    /// company registration no, sakhan) via the shared <see cref="RowsUnordered"/> source.
+    /// </summary>
+    public static async Task<ApiResult<ReportAggregateResult>> CreateSectionPagedResultAsync(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request,
+        ReportQueryRequest pagingRequest)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(pagingRequest);
+
+        var groups = SectionGroups(db, request);
+
+        var pageIndex = Math.Max(0, pagingRequest.PageIndex);
+        var pageSize = pagingRequest.PageSize <= 0
+            ? DefaultPageSize
+            : Math.Min(pagingRequest.PageSize, MaxPageSize);
+
+        var totalCount = pagingRequest.IncludeTotalCount
+            ? await groups.CountAsync()
+            : (int?)null;
+
+        var pageRows = await groups
+            .Skip(pageIndex * pageSize)
+            .Take(pageSize + (totalCount.HasValue ? 0 : 1))
+            .Select(group => new ReportAggregateResult
+            {
+                SectionName = group.SectionName,
+                NoOfLicences = group.NoOfLicences,
+                TotalValue = group.TotalValue,
+                Currency = group.Currency,
+            })
+            .ToListAsync();
+
+        return totalCount.HasValue
+            ? ApiResult<ReportAggregateResult>.CreatePageFromRows(
+                pageRows, totalCount.Value, pageIndex, pageSize, null, null,
+                pagingRequest.FilterColumn, pagingRequest.FilterQuery)
+            : ApiResult<ReportAggregateResult>.CreateFastPageFromRows(
+                pageRows, pageIndex, pageSize, null, null,
+                pagingRequest.FilterColumn, pagingRequest.FilterQuery);
+    }
+
+    /// <summary>Excel export of the By Section report: all section groups (no paging), grouped in SQL.</summary>
+    public static async Task<byte[]> CreateSectionExcelWorkbookAsync(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request,
+        ReportQueryRequest pagingRequest,
+        string worksheetName)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(pagingRequest);
+
+        var rows = await SectionGroups(db, request)
+            .Select(group => new ReportAggregateResult
+            {
+                SectionName = group.SectionName,
+                NoOfLicences = group.NoOfLicences,
+                TotalValue = group.TotalValue,
+                Currency = group.Currency,
+            })
+            .ToListAsync();
+
+        return await ExcelGenerator.CreateWorkbookAsync(rows.AsQueryable(), pagingRequest, worksheetName);
+    }
+
+    /// <summary>
+    /// The By Section grouped queryable: distinct non-empty licence count and summed amount per
+    /// (Section, Currency), ordered by Section then Currency. Fully translated to SQL.
+    /// </summary>
+    private static IQueryable<SectionAggregateRow> SectionGroups(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request)
+    {
+        return RowsUnordered(db, request)
+            .GroupBy(row => new { row.SectionName, row.Currency })
+            .Select(group => new SectionAggregateRow
+            {
+                SectionName = group.Key.SectionName,
+                Currency = group.Key.Currency,
+                NoOfLicences = group
+                    .Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo)
+                    .Distinct()
+                    .Count(),
+                TotalValue = group.Sum(x => x.Amount),
+            })
+            .OrderBy(row => row.SectionName)
+            .ThenBy(row => row.Currency);
+    }
+
+    /// <summary>
     /// Groups the detail rows in SQL (GROUP BY) so only the grouped rows are returned, instead of
     /// materializing the entire un-paged detail set in memory and grouping in C#. Counts and sums
     /// match <see cref="ReportAggregationService.Aggregate"/>: distinct non-empty licence numbers
@@ -516,6 +613,15 @@ public static class sp_ImportLicenceDetailReport_Fast
                 CommodityType = licence.CommodityType,
                 ApproveDate = licence.ApproveDate
             };
+    }
+
+    /// <summary>Intermediate shape returned by the By Section SQL GROUP BY.</summary>
+    private sealed class SectionAggregateRow
+    {
+        public string? SectionName { get; init; }
+        public string? Currency { get; init; }
+        public int NoOfLicences { get; init; }
+        public decimal TotalValue { get; init; }
     }
 
     /// <summary>Intermediate shape returned by the SQL GROUP BY; mapped to <see cref="ReportAggregateResult"/>.</summary>
