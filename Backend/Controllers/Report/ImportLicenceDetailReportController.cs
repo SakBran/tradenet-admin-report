@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using API.DBContext;
 using API.Model;
@@ -32,11 +33,10 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
+            // Page base rows first (no select-in-select); ConsignedCountry/CountryofOrigin
+            // are resolved from the in-memory ReportLookupCache after materialization.
             var result = await sp_ImportLicenceDetailReport_Fast.CreatePagedResultAsync(
-                _context,
-                _cache,
-                procedureRequest!,
-                request!);
+                _context, _cache, procedureRequest!, request!);
 
             return Ok(result);
         }
@@ -49,25 +49,10 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            byte[] fileBytes;
-            try
-            {
-                fileBytes = await sp_ImportLicenceDetailReport_Fast.CreateExcelWorkbookAsync(
-                    _context,
-                    _cache,
-                    procedureRequest!,
-                    request!,
-                    "Import Licence Detail Report");
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var fileBytes = await sp_ImportLicenceDetailReport_Fast.CreateExcelWorkbookAsync(
+                _context, _cache, procedureRequest!, request!, "Import Licence Detail Report");
 
-            return File(
-                fileBytes,
-                ExcelGenerator.ContentType,
-                "ImportLicenceDetailReport.xlsx");
+            return File(fileBytes, ExcelGenerator.ContentType, "ImportLicenceDetailReport.xlsx");
         }
 
         private bool TryCreateReportRequest(

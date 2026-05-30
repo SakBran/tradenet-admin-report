@@ -1,6 +1,7 @@
 using API.DBContext;
 using API.Model;
 using API.Service.Reports;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -31,6 +32,20 @@ public sealed class sp_HSCodeReportResult
     public string LicenceNo { get; set; } = null!;
     public string CompanyRegistrationNo { get; set; } = null!;
     public string CompanyName { get; set; } = null!;
+}
+
+public sealed class sp_HSCodeReportRow
+{
+    public string? SectionCode { get; set; }
+    public int? HSCodeId { get; set; }
+    public string? HSCode { get; set; }
+    public string? HSDescription { get; set; }
+    public decimal? Amount { get; set; }
+    public string? Currency { get; set; }
+    public string? LicenceNo { get; set; }
+    public string? CompanyRegistrationNo { get; set; }
+    public string? CompanyName { get; set; }
+    public int TotalCount { get; set; }
 }
 
 public static class sp_HSCodeReport
@@ -88,6 +103,97 @@ public static class sp_HSCodeReport
         var source = await AggregateSourceRowsAsync(db, request);
         return await ReportAggregationService.CreateExcelWorkbookAsync(
             source, ReportAggregateDimension.HSCode, includeSakhan: false, pagingRequest, worksheetName);
+    }
+
+    /// <summary>
+    /// Executes <c>dbo.sp_HSCodeReport_pagination</c> (DB-side wrapper over the untouched
+    /// original). Used by the stored-procedure-truth aggregate path below.
+    /// </summary>
+    public static async Task<List<sp_HSCodeReportRow>> ExecuteAsync(
+        TradeNetDbContext db,
+        sp_HSCodeReportRequest request,
+        string? sortColumn = null,
+        string? sortOrder = null,
+        int? pageIndex = null,
+        int? pageSize = null)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var parameters = new[]
+        {
+            new SqlParameter("@FromDate", request.FromDate),
+            new SqlParameter("@ToDate", request.ToDate),
+            new SqlParameter("@FormType", request.FormType ?? string.Empty),
+            new SqlParameter("@FilterType", request.FilterType ?? string.Empty),
+            new SqlParameter("@HSCode", request.HSCode ?? string.Empty),
+            new SqlParameter("@SakhanId", request.SakhanId),
+            new SqlParameter("@SortColumn", (object?)sortColumn ?? DBNull.Value),
+            new SqlParameter("@SortOrder", (object?)sortOrder ?? DBNull.Value),
+            new SqlParameter("@PageIndex", (object?)pageIndex ?? DBNull.Value),
+            new SqlParameter("@PageSize", (object?)pageSize ?? DBNull.Value),
+        };
+
+        const string sql =
+            "EXEC dbo.sp_HSCodeReport_pagination @FromDate, @ToDate, @FormType, @FilterType, @HSCode, " +
+            "@SakhanId, @SortColumn, @SortOrder, @PageIndex, @PageSize";
+
+        return await db.Database
+            .SqlQueryRaw<sp_HSCodeReportRow>(sql, parameters)
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Stored-procedure-truth aggregate (HSCode dimension), sourced from
+    /// <c>sp_HSCodeReport_pagination</c> rather than the LINQ <see cref="Query"/>.
+    /// </summary>
+    public static async Task<ApiResult<ReportAggregateResult>> CreateAggregateResultFromProcAsync(
+        TradeNetDbContext db,
+        sp_HSCodeReportRequest request,
+        ReportQueryRequest pagingRequest)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(pagingRequest);
+
+        var source = await ProcAggregateSourceRowsAsync(db, request);
+        return ReportAggregationService.CreatePagedResult(
+            source, ReportAggregateDimension.HSCode, includeSakhan: false, pagingRequest);
+    }
+
+    public static async Task<byte[]> CreateAggregateExcelWorkbookFromProcAsync(
+        TradeNetDbContext db,
+        sp_HSCodeReportRequest request,
+        ReportQueryRequest pagingRequest,
+        string worksheetName)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(pagingRequest);
+
+        var source = await ProcAggregateSourceRowsAsync(db, request);
+        return await ReportAggregationService.CreateExcelWorkbookAsync(
+            source, ReportAggregateDimension.HSCode, includeSakhan: false, pagingRequest, worksheetName);
+    }
+
+    private static async Task<List<AggregateSourceRow>> ProcAggregateSourceRowsAsync(
+        TradeNetDbContext db,
+        sp_HSCodeReportRequest request)
+    {
+        var rows = await ExecuteAsync(db, request, sortColumn: null, sortOrder: null, pageIndex: null, pageSize: null);
+
+        return rows
+            .Select(row => new AggregateSourceRow
+            {
+                HSCode = row.HSCode,
+                HSDescription = row.HSDescription,
+                CompanyName = row.CompanyName,
+                CompanyRegistrationNo = row.CompanyRegistrationNo,
+                LicenceNo = row.LicenceNo ?? string.Empty,
+                Amount = row.Amount ?? 0m,
+                Currency = row.Currency,
+            })
+            .ToList();
     }
 
     private static async Task<List<AggregateSourceRow>> AggregateSourceRowsAsync(

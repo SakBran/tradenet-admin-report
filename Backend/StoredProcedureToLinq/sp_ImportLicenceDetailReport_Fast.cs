@@ -131,13 +131,14 @@ public static class sp_ImportLicenceDetailReport_Fast
         TradeNetDbContext db,
         sp_ImportLicenceDetailReportRequest request)
     {
-        var rows = await Rows(db, request).ToListAsync();
+        var rows = await sp_ImportLicenceDetailReport.ExecuteAsync(
+            db, request, sortColumn: null, sortOrder: null, pageIndex: null, pageSize: null);
 
         return rows
             .Select(row => new AggregateSourceRow
             {
-                SakhanCode = row.SakhanCode,
-                SakhanName = row.SakhanName,
+                SakhanCode = null,
+                SakhanName = null,
                 SectionName = row.SectionName,
                 MethodName = row.MethodName,
                 Country = row.SellerCountry,
@@ -145,9 +146,9 @@ public static class sp_ImportLicenceDetailReport_Fast
                 CompanyRegistrationNo = row.CompanyRegistrationNo,
                 HSCode = row.HSCode,
                 HSDescription = row.HSDescription,
-                LicenceNo = row.LicenceNo,
+                LicenceNo = row.LicenceNo ?? string.Empty,
                 LicenceDate = row.LicenceDate,
-                Amount = row.Amount,
+                Amount = row.Amount ?? 0m,
                 Currency = row.Currency,
             })
             .ToList();

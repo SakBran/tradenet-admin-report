@@ -5877,7 +5877,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   CardListsByCompanyRegistrationNumber: {
     controllerName: 'CardListsByCompanyRegistrationNumber',
-    title: 'CardListsByCompanyRegistrationNumber',
+    title: 'Card Lists By Company Registration Number',
     apiRoute: 'CardListsByCompanyRegistrationNumber',
     excelRoute: 'CardListsByCompanyRegistrationNumber/Excel',
     excelFileName: 'CardListsByCompanyRegistrationNumber.xlsx',
@@ -9063,8 +9063,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'FilterType',
         label: 'Filter Type',
-        type: 'text',
-        defaultValue: '',
+        type: 'select',
+        defaultValue: 'Start',
+        options: [
+          { label: 'Start', value: 'Start' },
+          { label: 'End', value: 'End' },
+        ],
       },
       {
         name: 'HSCode',
@@ -10500,14 +10504,28 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'PaymentType',
         label: 'Payment Type',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: [
+          { label: '--- All ---', value: '' },
+          { label: 'Cash', value: 'Cash' },
+          { label: 'MPU', value: 'MPU' },
+          { label: 'Citizen Pay', value: 'Citizen Pay' },
+        ],
       },
       {
         name: 'ApplyType',
         label: 'Apply Type',
-        type: 'text',
-        defaultValue: '',
+        type: 'select',
+        defaultValue: 'New',
+        options: [
+          { label: 'New', value: 'New' },
+          { label: 'Amend', value: 'Amend' },
+          { label: 'Extension', value: 'Extension' },
+          { label: 'Cancel', value: 'Cancel' },
+          { label: 'Actual Amend', value: 'Actual Amend' },
+          { label: 'De-Cancel', value: 'De-Cancel' },
+        ],
       },
       {
         name: 'CompanyRegistrationNo',

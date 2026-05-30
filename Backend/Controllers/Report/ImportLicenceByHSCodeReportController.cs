@@ -29,7 +29,7 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var result = await sp_HSCodeReport.CreateAggregateResultAsync(_context, procedureRequest!, request!);
+            var result = await sp_HSCodeReport.CreateAggregateResultFromProcAsync(_context, procedureRequest!, request!);
 
             return Ok(result);
         }
@@ -45,7 +45,7 @@ namespace Backend.Controllers.Report
                         byte[] fileBytes;
             try
             {
-                fileBytes = await sp_HSCodeReport.CreateAggregateExcelWorkbookAsync(
+                fileBytes = await sp_HSCodeReport.CreateAggregateExcelWorkbookFromProcAsync(
                     _context,
                     procedureRequest!,
                     request!,
