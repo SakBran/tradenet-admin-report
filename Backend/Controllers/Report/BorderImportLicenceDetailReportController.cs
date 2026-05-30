@@ -6,7 +6,6 @@ using API.Service.Reports;
 using API.StoredProcedureToLinq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace Backend.Controllers.Report
 {
@@ -16,12 +15,12 @@ namespace Backend.Controllers.Report
     public class BorderImportLicenceDetailReportController : ControllerBase
     {
         private readonly TradeNetDbContext _context;
-        private readonly IMemoryCache _cache;
+        private readonly ICountryCache _countryCache;
 
-        public BorderImportLicenceDetailReportController(TradeNetDbContext context, IMemoryCache cache)
+        public BorderImportLicenceDetailReportController(TradeNetDbContext context, ICountryCache countryCache)
         {
             _context = context;
-            _cache = cache;
+            _countryCache = countryCache;
         }
 
         [HttpPost]
@@ -32,7 +31,7 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var result = await sp_ImportLicenceDetailReport_Fast.CreatePagedResultAsync(_context, _cache, procedureRequest!, request!);
+            var result = await sp_ImportLicenceDetailReport_Fast.CreatePagedResultAsync(_context, _countryCache, procedureRequest!, request!);
 
             return Ok(result);
         }
@@ -50,7 +49,7 @@ namespace Backend.Controllers.Report
             {
                 fileBytes = await sp_ImportLicenceDetailReport_Fast.CreateExcelWorkbookAsync(
                     _context,
-                    _cache,
+                    _countryCache,
                     procedureRequest!,
                     request!,
                     "Border Import Licence Detail Report");

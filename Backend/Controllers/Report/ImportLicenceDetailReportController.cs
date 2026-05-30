@@ -7,7 +7,6 @@ using API.Service.Reports;
 using API.StoredProcedureToLinq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace Backend.Controllers.Report
 {
@@ -17,12 +16,12 @@ namespace Backend.Controllers.Report
     public class ImportLicenceDetailReportController : ControllerBase
     {
         private readonly TradeNetDbContext _context;
-        private readonly IMemoryCache _cache;
+        private readonly ICountryCache _countryCache;
 
-        public ImportLicenceDetailReportController(TradeNetDbContext context, IMemoryCache cache)
+        public ImportLicenceDetailReportController(TradeNetDbContext context, ICountryCache countryCache)
         {
             _context = context;
-            _cache = cache;
+            _countryCache = countryCache;
         }
 
         [HttpPost]
@@ -34,9 +33,9 @@ namespace Backend.Controllers.Report
             }
 
             // Page base rows first (no select-in-select); ConsignedCountry/CountryofOrigin
-            // are resolved from the in-memory ReportLookupCache after materialization.
+            // are resolved from the in-memory country cache after materialization.
             var result = await sp_ImportLicenceDetailReport_Fast.CreatePagedResultAsync(
-                _context, _cache, procedureRequest!, request!);
+                _context, _countryCache, procedureRequest!, request!);
 
             return Ok(result);
         }
@@ -50,7 +49,7 @@ namespace Backend.Controllers.Report
             }
 
             var fileBytes = await sp_ImportLicenceDetailReport_Fast.CreateExcelWorkbookAsync(
-                _context, _cache, procedureRequest!, request!, "Import Licence Detail Report");
+                _context, _countryCache, procedureRequest!, request!, "Import Licence Detail Report");
 
             return File(fileBytes, ExcelGenerator.ContentType, "ImportLicenceDetailReport.xlsx");
         }

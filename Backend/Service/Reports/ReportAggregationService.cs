@@ -167,6 +167,60 @@ namespace API.Service.Reports
             return ExcelGenerator.CreateWorkbookAsync(aggregated.AsQueryable(), pagingRequest, worksheetName);
         }
 
+        /// <summary>
+        /// Orders and pages rows that have ALREADY been grouped (e.g. grouped in SQL via GROUP BY),
+        /// so the detail set never has to be materialized in memory. Ordering matches
+        /// <see cref="Aggregate"/>.
+        /// </summary>
+        public static ApiResult<ReportAggregateResult> CreatePagedResultFromGroups(
+            IReadOnlyList<ReportAggregateResult> grouped,
+            ReportAggregateDimension dimension,
+            bool includeSakhan,
+            ReportQueryRequest pagingRequest)
+        {
+            ArgumentNullException.ThrowIfNull(grouped);
+            ArgumentNullException.ThrowIfNull(pagingRequest);
+
+            var ordered = Order(new List<ReportAggregateResult>(grouped), dimension, includeSakhan);
+
+            var pageIndex = Math.Max(0, pagingRequest.PageIndex);
+            var pageSize = pagingRequest.PageSize <= 0
+                ? DefaultPageSize
+                : Math.Min(pagingRequest.PageSize, MaxPageSize);
+
+            var pageRows = ordered
+                .Skip(pageIndex * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return ApiResult<ReportAggregateResult>.CreatePageFromRows(
+                pageRows,
+                ordered.Count,
+                pageIndex,
+                pageSize,
+                null,
+                null,
+                pagingRequest.FilterColumn,
+                pagingRequest.FilterQuery);
+        }
+
+        /// <summary>
+        /// Orders rows that have ALREADY been grouped and writes them to an Excel workbook.
+        /// </summary>
+        public static Task<byte[]> CreateExcelWorkbookFromGroupsAsync(
+            IReadOnlyList<ReportAggregateResult> grouped,
+            ReportAggregateDimension dimension,
+            bool includeSakhan,
+            ReportQueryRequest pagingRequest,
+            string worksheetName)
+        {
+            ArgumentNullException.ThrowIfNull(grouped);
+            ArgumentNullException.ThrowIfNull(pagingRequest);
+
+            var ordered = Order(new List<ReportAggregateResult>(grouped), dimension, includeSakhan);
+            return ExcelGenerator.CreateWorkbookAsync(ordered.AsQueryable(), pagingRequest, worksheetName);
+        }
+
         private static AggregateKey BuildKey(
             AggregateSourceRow row,
             ReportAggregateDimension dimension,
