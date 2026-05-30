@@ -20,9 +20,9 @@ internal class Program
         var builder = WebApplication.CreateBuilder(args);
         builder.Services.AddControllers();
         builder.Services.AddMemoryCache();
-        // App-wide country list: loaded at startup, refreshed hourly, read in-memory by reports.
+        // App-wide country list: loaded lazily on first report request and refreshed on demand
+        // once stale (request-driven TTL, see CountryCache.Ttl), read in-memory by reports.
         builder.Services.AddSingleton<API.Service.Reports.ICountryCache, API.Service.Reports.CountryCache>();
-        builder.Services.AddHostedService<API.Service.Reports.CountryCacheRefreshService>();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(options =>
         {
