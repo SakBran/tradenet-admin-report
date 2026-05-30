@@ -131,6 +131,8 @@ internal class Program
                           "https://testingvehicle.myanmartradenet.com",
                           "https://www.mpu-ecommerce.com",
                           "https://www.mpuecomuat.com",
+                          "https://reportuat.myanmartradenet.com/",
+                          "https://reportuat.myanmartradenet.com",
                           "capacitor://localhost",
                           "http://localhost:5173",
                           "http://localhost:5173/",
