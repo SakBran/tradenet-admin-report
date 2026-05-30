@@ -40,6 +40,7 @@ storybook-static/
 **/TestResults/
 **/GeneratedFiles/
 **/wwwroot/
+Backend/publish/
 *.user
 *.rsuser
 *.suo
