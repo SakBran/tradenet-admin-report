@@ -28,9 +28,65 @@ BEGIN
     ELSE
         SET @ob = N'[Date] ASC, [LicenceNo] ASC';
 
+    DECLARE @cntpart nvarchar(max);
+    DECLARE @sql nvarchar(max);
+
     -- TotalCount only when requested, computed over the UN-paged base (no subqueries) as a separate scalar.
-    DECLARE @cntpart nvarchar(max) = CASE WHEN @IncludeTotalCount = 1
-        THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM ImportLicence
+    IF @FormType = N'Import Permit'
+    BEGIN
+        SET @cntpart = CASE WHEN @IncludeTotalCount = 1
+            THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM ImportPermit
+		INNER JOIN PaThaKa ON ImportPermit.PaThaKaId = PaThaKa.Id
+		INNER JOIN ExportImportSection section ON ImportPermit.ExportImportSectionId = section.Id
+		WHERE ApplyType=''New'' AND ImportPermit.Status=''Approved''
+		AND (ImportPermit.CreatedDate>=@FromDate AND ImportPermit.CreatedDate<=@ToDate)
+		AND ImportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)); '
+            ELSE N'DECLARE @__total int = NULL; ' END;
+
+        -- ImportPermit has no auto/quota columns and the original sp_NewReport leaves
+        -- auto/quota/CommodityType unselected for Import Permit; emit them as NULL so the
+        -- result set still matches sp_NewReportRow.
+        SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM ImportPermitItem
+		INNER JOIN Currency currency ON ImportPermitItem.CurrencyId = currency.Id
+		WHERE ImportPermitItem.ImportPermitId=pg.__k_Id) Currency,
+        (SELECT ISNULL(SUM(ImportPermitItem.Amount),0) FROM ImportPermitItem
+		WHERE ImportPermitItem.ImportPermitId=pg.__k_Id) Amount, @__total AS TotalCount
+    FROM (
+        SELECT ImportPermit.CreatedDate Date,
+section.Code SectionCode,
+section.Name SectionName,
+OldImportPermitNo OldLicenceNo,
+ImportPermitNo LicenceNo,
+CONVERT(varchar,ImportPermit.LastDate,103) sDate,
+PaThaKa.CompanyRegistrationNo,
+PaThaKa.CompanyName,
+UnitLevel,
+StreetNumberStreetName,
+QuarterCityTownship,
+State,
+Country,
+PostalCode,
+CAST(NULL AS nvarchar(50)) auto,
+CAST(NULL AS nvarchar(50)) quota,
+CAST(NULL AS nvarchar(max)) CommodityType,
+ImportPermit.Id AS __k_Id
+        FROM ImportPermit
+		INNER JOIN PaThaKa ON ImportPermit.PaThaKaId = PaThaKa.Id
+		INNER JOIN ExportImportSection section ON ImportPermit.ExportImportSectionId = section.Id
+		WHERE ApplyType=''New'' AND ImportPermit.Status=''Approved''
+		AND (ImportPermit.CreatedDate>=@FromDate AND ImportPermit.CreatedDate<=@ToDate)
+		AND ImportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+        ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
+    ) pg
+    ORDER BY ' + @ob + N'
+    OPTION (RECOMPILE);';
+    END
+    ELSE
+    BEGIN
+        SET @cntpart = CASE WHEN @IncludeTotalCount = 1
+            THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM ImportLicence
 		INNER JOIN PaThaKa ON ImportLicence.PaThaKaId = PaThaKa.Id
 		INNER JOIN ExportImportSection section ON ImportLicence.ExportImportSectionId = section.Id
 		WHERE ApplyType=''New'' AND ImportLicence.Status=''Approved''
@@ -39,9 +95,9 @@ BEGIN
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
 		--AND ImportLicence.auto=(CASE WHEN @auto='''' then ImportLicence.auto ELSE @auto END)
 		--AND ImportLicence.quota=(CASE WHEN quota='''' then ImportLicence.quota ELSE @quota END)); '
-        ELSE N'DECLARE @__total int = NULL; ' END;
+            ELSE N'DECLARE @__total int = NULL; ' END;
 
-    DECLARE @sql nvarchar(max) = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM ImportLicenceItem
+        SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM ImportLicenceItem
 		INNER JOIN Currency currency ON ImportLicenceItem.CurrencyId = currency.Id
 		WHERE ImportLicenceItem.ImportLicenceId=pg.__k_Id) Currency,
         (SELECT ISNULL(SUM(ImportLicenceItem.Amount),0) FROM ImportLicenceItem
@@ -78,6 +134,7 @@ ImportLicence.Id AS __k_Id
     ) pg
     ORDER BY ' + @ob + N'
     OPTION (RECOMPILE);';
+    END
 
     EXEC sp_executesql @sql, N'@FormType nvarchar(50), @FromDate datetime, @ToDate datetime, @ExportImportSectionId int, @CompanyRegistrationNo nvarchar(10), @SakhanId int, @auto nvarchar(50), @off bigint, @ps bigint', @FormType=@FormType, @FromDate=@FromDate, @ToDate=@ToDate, @ExportImportSectionId=@ExportImportSectionId, @CompanyRegistrationNo=@CompanyRegistrationNo, @SakhanId=@SakhanId, @auto=@auto, @off=@off, @ps=@ps;
 END

@@ -29,9 +29,87 @@ BEGIN
     ELSE
         SET @ob = N'[ApplicationNo] ASC, [LicenceNo] ASC';
 
-    -- TotalCount only when requested, computed over the UN-paged base (no subqueries) as a separate scalar.
-    DECLARE @cntpart nvarchar(max) = CASE WHEN @IncludeTotalCount = 1
-        THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM ImportLicence
+    DECLARE @cntpart nvarchar(max);
+    DECLARE @sql nvarchar(max);
+
+    -- Page-first: page the base query, then resolve Currency/TotalAmount on the ~PageSize rows only
+    -- via a lateral join to the materialized per-currency totals view (index seek, no re-aggregation).
+    -- WITH (NOEXPAND) forces the materialized index to be used (required outside Enterprise edition).
+    IF @FormType = N'Import Permit'
+    BEGIN
+        -- TotalCount only when requested, computed over the UN-paged base (no subqueries) as a separate scalar.
+        SET @cntpart = CASE WHEN @IncludeTotalCount = 1
+            THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM ImportPermit
+		INNER JOIN AccountTransaction ON ImportPermit.Id=AccountTransaction.TransactionId
+		INNER JOIN PaThaKa ON ImportPermit.PaThaKaId=PaThaKa.Id
+		INNER JOIN ExportImportSection section ON ImportPermit.ExportImportSectionId = section.Id
+		INNER JOIN Users ON Users.Id = ImportPermit.ApproveUserId
+		WHERE IsPayment=1
+		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
+		AND ImportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
+		AND ApplyType=@ApplyType AND ImportPermit.Status=''Approved''
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)); '
+            ELSE N'DECLARE @__total int = NULL; ' END;
+
+        -- The original sp_VoucherReport selects only CommodityType for Import Permit;
+        -- emit ExchangeRate/TotalCIF as NULL so the result set still matches sp_VoucherReportRow.
+        SET @sql = @cntpart + N'SELECT pg.*, cur.Code AS Currency, amt.TotalAmount AS TotalAmount, @__total AS TotalCount
+    FROM (
+        SELECT ImportPermit.ApplicationNo,
+ImportPermit.ApplicationDate,
+Users.FullName as ApprovedUser,
+AccountTransaction.PaymentDate Date,
+CONVERT(varchar,AccountTransaction.PaymentDate,103) sDate,
+section.Code SectionCode,
+ApplyType,
+OldImportPermitNo OldLicenceNo,
+ImportPermitNo LicenceNo,
+ImportPermit.CreatedDate LicenceDate,
+CONVERT(varchar,ImportPermit.CreatedDate,103) sLicenceDate,
+PaThaKa.CompanyRegistrationNo,
+PaThaKa.CompanyName,
+VoucherNo,
+VoucherDate,
+CONVERT(varchar,AccountTransaction.VoucherDate,103) sVoucherDate,
+CAST(AccountTransaction.TotalAmount AS decimal(38,6)) Amount,
+PaymentType,
+ImportPermit.CommodityType,
+CAST(NULL AS decimal(38,6)) ExchangeRate,
+CAST(NULL AS decimal(38,6)) TotalCIF,
+ImportPermit.Id AS __k_Id
+        FROM ImportPermit
+		INNER JOIN AccountTransaction ON ImportPermit.Id=AccountTransaction.TransactionId
+		INNER JOIN PaThaKa ON ImportPermit.PaThaKaId=PaThaKa.Id
+		INNER JOIN ExportImportSection section ON ImportPermit.ExportImportSectionId = section.Id
+		INNER JOIN Users ON Users.Id = ImportPermit.ApproveUserId
+		WHERE IsPayment=1
+		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
+		AND ImportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
+		AND ApplyType=@ApplyType AND ImportPermit.Status=''Approved''
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+        ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
+    ) pg
+    OUTER APPLY (
+        SELECT SUM(v.TotalAmount) AS TotalAmount
+        FROM dbo.vw_ImportPermitItemTotalByCurrency AS v WITH (NOEXPAND)
+        WHERE v.ImportPermitId = pg.__k_Id
+    ) amt
+    OUTER APPLY (
+        SELECT TOP 1 currency.Code
+        FROM dbo.vw_ImportPermitItemTotalByCurrency AS v WITH (NOEXPAND)
+        INNER JOIN Currency currency ON v.CurrencyId = currency.Id
+        WHERE v.ImportPermitId = pg.__k_Id
+    ) cur
+    ORDER BY ' + @ob + N'
+    OPTION (RECOMPILE);';
+    END
+    ELSE
+    BEGIN
+        -- TotalCount only when requested, computed over the UN-paged base (no subqueries) as a separate scalar.
+        SET @cntpart = CASE WHEN @IncludeTotalCount = 1
+            THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM ImportLicence
 		INNER JOIN AccountTransaction ON ImportLicence.Id=AccountTransaction.TransactionId
 		INNER JOIN PaThaKa ON ImportLicence.PaThaKaId=PaThaKa.Id
 		INNER JOIN ExportImportSection section ON ImportLicence.ExportImportSectionId = section.Id
@@ -42,16 +120,9 @@ BEGIN
 		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
 		AND ApplyType=@ApplyType AND ImportLicence.Status=''Approved''
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)); '
-        ELSE N'DECLARE @__total int = NULL; ' END;
+            ELSE N'DECLARE @__total int = NULL; ' END;
 
-    -- Page-first: page the base query, then resolve Currency/TotalAmount on the ~PageSize rows only.
-    -- The per-item subqueries are replaced by a lateral join to the materialized view
-    -- vw_ImportLicenceItemTotalByCurrency (index seek on ImportLicenceId, no re-aggregation of ImportLicenceItem).
-    -- The view is grouped by (ImportLicenceId, CurrencyId); OUTER APPLY keeps one row per licence:
-    --   * Currency  = an arbitrary currency present on the licence (matches the original TOP 1)
-    --   * TotalAmount = SUM across the licence's per-currency groups (matches the original SUM over all items)
-    -- WITH (NOEXPAND) forces the materialized index to be used (required outside Enterprise edition).
-    DECLARE @sql nvarchar(max) = @cntpart + N'SELECT pg.*, cur.Code AS Currency, amt.TotalAmount AS TotalAmount, @__total AS TotalCount
+        SET @sql = @cntpart + N'SELECT pg.*, cur.Code AS Currency, amt.TotalAmount AS TotalAmount, @__total AS TotalCount
     FROM (
         SELECT ImportLicence.ApplicationNo,
 ImportLicence.ApplicationDate,
@@ -101,6 +172,7 @@ ImportLicence.Id AS __k_Id
     ) cur
     ORDER BY ' + @ob + N'
     OPTION (RECOMPILE);';
+    END
 
     EXEC sp_executesql @sql, N'@FormType nvarchar(50), @FromDate datetime, @ToDate datetime, @ExportImportSectionId int, @PaymentType nvarchar(50), @ApplyType nvarchar(20), @CompanyRegistrationNo nvarchar(10), @SakhanId int, @off bigint, @ps bigint', @FormType=@FormType, @FromDate=@FromDate, @ToDate=@ToDate, @ExportImportSectionId=@ExportImportSectionId, @PaymentType=@PaymentType, @ApplyType=@ApplyType, @CompanyRegistrationNo=@CompanyRegistrationNo, @SakhanId=@SakhanId, @off=@off, @ps=@ps;
 END
