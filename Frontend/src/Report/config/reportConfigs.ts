@@ -6016,6 +6016,100 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
     ],
     columns: [
+      {
+        key: 'CompanyRegistrationNo',
+        dataIndex: 'companyRegistrationNo',
+        title: 'Company Registration No',
+      },
+      {
+        key: 'CompanyName',
+        dataIndex: 'companyName',
+        title: 'Company Name',
+      },
+      {
+        key: 'CompanyRegistrationDate',
+        dataIndex: 'companyRegistrationDate',
+        title: 'Company Registration Date',
+        dataType: 'date',
+      },
+      {
+        key: 'EndDate',
+        dataIndex: 'endDate',
+        title: 'End Date',
+        dataType: 'date',
+      },
+      {
+        key: 'BusinessType',
+        dataIndex: 'businessType',
+        title: 'Business Type',
+      },
+      {
+        key: 'LineofBusiness',
+        dataIndex: 'lineofBusiness',
+        title: 'Line of Business',
+      },
+      {
+        key: 'UnitLevel',
+        dataIndex: 'unitLevel',
+        title: 'Unit Level',
+      },
+      {
+        key: 'StreetNumberStreetName',
+        dataIndex: 'streetNumberStreetName',
+        title: 'Street Number / Street Name',
+      },
+      {
+        key: 'QuarterCityTownship',
+        dataIndex: 'quarterCityTownship',
+        title: 'Quarter / City / Township',
+      },
+      {
+        key: 'State',
+        dataIndex: 'state',
+        title: 'State',
+      },
+      {
+        key: 'Country',
+        dataIndex: 'country',
+        title: 'Country',
+      },
+      {
+        key: 'PostalCode',
+        dataIndex: 'postalCode',
+        title: 'Postal Code',
+      },
+      {
+        key: 'Capital',
+        dataIndex: 'capital',
+        title: 'Capital',
+        dataType: 'number',
+      },
+      {
+        key: 'DirectorName',
+        dataIndex: 'directorName',
+        title: 'Director Name',
+      },
+      {
+        key: 'DirectorNrc',
+        dataIndex: 'directorNrc',
+        title: 'Director NRC',
+      },
+      {
+        key: 'DirectorPosition',
+        dataIndex: 'directorPosition',
+        title: 'Director Position',
+      },
+      {
+        key: 'PermitBusiness',
+        dataIndex: 'permitBusiness',
+        title: 'Permit Business',
+      },
+      {
+        key: 'ExtensionCount',
+        dataIndex: 'extensionCount',
+        title: 'Extension Count',
+        dataType: 'number',
+      },
     ],
   },
   EIRCardBindReport: {
