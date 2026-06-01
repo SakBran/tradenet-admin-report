@@ -30,6 +30,10 @@ BEGIN
 	BEGIN
 		IF(@HSCode='')
 		BEGIN
+			SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+			result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+			FROM
+			(
 			SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 			COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 			FROM
@@ -44,7 +48,8 @@ BEGIN
 			WHERE ApplyType='New' AND ExportLicence.Status='Approved'
 			AND (ExportLicence.LicenceDate>=@FromDate AND ExportLicence.LicenceDate<=@ToDate))tmp
 			GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-			ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+			)result
+			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
 			FETCH NEXT @PageSize ROWS ONLY;
 		END
@@ -52,6 +57,10 @@ BEGIN
 		BEGIN
 			IF(@FilterType='Start')
 			BEGIN
+				SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+				result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+				FROM
+				(
 				SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 				COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 				FROM
@@ -67,12 +76,17 @@ BEGIN
 				AND (ExportLicence.LicenceDate>=@FromDate AND ExportLicence.LicenceDate<=@ToDate)
 				AND HSCode.Code LIKE @HSCode+'%')tmp
 				GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-				ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+				)result
+				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
 				FETCH NEXT @PageSize ROWS ONLY;
 			END
 			ELSE
 			BEGIN
+				SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+				result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+				FROM
+				(
 				SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 				COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 				FROM
@@ -88,7 +102,8 @@ BEGIN
 				AND (ExportLicence.LicenceDate>=@FromDate AND ExportLicence.LicenceDate<=@ToDate)
 				AND HSCode.Code LIKE '%'+@HSCode)tmp
 				GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-				ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+				)result
+				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
 				FETCH NEXT @PageSize ROWS ONLY;
 			END
@@ -98,6 +113,10 @@ BEGIN
 	BEGIN
 		IF(@HSCode='')
 		BEGIN
+			SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+			result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+			FROM
+			(
 			SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 			COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 			FROM
@@ -112,7 +131,8 @@ BEGIN
 			WHERE ApplyType='New' AND ImportLicence.Status='Approved'
 			AND (ImportLicence.LicenceDate>=@FromDate AND ImportLicence.LicenceDate<=@ToDate))tmp
 			GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-			ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+			)result
+			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
 			FETCH NEXT @PageSize ROWS ONLY;
 		END
@@ -120,6 +140,10 @@ BEGIN
 		BEGIN
 			IF(@FilterType='Start')
 			BEGIN
+				SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+				result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+				FROM
+				(
 				SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 				COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 				FROM
@@ -135,12 +159,17 @@ BEGIN
 				AND (ImportLicence.LicenceDate>=@FromDate AND ImportLicence.LicenceDate<=@ToDate)
 				AND HSCode.Code LIKE @HSCode+'%')tmp
 				GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-				ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+				)result
+				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
 				FETCH NEXT @PageSize ROWS ONLY;
 			END
 			ELSE
 			BEGIN
+				SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+				result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+				FROM
+				(
 				SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 				COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 				FROM
@@ -156,7 +185,8 @@ BEGIN
 				AND (ImportLicence.LicenceDate>=@FromDate AND ImportLicence.LicenceDate<=@ToDate)
 				AND HSCode.Code LIKE '%'+@HSCode)tmp
 				GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-				ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+				)result
+				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
 				FETCH NEXT @PageSize ROWS ONLY;
 			END
@@ -166,6 +196,10 @@ BEGIN
 	BEGIN
 		IF(@HSCode='')
 		BEGIN
+			SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+			result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+			FROM
+			(
 			SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 			COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 			FROM
@@ -180,7 +214,8 @@ BEGIN
 			WHERE ApplyType='New' AND ExportPermit.Status='Approved'
 			AND (ExportPermit.LicenceDate>=@FromDate AND ExportPermit.LicenceDate<=@ToDate))tmp
 			GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-			ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+			)result
+			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
 			FETCH NEXT @PageSize ROWS ONLY;
 		END
@@ -188,6 +223,10 @@ BEGIN
 		BEGIN
 			IF(@FilterType='Start')
 			BEGIN
+				SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+				result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+				FROM
+				(
 				SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 				COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 				FROM
@@ -203,12 +242,17 @@ BEGIN
 				AND (ExportPermit.LicenceDate>=@FromDate AND ExportPermit.LicenceDate<=@ToDate)
 				AND HSCode.Code LIKE @HSCode+'%')tmp
 				GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-				ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+				)result
+				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
 				FETCH NEXT @PageSize ROWS ONLY;
 			END
 			ELSE
 			BEGIN
+				SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+				result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+				FROM
+				(
 				SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 				COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 				FROM
@@ -224,7 +268,8 @@ BEGIN
 				AND (ExportPermit.LicenceDate>=@FromDate AND ExportPermit.LicenceDate<=@ToDate)
 				AND HSCode.Code LIKE '%'+@HSCode)tmp
 				GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-				ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+				)result
+				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
 				FETCH NEXT @PageSize ROWS ONLY;
 			END
@@ -234,6 +279,10 @@ BEGIN
 	BEGIN
 		IF(@HSCode='')
 		BEGIN
+			SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+			result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+			FROM
+			(
 			SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 			COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 			FROM
@@ -248,7 +297,8 @@ BEGIN
 			WHERE ApplyType='New' AND ImportPermit.Status='Approved'
 			AND (ImportPermit.LicenceDate>=@FromDate AND ImportPermit.LicenceDate<=@ToDate))tmp
 			GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-			ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+			)result
+			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
 			FETCH NEXT @PageSize ROWS ONLY;
 		END
@@ -256,6 +306,10 @@ BEGIN
 		BEGIN
 			IF(@FilterType='Start')
 			BEGIN
+				SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+				result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+				FROM
+				(
 				SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 				COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 				FROM
@@ -271,12 +325,17 @@ BEGIN
 				AND (ImportPermit.LicenceDate>=@FromDate AND ImportPermit.LicenceDate<=@ToDate)
 				AND HSCode.Code LIKE @HSCode+'%')tmp
 				GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-				ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+				)result
+				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
 				FETCH NEXT @PageSize ROWS ONLY;
 			END
 			ELSE
 			BEGIN
+				SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+				result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+				FROM
+				(
 				SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 				COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 				FROM
@@ -292,7 +351,8 @@ BEGIN
 				AND (ImportPermit.LicenceDate>=@FromDate AND ImportPermit.LicenceDate<=@ToDate)
 				AND HSCode.Code LIKE '%'+@HSCode)tmp
 				GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-				ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+				)result
+				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
 				FETCH NEXT @PageSize ROWS ONLY;
 			END
@@ -302,6 +362,10 @@ BEGIN
 	BEGIN
 		IF(@HSCode='')
 		BEGIN
+			SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+			result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+			FROM
+			(
 			SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 			COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 			FROM
@@ -329,7 +393,8 @@ BEGIN
 			AND (BorderExportLicence.LicenceDate>=@FromDate AND BorderExportLicence.LicenceDate<=@ToDate)
 			AND BorderExportLicence.SakhanId=(CASE WHEN @SakhanId=0 THEN BorderExportLicence.SakhanId ELSE @SakhanId END))tmp
 			GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-			ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+			)result
+			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
 			FETCH NEXT @PageSize ROWS ONLY;
 		END
@@ -337,6 +402,10 @@ BEGIN
 		BEGIN
 			IF(@FilterType='Start')
 			BEGIN
+				SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+				result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+				FROM
+				(
 				SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 				COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 				FROM
@@ -366,12 +435,17 @@ BEGIN
 				AND HSCode.Code LIKE @HSCode+'%'
 				AND BorderExportLicence.SakhanId=(CASE WHEN @SakhanId=0 THEN BorderExportLicence.SakhanId ELSE @SakhanId END))tmp
 				GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-				ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+				)result
+				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
 				FETCH NEXT @PageSize ROWS ONLY;
 			END
 			ELSE
 			BEGIN
+				SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+				result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+				FROM
+				(
 				SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 				COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 				FROM
@@ -401,7 +475,8 @@ BEGIN
 				AND HSCode.Code LIKE '%'+@HSCode
 				AND BorderExportLicence.SakhanId=(CASE WHEN @SakhanId=0 THEN BorderExportLicence.SakhanId ELSE @SakhanId END))tmp
 				GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-				ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+				)result
+				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
 				FETCH NEXT @PageSize ROWS ONLY;
 			END
@@ -411,6 +486,10 @@ BEGIN
 	BEGIN
 		IF(@HSCode='')
 		BEGIN
+			SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+			result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+			FROM
+			(
 			SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 			COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 			FROM
@@ -438,7 +517,8 @@ BEGIN
 			AND (BorderImportLicence.LicenceDate>=@FromDate AND BorderImportLicence.LicenceDate<=@ToDate)
 			AND BorderImportLicence.SakhanId=(CASE WHEN @SakhanId=0 THEN BorderImportLicence.SakhanId ELSE @SakhanId END))tmp
 			GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-			ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+			)result
+			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
 			FETCH NEXT @PageSize ROWS ONLY;
 		END
@@ -446,6 +526,10 @@ BEGIN
 		BEGIN
 			IF(@FilterType='Start')
 			BEGIN
+				SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+				result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+				FROM
+				(
 				SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 				COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 				FROM
@@ -476,12 +560,17 @@ BEGIN
 				AND BorderImportLicence.SakhanId=(CASE WHEN @SakhanId=0 THEN BorderImportLicence.SakhanId ELSE @SakhanId END)
 				)tmp
 				GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-				ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+				)result
+				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
 				FETCH NEXT @PageSize ROWS ONLY;
 			END
 			ELSE
 			BEGIN
+				SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+				result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+				FROM
+				(
 				SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 				COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 				FROM
@@ -512,7 +601,8 @@ BEGIN
 				AND BorderImportLicence.SakhanId=(CASE WHEN @SakhanId=0 THEN BorderImportLicence.SakhanId ELSE @SakhanId END)
 				)tmp
 				GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-				ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+				)result
+				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
 				FETCH NEXT @PageSize ROWS ONLY;
 			END
@@ -522,6 +612,10 @@ BEGIN
 	BEGIN
 		IF(@HSCode='')
 		BEGIN
+			SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+			result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+			FROM
+			(
 			SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 			COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 			FROM
@@ -537,7 +631,8 @@ BEGIN
 			AND (BorderExportPermit.LicenceDate>=@FromDate AND BorderExportPermit.LicenceDate<=@ToDate)
 			AND BorderExportPermit.SakhanId=(CASE WHEN @SakhanId=0 THEN BorderExportPermit.SakhanId ELSE @SakhanId END))tmp
 			GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-			ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+			)result
+			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
 			FETCH NEXT @PageSize ROWS ONLY;
 		END
@@ -545,6 +640,10 @@ BEGIN
 		BEGIN
 			IF(@FilterType='Start')
 			BEGIN
+				SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+				result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+				FROM
+				(
 				SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 				COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 				FROM
@@ -561,12 +660,17 @@ BEGIN
 				AND HSCode.Code LIKE @HSCode+'%'
 				AND BorderExportPermit.SakhanId=(CASE WHEN @SakhanId=0 THEN BorderExportPermit.SakhanId ELSE @SakhanId END))tmp
 				GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-				ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+				)result
+				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
 				FETCH NEXT @PageSize ROWS ONLY;
 			END
 			ELSE
 			BEGIN
+				SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+				result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+				FROM
+				(
 				SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 				COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 				FROM
@@ -583,7 +687,8 @@ BEGIN
 				AND HSCode.Code LIKE '%'+@HSCode
 				AND BorderExportPermit.SakhanId=(CASE WHEN @SakhanId=0 THEN BorderExportPermit.SakhanId ELSE @SakhanId END))tmp
 				GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-				ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+				)result
+				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
 				FETCH NEXT @PageSize ROWS ONLY;
 			END
@@ -593,6 +698,10 @@ BEGIN
 	BEGIN
 		IF(@HSCode='')
 		BEGIN
+			SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+			result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+			FROM
+			(
 			SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 			COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 			FROM
@@ -608,7 +717,8 @@ BEGIN
 			AND (BorderImportPermit.LicenceDate>=@FromDate AND BorderImportPermit.LicenceDate<=@ToDate)
 			AND BorderImportPermit.SakhanId=(CASE WHEN @SakhanId=0 THEN BorderImportPermit.SakhanId ELSE @SakhanId END))tmp
 			GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-			ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+			)result
+			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
 			FETCH NEXT @PageSize ROWS ONLY;
 		END
@@ -616,6 +726,10 @@ BEGIN
 		BEGIN
 			IF(@FilterType='Start')
 			BEGIN
+				SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+				result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+				FROM
+				(
 				SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 				COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 				FROM
@@ -632,12 +746,17 @@ BEGIN
 				AND HSCode.Code LIKE @HSCode+'%'
 				AND BorderImportPermit.SakhanId=(CASE WHEN @SakhanId=0 THEN BorderImportPermit.SakhanId ELSE @SakhanId END))tmp
 				GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-				ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+				)result
+				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
 				FETCH NEXT @PageSize ROWS ONLY;
 			END
 			ELSE
 			BEGIN
+				SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+				result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
+				FROM
+				(
 				SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
 				COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 				FROM
@@ -654,7 +773,8 @@ BEGIN
 				AND HSCode.Code LIKE '%'+@HSCode
 				AND BorderImportPermit.SakhanId=(CASE WHEN @SakhanId=0 THEN BorderImportPermit.SakhanId ELSE @SakhanId END))tmp
 				GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
-				ORDER BY tmp.HSCode,tmp.CompanyName,tmp.Currency
+				)result
+				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
 				FETCH NEXT @PageSize ROWS ONLY;
 			END
@@ -662,3 +782,4 @@ BEGIN
 	END
 END
 GO
+

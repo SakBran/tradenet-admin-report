@@ -163,7 +163,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -273,7 +280,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -340,12 +354,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     columns: [
       {
         key: 'HSCode',
-        dataIndex: 'hSCode',
+        dataIndex: 'hsCode',
         title: 'HS Code',
       },
       {
         key: 'Description',
-        dataIndex: 'hSDescription',
+        dataIndex: 'hsDescription',
         title: 'Description',
       },
       {
@@ -732,7 +746,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -1066,7 +1087,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'BuyerName',
@@ -1253,7 +1281,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -1348,7 +1383,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -1661,7 +1703,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -1771,7 +1820,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -1838,12 +1894,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     columns: [
       {
         key: 'HSCode',
-        dataIndex: 'hSCode',
+        dataIndex: 'hsCode',
         title: 'HS Code',
       },
       {
         key: 'Description',
-        dataIndex: 'hSDescription',
+        dataIndex: 'hsDescription',
         title: 'Description',
       },
       {
@@ -2110,7 +2166,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -2387,7 +2450,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'UnionCitizenshipNo',
@@ -2574,7 +2644,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -2669,7 +2746,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -2901,7 +2985,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -3011,7 +3102,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -3078,12 +3176,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     columns: [
       {
         key: 'HSCode',
-        dataIndex: 'hSCode',
+        dataIndex: 'hsCode',
         title: 'HS Code',
       },
       {
         key: 'Description',
-        dataIndex: 'hSDescription',
+        dataIndex: 'hsDescription',
         title: 'Description',
       },
       {
@@ -3465,7 +3563,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -3789,7 +3894,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'SellerName',
@@ -3992,7 +4104,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'SellerName',
@@ -4169,7 +4288,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -4264,7 +4390,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -4697,7 +4830,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -4807,7 +4947,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -4879,12 +5026,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     columns: [
       {
         key: 'HSCode',
-        dataIndex: 'hSCode',
+        dataIndex: 'hsCode',
         title: 'HS Code',
       },
       {
         key: 'Description',
-        dataIndex: 'hSDescription',
+        dataIndex: 'hsDescription',
         title: 'Description',
       },
       {
@@ -5151,7 +5298,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -5428,7 +5582,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'UnionCitizenshipNo',
@@ -5605,7 +5766,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -5700,7 +5868,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -5873,7 +6048,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'StartDate',
@@ -5982,8 +6164,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
     ],
-    columns: [
-    ],
+    columns: [],
   },
   EIRCardBindReport: {
     controllerName: 'EIRCardBindReport',
@@ -6140,7 +6321,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -6245,7 +6433,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -6312,12 +6507,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     columns: [
       {
         key: 'HSCode',
-        dataIndex: 'hSCode',
+        dataIndex: 'hsCode',
         title: 'HS Code',
       },
       {
         key: 'Description',
-        dataIndex: 'hSDescription',
+        dataIndex: 'hsDescription',
         title: 'Description',
       },
       {
@@ -6699,7 +6894,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -7018,7 +7220,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'BuyerName',
@@ -7200,7 +7409,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -7290,7 +7506,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -7624,7 +7847,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -7729,7 +7959,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -7796,12 +8033,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     columns: [
       {
         key: 'HSCode',
-        dataIndex: 'hSCode',
+        dataIndex: 'hsCode',
         title: 'HS Code',
       },
       {
         key: 'Description',
-        dataIndex: 'hSDescription',
+        dataIndex: 'hsDescription',
         title: 'Description',
       },
       {
@@ -8068,7 +8305,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -8340,7 +8584,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'UnionCitizenshipNo',
@@ -8522,7 +8773,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -8612,7 +8870,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -8877,7 +9142,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -8982,7 +9254,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -9049,12 +9328,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     columns: [
       {
         key: 'HSCode',
-        dataIndex: 'hSCode',
+        dataIndex: 'hsCode',
         title: 'HS Code',
       },
       {
         key: 'Description',
-        dataIndex: 'hSDescription',
+        dataIndex: 'hsDescription',
         title: 'Description',
       },
       {
@@ -9436,7 +9715,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -9755,7 +10041,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'SellerName',
@@ -9958,7 +10251,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'SellerName',
@@ -10130,7 +10430,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -10220,7 +10527,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -10663,7 +10977,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -10768,7 +11089,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -10835,12 +11163,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     columns: [
       {
         key: 'HSCode',
-        dataIndex: 'hSCode',
+        dataIndex: 'hsCode',
         title: 'HS Code',
       },
       {
         key: 'Description',
-        dataIndex: 'hSDescription',
+        dataIndex: 'hsDescription',
         title: 'Description',
       },
       {
@@ -11107,7 +11435,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -11379,7 +11714,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'UnionCitizenshipNo',
@@ -11551,7 +11893,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -11641,7 +11990,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Curency',
@@ -11907,7 +12263,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'Mobile',
@@ -12042,7 +12405,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'CompanyRegistrationDate',
@@ -12255,7 +12625,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'CapitalAmount',
@@ -12353,7 +12730,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
     ],
   },
@@ -12833,7 +13217,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
     ],
   },
@@ -12930,7 +13321,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyAddress',
         dataIndex: 'companyAddress',
         title: 'Company Address',
-        fallbackDataIndexes: ['unitLevel', 'streetNumberStreetName', 'quarterCityTownship', 'state', 'country', 'postalCode'],
+        fallbackDataIndexes: [
+          'unitLevel',
+          'streetNumberStreetName',
+          'quarterCityTownship',
+          'state',
+          'country',
+          'postalCode',
+        ],
       },
       {
         key: 'TotalAmount',

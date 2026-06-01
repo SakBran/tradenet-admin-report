@@ -3,7 +3,6 @@ using API.Model;
 using API.Service.Reports;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -33,7 +32,7 @@ public sealed class sp_HSCodeReportResult
     public string CompanyName { get; set; } = null!;
 }
 
-public static class sp_HSCodeReport
+public static partial class sp_HSCodeReport
 {
     private const string New = "New";
     private const string Approved = "Approved";
@@ -70,9 +69,56 @@ public static class sp_HSCodeReport
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
-        var source = await AggregateSourceRowsAsync(db, request);
-        return ReportAggregationService.CreatePagedResult(
-            source, ReportAggregateDimension.HSCode, includeSakhan: false, pagingRequest);
+        if (UsesAggregateStoredProcedure(request.FormType))
+        {
+            var pageIndex = Math.Max(0, pagingRequest.PageIndex);
+            var pageSize = pagingRequest.PageSize <= 0 ? 10 : Math.Min(pagingRequest.PageSize, 1000);
+            var rows = await ExecuteAggregateStoredProcedureAsync(db, request, pageIndex, pageSize);
+            var totalCount = rows.FirstOrDefault()?.TotalCount ?? 0;
+
+            return ApiResult<ReportAggregateResult>.CreatePageFromRows(
+                rows.Select(row => new ReportAggregateResult
+                {
+                    HSCode = row.HSCode,
+                    HSDescription = row.HSDescription,
+                    CompanyName = row.CompanyName,
+                    CompanyRegistrationNo = row.CompanyRegistrationNo,
+                    Currency = row.Currency,
+                    NoOfLicences = row.NoOfLicences,
+                    TotalValue = row.TotalValue,
+                    TotalUSDValue = null,
+                }).ToList(),
+                totalCount,
+                pageIndex,
+                pageSize,
+                null,
+                null,
+                pagingRequest.FilterColumn,
+                pagingRequest.FilterQuery);
+        }
+
+        var query = AggregateQuery(db, request);
+        return await ApiResult<ReportAggregateResult>.CreateFastPageAsync(
+            query,
+            pagingRequest.PageIndex,
+            pagingRequest.PageSize,
+            pagingRequest.SortColumn,
+            pagingRequest.SortOrder,
+            pagingRequest.FilterColumn,
+            pagingRequest.FilterQuery,
+            pagingRequest.IncludeTotalCount);
+    }
+
+    private static bool UsesAggregateStoredProcedure(string formType)
+    {
+        return formType is "Export Licence"
+            or "Import Licence"
+            or "Export Permit"
+            or "Import Permit"
+            or "Border Export Licence"
+            or "Border Import Licence"
+            or "Border Export Permit"
+            or "Border Import Permit";
     }
 
     public static async Task<byte[]> CreateAggregateExcelWorkbookAsync(
@@ -85,29 +131,40 @@ public static class sp_HSCodeReport
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
-        var source = await AggregateSourceRowsAsync(db, request);
-        return await ReportAggregationService.CreateExcelWorkbookAsync(
-            source, ReportAggregateDimension.HSCode, includeSakhan: false, pagingRequest, worksheetName);
+        var query = AggregateQuery(db, request);
+        return await ExcelGenerator.CreateWorkbookAsync(query, pagingRequest, worksheetName);
     }
 
-    private static async Task<List<AggregateSourceRow>> AggregateSourceRowsAsync(
+    private static IQueryable<ReportAggregateResult> AggregateQuery(
         TradeNetDbContext db,
         sp_HSCodeReportRequest request)
     {
-        var rows = await Query(db, request).ToListAsync();
-
-        return rows
-            .Select(row => new AggregateSourceRow
+        return Query(db, request)
+            .GroupBy(row => new
             {
-                HSCode = row.HSCode,
-                HSDescription = row.HSDescription,
-                CompanyName = row.CompanyName,
-                CompanyRegistrationNo = row.CompanyRegistrationNo,
-                LicenceNo = row.LicenceNo,
-                Amount = row.Amount,
-                Currency = row.Currency,
+                row.HSCode,
+                row.HSDescription,
+                row.CompanyName,
+                row.CompanyRegistrationNo,
+                row.Currency
             })
-            .ToList();
+            .Select(group => new ReportAggregateResult
+            {
+                HSCode = group.Key.HSCode,
+                HSDescription = group.Key.HSDescription,
+                CompanyName = group.Key.CompanyName,
+                CompanyRegistrationNo = group.Key.CompanyRegistrationNo,
+                Currency = group.Key.Currency,
+                NoOfLicences = group
+                    .Select(row => row.LicenceNo)
+                    .Distinct()
+                    .Count(),
+                TotalValue = group.Sum(row => row.Amount),
+                TotalUSDValue = null,
+            })
+            .OrderBy(row => row.HSCode)
+            .ThenBy(row => row.CompanyName)
+            .ThenBy(row => row.Currency);
     }
 
     private static IQueryable<sp_HSCodeReportResult> ExportLicenceRows(

@@ -98,8 +98,8 @@ namespace Backend.Controllers.Report
                 FromDate = request.FromDate,
                 ToDate = request.ToDate,
                 FormType = "Import Permit",
-                FilterType = request.FilterType,
-                HSCode = request.HSCode,
+                FilterType = request.FilterType ?? string.Empty,
+                HSCode = request.HSCode ?? string.Empty,
                 SakhanId = request.SakhanId,
             };
 
