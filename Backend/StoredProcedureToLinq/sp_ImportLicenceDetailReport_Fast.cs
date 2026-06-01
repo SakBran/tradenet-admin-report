@@ -39,7 +39,7 @@ public static class sp_ImportLicenceDetailReport_Fast
 
         var rows = Rows(db, request);
         var totalCount = pagingRequest.IncludeTotalCount
-            ? await rows.CountAsync()
+            ? await CountRowsAsync(db, request)
             : (int?)null;
 
         var pageRows = await rows
@@ -381,6 +381,95 @@ public static class sp_ImportLicenceDetailReport_Fast
             _ => OverseaRows(db, request)
                 .Where(_ => false)
         };
+    }
+
+    /// <summary>
+    /// Total row count matching the same filters as <see cref="RowsUnordered"/>, but joining only the
+    /// tables that affect cardinality (the licence-item fan-out) or back a filter (PaThaKa /
+    /// IndividualTrading). The lookup joins (PaThaKaType/Unit/Currency/HSCode/Section/Countries/
+    /// Method/Incoterm/Sakhan) are FK=PK on NOT NULL columns, so they are 1:1 and do not change the
+    /// count — dropping them avoids materializing the full join just to count rows. PaThaKa type is
+    /// filtered directly on PaThaKa.PaThaKaTypeId / IndividualTrading.PaThaKaTypeId.
+    /// </summary>
+    private static async Task<int> CountRowsAsync(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request)
+    {
+        return request.Type switch
+        {
+            "Oversea" => await CountOverseaAsync(db, request),
+            "Border" => await CountBorderPaThaKaAsync(db, request)
+                + await CountBorderIndividualTradingAsync(db, request),
+            _ => 0,
+        };
+    }
+
+    private static Task<int> CountOverseaAsync(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request)
+    {
+        return (
+            from licence in db.ImportLicences.AsNoTracking()
+            join paThaKa in db.PaThaKas.AsNoTracking() on licence.PaThaKaId equals paThaKa.Id
+            join item in db.ImportLicenceItems.AsNoTracking() on licence.Id equals item.ImportLicenceId
+            where licence.ApplyType == New
+                && licence.Status == Approved
+                && licence.ImportLicenceNo != string.Empty
+                && licence.CreatedDate >= request.FromDate
+                && licence.CreatedDate <= request.ToDate
+                && (request.CompanyRegistrationNo == string.Empty || paThaKa.CompanyRegistrationNo == request.CompanyRegistrationNo)
+                && (request.PaThaKaTypeId == 0 || paThaKa.PaThaKaTypeId == request.PaThaKaTypeId)
+                && (request.ExportImportSectionId == 0 || licence.ExportImportSectionId == request.ExportImportSectionId)
+                && (request.ExportImportMethodId == 0 || licence.ExportImportMethodId == request.ExportImportMethodId)
+                && (request.ExportImportIncotermId == 0 || licence.ExportImportIncotermId == request.ExportImportIncotermId)
+                && (request.SellerCountryId == 0 || licence.SellerCountryId == request.SellerCountryId)
+            select 1).CountAsync();
+    }
+
+    private static Task<int> CountBorderPaThaKaAsync(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request)
+    {
+        return (
+            from licence in db.BorderImportLicences.AsNoTracking()
+            join paThaKa in db.PaThaKas.AsNoTracking() on licence.PaThaKaId equals paThaKa.Id
+            join item in db.BorderImportLicenceItems.AsNoTracking() on licence.Id equals item.BorderImportLicenceId
+            where licence.ApplyType == New
+                && licence.Status == Approved
+                && licence.CardType == PaThaKaCardType
+                && licence.CreatedDate >= request.FromDate
+                && licence.CreatedDate <= request.ToDate
+                && (request.CompanyRegistrationNo == string.Empty || paThaKa.CompanyRegistrationNo == request.CompanyRegistrationNo)
+                && (request.PaThaKaTypeId == 0 || paThaKa.PaThaKaTypeId == request.PaThaKaTypeId)
+                && (request.ExportImportSectionId == 0 || licence.ExportImportSectionId == request.ExportImportSectionId)
+                && (request.ExportImportMethodId == 0 || licence.ExportImportMethodId == request.ExportImportMethodId)
+                && (request.ExportImportIncotermId == 0 || licence.ExportImportIncotermId == request.ExportImportIncotermId)
+                && (request.SellerCountryId == 0 || licence.SellerCountryId == request.SellerCountryId)
+                && (request.SakhanId == 0 || licence.SakhanId == request.SakhanId)
+            select 1).CountAsync();
+    }
+
+    private static Task<int> CountBorderIndividualTradingAsync(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request)
+    {
+        return (
+            from licence in db.BorderImportLicences.AsNoTracking()
+            join individualTrading in db.IndividualTradings.AsNoTracking() on licence.IndividualTradingId equals individualTrading.Id
+            join item in db.BorderImportLicenceItems.AsNoTracking() on licence.Id equals item.BorderImportLicenceId
+            where licence.ApplyType == New
+                && licence.Status == Approved
+                && licence.CardType == IndividualTradingCardType
+                && licence.CreatedDate >= request.FromDate
+                && licence.CreatedDate <= request.ToDate
+                && (request.CompanyRegistrationNo == string.Empty || individualTrading.Tinno == request.CompanyRegistrationNo)
+                && (request.PaThaKaTypeId == 0 || individualTrading.PaThaKaTypeId == request.PaThaKaTypeId)
+                && (request.ExportImportSectionId == 0 || licence.ExportImportSectionId == request.ExportImportSectionId)
+                && (request.ExportImportMethodId == 0 || licence.ExportImportMethodId == request.ExportImportMethodId)
+                && (request.ExportImportIncotermId == 0 || licence.ExportImportIncotermId == request.ExportImportIncotermId)
+                && (request.SellerCountryId == 0 || licence.SellerCountryId == request.SellerCountryId)
+                && (request.SakhanId == 0 || licence.SakhanId == request.SakhanId)
+            select 1).CountAsync();
     }
 
     private static IQueryable<ImportLicenceDetailFastRow> OverseaRows(

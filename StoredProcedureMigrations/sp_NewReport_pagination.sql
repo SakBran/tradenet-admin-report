@@ -246,9 +246,7 @@ BorderExportLicence.Id AS __k_Id
 		WHERE ApplyType=''New'' AND ImportLicence.Status=''Approved''
 		AND (ImportLicence.CreatedDate>=@FromDate AND ImportLicence.CreatedDate<=@ToDate)
 		AND ImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
-		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
-		--AND ImportLicence.auto=(CASE WHEN @auto='''' then ImportLicence.auto ELSE @auto END)
-		--AND ImportLicence.quota=(CASE WHEN quota='''' then ImportLicence.quota ELSE @quota END)); '
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)); '
             ELSE N'DECLARE @__total int = NULL; ' END;
 
         SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM ImportLicenceItem

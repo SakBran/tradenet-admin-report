@@ -31,28 +31,24 @@ BEGIN
     ELSE
         SET @ob = N'[LicenceDate] ASC, [LicenceNo] ASC';
 
-    -- TotalCount only when requested, computed over the UN-paged base (no subqueries) as a separate scalar.
+    -- TotalCount only when requested. The count grain is ImportLicenceItem, so it only needs the
+    -- tables that change cardinality (ImportLicenceItem) or back a filter (PaThaKa). The lookup joins
+    -- (PaThaKaType/Unit/Currency/HSCode/Section/Countries/Method/Incoterm) are FK=PK on NOT NULL
+    -- columns, so they are 1:1 and do not affect the count -- dropping them avoids materializing the
+    -- full join just to count rows. PaThaKaTypeId is filtered directly on PaThaKa.
     DECLARE @cntpart nvarchar(max) = CASE WHEN @IncludeTotalCount = 1
-        THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM ImportLicence  
+        THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM ImportLicence
   INNER JOIN PaThaKa ON PaThaKa.Id = ImportLicence.PaThaKaId
-  INNER JOIN PaThaKaType paThaKaType ON PaThaKa.PaThaKaTypeId = paThaKaType.Id
-  INNER JOIN ImportLicenceItem ON ImportLicence.Id = ImportLicenceItem.ImportLicenceId  
-  INNER JOIN Unit unit ON ImportLicenceItem.UnitId = unit.Id  
-  INNER JOIN Currency currency ON ImportLicenceItem.CurrencyId = currency.Id  
-  INNER JOIN HSCode ON ImportLicenceItem.HSCodeId = HSCode.Id  
-  INNER JOIN ExportImportSection section ON section.Id  = ImportLicence.ExportImportSectionId  
-  INNER JOIN Countries sellerCountry ON sellerCountry.Id  = ImportLicence.SellerCountryId  
-  INNER JOIN ExportImportMethod method ON method.Id  = ImportLicence.ExportImportMethodId  
-  INNER JOIN ExportImportIncoterm incoterm ON incoterm.Id  = ImportLicence.ExportImportIncotermId  
-  WHERE ApplyType=''New'' 
-  AND ImportLicence.Status=''Approved'' AND ImportLicence.ImportLicenceNo <> ''''  
+  INNER JOIN ImportLicenceItem ON ImportLicence.Id = ImportLicenceItem.ImportLicenceId
+  WHERE ImportLicence.ApplyType=''New''
+  AND ImportLicence.Status=''Approved'' AND ImportLicence.ImportLicenceNo <> ''''
   AND (ImportLicence.CreatedDate>=@FromDate AND ImportLicence.CreatedDate<=@ToDate)
-  AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
-  AND paThaKaType.Id=(CASE WHEN @PaThaKaTypeId=0 then paThaKaType.Id ELSE @PaThaKaTypeId END)
-  AND ImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
-  AND ImportLicence.ExportImportMethodId=(CASE WHEN @ExportImportMethodId=0 then ImportLicence.ExportImportMethodId ELSE @ExportImportMethodId END)
-  AND ImportLicence.ExportImportIncotermId=(CASE WHEN @ExportImportIncotermId=0 then ImportLicence.ExportImportIncotermId ELSE @ExportImportIncotermId END)
-  AND ImportLicence.SellerCountryId=(CASE WHEN @SellerCountryId=0 then ImportLicence.SellerCountryId ELSE @SellerCountryId END)); '
+  AND (@CompanyRegistrationNo='''' OR PaThaKa.CompanyRegistrationNo=@CompanyRegistrationNo)
+  AND (@PaThaKaTypeId=0 OR PaThaKa.PaThaKaTypeId=@PaThaKaTypeId)
+  AND (@ExportImportSectionId=0 OR ImportLicence.ExportImportSectionId=@ExportImportSectionId)
+  AND (@ExportImportMethodId=0 OR ImportLicence.ExportImportMethodId=@ExportImportMethodId)
+  AND (@ExportImportIncotermId=0 OR ImportLicence.ExportImportIncotermId=@ExportImportIncotermId)
+  AND (@SellerCountryId=0 OR ImportLicence.SellerCountryId=@SellerCountryId)); '
         ELSE N'DECLARE @__total int = NULL; ' END;
 
     DECLARE @sql nvarchar(max) = @cntpart + N'SELECT pg.*,(  
