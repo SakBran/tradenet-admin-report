@@ -7,8 +7,18 @@
    Preserves dbo.fn_GetPermitBusiness and the Extension-count subquery.
 
    - @PageSize NULL/<=0 -> all rows (Excel); >0 -> one OFFSET/FETCH page.
-   - Every row carries TotalCount (COUNT(*) OVER()).
+   - Every row carries TotalCount (computed once via COUNT_BIG).
    - @SortColumn whitelisted; default IssuedDate (source order).
+
+   PERFORMANCE: two-phase pagination.
+     Phase 1 pages just the keys (PaThaKa.Id + Director Id) and computes the
+       total with a cheap COUNT_BIG over the same join/filter.
+     Phase 2 joins that single page back and only THEN evaluates the expensive
+       per-row work (scalar UDF dbo.fn_GetPermitBusiness + the Extension-count
+       correlated subquery). For a 10-row page those run 10 times instead of
+       once per matched row across the whole date range.
+     The @CompanyRegistrationNo predicate is added only when supplied, so an
+       index seek stays available instead of the non-sargable CASE wrapper.
 
    Idempotent: CREATE OR ALTER.
    ============================================= */
@@ -39,31 +49,54 @@ BEGIN
     DECLARE @Direction nvarchar(4) =
         CASE WHEN UPPER(ISNULL(@SortOrder, '')) = 'DESC' THEN 'DESC' ELSE 'ASC' END;
 
-    DECLARE @Sql nvarchar(max) = N'
-        SELECT PaThaKa.Id, CompanyRegistrationNo, EndDate, CompanyName, CompanyRegistrationDate,
-               businessType.Name AS BusinessType, lineofBusiness.Name AS LineofBusiness,
-               PaThaKa.UnitLevel, PaThaKa.StreetNumberStreetName, PaThaKa.QuarterCityTownship,
-               PaThaKa.State, PaThaKa.Country, PaThaKa.PostalCode, Capital,
-               PaThaKaDirectors.Name AS DirectorName, PaThaKaDirectors.NRC AS DirectorNRC,
-               PaThaKaDirectors.Position AS DirectorPosition,
-               ISNULL(dbo.fn_GetPermitBusiness(PaThaKa.Id), '''') AS PermitBusiness,
-               (SELECT COUNT(Id) FROM PaThaKaRegistration
-                WHERE PaThaKaRegistration.CompanyRegistrationNo = PaThaKa.CompanyRegistrationNo
-                AND PaThaKaRegistration.ApplyType = ''Extension'' AND PaThaKaRegistration.Status = ''Approved'') AS ExtensionCount,
-               COUNT(*) OVER() AS TotalCount
+    -- Shared join + filter. Add the registration-no predicate only when supplied
+    -- so the optimizer can seek instead of being forced through a CASE wrapper.
+    DECLARE @CoreFrom nvarchar(max) = N'
         FROM PaThaKa
         INNER JOIN PaThaKaDirectors ON PaThaKa.Id = PaThaKaDirectors.PaThaKaId
         INNER JOIN BusinessType businessType ON PaThaKa.BusinessTypeId = businessType.Id
         INNER JOIN LineofBusiness lineofBusiness ON PaThaKa.LineofBusinessId = lineofBusiness.Id
-        WHERE (PaThaKa.IssuedDate >= @FromDate AND PaThaKa.IssuedDate <= @ToDate)
-          AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '''' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+        WHERE (PaThaKa.IssuedDate >= @FromDate AND PaThaKa.IssuedDate <= @ToDate)'
+        + CASE WHEN @CompanyRegistrationNo = '' THEN N''
+               ELSE N'
+          AND PaThaKa.CompanyRegistrationNo = @CompanyRegistrationNo' END;
+
+    -- Phase 1: total count + the page of keys only (no UDF / subquery here).
+    DECLARE @Sql nvarchar(max) = N'
+        DECLARE @Total int;
+        SELECT @Total = COUNT_BIG(*)' + @CoreFrom + N';
+
+        SELECT PaThaKa.Id AS PaThaKaId, PaThaKaDirectors.Id AS DirectorId, @Total AS TotalCount
+        INTO #page' + @CoreFrom + N'
         ORDER BY ' + @OrderBy + N' ' + @Direction + N', PaThaKaDirectors.Id ' + @Direction;
 
     IF (@PageSize IS NOT NULL AND @PageSize > 0)
         SET @Sql = @Sql + N'
         OFFSET (ISNULL(@PageIndex, 0) * @PageSize) ROWS FETCH NEXT @PageSize ROWS ONLY';
 
-    SET @Sql = @Sql + N';';
+    -- Phase 2: enrich ONLY the paged rows with the expensive per-row lookups.
+    SET @Sql = @Sql + N';
+
+        SELECT PaThaKa.Id, PaThaKa.CompanyRegistrationNo, PaThaKa.EndDate, PaThaKa.CompanyName,
+               PaThaKa.CompanyRegistrationDate,
+               businessType.Name AS BusinessType, lineofBusiness.Name AS LineofBusiness,
+               PaThaKa.UnitLevel, PaThaKa.StreetNumberStreetName, PaThaKa.QuarterCityTownship,
+               PaThaKa.State, PaThaKa.Country, PaThaKa.PostalCode, PaThaKa.Capital,
+               PaThaKaDirectors.Name AS DirectorName, PaThaKaDirectors.NRC AS DirectorNRC,
+               PaThaKaDirectors.Position AS DirectorPosition,
+               ISNULL(dbo.fn_GetPermitBusiness(PaThaKa.Id), '''') AS PermitBusiness,
+               (SELECT COUNT(Id) FROM PaThaKaRegistration
+                WHERE PaThaKaRegistration.CompanyRegistrationNo = PaThaKa.CompanyRegistrationNo
+                AND PaThaKaRegistration.ApplyType = ''Extension'' AND PaThaKaRegistration.Status = ''Approved'') AS ExtensionCount,
+               #page.TotalCount
+        FROM #page
+        INNER JOIN PaThaKa ON PaThaKa.Id = #page.PaThaKaId
+        INNER JOIN PaThaKaDirectors ON PaThaKaDirectors.Id = #page.DirectorId
+        INNER JOIN BusinessType businessType ON PaThaKa.BusinessTypeId = businessType.Id
+        INNER JOIN LineofBusiness lineofBusiness ON PaThaKa.LineofBusinessId = lineofBusiness.Id
+        ORDER BY ' + @OrderBy + N' ' + @Direction + N', PaThaKaDirectors.Id ' + @Direction + N';
+
+        DROP TABLE #page;';
 
     EXEC sp_executesql @Sql,
         N'@FromDate datetime, @ToDate datetime, @CompanyRegistrationNo nvarchar(20), @PageIndex int, @PageSize int',
