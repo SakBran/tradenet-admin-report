@@ -2,7 +2,6 @@ import {
   Button,
   Checkbox,
   Col,
-  Divider,
   Flex,
   Form,
   Input,
@@ -11,12 +10,6 @@ import {
   theme,
   Typography,
 } from 'antd';
-import {
-  FacebookFilled,
-  GoogleOutlined,
-  TwitterOutlined,
-} from '@ant-design/icons';
-import { Logo } from '../../components';
 import { useMediaQuery } from 'react-responsive';
 import { PATH_AUTH, PATH_DASHBOARD } from '../../constants';
 import { useNavigate } from 'react-router-dom';
@@ -81,13 +74,30 @@ export const SignInPage = () => {
           className="text-center"
           style={{ background: colorPrimary, height: '100%', padding: '1rem' }}
         >
-          <Logo color="white" />
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '50%',
+              padding: 20,
+              marginBottom: 16,
+              boxShadow: '0 6px 18px rgba(0, 0, 0, 0.18)',
+              lineHeight: 0,
+            }}
+          >
+            <img
+              src="/moc-logo.png"
+              alt="Ministry of Commerce logo"
+              height={108}
+              width={108}
+              style={{ display: 'block' }}
+            />
+          </div>
           <Title level={2} className="text-white">
             Welcome back to T2.0 Report
           </Title>
           <Text className="text-white" style={{ fontSize: 18 }}>
-            A dynamic and versatile multipurpose dashboard utilizing Ant Design,
-            React, TypeScript, and Vite.
+            Ministry of Commerce — Tradenet 2.0 reporting and administration
+            portal.
           </Text>
         </Flex>
       </Col>
@@ -100,10 +110,9 @@ export const SignInPage = () => {
           style={{ height: '100%', padding: '2rem' }}
         >
           <Title className="m-0">Login</Title>
-          <Flex gap={4}>
-            <Text>Don't have an account?</Text>
-            <Link to={PATH_AUTH.signup}>Create an account here</Link>
-          </Flex>
+          <Text type="secondary">
+            Sign in with your Ministry of Commerce account to continue.
+          </Text>
           <Form
             name="sign-up-form"
             layout="vertical"
@@ -156,23 +165,12 @@ export const SignInPage = () => {
                   size="middle"
                   loading={loading}
                 >
-                  Continue
+                  Login
                 </Button>
                 <Link to={PATH_AUTH.passwordReset}>Forgot password?</Link>
               </Flex>
             </Form.Item>
           </Form>
-          <Divider className="m-0">or</Divider>
-          <Flex
-            vertical={isMobile}
-            gap="small"
-            wrap="wrap"
-            style={{ width: '100%' }}
-          >
-            <Button icon={<GoogleOutlined />}>Sign in with Google</Button>
-            <Button icon={<FacebookFilled />}>Sign in with Facebook</Button>
-            <Button icon={<TwitterOutlined />}>Sign in with Twitter</Button>
-          </Flex>
         </Flex>
       </Col>
     </Row>

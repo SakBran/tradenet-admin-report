@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ConfigProvider, Layout, Menu, MenuProps, SiderProps } from 'antd';
 import { Logo } from '../../components';
 import { useLocation } from 'react-router-dom';
-import { PATH_LANDING } from '../../constants';
+import { PATH_DASHBOARD } from '../../constants';
 import { COLOR } from '../../App.tsx';
 import { useMediaQuery } from 'react-responsive';
 import {
@@ -64,7 +64,7 @@ const SideNav = ({ setCollapse, className, ...others }: SideNavProps) => {
       <Logo
         color="blue"
         asLink
-        href={PATH_LANDING.root}
+        href={PATH_DASHBOARD.default}
         justify="center"
         gap="small"
         imgSize={{ h: 28, w: 28 }}

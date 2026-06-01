@@ -31,8 +31,8 @@ export const Logo = ({
     <Link to={href || '#'} className="logo-link">
       <Flex gap={others.gap || 'small'} align="center" {...others}>
         <img
-          src="/logo-no-background.png"
-          alt="design sparx logo"
+          src="/moc-logo.png"
+          alt="Ministry of Commerce logo"
           height={imgSize?.h || 48}
         />
         <Typography.Title

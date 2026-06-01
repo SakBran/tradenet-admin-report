@@ -28,7 +28,7 @@ import SideNav from './SideNav.tsx';
 import HeaderNav from './HeaderNav.tsx';
 import FooterNav from './FooterNav.tsx';
 import { NProgress } from '../../components';
-import { PATH_LANDING } from '../../constants';
+import { PATH_AUTH } from '../../constants';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../redux/store.ts';
 import AuthContext from '../../context/AuthContext.tsx';
@@ -78,9 +78,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
           content: 'signing you out',
         });
         auth?.logout();
-        setTimeout(() => {
-          navigate(PATH_LANDING.root);
-        }, 450);
+        navigate(PATH_AUTH.signin, { replace: true });
       },
     },
   ];

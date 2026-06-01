@@ -8,7 +8,6 @@ import {
   Error503Page,
   ErrorPage,
   PasswordResetPage,
-  ProjectsDashboardPage,
   SignInPage,
   SignUpPage,
   VerifyEmailPage,
@@ -22,6 +21,7 @@ import ProtectedRoute from './ProtectedRoute.tsx';
 import TimelinePage from '../pages/Timeline/Timeline.tsx';
 import Certificate from '../pages/certificate/Certificate.tsx';
 import Test from '../pages/Test.tsx';
+import HowToUsePage from '../pages/Guide/HowToUse.tsx';
 import { reportRoutes } from '../Report/reportRoutes.tsx';
 
 // Custom scroll restoration function
@@ -117,7 +117,7 @@ const router = createBrowserRouter([
           {
             index: true,
             path: 'default',
-            element: <ProjectsDashboardPage />,
+            element: <HowToUsePage />,
           },
         ],
       },
