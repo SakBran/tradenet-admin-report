@@ -34,7 +34,7 @@ BEGIN
         THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM ImportLicence
 		INNER JOIN AccountTransaction ON ImportLicence.Id=AccountTransaction.TransactionId
 		INNER JOIN PaThaKa ON ImportLicence.PaThaKaId=PaThaKa.Id
-		INNER JOIN ExportImportSection section ON ImportLicence.ExportImportSectionId = section.Id 
+		INNER JOIN ExportImportSection section ON ImportLicence.ExportImportSectionId = section.Id
 		INNER JOIN Users ON Users.Id = ImportLicence.ApproveUserId
 		WHERE IsPayment=1
 		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
@@ -44,11 +44,14 @@ BEGIN
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)); '
         ELSE N'DECLARE @__total int = NULL; ' END;
 
-    DECLARE @sql nvarchar(max) = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM ImportLicenceItem
-		INNER JOIN Currency currency ON ImportLicenceItem.CurrencyId = currency.Id
-		WHERE ImportLicenceItem.ImportLicenceId=pg.__k_Id) Currency,
-        (Select SUM(Amount) as TotalAmount  from ImportLicenceItem
-       where ImportLicenceItem.ImportLicenceId=pg.__k_Id) as TotalAmount, @__total AS TotalCount
+    -- Page-first: page the base query, then resolve Currency/TotalAmount on the ~PageSize rows only.
+    -- The per-item subqueries are replaced by a lateral join to the materialized view
+    -- vw_ImportLicenceItemTotalByCurrency (index seek on ImportLicenceId, no re-aggregation of ImportLicenceItem).
+    -- The view is grouped by (ImportLicenceId, CurrencyId); OUTER APPLY keeps one row per licence:
+    --   * Currency  = an arbitrary currency present on the licence (matches the original TOP 1)
+    --   * TotalAmount = SUM across the licence's per-currency groups (matches the original SUM over all items)
+    -- WITH (NOEXPAND) forces the materialized index to be used (required outside Enterprise edition).
+    DECLARE @sql nvarchar(max) = @cntpart + N'SELECT pg.*, cur.Code AS Currency, amt.TotalAmount AS TotalAmount, @__total AS TotalCount
     FROM (
         SELECT ImportLicence.ApplicationNo,
 ImportLicence.ApplicationDate,
@@ -66,16 +69,16 @@ PaThaKa.CompanyName,
 VoucherNo,
 VoucherDate,
 CONVERT(varchar,AccountTransaction.VoucherDate,103) sVoucherDate,
-TotalAmount Amount,
+CAST(AccountTransaction.TotalAmount AS decimal(38,6)) Amount,
 PaymentType,
 ImportLicence.CommodityType,
 ImportLicence.ExchangeRate,
-ImportLicence.TotalCIF,
+CAST(ImportLicence.TotalCIF AS decimal(38,6)) TotalCIF,
 ImportLicence.Id AS __k_Id
         FROM ImportLicence
 		INNER JOIN AccountTransaction ON ImportLicence.Id=AccountTransaction.TransactionId
 		INNER JOIN PaThaKa ON ImportLicence.PaThaKaId=PaThaKa.Id
-		INNER JOIN ExportImportSection section ON ImportLicence.ExportImportSectionId = section.Id 
+		INNER JOIN ExportImportSection section ON ImportLicence.ExportImportSectionId = section.Id
 		INNER JOIN Users ON Users.Id = ImportLicence.ApproveUserId
 		WHERE IsPayment=1
 		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
@@ -85,6 +88,17 @@ ImportLicence.Id AS __k_Id
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
         ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
     ) pg
+    OUTER APPLY (
+        SELECT SUM(v.TotalAmount) AS TotalAmount
+        FROM dbo.vw_ImportLicenceItemTotalByCurrency AS v WITH (NOEXPAND)
+        WHERE v.ImportLicenceId = pg.__k_Id
+    ) amt
+    OUTER APPLY (
+        SELECT TOP 1 currency.Code
+        FROM dbo.vw_ImportLicenceItemTotalByCurrency AS v WITH (NOEXPAND)
+        INNER JOIN Currency currency ON v.CurrencyId = currency.Id
+        WHERE v.ImportLicenceId = pg.__k_Id
+    ) cur
     ORDER BY ' + @ob + N'
     OPTION (RECOMPILE);';
 

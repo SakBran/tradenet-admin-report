@@ -6026,6 +6026,100 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
     ],
     columns: [
+      {
+        key: 'CompanyRegistrationNo',
+        dataIndex: 'companyRegistrationNo',
+        title: 'Company Registration No',
+      },
+      {
+        key: 'CompanyName',
+        dataIndex: 'companyName',
+        title: 'Company Name',
+      },
+      {
+        key: 'CompanyRegistrationDate',
+        dataIndex: 'companyRegistrationDate',
+        title: 'Company Registration Date',
+        dataType: 'date',
+      },
+      {
+        key: 'EndDate',
+        dataIndex: 'endDate',
+        title: 'End Date',
+        dataType: 'date',
+      },
+      {
+        key: 'BusinessType',
+        dataIndex: 'businessType',
+        title: 'Business Type',
+      },
+      {
+        key: 'LineofBusiness',
+        dataIndex: 'lineofBusiness',
+        title: 'Line of Business',
+      },
+      {
+        key: 'UnitLevel',
+        dataIndex: 'unitLevel',
+        title: 'Unit Level',
+      },
+      {
+        key: 'StreetNumberStreetName',
+        dataIndex: 'streetNumberStreetName',
+        title: 'Street Number / Street Name',
+      },
+      {
+        key: 'QuarterCityTownship',
+        dataIndex: 'quarterCityTownship',
+        title: 'Quarter / City / Township',
+      },
+      {
+        key: 'State',
+        dataIndex: 'state',
+        title: 'State',
+      },
+      {
+        key: 'Country',
+        dataIndex: 'country',
+        title: 'Country',
+      },
+      {
+        key: 'PostalCode',
+        dataIndex: 'postalCode',
+        title: 'Postal Code',
+      },
+      {
+        key: 'Capital',
+        dataIndex: 'capital',
+        title: 'Capital',
+        dataType: 'number',
+      },
+      {
+        key: 'DirectorName',
+        dataIndex: 'directorName',
+        title: 'Director Name',
+      },
+      {
+        key: 'DirectorNrc',
+        dataIndex: 'directorNrc',
+        title: 'Director NRC',
+      },
+      {
+        key: 'DirectorPosition',
+        dataIndex: 'directorPosition',
+        title: 'Director Position',
+      },
+      {
+        key: 'PermitBusiness',
+        dataIndex: 'permitBusiness',
+        title: 'Permit Business',
+      },
+      {
+        key: 'ExtensionCount',
+        dataIndex: 'extensionCount',
+        title: 'Extension Count',
+        dataType: 'number',
+      },
     ],
   },
   EIRCardBindReport: {
@@ -10500,28 +10594,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         required: true,
       },
       {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
         name: 'ExportImportSectionId',
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
-      },
-      {
-        name: 'PaymentType',
-        label: 'Payment Type',
-        type: 'select',
-        defaultValue: '',
-        options: [
-          { label: '--- All ---', value: '' },
-          { label: 'Cash', value: 'Cash' },
-          { label: 'MPU', value: 'MPU' },
-          { label: 'Citizen Pay', value: 'Citizen Pay' },
-        ],
       },
       {
         name: 'ApplyType',
@@ -10538,16 +10614,22 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
+        name: 'PaymentType',
+        label: 'Payment Type',
+        type: 'select',
+        defaultValue: '',
+        options: [
+          { label: '--- All ---', value: '' },
+          { label: 'Cash', value: 'Cash' },
+          { label: 'MPU', value: 'MPU' },
+          { label: 'Citizen Pay', value: 'Citizen Pay' },
+        ],
+      },
+      {
         name: 'CompanyRegistrationNo',
         label: 'Company Registration No',
         type: 'text',
         defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
       },
     ],
     columns: [
@@ -10557,25 +10639,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Licence No',
       },
       {
-        key: 'ApplicationDate',
-        dataIndex: 'applicationDate',
-        title: 'Application Date',
-        dataType: 'date',
-      },
-      {
-        key: 'ParametersHeader2Value',
-        dataIndex: 'licenceNo',
-        title: '=Parameters!header2.Value',
-      },
-      {
         key: 'ApplicationNo',
         dataIndex: 'applicationNo',
         title: 'Application No',
       },
       {
-        key: 'ParametersHeader3Value',
+        key: 'LicenceDate',
         dataIndex: 'sLicenceDate',
-        title: '=Parameters!header3.Value',
+        title: 'Licence Date',
       },
       {
         key: 'CompanyRegistrationNo',
@@ -10589,7 +10660,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicValue',
-        dataIndex: 'amount',
+        dataIndex: 'totalAmount',
         title: 'Lic Value',
         dataType: 'number',
       },
@@ -10605,9 +10676,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'VoucherDate',
-        dataIndex: 'voucherDate',
+        dataIndex: 'sVoucherDate',
         title: 'Voucher Date',
-        dataType: 'date',
       },
       {
         key: 'ApprovedUser',
@@ -10615,25 +10685,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Approved User',
       },
       {
-        key: 'CommodityType',
-        dataIndex: 'commodityType',
-        title: 'Commodity Type',
-      },
-      {
-        key: 'TotalCIF',
-        dataIndex: 'totalCIF',
-        title: 'Total CIF',
-        dataType: 'number',
-      },
-      {
-        key: 'ExchangeRate',
-        dataIndex: 'exchangeRate',
-        title: 'Exchange Rate',
-        dataType: 'number',
-      },
-      {
-        key: 'TotalAmount',
-        dataIndex: 'totalAmount',
+        key: 'Amount',
+        dataIndex: 'amount',
         title: 'Total Amount',
         dataType: 'number',
       },

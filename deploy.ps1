@@ -35,7 +35,7 @@ dotnet publish API.csproj -c Release -o $publishOutput
 $backendTarget = 'P:\WEBSITES\tradenet-admin-backend'
 New-Item -ItemType Directory -Force -Path $backendTarget | Out-Null
 Write-Host "Copying backend files to: $backendTarget"
-robocopy $publishOutput $backendTarget /MIR /MT:8 /NFL /NDL /NJH /NJS /nc /ns /np
+robocopy $publishOutput $backendTarget /E /MT:8 /NFL /NDL /NJH /NJS /nc /ns /np /XF appsettings.json appsettings.*.json
 
 if (-not $NoFrontend) {
     $frontendDir = Join-Path $root 'Frontend'
@@ -47,7 +47,7 @@ if (-not $NoFrontend) {
     $frontendTarget = 'P:\WEBSITES\tradenenet-admin-frontend'
     New-Item -ItemType Directory -Force -Path $frontendTarget | Out-Null
     Write-Host "Copying frontend files to: $frontendTarget"
-    robocopy $frontendOutput $frontendTarget /MIR /MT:8 /NFL /NDL /NJH /NJS /nc /ns /np
+    robocopy $frontendOutput $frontendTarget /E /MT:8 /NFL /NDL /NJH /NJS /nc /ns /np /XF web.config
 }
 
 Write-Host 'Deployment complete.'

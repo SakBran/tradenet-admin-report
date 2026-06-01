@@ -474,6 +474,41 @@ LINQ (no DB proc existed); they now reflect stored-procedure truth, so their num
 to match the real procs. Dropped LINQ-only columns not returned by the procs (e.g. `Sakhan*`,
 some `HSCode`) now come back null.
 
+#### ImportLicenceVoucherReport — indexed-view optimization + UI alignment
+
+`sp_VoucherReport_pagination` for the **Import Licence** form was moved off the generic
+INSERT-EXEC wrapper to a **direct page-first** query: the base joins+WHERE are paged via OFFSET/FETCH inside a
+`pg` derived table, then per-licence `Currency` / `TotalAmount` are resolved on the ~PageSize
+page rows only.
+
+- **Correlated subqueries → indexed view.** The original per-row `(SELECT TOP 1 currency.Code …)`
+  and `(SELECT SUM(Amount) …)` over `ImportLicenceItem` are now two `OUTER APPLY` joins to the
+  **materialized** view `vw_ImportLicenceItemTotalByCurrency` (grouped by `(ImportLicenceId,
+  CurrencyId)`) with `WITH (NOEXPAND)`. `OUTER APPLY` (not a plain JOIN) keeps one row per
+  licence — the view is per-currency, so a JOIN would multiply rows for multi-currency licences.
+- **View must be materialized.** The view ships in
+  `StoredProcedureMigrations/Views/vw_ImportLicenceItemTotalByCurrency.sql` **with** its unique
+  clustered index `IX_vw_…(ImportLicenceId, CurrencyId)`. `NOEXPAND` errors at runtime if the
+  index is missing — deploy the index, not just the view definition. (Creating it needs
+  `ARITHABORT`/`QUOTED_IDENTIFIER`/`ANSI_*` ON in the session.)
+- **Verified** on dev DB: NOEXPAND resolves (view = 768,062 rows), proc ~1.8s on a 1-month
+  window (fast path), and view-based `Currency`/`TotalAmount` match the original subquery logic
+  exactly (4/4 cross-check).
+
+**Frontend filter boxes + columns** (`reportConfigs.ts` → `ImportLicenceVoucherReport`), aligned
+to old MVC `Views/Reports/ImportLicenceVoucherReport.cshtml` + `ReportControl/VoucherReport.rdlc`:
+
+- Filters: From/To Date, **Import Section** (`ExportImportSectionId` → auto lookup
+  `exportImportSections`), **Apply Type**, **Payment Type**, **Company Registration No**.
+  Removed the bogus `FormType` text box (controller hardcodes `Import Licence`) and `SakhanId`
+  (Sakhan is Border-only).
+- Columns: cleaned single licence-no column; dropped RDLC junk titles (`=Parameters!header…`)
+  and columns absent from the old report (`ApplicationDate`, `CommodityType`, `TotalCIF`,
+  `ExchangeRate`). **Fixed swapped mapping** — `Lic Value` = `totalAmount` (sum of items),
+  `Total Amount` = `amount` (voucher payment), per `Business/Reports.cs` (`sLicenceValue =
+  TotalAmount`). Date columns use the preformatted `sLicenceDate`/`sVoucherDate` strings so they
+  render `dd/MM/yyyy` (the `date` dataType would show `YYYY-MM-DD`).
+
 **Remaining:** the Export/Permit/Border families on the 🟡 procs, plus AccountSummary,
 ChequeNo, MPU, MPU_V3, MemberRegistration, OnlineFees.
 
