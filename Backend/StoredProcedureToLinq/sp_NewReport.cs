@@ -67,6 +67,9 @@ public sealed class sp_NewReportRow
     public string? Auto { get; set; }
     public string? Quota { get; set; }
     public string? CommodityType { get; set; }
+    public int? SakhanId { get; set; }
+    public string? SakhanCode { get; set; }
+    public string? SakhanName { get; set; }
     public int? TotalCount { get; set; }
 
     public sp_NewReportResult ToResult() => new()
@@ -90,6 +93,9 @@ public sealed class sp_NewReportRow
         Auto = Auto,
         Quota = Quota,
         CommodityType = CommodityType,
+        SakhanId = SakhanId,
+        SakhanCode = SakhanCode,
+        SakhanName = SakhanName,
     };
 }
 

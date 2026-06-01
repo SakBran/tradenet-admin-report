@@ -59,6 +59,9 @@ public sealed class sp_ExtensionReportRow
     public string? PostalCode { get; set; }
     public string? Currency { get; set; }
     public decimal? Amount { get; set; }
+    public int? SakhanId { get; set; }
+    public string? SakhanCode { get; set; }
+    public string? SakhanName { get; set; }
     public int? TotalCount { get; set; }
 
     public sp_ExtensionReportResult ToResult() => new()
@@ -79,6 +82,9 @@ public sealed class sp_ExtensionReportRow
         PostalCode = PostalCode,
         Currency = Currency,
         Amount = Amount,
+        SakhanId = SakhanId,
+        SakhanCode = SakhanCode,
+        SakhanName = SakhanName,
     };
 }
 

@@ -75,6 +75,9 @@ public sealed class sp_VoucherReportRow
     public string? CommodityType { get; set; }
     public decimal? ExchangeRate { get; set; }
     public decimal? TotalCIF { get; set; }
+    public int? SakhanId { get; set; }
+    public string? SakhanCode { get; set; }
+    public string? SakhanName { get; set; }
     public int? TotalCount { get; set; }
 
     public sp_VoucherReportResult ToResult() => new()
@@ -102,6 +105,9 @@ public sealed class sp_VoucherReportRow
         CommodityType = CommodityType,
         ExchangeRate = ExchangeRate,
         TotalCIF = TotalCIF.HasValue ? (double)TotalCIF.Value : (double?)null,
+        SakhanId = SakhanId,
+        SakhanCode = SakhanCode,
+        SakhanName = SakhanName,
     };
 }
 

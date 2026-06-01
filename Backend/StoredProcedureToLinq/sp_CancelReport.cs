@@ -62,6 +62,9 @@ public sealed class sp_CancelReportRow
     public string? Currency { get; set; }
     public decimal? Amount { get; set; }
     public string? Remark { get; set; }
+    public int? SakhanId { get; set; }
+    public string? SakhanCode { get; set; }
+    public string? SakhanName { get; set; }
     public int? TotalCount { get; set; }
 
     public sp_CancelReportResult ToResult() => new()
@@ -83,6 +86,9 @@ public sealed class sp_CancelReportRow
         Currency = Currency,
         Amount = Amount,
         Remark = Remark,
+        SakhanId = SakhanId,
+        SakhanCode = SakhanCode,
+        SakhanName = SakhanName,
     };
 }
 

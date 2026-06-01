@@ -49,7 +49,7 @@ BEGIN
 		INNER JOIN Currency currency ON ImportPermitItem.CurrencyId = currency.Id
 		WHERE ImportPermitItem.ImportPermitId=pg.__k_Id) Currency,
         (SELECT top 1 ISNULL(ImportPermitItem.Amount,0) FROM ImportPermitItem
-		WHERE ImportPermitItem.ImportPermitId=pg.__k_Id) Amount, @__total AS TotalCount
+		WHERE ImportPermitItem.ImportPermitId=pg.__k_Id) Amount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
     FROM (
         SELECT ImportPermit.CreatedDate Date,
 section.Code SectionCode,
@@ -96,7 +96,7 @@ ImportPermit.Id AS __k_Id
 		INNER JOIN Currency currency ON ExportPermitItem.CurrencyId = currency.Id
 		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id) Currency,
         (SELECT top 1 ISNULL(ExportPermitItem.Amount,0) FROM ExportPermitItem
-		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id) Amount, @__total AS TotalCount
+		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id) Amount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
     FROM (
         SELECT ExportPermit.CreatedDate Date,
 section.Code SectionCode,
@@ -126,6 +126,104 @@ ExportPermit.Id AS __k_Id
     ORDER BY ' + @ob + N'
     OPTION (RECOMPILE);';
     END
+    ELSE IF @FormType = N'Border Export Licence'
+    BEGIN
+        SET @cntpart = CASE WHEN @IncludeTotalCount = 1
+            THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM (
+		SELECT BorderExportLicence.Id FROM BorderExportLicence
+		INNER JOIN PaThaKa ON BorderExportLicence.PaThaKaId = PaThaKa.Id
+		INNER JOIN ExportImportSection section ON BorderExportLicence.ExportImportSectionId = section.Id
+		INNER JOIN Sakhan sakhan ON BorderExportLicence.SakhanId = sakhan.Id
+		WHERE ApplyType=''Actual Amend'' AND BorderExportLicence.Status=''Approved'' AND CardType=''Pa Tha Ka''
+		AND (BorderExportLicence.CreatedDate>=@FromDate AND BorderExportLicence.CreatedDate<=@ToDate)
+		AND BorderExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND BorderExportLicence.AmendRemarkId=(CASE WHEN @AmendRemarkId=0 then BorderExportLicence.AmendRemarkId ELSE @AmendRemarkId END)
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+		AND BorderExportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderExportLicence.SakhanId ELSE @SakhanId END)
+		UNION ALL
+		SELECT BorderExportLicence.Id FROM BorderExportLicence
+		INNER JOIN IndividualTrading ON BorderExportLicence.IndividualTradingId = IndividualTrading.Id
+		INNER JOIN ExportImportSection section ON BorderExportLicence.ExportImportSectionId = section.Id
+		INNER JOIN Sakhan sakhan ON BorderExportLicence.SakhanId = sakhan.Id
+		WHERE ApplyType=''Actual Amend'' AND BorderExportLicence.Status=''Approved'' AND CardType=''Individual Trading''
+		AND (BorderExportLicence.CreatedDate>=@FromDate AND BorderExportLicence.CreatedDate<=@ToDate)
+		AND BorderExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND BorderExportLicence.AmendRemarkId=(CASE WHEN @AmendRemarkId=0 then BorderExportLicence.AmendRemarkId ELSE @AmendRemarkId END)
+		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
+		AND BorderExportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderExportLicence.SakhanId ELSE @SakhanId END)
+	) tmp); '
+            ELSE N'DECLARE @__total int = NULL; ' END;
+
+        SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM BorderExportLicenceItem
+		INNER JOIN Currency currency ON BorderExportLicenceItem.CurrencyId = currency.Id
+		WHERE BorderExportLicenceItem.BorderExportLicenceId=pg.__k_Id) Currency,
+        (SELECT top 1 ISNULL(BorderExportLicenceItem.Amount,0) FROM BorderExportLicenceItem
+		WHERE BorderExportLicenceItem.BorderExportLicenceId=pg.__k_Id) Amount, @__total AS TotalCount
+    FROM (
+        SELECT * FROM (
+        SELECT BorderExportLicence.CreatedDate Date,
+section.Code SectionCode,
+section.Name SectionName,
+OldExportLicenceNo OldLicenceNo,
+ExportLicenceNo LicenceNo,
+CONVERT(varchar,BorderExportLicence.CreatedDate,103) sDate,
+PaThaKa.CompanyRegistrationNo,
+PaThaKa.CompanyName,
+UnitLevel,
+StreetNumberStreetName,
+QuarterCityTownship,
+State,
+Country,
+PostalCode,
+sakhan.Id SakhanId,
+sakhan.Code SakhanCode,
+sakhan.Name SakhanName,
+BorderExportLicence.Id AS __k_Id
+        FROM BorderExportLicence
+		INNER JOIN PaThaKa ON BorderExportLicence.PaThaKaId = PaThaKa.Id
+		INNER JOIN ExportImportSection section ON BorderExportLicence.ExportImportSectionId = section.Id
+		INNER JOIN Sakhan sakhan ON BorderExportLicence.SakhanId = sakhan.Id
+		WHERE ApplyType=''Actual Amend'' AND BorderExportLicence.Status=''Approved'' AND CardType=''Pa Tha Ka''
+		AND (BorderExportLicence.CreatedDate>=@FromDate AND BorderExportLicence.CreatedDate<=@ToDate)
+		AND BorderExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND BorderExportLicence.AmendRemarkId=(CASE WHEN @AmendRemarkId=0 then BorderExportLicence.AmendRemarkId ELSE @AmendRemarkId END)
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+		AND BorderExportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderExportLicence.SakhanId ELSE @SakhanId END)
+		UNION ALL
+        SELECT BorderExportLicence.CreatedDate Date,
+section.Code SectionCode,
+section.Name SectionName,
+OldExportLicenceNo OldLicenceNo,
+ExportLicenceNo LicenceNo,
+CONVERT(varchar,BorderExportLicence.CreatedDate,103) sDate,
+IndividualTrading.TINNo CompanyRegistrationNo,
+IndividualTrading.Name CompanyName,
+UnitLevel,
+StreetNumberStreetName,
+QuarterCityTownship,
+State,
+Country,
+PostalCode,
+sakhan.Id SakhanId,
+sakhan.Code SakhanCode,
+sakhan.Name SakhanName,
+BorderExportLicence.Id AS __k_Id
+        FROM BorderExportLicence
+		INNER JOIN IndividualTrading ON BorderExportLicence.IndividualTradingId = IndividualTrading.Id
+		INNER JOIN ExportImportSection section ON BorderExportLicence.ExportImportSectionId = section.Id
+		INNER JOIN Sakhan sakhan ON BorderExportLicence.SakhanId = sakhan.Id
+		WHERE ApplyType=''Actual Amend'' AND BorderExportLicence.Status=''Approved'' AND CardType=''Individual Trading''
+		AND (BorderExportLicence.CreatedDate>=@FromDate AND BorderExportLicence.CreatedDate<=@ToDate)
+		AND BorderExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND BorderExportLicence.AmendRemarkId=(CASE WHEN @AmendRemarkId=0 then BorderExportLicence.AmendRemarkId ELSE @AmendRemarkId END)
+		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
+		AND BorderExportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderExportLicence.SakhanId ELSE @SakhanId END)
+        ) u
+        ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
+    ) pg
+    ORDER BY ' + @ob + N'
+    OPTION (RECOMPILE);';
+    END
     ELSE
     BEGIN
         SET @cntpart = CASE WHEN @IncludeTotalCount = 1
@@ -143,7 +241,7 @@ ExportPermit.Id AS __k_Id
 		INNER JOIN Currency currency ON ImportLicenceItem.CurrencyId = currency.Id
 		WHERE ImportLicenceItem.ImportLicenceId=pg.__k_Id) Currency,
         (SELECT top 1 ISNULL(ImportLicenceItem.Amount,0) FROM ImportLicenceItem
-		WHERE ImportLicenceItem.ImportLicenceId=pg.__k_Id) Amount, @__total AS TotalCount
+		WHERE ImportLicenceItem.ImportLicenceId=pg.__k_Id) Amount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
     FROM (
         SELECT ImportLicence.CreatedDate Date,
 section.Code SectionCode,

@@ -1569,8 +1569,16 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'ApplyType',
         label: 'Apply Type',
-        type: 'text',
-        defaultValue: '',
+        type: 'select',
+        defaultValue: 'New',
+        options: [
+          { label: 'New', value: 'New' },
+          { label: 'Amend', value: 'Amend' },
+          { label: 'Extension', value: 'Extension' },
+          { label: 'Cancel', value: 'Cancel' },
+          { label: 'Actual Amend', value: 'Actual Amend' },
+          { label: 'De-Cancel', value: 'De-Cancel' },
+        ],
       },
       {
         name: 'CompanyRegistrationNo',
@@ -1597,25 +1605,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Licence No',
       },
       {
-        key: 'ApplicationDate',
-        dataIndex: 'applicationDate',
-        title: 'Application Date',
-        dataType: 'date',
-      },
-      {
         key: 'ApplicationNo',
         dataIndex: 'applicationNo',
         title: 'Application No',
       },
       {
-        key: 'ParametersHeader2Value',
-        dataIndex: 'licenceNo',
-        title: '=Parameters!header2.Value',
-      },
-      {
-        key: 'ParametersHeader3Value',
+        key: 'LicenceDate',
         dataIndex: 'sLicenceDate',
-        title: '=Parameters!header3.Value',
+        title: 'Licence Date',
       },
       {
         key: 'CompanyRegistrationNo',
@@ -1628,24 +1625,34 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Company Name',
       },
       {
+        key: 'LicValue',
+        dataIndex: 'totalAmount',
+        title: 'Lic Value',
+        dataType: 'number',
+      },
+      {
+        key: 'Currency',
+        dataIndex: 'currency',
+        title: 'Currency',
+      },
+      {
         key: 'VoucherNo',
         dataIndex: 'voucherNo',
         title: 'Voucher No',
       },
       {
         key: 'VoucherDate',
-        dataIndex: 'voucherDate',
+        dataIndex: 'sVoucherDate',
         title: 'Voucher Date',
-        dataType: 'date',
       },
       {
-        key: 'CommodityType',
-        dataIndex: 'commodityType',
-        title: 'Commodity Type',
+        key: 'ApprovedUser',
+        dataIndex: 'approvedUser',
+        title: 'Approved User',
       },
       {
-        key: 'TotalAmount',
-        dataIndex: 'totalAmount',
+        key: 'Amount',
+        dataIndex: 'amount',
         title: 'Total Amount',
         dataType: 'number',
       },

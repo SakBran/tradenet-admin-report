@@ -54,7 +54,7 @@ BEGIN
 
         -- The original sp_VoucherReport selects only CommodityType for Import Permit;
         -- emit ExchangeRate/TotalCIF as NULL so the result set still matches sp_VoucherReportRow.
-        SET @sql = @cntpart + N'SELECT pg.*, cur.Code AS Currency, amt.TotalAmount AS TotalAmount, @__total AS TotalCount
+        SET @sql = @cntpart + N'SELECT pg.*, cur.Code AS Currency, amt.TotalAmount AS TotalAmount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
     FROM (
         SELECT ImportPermit.ApplicationNo,
 ImportPermit.ApplicationDate,
@@ -124,7 +124,7 @@ ImportPermit.Id AS __k_Id
 
         -- The original sp_VoucherReport selects only CommodityType for Export Permit;
         -- emit ExchangeRate/TotalCIF as NULL so the result set still matches sp_VoucherReportRow.
-        SET @sql = @cntpart + N'SELECT pg.*, cur.Code AS Currency, amt.TotalAmount AS TotalAmount, @__total AS TotalCount
+        SET @sql = @cntpart + N'SELECT pg.*, cur.Code AS Currency, amt.TotalAmount AS TotalAmount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
     FROM (
         SELECT ExportPermit.ApplicationNo,
 ExportPermit.ApplicationDate,
@@ -175,6 +175,131 @@ ExportPermit.Id AS __k_Id
     ORDER BY ' + @ob + N'
     OPTION (RECOMPILE);';
     END
+    ELSE IF @FormType = N'Border Export Licence'
+    BEGIN
+        SET @cntpart = CASE WHEN @IncludeTotalCount = 1
+            THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM (
+		SELECT BorderExportLicence.Id FROM BorderExportLicence
+		INNER JOIN AccountTransaction ON BorderExportLicence.Id=AccountTransaction.TransactionId
+		INNER JOIN PaThaKa ON BorderExportLicence.PaThaKaId=PaThaKa.Id
+		INNER JOIN ExportImportSection section ON BorderExportLicence.ExportImportSectionId = section.Id
+		INNER JOIN Sakhan sakhan ON BorderExportLicence.SakhanId = sakhan.Id
+		INNER JOIN Users ON Users.Id = BorderExportLicence.ApproveUserId
+		WHERE IsPayment=1
+		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
+		AND BorderExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
+		AND ApplyType=@ApplyType AND BorderExportLicence.Status=''Approved'' AND BorderExportLicence.CardType=''Pa Tha Ka''
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+		AND BorderExportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderExportLicence.SakhanId ELSE @SakhanId END)
+		UNION ALL
+		SELECT BorderExportLicence.Id FROM BorderExportLicence
+		INNER JOIN AccountTransaction ON BorderExportLicence.Id=AccountTransaction.TransactionId
+		INNER JOIN IndividualTrading ON BorderExportLicence.IndividualTradingId=IndividualTrading.Id
+		INNER JOIN ExportImportSection section ON BorderExportLicence.ExportImportSectionId = section.Id
+		INNER JOIN Sakhan sakhan ON BorderExportLicence.SakhanId = sakhan.Id
+		INNER JOIN Users ON Users.Id = BorderExportLicence.ApproveUserId
+		WHERE IsPayment=1
+		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
+		AND BorderExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
+		AND ApplyType=@ApplyType AND BorderExportLicence.Status=''Approved'' AND BorderExportLicence.CardType=''Individual Trading''
+		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
+		AND BorderExportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderExportLicence.SakhanId ELSE @SakhanId END)
+	) tmp); '
+            ELSE N'DECLARE @__total int = NULL; ' END;
+
+        SET @sql = @cntpart + N'SELECT pg.*,
+        (SELECT top 1 currency.Code FROM BorderExportLicenceItem
+		INNER JOIN Currency currency ON BorderExportLicenceItem.CurrencyId = currency.Id
+		WHERE BorderExportLicenceItem.BorderExportLicenceId=pg.__k_Id) Currency,
+        (SELECT SUM(BorderExportLicenceItem.Amount) FROM BorderExportLicenceItem
+		WHERE BorderExportLicenceItem.BorderExportLicenceId=pg.__k_Id) TotalAmount, @__total AS TotalCount
+    FROM (
+        SELECT * FROM (
+        SELECT BorderExportLicence.ApplicationNo,
+BorderExportLicence.ApplicationDate,
+Users.FullName as ApprovedUser,
+AccountTransaction.PaymentDate Date,
+CONVERT(varchar,AccountTransaction.PaymentDate,103) sDate,
+section.Code SectionCode,
+ApplyType,
+OldExportLicenceNo OldLicenceNo,
+ExportLicenceNo LicenceNo,
+BorderExportLicence.CreatedDate LicenceDate,
+CONVERT(varchar,BorderExportLicence.CreatedDate,103) sLicenceDate,
+PaThaKa.CompanyRegistrationNo,
+PaThaKa.CompanyName,
+VoucherNo,
+VoucherDate,
+CONVERT(varchar,AccountTransaction.VoucherDate,103) sVoucherDate,
+CAST(AccountTransaction.TotalAmount AS decimal(38,6)) Amount,
+PaymentType,
+BorderExportLicence.CommodityType,
+CAST(NULL AS decimal(38,6)) ExchangeRate,
+CAST(NULL AS decimal(38,6)) TotalCIF,
+sakhan.Id SakhanId,
+sakhan.Code SakhanCode,
+sakhan.Name SakhanName,
+BorderExportLicence.Id AS __k_Id
+        FROM BorderExportLicence
+		INNER JOIN AccountTransaction ON BorderExportLicence.Id=AccountTransaction.TransactionId
+		INNER JOIN PaThaKa ON BorderExportLicence.PaThaKaId=PaThaKa.Id
+		INNER JOIN ExportImportSection section ON BorderExportLicence.ExportImportSectionId = section.Id
+		INNER JOIN Sakhan sakhan ON BorderExportLicence.SakhanId = sakhan.Id
+		INNER JOIN Users ON Users.Id = BorderExportLicence.ApproveUserId
+		WHERE IsPayment=1
+		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
+		AND BorderExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
+		AND ApplyType=@ApplyType AND BorderExportLicence.Status=''Approved'' AND BorderExportLicence.CardType=''Pa Tha Ka''
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+		AND BorderExportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderExportLicence.SakhanId ELSE @SakhanId END)
+		UNION ALL
+        SELECT BorderExportLicence.ApplicationNo,
+BorderExportLicence.ApplicationDate,
+Users.FullName as ApprovedUser,
+AccountTransaction.PaymentDate Date,
+CONVERT(varchar,AccountTransaction.PaymentDate,103) sDate,
+section.Code SectionCode,
+ApplyType,
+OldExportLicenceNo OldLicenceNo,
+ExportLicenceNo LicenceNo,
+BorderExportLicence.CreatedDate LicenceDate,
+CONVERT(varchar,BorderExportLicence.CreatedDate,103) sLicenceDate,
+IndividualTrading.TINNo CompanyRegistrationNo,
+IndividualTrading.Name CompanyName,
+VoucherNo,
+VoucherDate,
+CONVERT(varchar,AccountTransaction.VoucherDate,103) sVoucherDate,
+CAST(AccountTransaction.TotalAmount AS decimal(38,6)) Amount,
+PaymentType,
+BorderExportLicence.CommodityType,
+CAST(NULL AS decimal(38,6)) ExchangeRate,
+CAST(NULL AS decimal(38,6)) TotalCIF,
+sakhan.Id SakhanId,
+sakhan.Code SakhanCode,
+sakhan.Name SakhanName,
+BorderExportLicence.Id AS __k_Id
+        FROM BorderExportLicence
+		INNER JOIN AccountTransaction ON BorderExportLicence.Id=AccountTransaction.TransactionId
+		INNER JOIN IndividualTrading ON BorderExportLicence.IndividualTradingId=IndividualTrading.Id
+		INNER JOIN ExportImportSection section ON BorderExportLicence.ExportImportSectionId = section.Id
+		INNER JOIN Sakhan sakhan ON BorderExportLicence.SakhanId = sakhan.Id
+		INNER JOIN Users ON Users.Id = BorderExportLicence.ApproveUserId
+		WHERE IsPayment=1
+		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
+		AND BorderExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
+		AND ApplyType=@ApplyType AND BorderExportLicence.Status=''Approved'' AND BorderExportLicence.CardType=''Individual Trading''
+		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
+		AND BorderExportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderExportLicence.SakhanId ELSE @SakhanId END)
+        ) u
+        ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
+    ) pg
+    ORDER BY ' + @ob + N'
+    OPTION (RECOMPILE);';
+    END
     ELSE
     BEGIN
         -- TotalCount only when requested, computed over the UN-paged base (no subqueries) as a separate scalar.
@@ -192,7 +317,7 @@ ExportPermit.Id AS __k_Id
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)); '
             ELSE N'DECLARE @__total int = NULL; ' END;
 
-        SET @sql = @cntpart + N'SELECT pg.*, cur.Code AS Currency, amt.TotalAmount AS TotalAmount, @__total AS TotalCount
+        SET @sql = @cntpart + N'SELECT pg.*, cur.Code AS Currency, amt.TotalAmount AS TotalAmount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
     FROM (
         SELECT ImportLicence.ApplicationNo,
 ImportLicence.ApplicationDate,
