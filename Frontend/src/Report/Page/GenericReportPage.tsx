@@ -111,6 +111,45 @@ const formatBoolean = (value: unknown) => {
   return value?.toString() ?? 'N/A';
 };
 
+const formatMoney = (value: unknown) => {
+  const parsed = Number(value?.toString().replace(/,/g, ''));
+  return Number.isFinite(parsed) ? parsed.toFixed(2) : value?.toString() ?? 'N/A';
+};
+
+const toTransactionAmountNumber = (value: unknown) => {
+  const raw = value?.toString().replace(/,/g, '').trim() ?? '';
+  if (!raw) {
+    return 0;
+  }
+
+  if (raw.includes('.')) {
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  const wholePart = raw.length > 2 ? raw.slice(0, -2) : '0';
+  const decimalPart = raw.slice(-2).padStart(2, '0');
+  const parsed = Number(`${Number(wholePart)}.${decimalPart}`);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const formatTransactionAmount = (value: unknown) =>
+  toTransactionAmountNumber(value).toFixed(2);
+
+const toMoneyNumber = (value: unknown) => {
+  const parsed = Number(value?.toString().replace(/,/g, ''));
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const getMpuAmount = (row: AnyObject) =>
+  toTransactionAmountNumber(row.transactionAmount) -
+  toMoneyNumber(row.mocAmount) -
+  toMoneyNumber(row.imAmount);
+
+const getAmountDiff = (row: AnyObject) =>
+  toTransactionAmountNumber(row.transactionAmount) -
+  toMoneyNumber(row.mocAmount);
+
 const hasValue = (value: unknown) =>
   value !== undefined && value !== null && value.toString().trim() !== '';
 
@@ -128,6 +167,10 @@ const formatColumnValue = (
 
   if (dataType === 'boolean') {
     return formatBoolean(value);
+  }
+
+  if (dataType === 'money') {
+    return formatMoney(value);
   }
 
   return value?.toString() ?? 'N/A';
@@ -262,6 +305,26 @@ const downloadBlob = (blob: Blob, fileName: string) => {
 const toTableColumn = (
   column: ReportColumnConfig
 ): BasicTableColumn<AnyObject> => {
+  if (column.dataIndex === 'transactionAmount' && column.dataType === 'money') {
+    return { ...column, render: formatTransactionAmount };
+  }
+
+  if (column.dataIndex === 'mpuAmount') {
+    return {
+      ...column,
+      render: (value, row) =>
+        formatMoney(hasValue(value) ? value : getMpuAmount(row)),
+    };
+  }
+
+  if (column.dataIndex === 'amountDiff') {
+    return {
+      ...column,
+      render: (value, row) =>
+        formatMoney(hasValue(value) ? value : getAmountDiff(row)),
+    };
+  }
+
   if (column.fallbackDataIndexes?.length) {
     return {
       ...column,
@@ -286,6 +349,10 @@ const toTableColumn = (
 
   if (column.dataType === 'boolean') {
     return { ...column, render: formatBoolean };
+  }
+
+  if (column.dataType === 'money') {
+    return { ...column, render: formatMoney };
   }
 
   return column;

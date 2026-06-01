@@ -1516,8 +1516,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'PaymentType',
         label: 'Payment Type',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: [
+          { label: 'All', value: '' },
+          { label: 'MPU', value: 'MPU' },
+          { label: 'Citizen Pay', value: 'CitizenPay' },
+        ],
       },
       {
         name: 'ApplyType',
@@ -2756,8 +2761,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'PaymentType',
         label: 'Payment Type',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: [
+          { label: 'All', value: '' },
+          { label: 'MPU', value: 'MPU' },
+          { label: 'Citizen Pay', value: 'Citizen Pay' },
+        ],
       },
       {
         name: 'ApplyType',
@@ -12517,8 +12527,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'PaymentType',
         label: 'Payment Type',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: [
+          { label: 'All', value: '' },
+          { label: 'MPU', value: 'MPU' },
+          { label: 'Citizen Pay', value: 'CitizenPay' },
+        ],
       },
     ],
     columns: [
@@ -12587,21 +12602,25 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'TrxnAmount',
         dataIndex: 'transactionAmount',
         title: 'Trxn Amount',
+        dataType: 'money',
       },
       {
         key: 'MOC',
-        dataIndex: 'mOCAmount',
+        dataIndex: 'mocAmount',
         title: 'MOC',
+        dataType: 'money',
       },
       {
         key: 'IM',
-        dataIndex: 'iMAmount',
+        dataIndex: 'imAmount',
         title: 'IM',
+        dataType: 'money',
       },
       {
         key: 'MPU',
-        dataIndex: 'mPU',
-        title: 'MPU',
+        dataIndex: 'mpuAmount',
+        title: 'MPU Amount',
+        dataType: 'money',
       },
       {
         key: 'VoucherNo',
@@ -12610,8 +12629,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'AmountDiff',
-        dataIndex: 'transactionAmount',
+        dataIndex: 'amountDiff',
         title: 'Amount Diff',
+        dataType: 'money',
       },
     ],
   },
@@ -12643,8 +12663,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'PaymentType',
         label: 'Payment Type',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: [
+          { label: 'All', value: '' },
+          { label: 'MPU', value: 'MPU' },
+          { label: 'Citizen Pay', value: 'CitizenPay' },
+        ],
       },
     ],
     columns: [
@@ -12713,21 +12738,25 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'TrxnAmount',
         dataIndex: 'transactionAmount',
         title: 'Trxn Amount',
+        dataType: 'money',
       },
       {
         key: 'MOC',
-        dataIndex: 'mOCAmount',
+        dataIndex: 'mocAmount',
         title: 'MOC',
+        dataType: 'money',
       },
       {
         key: 'IM',
-        dataIndex: 'iMAmount',
+        dataIndex: 'imAmount',
         title: 'IM',
+        dataType: 'money',
       },
       {
         key: 'MPU',
-        dataIndex: 'mPU',
-        title: 'MPU',
+        dataIndex: 'mpuAmount',
+        title: 'MPU Amount',
+        dataType: 'money',
       },
       {
         key: 'VoucherNo',
@@ -12736,8 +12765,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'AmountDiff',
-        dataIndex: 'transactionAmount',
+        dataIndex: 'amountDiff',
         title: 'Amount Diff',
+        dataType: 'money',
       },
     ],
   },

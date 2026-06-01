@@ -1,4 +1,9 @@
-export type ReportColumnDataType = 'string' | 'number' | 'date' | 'boolean';
+export type ReportColumnDataType =
+  | 'string'
+  | 'number'
+  | 'date'
+  | 'boolean'
+  | 'money';
 
 export type ReportFilterType =
   | 'text'
