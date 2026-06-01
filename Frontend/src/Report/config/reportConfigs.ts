@@ -9082,16 +9082,30 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
       },
       {
-        name: 'PaymentType',
-        label: 'Payment Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
         name: 'ApplyType',
         label: 'Apply Type',
-        type: 'text',
+        type: 'select',
+        defaultValue: 'New',
+        options: [
+          { label: 'New', value: 'New' },
+          { label: 'Amend', value: 'Amend' },
+          { label: 'Extension', value: 'Extension' },
+          { label: 'Cancel', value: 'Cancel' },
+          { label: 'Actual Amend', value: 'Actual Amend' },
+          { label: 'De-Cancel', value: 'De-Cancel' },
+        ],
+      },
+      {
+        name: 'PaymentType',
+        label: 'Payment Type',
+        type: 'select',
         defaultValue: '',
+        options: [
+          { label: '--- All ---', value: '' },
+          { label: 'Cash', value: 'Cash' },
+          { label: 'MPU', value: 'MPU' },
+          { label: 'Citizen Pay', value: 'Citizen Pay' },
+        ],
       },
       {
         name: 'CompanyRegistrationNo',
@@ -9113,25 +9127,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Licence No',
       },
       {
-        key: 'ApplicationDate',
-        dataIndex: 'applicationDate',
-        title: 'Application Date',
-        dataType: 'date',
-      },
-      {
-        key: 'ParametersHeader2Value',
-        dataIndex: 'licenceNo',
-        title: '=Parameters!header2.Value',
-      },
-      {
         key: 'ApplicationNo',
         dataIndex: 'applicationNo',
         title: 'Application No',
       },
       {
-        key: 'ParametersHeader3Value',
+        key: 'LicenceDate',
         dataIndex: 'sLicenceDate',
-        title: '=Parameters!header3.Value',
+        title: 'Licence Date',
       },
       {
         key: 'CompanyRegistrationNo',
@@ -9145,7 +9148,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicValue',
-        dataIndex: 'amount',
+        dataIndex: 'totalAmount',
         title: 'Lic Value',
         dataType: 'number',
       },
@@ -9161,9 +9164,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'VoucherDate',
-        dataIndex: 'voucherDate',
+        dataIndex: 'sVoucherDate',
         title: 'Voucher Date',
-        dataType: 'date',
       },
       {
         key: 'ApprovedUser',
@@ -9171,25 +9173,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Approved User',
       },
       {
-        key: 'CommodityType',
-        dataIndex: 'commodityType',
-        title: 'Commodity Type',
-      },
-      {
-        key: 'TotalCIF',
-        dataIndex: 'totalCIF',
-        title: 'Total CIF',
-        dataType: 'number',
-      },
-      {
-        key: 'ExchangeRate',
-        dataIndex: 'exchangeRate',
-        title: 'Exchange Rate',
-        dataType: 'number',
-      },
-      {
-        key: 'TotalAmount',
-        dataIndex: 'totalAmount',
+        key: 'Amount',
+        dataIndex: 'amount',
         title: 'Total Amount',
         dataType: 'number',
       },

@@ -105,6 +105,76 @@ ImportPermit.Id AS __k_Id
     ORDER BY ' + @ob + N'
     OPTION (RECOMPILE);';
     END
+    ELSE IF @FormType = N'Export Permit'
+    BEGIN
+        -- TotalCount only when requested, computed over the UN-paged base (no subqueries) as a separate scalar.
+        SET @cntpart = CASE WHEN @IncludeTotalCount = 1
+            THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM ExportPermit
+		INNER JOIN AccountTransaction ON ExportPermit.Id=AccountTransaction.TransactionId
+		INNER JOIN PaThaKa ON ExportPermit.PaThaKaId=PaThaKa.Id
+		INNER JOIN ExportImportSection section ON ExportPermit.ExportImportSectionId = section.Id
+		INNER JOIN Users ON Users.Id = ExportPermit.ApproveUserId
+		WHERE IsPayment=1
+		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
+		AND ExportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
+		AND ApplyType=@ApplyType AND ExportPermit.Status=''Approved''
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)); '
+            ELSE N'DECLARE @__total int = NULL; ' END;
+
+        -- The original sp_VoucherReport selects only CommodityType for Export Permit;
+        -- emit ExchangeRate/TotalCIF as NULL so the result set still matches sp_VoucherReportRow.
+        SET @sql = @cntpart + N'SELECT pg.*, cur.Code AS Currency, amt.TotalAmount AS TotalAmount, @__total AS TotalCount
+    FROM (
+        SELECT ExportPermit.ApplicationNo,
+ExportPermit.ApplicationDate,
+Users.FullName as ApprovedUser,
+AccountTransaction.PaymentDate Date,
+CONVERT(varchar,AccountTransaction.PaymentDate,103) sDate,
+section.Code SectionCode,
+ApplyType,
+OldExportPermitNo OldLicenceNo,
+ExportPermitNo LicenceNo,
+ExportPermit.CreatedDate LicenceDate,
+CONVERT(varchar,ExportPermit.CreatedDate,103) sLicenceDate,
+PaThaKa.CompanyRegistrationNo,
+PaThaKa.CompanyName,
+VoucherNo,
+VoucherDate,
+CONVERT(varchar,AccountTransaction.VoucherDate,103) sVoucherDate,
+CAST(AccountTransaction.TotalAmount AS decimal(38,6)) Amount,
+PaymentType,
+ExportPermit.CommodityType,
+CAST(NULL AS decimal(38,6)) ExchangeRate,
+CAST(NULL AS decimal(38,6)) TotalCIF,
+ExportPermit.Id AS __k_Id
+        FROM ExportPermit
+		INNER JOIN AccountTransaction ON ExportPermit.Id=AccountTransaction.TransactionId
+		INNER JOIN PaThaKa ON ExportPermit.PaThaKaId=PaThaKa.Id
+		INNER JOIN ExportImportSection section ON ExportPermit.ExportImportSectionId = section.Id
+		INNER JOIN Users ON Users.Id = ExportPermit.ApproveUserId
+		WHERE IsPayment=1
+		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
+		AND ExportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
+		AND ApplyType=@ApplyType AND ExportPermit.Status=''Approved''
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+        ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
+    ) pg
+    OUTER APPLY (
+        SELECT SUM(v.TotalAmount) AS TotalAmount
+        FROM dbo.vw_ExportPermitItemTotalByCurrency AS v WITH (NOEXPAND)
+        WHERE v.ExportPermitId = pg.__k_Id
+    ) amt
+    OUTER APPLY (
+        SELECT TOP 1 currency.Code
+        FROM dbo.vw_ExportPermitItemTotalByCurrency AS v WITH (NOEXPAND)
+        INNER JOIN Currency currency ON v.CurrencyId = currency.Id
+        WHERE v.ExportPermitId = pg.__k_Id
+    ) cur
+    ORDER BY ' + @ob + N'
+    OPTION (RECOMPILE);';
+    END
     ELSE
     BEGIN
         -- TotalCount only when requested, computed over the UN-paged base (no subqueries) as a separate scalar.

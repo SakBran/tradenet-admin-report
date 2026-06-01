@@ -79,6 +79,53 @@ ImportPermit.Id AS __k_Id
     ORDER BY ' + @ob + N'
     OPTION (RECOMPILE);';
     END
+    ELSE IF @FormType = N'Export Permit'
+    BEGIN
+        SET @cntpart = CASE WHEN @IncludeTotalCount = 1
+            THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM ExportPermit
+		INNER JOIN PaThaKa ON ExportPermit.PaThaKaId = PaThaKa.Id
+		INNER JOIN ExportImportSection section ON ExportPermit.ExportImportSectionId = section.Id
+		WHERE ApplyType=''Actual Amend'' AND ExportPermit.Status=''Approved''
+		AND (ExportPermit.CreatedDate>=@FromDate AND ExportPermit.CreatedDate<=@ToDate)
+		AND ExportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND ExportPermit.AmendRemarkId=(CASE WHEN @AmendRemarkId=0 then ExportPermit.AmendRemarkId ELSE @AmendRemarkId END)
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)); '
+            ELSE N'DECLARE @__total int = NULL; ' END;
+
+        SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM ExportPermitItem
+		INNER JOIN Currency currency ON ExportPermitItem.CurrencyId = currency.Id
+		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id) Currency,
+        (SELECT top 1 ISNULL(ExportPermitItem.Amount,0) FROM ExportPermitItem
+		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id) Amount, @__total AS TotalCount
+    FROM (
+        SELECT ExportPermit.CreatedDate Date,
+section.Code SectionCode,
+section.Name SectionName,
+OldExportPermitNo OldLicenceNo,
+ExportPermitNo LicenceNo,
+CONVERT(varchar,ExportPermit.CreatedDate,103) sDate,
+PaThaKa.CompanyRegistrationNo,
+PaThaKa.CompanyName,
+UnitLevel,
+StreetNumberStreetName,
+QuarterCityTownship,
+State,
+Country,
+PostalCode,
+ExportPermit.Id AS __k_Id
+        FROM ExportPermit
+		INNER JOIN PaThaKa ON ExportPermit.PaThaKaId = PaThaKa.Id
+		INNER JOIN ExportImportSection section ON ExportPermit.ExportImportSectionId = section.Id
+		WHERE ApplyType=''Actual Amend'' AND ExportPermit.Status=''Approved''
+		AND (ExportPermit.CreatedDate>=@FromDate AND ExportPermit.CreatedDate<=@ToDate)
+		AND ExportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND ExportPermit.AmendRemarkId=(CASE WHEN @AmendRemarkId=0 then ExportPermit.AmendRemarkId ELSE @AmendRemarkId END)
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+        ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
+    ) pg
+    ORDER BY ' + @ob + N'
+    OPTION (RECOMPILE);';
+    END
     ELSE
     BEGIN
         SET @cntpart = CASE WHEN @IncludeTotalCount = 1
