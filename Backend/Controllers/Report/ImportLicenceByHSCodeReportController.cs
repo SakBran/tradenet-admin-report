@@ -42,7 +42,7 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-                        byte[] fileBytes;
+            byte[] fileBytes;
             try
             {
                 fileBytes = await sp_HSCodeReport.CreateAggregateExcelWorkbookAsync(

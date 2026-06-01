@@ -1,4 +1,37 @@
-import { ReportPageConfig } from './reportTypes';
+import { ReportFilterOption, ReportPageConfig } from './reportTypes';
+
+// Shared PaThaKa State/Status filter options. '--- All ---' = no filter ('').
+const pathakaStateFilterOptions: ReportFilterOption[] = [
+  { label: '--- All ---', value: '' },
+  { label: 'Ayeyarwaddy Region', value: 'Ayeyarwaddy Region' },
+  { label: 'Bago Region', value: 'Bago Region' },
+  { label: 'Chin State', value: 'Chin State' },
+  { label: 'Eastern Shan State', value: 'Eastern Shan State' },
+  { label: 'Kachin State', value: 'Kachin State' },
+  { label: 'Kayah State', value: 'Kayah State' },
+  { label: 'Kayin State', value: 'Kayin State' },
+  { label: 'Magway Region', value: 'Magway Region' },
+  { label: 'Mandalay Region', value: 'Mandalay Region' },
+  { label: 'Mon State', value: 'Mon State' },
+  { label: 'Naypyitaw Region', value: 'Naypyitaw Region' },
+  { label: 'Northern Shan State', value: 'Northern Shan State' },
+  { label: 'Rakhine State', value: 'Rakhine State' },
+  { label: 'Sagaing Region', value: 'Sagaing Region' },
+  { label: 'Shan State', value: 'Shan State' },
+  { label: 'Southern Shan State', value: 'Southern Shan State' },
+  { label: 'Tanintharyi Region', value: 'Tanintharyi Region' },
+  { label: 'Yangon Region', value: 'Yangon Region' },
+];
+
+const pathakaStatusFilterOptions: ReportFilterOption[] = [
+  { label: '--- All ---', value: '' },
+  { label: 'Suspension', value: 'Suspension' },
+  { label: 'Extension', value: 'Extension' },
+  { label: 'Un_suspension', value: 'Un_suspension' },
+  { label: 'Blacklist', value: 'Blacklist' },
+  { label: 'New', value: 'New' },
+  { label: 'Amend', value: 'Amend' },
+];
 
 export const reportConfigs: Record<string, ReportPageConfig> = {
   AccountSummaryReport: {
@@ -1525,8 +1558,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'PaymentType',
         label: 'Payment Type',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: [
+          { label: 'All', value: '' },
+          { label: 'MPU', value: 'MPU' },
+          { label: 'Citizen Pay', value: 'CitizenPay' },
+        ],
       },
       {
         name: 'ApplyType',
@@ -2807,8 +2845,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'PaymentType',
         label: 'Payment Type',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: [
+          { label: 'All', value: '' },
+          { label: 'MPU', value: 'MPU' },
+          { label: 'Citizen Pay', value: 'Citizen Pay' },
+        ],
       },
       {
         name: 'ApplyType',
@@ -6019,7 +6062,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   CardListsByCompanyRegistrationNumber: {
     controllerName: 'CardListsByCompanyRegistrationNumber',
-    title: 'CardListsByCompanyRegistrationNumber',
+    title: 'Card Lists By Company Registration Number',
     apiRoute: 'CardListsByCompanyRegistrationNumber',
     excelRoute: 'CardListsByCompanyRegistrationNumber/Excel',
     excelFileName: 'CardListsByCompanyRegistrationNumber.xlsx',
@@ -6164,7 +6207,102 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
     ],
-    columns: [],
+    columns: [
+      {
+        key: 'CompanyRegistrationNo',
+        dataIndex: 'companyRegistrationNo',
+        title: 'Company Registration No',
+      },
+      {
+        key: 'CompanyName',
+        dataIndex: 'companyName',
+        title: 'Company Name',
+      },
+      {
+        key: 'CompanyRegistrationDate',
+        dataIndex: 'companyRegistrationDate',
+        title: 'Company Registration Date',
+        dataType: 'date',
+      },
+      {
+        key: 'EndDate',
+        dataIndex: 'endDate',
+        title: 'End Date',
+        dataType: 'date',
+      },
+      {
+        key: 'BusinessType',
+        dataIndex: 'businessType',
+        title: 'Business Type',
+      },
+      {
+        key: 'LineofBusiness',
+        dataIndex: 'lineofBusiness',
+        title: 'Line of Business',
+      },
+      {
+        key: 'UnitLevel',
+        dataIndex: 'unitLevel',
+        title: 'Unit Level',
+      },
+      {
+        key: 'StreetNumberStreetName',
+        dataIndex: 'streetNumberStreetName',
+        title: 'Street Number / Street Name',
+      },
+      {
+        key: 'QuarterCityTownship',
+        dataIndex: 'quarterCityTownship',
+        title: 'Quarter / City / Township',
+      },
+      {
+        key: 'State',
+        dataIndex: 'state',
+        title: 'State',
+      },
+      {
+        key: 'Country',
+        dataIndex: 'country',
+        title: 'Country',
+      },
+      {
+        key: 'PostalCode',
+        dataIndex: 'postalCode',
+        title: 'Postal Code',
+      },
+      {
+        key: 'Capital',
+        dataIndex: 'capital',
+        title: 'Capital',
+        dataType: 'number',
+      },
+      {
+        key: 'DirectorName',
+        dataIndex: 'directorName',
+        title: 'Director Name',
+      },
+      {
+        key: 'DirectorNrc',
+        dataIndex: 'directorNrc',
+        title: 'Director NRC',
+      },
+      {
+        key: 'DirectorPosition',
+        dataIndex: 'directorPosition',
+        title: 'Director Position',
+      },
+      {
+        key: 'PermitBusiness',
+        dataIndex: 'permitBusiness',
+        title: 'Permit Business',
+      },
+      {
+        key: 'ExtensionCount',
+        dataIndex: 'extensionCount',
+        title: 'Extension Count',
+        dataType: 'number',
+      },
+    ],
   },
   EIRCardBindReport: {
     controllerName: 'EIRCardBindReport',
@@ -9309,8 +9447,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'FilterType',
         label: 'Filter Type',
-        type: 'text',
-        defaultValue: '',
+        type: 'select',
+        defaultValue: 'Start',
+        options: [
+          { label: 'Start', value: 'Start' },
+          { label: 'End', value: 'End' },
+        ],
       },
       {
         name: 'HSCode',
@@ -10767,40 +10909,42 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         required: true,
       },
       {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
         name: 'ExportImportSectionId',
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
       },
       {
-        name: 'PaymentType',
-        label: 'Payment Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
         name: 'ApplyType',
         label: 'Apply Type',
-        type: 'text',
+        type: 'select',
+        defaultValue: 'New',
+        options: [
+          { label: 'New', value: 'New' },
+          { label: 'Amend', value: 'Amend' },
+          { label: 'Extension', value: 'Extension' },
+          { label: 'Cancel', value: 'Cancel' },
+          { label: 'Actual Amend', value: 'Actual Amend' },
+          { label: 'De-Cancel', value: 'De-Cancel' },
+        ],
+      },
+      {
+        name: 'PaymentType',
+        label: 'Payment Type',
+        type: 'select',
         defaultValue: '',
+        options: [
+          { label: '--- All ---', value: '' },
+          { label: 'Cash', value: 'Cash' },
+          { label: 'MPU', value: 'MPU' },
+          { label: 'Citizen Pay', value: 'Citizen Pay' },
+        ],
       },
       {
         name: 'CompanyRegistrationNo',
         label: 'Company Registration No',
         type: 'text',
         defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
       },
     ],
     columns: [
@@ -10810,25 +10954,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Licence No',
       },
       {
-        key: 'ApplicationDate',
-        dataIndex: 'applicationDate',
-        title: 'Application Date',
-        dataType: 'date',
-      },
-      {
-        key: 'ParametersHeader2Value',
-        dataIndex: 'licenceNo',
-        title: '=Parameters!header2.Value',
-      },
-      {
         key: 'ApplicationNo',
         dataIndex: 'applicationNo',
         title: 'Application No',
       },
       {
-        key: 'ParametersHeader3Value',
+        key: 'LicenceDate',
         dataIndex: 'sLicenceDate',
-        title: '=Parameters!header3.Value',
+        title: 'Licence Date',
       },
       {
         key: 'CompanyRegistrationNo',
@@ -10842,7 +10975,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicValue',
-        dataIndex: 'amount',
+        dataIndex: 'totalAmount',
         title: 'Lic Value',
         dataType: 'number',
       },
@@ -10858,9 +10991,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'VoucherDate',
-        dataIndex: 'voucherDate',
+        dataIndex: 'sVoucherDate',
         title: 'Voucher Date',
-        dataType: 'date',
       },
       {
         key: 'ApprovedUser',
@@ -10868,25 +11000,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Approved User',
       },
       {
-        key: 'CommodityType',
-        dataIndex: 'commodityType',
-        title: 'Commodity Type',
-      },
-      {
-        key: 'TotalCIF',
-        dataIndex: 'totalCIF',
-        title: 'Total CIF',
-        dataType: 'number',
-      },
-      {
-        key: 'ExchangeRate',
-        dataIndex: 'exchangeRate',
-        title: 'Exchange Rate',
-        dataType: 'number',
-      },
-      {
-        key: 'TotalAmount',
-        dataIndex: 'totalAmount',
+        key: 'Amount',
+        dataIndex: 'amount',
         title: 'Total Amount',
         dataType: 'number',
       },
@@ -12201,14 +12316,16 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'State',
         label: 'State',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: pathakaStateFilterOptions,
       },
       {
         name: 'Status',
         label: 'Status',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: pathakaStatusFilterOptions,
       },
     ],
     columns: [
@@ -12578,14 +12695,16 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'State',
         label: 'State',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: pathakaStateFilterOptions,
       },
       {
         name: 'Status',
         label: 'Status',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: pathakaStatusFilterOptions,
       },
     ],
     columns: [
@@ -12671,20 +12790,26 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'State',
         label: 'State',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: pathakaStateFilterOptions,
       },
       {
         name: 'Status',
         label: 'Status',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: pathakaStatusFilterOptions,
       },
       {
         name: 'Type',
         label: 'Type',
-        type: 'text',
-        defaultValue: '',
+        type: 'select',
+        defaultValue: 'valid',
+        options: [
+          { label: 'Valid', value: 'valid' },
+          { label: 'Invalid', value: 'invalid' },
+        ],
       },
     ],
     columns: [
@@ -12840,8 +12965,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'PaymentType',
         label: 'Payment Type',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: [
+          { label: 'All', value: '' },
+          { label: 'MPU', value: 'MPU' },
+          { label: 'Citizen Pay', value: 'CitizenPay' },
+        ],
       },
     ],
     columns: [
@@ -12910,21 +13040,25 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'TrxnAmount',
         dataIndex: 'transactionAmount',
         title: 'Trxn Amount',
+        dataType: 'money',
       },
       {
         key: 'MOC',
-        dataIndex: 'mOCAmount',
+        dataIndex: 'mocAmount',
         title: 'MOC',
+        dataType: 'money',
       },
       {
         key: 'IM',
-        dataIndex: 'iMAmount',
+        dataIndex: 'imAmount',
         title: 'IM',
+        dataType: 'money',
       },
       {
         key: 'MPU',
-        dataIndex: 'mPU',
-        title: 'MPU',
+        dataIndex: 'mpuAmount',
+        title: 'MPU Amount',
+        dataType: 'money',
       },
       {
         key: 'VoucherNo',
@@ -12933,8 +13067,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'AmountDiff',
-        dataIndex: 'transactionAmount',
+        dataIndex: 'amountDiff',
         title: 'Amount Diff',
+        dataType: 'money',
       },
     ],
   },
@@ -12966,8 +13101,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'PaymentType',
         label: 'Payment Type',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: [
+          { label: 'All', value: '' },
+          { label: 'MPU', value: 'MPU' },
+          { label: 'Citizen Pay', value: 'CitizenPay' },
+        ],
       },
     ],
     columns: [
@@ -13036,21 +13176,25 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'TrxnAmount',
         dataIndex: 'transactionAmount',
         title: 'Trxn Amount',
+        dataType: 'money',
       },
       {
         key: 'MOC',
-        dataIndex: 'mOCAmount',
+        dataIndex: 'mocAmount',
         title: 'MOC',
+        dataType: 'money',
       },
       {
         key: 'IM',
-        dataIndex: 'iMAmount',
+        dataIndex: 'imAmount',
         title: 'IM',
+        dataType: 'money',
       },
       {
         key: 'MPU',
-        dataIndex: 'mPU',
-        title: 'MPU',
+        dataIndex: 'mpuAmount',
+        title: 'MPU Amount',
+        dataType: 'money',
       },
       {
         key: 'VoucherNo',
@@ -13059,8 +13203,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'AmountDiff',
-        dataIndex: 'transactionAmount',
+        dataIndex: 'amountDiff',
         title: 'Amount Diff',
+        dataType: 'money',
       },
     ],
   },
@@ -13133,7 +13278,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   PaThaKaRegisteredBusinessOrganizationReport: {
     controllerName: 'PaThaKaRegisteredBusinessOrganizationReport',
-    title: 'PaThaKaRegisteredBusinessOrganizationReport',
+    title: 'PaThaKa Registered Business Organization Report',
     apiRoute: 'PaThaKaRegisteredBusinessOrganizationReport',
     excelRoute: 'PaThaKaRegisteredBusinessOrganizationReport/Excel',
     excelFileName: 'PaThaKaRegisteredBusinessOrganizationReport.xlsx',
@@ -13165,14 +13310,16 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'State',
         label: 'State',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: pathakaStateFilterOptions,
       },
       {
         name: 'Status',
         label: 'Status',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: pathakaStatusFilterOptions,
       },
     ],
     columns: [
@@ -13290,14 +13437,28 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'PaymentType',
         label: 'Payment Type',
-        type: 'text',
+        type: 'select',
         defaultValue: '',
+        options: [
+          { label: '--- All ---', value: '' },
+          { label: 'Cash', value: 'Cash' },
+          { label: 'MPU', value: 'MPU' },
+          { label: 'Citizen Pay', value: 'Citizen Pay' },
+        ],
       },
       {
         name: 'ApplyType',
         label: 'Apply Type',
-        type: 'text',
-        defaultValue: '',
+        type: 'select',
+        defaultValue: 'New',
+        options: [
+          { label: 'New', value: 'New' },
+          { label: 'Amend', value: 'Amend' },
+          { label: 'Extension', value: 'Extension' },
+          { label: 'Cancel', value: 'Cancel' },
+          { label: 'Actual Amend', value: 'Actual Amend' },
+          { label: 'De-Cancel', value: 'De-Cancel' },
+        ],
       },
     ],
     columns: [

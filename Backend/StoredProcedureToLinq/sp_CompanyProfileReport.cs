@@ -1,6 +1,9 @@
 using API.DBContext;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System;
-using System.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
 
@@ -34,59 +37,87 @@ public sealed class sp_CompanyProfileReportResult
     public int ExtensionCount { get; set; }
 }
 
+public sealed class sp_CompanyProfileReportRow
+{
+    public string Id { get; set; } = null!;
+    public string CompanyRegistrationNo { get; set; } = null!;
+    public DateTime EndDate { get; set; }
+    public string CompanyName { get; set; } = null!;
+    public DateTime CompanyRegistrationDate { get; set; }
+    public string BusinessType { get; set; } = null!;
+    public string? LineofBusiness { get; set; }
+    public string? UnitLevel { get; set; }
+    public string StreetNumberStreetName { get; set; } = null!;
+    public string QuarterCityTownship { get; set; } = null!;
+    public string State { get; set; } = null!;
+    public string Country { get; set; } = null!;
+    public string? PostalCode { get; set; }
+    public double? Capital { get; set; }
+    public string? DirectorName { get; set; }
+    public string? DirectorNRC { get; set; }
+    public string? DirectorPosition { get; set; }
+    public string PermitBusiness { get; set; } = string.Empty;
+    public int ExtensionCount { get; set; }
+    public int TotalCount { get; set; }
+
+    public sp_CompanyProfileReportResult ToResult() => new()
+    {
+        Id = Id,
+        CompanyRegistrationNo = CompanyRegistrationNo,
+        EndDate = EndDate,
+        CompanyName = CompanyName,
+        CompanyRegistrationDate = CompanyRegistrationDate,
+        BusinessType = BusinessType,
+        LineofBusiness = LineofBusiness,
+        UnitLevel = UnitLevel,
+        StreetNumberStreetName = StreetNumberStreetName,
+        QuarterCityTownship = QuarterCityTownship,
+        State = State,
+        Country = Country,
+        PostalCode = PostalCode,
+        Capital = Capital,
+        DirectorName = DirectorName,
+        DirectorNrc = DirectorNRC,
+        DirectorPosition = DirectorPosition,
+        PermitBusiness = PermitBusiness,
+        ExtensionCount = ExtensionCount,
+    };
+}
+
+/// <summary>
+/// Executes <c>dbo.sp_CompanyProfileReport_pagination</c> directly (NOT the
+/// untouched original). See StoredProcedureMigrations/sp_CompanyProfileReport_pagination.sql.
+/// </summary>
 public static class sp_CompanyProfileReport
 {
-    private const string Approved = "Approved";
-    private const string Extension = "Extension";
-
-    public static IQueryable<sp_CompanyProfileReportResult> Query(
+    public static async Task<List<sp_CompanyProfileReportRow>> ExecuteAsync(
         TradeNetDbContext db,
-        sp_CompanyProfileReportRequest request)
+        sp_CompanyProfileReportRequest request,
+        string? sortColumn = null,
+        string? sortOrder = null,
+        int? pageIndex = null,
+        int? pageSize = null)
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
-        return
-            from paThaKa in db.PaThaKas
-            join director in db.PaThaKaDirectors on paThaKa.Id equals director.PaThaKaId
-            join businessType in db.BusinessTypes on paThaKa.BusinessTypeId equals businessType.Id
-            join lineofBusiness in db.LineofBusinesses on paThaKa.LineofBusinessId equals lineofBusiness.Id
-            where paThaKa.IssuedDate >= request.FromDate
-                && paThaKa.IssuedDate <= request.ToDate
-                && (request.CompanyRegistrationNo == string.Empty
-                    ? paThaKa.CompanyRegistrationNo == paThaKa.CompanyRegistrationNo
-                    : paThaKa.CompanyRegistrationNo == request.CompanyRegistrationNo)
-            orderby paThaKa.IssuedDate
-            select new sp_CompanyProfileReportResult
-            {
-                Id = paThaKa.Id,
-                CompanyRegistrationNo = paThaKa.CompanyRegistrationNo,
-                EndDate = paThaKa.EndDate,
-                CompanyName = paThaKa.CompanyName,
-                CompanyRegistrationDate = paThaKa.CompanyRegistrationDate,
-                BusinessType = businessType.Name,
-                LineofBusiness = lineofBusiness.Name,
-                UnitLevel = paThaKa.UnitLevel,
-                StreetNumberStreetName = paThaKa.StreetNumberStreetName,
-                QuarterCityTownship = paThaKa.QuarterCityTownship,
-                State = paThaKa.State,
-                Country = paThaKa.Country,
-                PostalCode = paThaKa.PostalCode,
-                Capital = paThaKa.Capital,
-                DirectorName = director.Name,
-                DirectorNrc = director.Nrc,
-                DirectorPosition = director.Position,
-                PermitBusiness = string.Join(",",
-                    from paThaKaPermitBusiness in db.PaThaKaPermitBusinesses
-                    join permitBusiness in db.PermitBusinesses
-                        on paThaKaPermitBusiness.PermitBusinessId equals permitBusiness.Id
-                    where paThaKaPermitBusiness.PaThaKaId == paThaKa.Id
-                    orderby permitBusiness.SortOrder
-                    select permitBusiness.Description),
-                ExtensionCount = db.PaThaKaRegistrations.Count(registration =>
-                    registration.CompanyRegistrationNo == paThaKa.CompanyRegistrationNo
-                    && registration.ApplyType == Extension
-                    && registration.Status == Approved)
-            };
+        var parameters = new[]
+        {
+            new SqlParameter("@FromDate", request.FromDate),
+            new SqlParameter("@ToDate", request.ToDate),
+            new SqlParameter("@CompanyRegistrationNo", request.CompanyRegistrationNo ?? string.Empty),
+            new SqlParameter("@SortColumn", (object?)sortColumn ?? DBNull.Value),
+            new SqlParameter("@SortOrder", (object?)sortOrder ?? DBNull.Value),
+            new SqlParameter("@PageIndex", (object?)pageIndex ?? DBNull.Value),
+            new SqlParameter("@PageSize", (object?)pageSize ?? DBNull.Value),
+        };
+
+        const string sql =
+            "EXEC dbo.sp_CompanyProfileReport_pagination @FromDate, @ToDate, @CompanyRegistrationNo, " +
+            "@SortColumn, @SortOrder, @PageIndex, @PageSize";
+
+        return await db.Database
+            .SqlQueryRaw<sp_CompanyProfileReportRow>(sql, parameters)
+            .ToListAsync();
     }
 }

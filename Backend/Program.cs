@@ -20,6 +20,9 @@ internal class Program
         var builder = WebApplication.CreateBuilder(args);
         builder.Services.AddControllers();
         builder.Services.AddMemoryCache();
+        // App-wide country list: loaded lazily on first report request and refreshed on demand
+        // once stale (request-driven TTL, see CountryCache.Ttl), read in-memory by reports.
+        builder.Services.AddSingleton<API.Service.Reports.ICountryCache, API.Service.Reports.CountryCache>();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(options =>
         {
@@ -131,6 +134,8 @@ internal class Program
                           "https://testingvehicle.myanmartradenet.com",
                           "https://www.mpu-ecommerce.com",
                           "https://www.mpuecomuat.com",
+                          "https://reportuat.myanmartradenet.com/",
+                          "https://reportuat.myanmartradenet.com",
                           "capacitor://localhost",
                           "http://localhost:5173",
                           "http://localhost:5173/",

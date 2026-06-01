@@ -466,6 +466,8 @@ public partial class TradeNetDbContext : DbContext
 
     public virtual DbSet<WineType> WineTypes { get; set; }
 
+    public virtual DbSet<VwImportLicenceItemTotalByCurrency> VwImportLicenceItemTotalByCurrencies { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AccountTransaction>(entity =>
@@ -1555,6 +1557,15 @@ public partial class TradeNetDbContext : DbContext
             entity.Property(e => e.Id).IsFixedLength();
             entity.Property(e => e.ParentId).IsFixedLength();
             entity.Property(e => e.WineImportationRegistrationId).IsFixedLength();
+        });
+
+        modelBuilder.Entity<VwImportLicenceItemTotalByCurrency>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("vw_ImportLicenceItemTotalByCurrency");
+
+            entity.Property(e => e.ImportLicenceId).IsFixedLength();
         });
 
         OnModelCreatingPartial(modelBuilder);

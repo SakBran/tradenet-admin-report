@@ -1,6 +1,9 @@
 using API.DBContext;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System;
-using System.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
 
@@ -47,207 +50,108 @@ public sealed class sp_DirectorListReportResult
     public string? DirectorBlackList { get; set; }
 }
 
+public sealed class sp_DirectorListReportRow
+{
+    public string CompanyRegistrationNo { get; set; } = null!;
+    public string CompanyName { get; set; } = null!;
+    public DateTime CompanyRegistrationDate { get; set; }
+    public DateTime? IssuedDate { get; set; }
+    public DateTime EndDate { get; set; }
+    public string BusinessType { get; set; } = null!;
+    public string? LineofBusiness { get; set; }
+    public string? UnitLevel { get; set; }
+    public string StreetNumberStreetName { get; set; } = null!;
+    public string QuarterCityTownship { get; set; } = null!;
+    public string State { get; set; } = null!;
+    public string Country { get; set; } = null!;
+    public string? PostalCode { get; set; }
+    public string? DirectorName { get; set; }
+    public string? DirectorNRC { get; set; }
+    public string? DirectorPosition { get; set; }
+    public string? DirectorNationality { get; set; }
+    public string? DirectorUnitLevel { get; set; }
+    public string? DirectorStreetNumberStreetName { get; set; }
+    public string? DirectorQuarterCityTownship { get; set; }
+    public string? DirectorState { get; set; }
+    public string? DirectorCountry { get; set; }
+    public string? DirectorPostalCode { get; set; }
+    public int? DirectorSortOrder { get; set; }
+    public string? DirectorBlackList { get; set; }
+    public int TotalCount { get; set; }
+
+    public sp_DirectorListReportResult ToResult() => new()
+    {
+        CompanyRegistrationNo = CompanyRegistrationNo,
+        CompanyName = CompanyName,
+        CompanyRegistrationDate = CompanyRegistrationDate,
+        IssuedDate = IssuedDate,
+        EndDate = EndDate,
+        BusinessType = BusinessType,
+        LineofBusiness = LineofBusiness,
+        UnitLevel = UnitLevel,
+        StreetNumberStreetName = StreetNumberStreetName,
+        QuarterCityTownship = QuarterCityTownship,
+        State = State,
+        Country = Country,
+        PostalCode = PostalCode,
+        DirectorName = DirectorName,
+        DirectorNRC = DirectorNRC,
+        DirectorPosition = DirectorPosition,
+        DirectorNationality = DirectorNationality,
+        DirectorUnitLevel = DirectorUnitLevel,
+        DirectorStreetNumberStreetName = DirectorStreetNumberStreetName,
+        DirectorQuarterCityTownship = DirectorQuarterCityTownship,
+        DirectorState = DirectorState,
+        DirectorCountry = DirectorCountry,
+        DirectorPostalCode = DirectorPostalCode,
+        DirectorSortOrder = DirectorSortOrder,
+        DirectorBlackList = DirectorBlackList,
+    };
+}
+
+/// <summary>
+/// Executes <c>dbo.sp_DirectorListReport_pagination</c> directly (NOT the
+/// untouched original). Preserves both @Type branches. See
+/// StoredProcedureMigrations/sp_DirectorListReport_pagination.sql.
+/// </summary>
 public static class sp_DirectorListReport
 {
-    private const string ByCompanyRegistrationNo = "By Company Registration No";
-    private const string CurrentNrcType = "Current";
-    private const string OldNrcType = "Old";
-
-    public static IQueryable<sp_DirectorListReportResult> Query(
+    public static async Task<List<sp_DirectorListReportRow>> ExecuteAsync(
         TradeNetDbContext db,
-        sp_DirectorListReportRequest request)
+        sp_DirectorListReportRequest request,
+        string? sortColumn = null,
+        string? sortOrder = null,
+        int? pageIndex = null,
+        int? pageSize = null)
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
-        var query = BuildDirectorRows(db);
-
-        if (request.Type == ByCompanyRegistrationNo)
+        var parameters = new[]
         {
-            return query
-                .Where(row => row.CompanyRegistrationNo == request.CompanyRegistrationNo)
-                .OrderBy(row => row.DirectorSortOrder)
-                .Select(row => new sp_DirectorListReportResult
-                {
-                    CompanyRegistrationNo = row.CompanyRegistrationNo,
-                    CompanyName = row.CompanyName,
-                    CompanyRegistrationDate = row.CompanyRegistrationDate,
-                    EndDate = row.EndDate,
-                    BusinessType = row.BusinessType,
-                    LineofBusiness = row.LineofBusiness,
-                    UnitLevel = row.UnitLevel,
-                    StreetNumberStreetName = row.StreetNumberStreetName,
-                    QuarterCityTownship = row.QuarterCityTownship,
-                    State = row.State,
-                    Country = row.Country,
-                    PostalCode = row.PostalCode,
-                    DirectorName = row.DirectorName,
-                    DirectorNRC = row.DirectorNRC,
-                    DirectorPosition = row.DirectorPosition,
-                    DirectorUnitLevel = row.DirectorUnitLevel,
-                    DirectorStreetNumberStreetName = row.DirectorStreetNumberStreetName,
-                    DirectorQuarterCityTownship = row.DirectorQuarterCityTownship,
-                    DirectorState = row.DirectorState,
-                    DirectorCountry = row.DirectorCountry,
-                    DirectorPostalCode = row.DirectorPostalCode
-                });
-        }
+            new SqlParameter("@FromDate", request.FromDate),
+            new SqlParameter("@ToDate", request.ToDate),
+            new SqlParameter("@CompanyRegistrationNo", request.CompanyRegistrationNo ?? string.Empty),
+            new SqlParameter("@Name", request.Name ?? string.Empty),
+            new SqlParameter("@Nationality", request.Nationality ?? string.Empty),
+            new SqlParameter("@NRCType", request.NRCType ?? string.Empty),
+            new SqlParameter("@NRCPrefixId", request.NRCPrefixId),
+            new SqlParameter("@NRCPrefixCodeId", request.NRCPrefixCodeId),
+            new SqlParameter("@NRCNo", request.NRCNo ?? string.Empty),
+            new SqlParameter("@Type", request.Type ?? string.Empty),
+            new SqlParameter("@SortColumn", (object?)sortColumn ?? DBNull.Value),
+            new SqlParameter("@SortOrder", (object?)sortOrder ?? DBNull.Value),
+            new SqlParameter("@PageIndex", (object?)pageIndex ?? DBNull.Value),
+            new SqlParameter("@PageSize", (object?)pageSize ?? DBNull.Value),
+        };
 
-        query = query.Where(row => row.IssuedDate >= request.FromDate && row.IssuedDate <= request.ToDate);
-        query = ApplyDirectorListFilters(db, query, request);
+        const string sql =
+            "EXEC dbo.sp_DirectorListReport_pagination @FromDate, @ToDate, @CompanyRegistrationNo, @Name, " +
+            "@Nationality, @NRCType, @NRCPrefixId, @NRCPrefixCodeId, @NRCNo, @Type, " +
+            "@SortColumn, @SortOrder, @PageIndex, @PageSize";
 
-        return query
-            .OrderBy(row => row.IssuedDate)
-            .ThenBy(row => row.DirectorSortOrder)
-            .Select(row => new sp_DirectorListReportResult
-            {
-                CompanyRegistrationNo = row.CompanyRegistrationNo,
-                CompanyName = row.CompanyName,
-                CompanyRegistrationDate = row.CompanyRegistrationDate,
-                IssuedDate = row.IssuedDate,
-                EndDate = row.EndDate,
-                BusinessType = row.BusinessType,
-                LineofBusiness = row.LineofBusiness,
-                UnitLevel = row.UnitLevel,
-                StreetNumberStreetName = row.StreetNumberStreetName,
-                QuarterCityTownship = row.QuarterCityTownship,
-                State = row.State,
-                Country = row.Country,
-                PostalCode = row.PostalCode,
-                DirectorName = row.DirectorName,
-                DirectorNRC = row.DirectorNRC,
-                DirectorPosition = row.DirectorPosition,
-                DirectorNationality = row.DirectorNationality,
-                DirectorUnitLevel = row.DirectorUnitLevel,
-                DirectorStreetNumberStreetName = row.DirectorStreetNumberStreetName,
-                DirectorQuarterCityTownship = row.DirectorQuarterCityTownship,
-                DirectorState = row.DirectorState,
-                DirectorCountry = row.DirectorCountry,
-                DirectorPostalCode = row.DirectorPostalCode,
-                DirectorSortOrder = row.DirectorSortOrder,
-                DirectorBlackList = row.DirectorBlackList
-            });
-    }
-
-    private static IQueryable<DirectorRow> ApplyDirectorListFilters(
-        TradeNetDbContext db,
-        IQueryable<DirectorRow> query,
-        sp_DirectorListReportRequest request)
-    {
-        // Preserve the stored procedure's CASE-without-ELSE behavior: a non-empty
-        // company registration number in this branch returns no rows.
-        query = request.CompanyRegistrationNo == string.Empty
-            ? query.Where(row => row.CompanyRegistrationNo == row.CompanyRegistrationNo)
-            : query.Where(_ => false);
-
-        query = request.Name == string.Empty
-            ? query.Where(row => row.DirectorName == row.DirectorName)
-            : query.Where(row => row.DirectorName == request.Name);
-
-        query = request.Nationality == string.Empty
-            ? query.Where(row => row.DirectorNationality == row.DirectorNationality)
-            : query.Where(row => row.DirectorNationality == request.Nationality);
-
-        if (request.NRCType == CurrentNrcType && request.NRCNo != string.Empty)
-        {
-            query = from row in query
-                    from requestPrefix in db.Nrcprefixes
-                        .Where(prefix => prefix.Id == request.NRCPrefixId)
-                        .DefaultIfEmpty()
-                    from requestPrefixCode in db.NrcprefixCodes
-                        .Where(prefixCode => prefixCode.Id == request.NRCPrefixCodeId)
-                        .DefaultIfEmpty()
-                    where row.DirectorNRC == requestPrefix.StatePrefix.ToString()
-                        + "/"
-                        + requestPrefix.TownshipPrefix
-                        + requestPrefixCode.Code
-                        + request.NRCNo
-                    select row;
-        }
-        else if (request.NRCType == OldNrcType && request.NRCNo != string.Empty)
-        {
-            query = query.Where(row => row.DirectorNRC == request.NRCNo);
-        }
-        else
-        {
-            query = query.Where(row => row.DirectorNRC == row.DirectorNRC);
-        }
-
-        return query;
-    }
-
-    private static IQueryable<DirectorRow> BuildDirectorRows(TradeNetDbContext db)
-    {
-        return from paThaKa in db.PaThaKas
-               join director in db.PaThaKaDirectors on paThaKa.Id equals director.PaThaKaId
-               join businessType in db.BusinessTypes on paThaKa.BusinessTypeId equals businessType.Id
-               join lineofBusiness in db.LineofBusinesses on paThaKa.LineofBusinessId equals lineofBusiness.Id
-               from nrcPrefix in db.Nrcprefixes
-                   .Where(prefix => director.NrcprefixId == prefix.Id)
-                   .DefaultIfEmpty()
-               from nrcPrefixCode in db.NrcprefixCodes
-                   .Where(prefixCode => director.NrcprefixCodeId == prefixCode.Id)
-                   .DefaultIfEmpty()
-               select new DirectorRow
-               {
-                   CompanyRegistrationNo = paThaKa.CompanyRegistrationNo,
-                   CompanyName = paThaKa.CompanyName,
-                   CompanyRegistrationDate = paThaKa.CompanyRegistrationDate,
-                   IssuedDate = paThaKa.IssuedDate,
-                   EndDate = paThaKa.EndDate,
-                   BusinessType = businessType.Name,
-                   LineofBusiness = lineofBusiness.Name,
-                   UnitLevel = paThaKa.UnitLevel,
-                   StreetNumberStreetName = paThaKa.StreetNumberStreetName,
-                   QuarterCityTownship = paThaKa.QuarterCityTownship,
-                   State = paThaKa.State,
-                   Country = paThaKa.Country,
-                   PostalCode = paThaKa.PostalCode,
-                   DirectorName = director.Name,
-                   DirectorNRC = director.Nrctype == CurrentNrcType && director.Nrcno != string.Empty
-                       ? nrcPrefix.StatePrefix.ToString() + "/" + nrcPrefix.TownshipPrefix + nrcPrefixCode.Code + director.Nrcno
-                       : director.Nrctype == OldNrcType && director.Nrcno != string.Empty
-                           ? director.Nrcno
-                           : string.Empty,
-                   DirectorPosition = director.Position,
-                   DirectorNationality = director.Nationality,
-                   DirectorUnitLevel = director.UnitLevel,
-                   DirectorStreetNumberStreetName = director.StreetNumberStreetName,
-                   DirectorQuarterCityTownship = director.QuarterCityTownship,
-                   DirectorState = director.State,
-                   DirectorCountry = director.Country,
-                   DirectorPostalCode = director.PostalCode,
-                   DirectorSortOrder = director.SortOrder,
-                   DirectorBlackList = director.IsBlackList ? "Black List" : string.Empty
-               };
-    }
-
-    private sealed class DirectorRow
-    {
-        public string CompanyRegistrationNo { get; set; } = null!;
-        public string CompanyName { get; set; } = null!;
-        public DateTime CompanyRegistrationDate { get; set; }
-        public DateTime IssuedDate { get; set; }
-        public DateTime EndDate { get; set; }
-        public string BusinessType { get; set; } = null!;
-        public string? LineofBusiness { get; set; }
-        public string? UnitLevel { get; set; }
-        public string StreetNumberStreetName { get; set; } = null!;
-        public string QuarterCityTownship { get; set; } = null!;
-        public string State { get; set; } = null!;
-        public string Country { get; set; } = null!;
-        public string? PostalCode { get; set; }
-        public string? DirectorName { get; set; }
-        public string? DirectorNRC { get; set; }
-        public string? DirectorPosition { get; set; }
-        public string? DirectorNationality { get; set; }
-        public string? DirectorUnitLevel { get; set; }
-        public string? DirectorStreetNumberStreetName { get; set; }
-        public string? DirectorQuarterCityTownship { get; set; }
-        public string? DirectorState { get; set; }
-        public string? DirectorCountry { get; set; }
-        public string? DirectorPostalCode { get; set; }
-        public int? DirectorSortOrder { get; set; }
-        public string? DirectorBlackList { get; set; }
+        return await db.Database
+            .SqlQueryRaw<sp_DirectorListReportRow>(sql, parameters)
+            .ToListAsync();
     }
 }

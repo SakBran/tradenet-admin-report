@@ -1,6 +1,10 @@
 using API.DBContext;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
 
@@ -29,10 +33,84 @@ public sealed class sp_PendingReportResult
     public string? HSCode { get; set; }
 }
 
+public sealed class sp_PendingReportRow
+{
+    public string? Status { get; set; }
+    public string? ApplyType { get; set; }
+    public DateTime? ApplicationDate { get; set; }
+    public string? ApplicationNo { get; set; }
+    public string? SectionCode { get; set; }
+    public string? SectionName { get; set; }
+    public string? CompanyRegistrationNo { get; set; }
+    public string? CompanyName { get; set; }
+    public string? Currency { get; set; }
+    public string? AdditionalDescription { get; set; }
+    public decimal? Amount { get; set; }
+    public string? CommodityType { get; set; }
+    public string? HSCode { get; set; }
+    public int? TotalCount { get; set; }
+
+    public sp_PendingReportResult ToResult() => new()
+    {
+        Status = Status ?? string.Empty,
+        ApplyType = ApplyType ?? string.Empty,
+        ApplicationDate = ApplicationDate ?? default,
+        ApplicationNo = ApplicationNo ?? string.Empty,
+        SectionCode = SectionCode ?? string.Empty,
+        SectionName = SectionName ?? string.Empty,
+        CompanyRegistrationNo = CompanyRegistrationNo ?? string.Empty,
+        CompanyName = CompanyName ?? string.Empty,
+        Currency = Currency,
+        AdditionalDescription = AdditionalDescription,
+        Amount = Amount ?? 0m,
+        CommodityType = CommodityType,
+        HSCode = HSCode,
+    };
+}
+
 public static class sp_PendingReport
 {
     private const string Pending = "Pending";
     private const string Reject = "Reject";
+
+    /// <summary>
+    /// Executes <c>dbo.sp_PendingReport_pagination</c> (DB-side paging via INSERT-EXEC
+    /// wrapper over the untouched original). The LINQ <see cref="Query"/> below is retained
+    /// for not-yet-converted sibling report families.
+    /// </summary>
+    public static async Task<List<sp_PendingReportRow>> ExecuteAsync(
+        TradeNetDbContext db,
+        sp_PendingReportRequest request,
+        string? sortColumn = null,
+        string? sortOrder = null,
+        int? pageIndex = null,
+        int? pageSize = null,
+        bool includeTotalCount = true)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var parameters = new[]
+        {
+            new SqlParameter("@FromDate", request.FromDate),
+            new SqlParameter("@ToDate", request.ToDate),
+            new SqlParameter("@FormType", request.FormType ?? string.Empty),
+            new SqlParameter("@ExportImportSectionId", request.ExportImportSectionId),
+            new SqlParameter("@SortColumn", (object?)sortColumn ?? DBNull.Value),
+            new SqlParameter("@SortOrder", (object?)sortOrder ?? DBNull.Value),
+            new SqlParameter("@PageIndex", (object?)pageIndex ?? DBNull.Value),
+            new SqlParameter("@PageSize", (object?)pageSize ?? DBNull.Value),
+            new SqlParameter("@IncludeTotalCount", includeTotalCount),
+        };
+
+        const string sql =
+            "EXEC dbo.sp_PendingReport_pagination @FromDate, @ToDate, @FormType, @ExportImportSectionId, " +
+            "@SortColumn, @SortOrder, @PageIndex, @PageSize, @IncludeTotalCount";
+
+        return await db.Database
+            .SqlQueryRaw<sp_PendingReportRow>(sql, parameters)
+            .ToListAsync();
+    }
 
     public static IQueryable<sp_PendingReportResult> Query(
         TradeNetDbContext db,

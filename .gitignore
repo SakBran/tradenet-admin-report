@@ -40,6 +40,7 @@ storybook-static/
 **/TestResults/
 **/GeneratedFiles/
 **/wwwroot/
+Backend/publish/
 *.user
 *.rsuser
 *.suo
@@ -158,3 +159,4 @@ fabric.properties
 
 # End of https://www.toptal.com/developers/gitignore/api/webstorm+all
 *.zip
+Backend/appsettings.json

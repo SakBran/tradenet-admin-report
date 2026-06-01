@@ -2,9 +2,9 @@ using API.DBContext;
 using API.Model;
 using API.Service.Reports;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -21,16 +21,17 @@ public static class sp_ImportLicenceDetailReport_Fast
 
     public static async Task<ApiResult<sp_ImportLicenceDetailReportResult>> CreatePagedResultAsync(
         TradeNetDbContext db,
-        IMemoryCache cache,
+        ICountryCache countryCache,
         sp_ImportLicenceDetailReportRequest request,
         ReportQueryRequest pagingRequest)
     {
         ArgumentNullException.ThrowIfNull(db);
-        ArgumentNullException.ThrowIfNull(cache);
+        ArgumentNullException.ThrowIfNull(countryCache);
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
-        var countryNames = await ReportLookupCache.GetCountryNamesAsync(db, cache);
+        await countryCache.EnsureLoadedAsync();
+        var countryNames = countryCache.Countries;
         var pageIndex = Math.Max(0, pagingRequest.PageIndex);
         var pageSize = pagingRequest.PageSize <= 0
             ? DefaultPageSize
@@ -75,17 +76,18 @@ public static class sp_ImportLicenceDetailReport_Fast
 
     public static async Task<byte[]> CreateExcelWorkbookAsync(
         TradeNetDbContext db,
-        IMemoryCache cache,
+        ICountryCache countryCache,
         sp_ImportLicenceDetailReportRequest request,
         ReportQueryRequest pagingRequest,
         string worksheetName)
     {
         ArgumentNullException.ThrowIfNull(db);
-        ArgumentNullException.ThrowIfNull(cache);
+        ArgumentNullException.ThrowIfNull(countryCache);
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
-        var countryNames = await ReportLookupCache.GetCountryNamesAsync(db, cache);
+        await countryCache.EnsureLoadedAsync();
+        var countryNames = countryCache.Countries;
         var rows = await Rows(db, request).ToListAsync();
 
         var resolved = rows
@@ -106,8 +108,8 @@ public static class sp_ImportLicenceDetailReport_Fast
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
-        var source = await AggregateSourceRowsAsync(db, request);
-        return ReportAggregationService.CreatePagedResult(source, dimension, includeSakhan, pagingRequest);
+        var groups = await AggregateInSqlAsync(db, request, dimension, includeSakhan);
+        return ReportAggregationService.CreatePagedResultFromGroups(groups, dimension, includeSakhan, pagingRequest);
     }
 
     public static async Task<byte[]> CreateAggregateExcelWorkbookAsync(
@@ -122,51 +124,262 @@ public static class sp_ImportLicenceDetailReport_Fast
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
-        var source = await AggregateSourceRowsAsync(db, request);
-        return await ReportAggregationService.CreateExcelWorkbookAsync(
-            source, dimension, includeSakhan, pagingRequest, worksheetName);
+        var groups = await AggregateInSqlAsync(db, request, dimension, includeSakhan);
+        return await ReportAggregationService.CreateExcelWorkbookFromGroupsAsync(
+            groups, dimension, includeSakhan, pagingRequest, worksheetName);
     }
 
-    private static async Task<List<AggregateSourceRow>> AggregateSourceRowsAsync(
+    /// <summary>
+    /// Import Licence By Section report. Groups the filtered detail rows by Section (+ Currency)
+    /// entirely in SQL — GROUP BY, ORDER BY and OFFSET/FETCH paging all run on the server, so only
+    /// one page of grouped rows is returned. Output columns: Section, No of Licences (distinct
+    /// non-empty licence numbers), Total Value (summed amount) and Currency. Honours all the
+    /// standard filters (date range, PaThaKa type, section, method, incoterm, seller country,
+    /// company registration no, sakhan) via the shared <see cref="RowsUnordered"/> source.
+    /// </summary>
+    public static async Task<ApiResult<ReportAggregateResult>> CreateSectionPagedResultAsync(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request,
+        ReportQueryRequest pagingRequest)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(pagingRequest);
+
+        var groups = SectionGroups(db, request);
+
+        var pageIndex = Math.Max(0, pagingRequest.PageIndex);
+        var pageSize = pagingRequest.PageSize <= 0
+            ? DefaultPageSize
+            : Math.Min(pagingRequest.PageSize, MaxPageSize);
+
+        var totalCount = pagingRequest.IncludeTotalCount
+            ? await groups.CountAsync()
+            : (int?)null;
+
+        var pageRows = await groups
+            .Skip(pageIndex * pageSize)
+            .Take(pageSize + (totalCount.HasValue ? 0 : 1))
+            .Select(group => new ReportAggregateResult
+            {
+                SectionName = group.SectionName,
+                NoOfLicences = group.NoOfLicences,
+                TotalValue = group.TotalValue,
+                Currency = group.Currency,
+            })
+            .ToListAsync();
+
+        return totalCount.HasValue
+            ? ApiResult<ReportAggregateResult>.CreatePageFromRows(
+                pageRows, totalCount.Value, pageIndex, pageSize, null, null,
+                pagingRequest.FilterColumn, pagingRequest.FilterQuery)
+            : ApiResult<ReportAggregateResult>.CreateFastPageFromRows(
+                pageRows, pageIndex, pageSize, null, null,
+                pagingRequest.FilterColumn, pagingRequest.FilterQuery);
+    }
+
+    /// <summary>Excel export of the By Section report: all section groups (no paging), grouped in SQL.</summary>
+    public static async Task<byte[]> CreateSectionExcelWorkbookAsync(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request,
+        ReportQueryRequest pagingRequest,
+        string worksheetName)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(pagingRequest);
+
+        var rows = await SectionGroups(db, request)
+            .Select(group => new ReportAggregateResult
+            {
+                SectionName = group.SectionName,
+                NoOfLicences = group.NoOfLicences,
+                TotalValue = group.TotalValue,
+                Currency = group.Currency,
+            })
+            .ToListAsync();
+
+        return await ExcelGenerator.CreateWorkbookAsync(rows.AsQueryable(), pagingRequest, worksheetName);
+    }
+
+    /// <summary>
+    /// The By Section grouped queryable: distinct non-empty licence count and summed amount per
+    /// (Section, Currency), ordered by Section then Currency. Fully translated to SQL.
+    /// </summary>
+    private static IQueryable<SectionAggregateRow> SectionGroups(
         TradeNetDbContext db,
         sp_ImportLicenceDetailReportRequest request)
     {
-        var rows = await Rows(db, request).ToListAsync();
-
-        return rows
-            .Select(row => new AggregateSourceRow
+        return RowsUnordered(db, request)
+            .GroupBy(row => new { row.SectionName, row.Currency })
+            .Select(group => new SectionAggregateRow
             {
-                SakhanCode = row.SakhanCode,
-                SakhanName = row.SakhanName,
-                SectionName = row.SectionName,
-                MethodName = row.MethodName,
-                Country = row.SellerCountry,
-                CompanyName = row.CompanyName,
-                CompanyRegistrationNo = row.CompanyRegistrationNo,
-                HSCode = row.HSCode,
-                HSDescription = row.HSDescription,
-                LicenceNo = row.LicenceNo,
-                LicenceDate = row.LicenceDate,
-                Amount = row.Amount,
-                Currency = row.Currency,
+                SectionName = group.Key.SectionName,
+                Currency = group.Key.Currency,
+                NoOfLicences = group
+                    .Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo)
+                    .Distinct()
+                    .Count(),
+                TotalValue = group.Sum(x => x.Amount),
             })
-            .ToList();
+            .OrderBy(row => row.SectionName)
+            .ThenBy(row => row.Currency);
+    }
+
+    /// <summary>
+    /// Groups the detail rows in SQL (GROUP BY) so only the grouped rows are returned, instead of
+    /// materializing the entire un-paged detail set in memory and grouping in C#. Counts and sums
+    /// match <see cref="ReportAggregationService.Aggregate"/>: distinct non-empty licence numbers
+    /// and summed amounts per group. Country names are not needed by aggregates, so they are never
+    /// resolved.
+    /// </summary>
+    private static async Task<List<ReportAggregateResult>> AggregateInSqlAsync(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request,
+        ReportAggregateDimension dimension,
+        bool includeSakhan)
+    {
+        var source = RowsUnordered(db, request);
+
+        List<AggregateGroupRow> groups = dimension switch
+        {
+            ReportAggregateDimension.Section => await source
+                .GroupBy(row => new { Label = row.SectionName, Sakhan = includeSakhan ? row.SakhanCode : null, row.Currency })
+                .Select(g => new AggregateGroupRow
+                {
+                    Label = g.Key.Label,
+                    SakhanCode = g.Key.Sakhan,
+                    Currency = g.Key.Currency,
+                    NoOfLicences = g.Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo).Distinct().Count(),
+                    TotalValue = g.Sum(x => x.Amount),
+                })
+                .ToListAsync(),
+
+            ReportAggregateDimension.Method => await source
+                .GroupBy(row => new { Label = row.MethodName, Sakhan = includeSakhan ? row.SakhanCode : null, row.Currency })
+                .Select(g => new AggregateGroupRow
+                {
+                    Label = g.Key.Label,
+                    SakhanCode = g.Key.Sakhan,
+                    Currency = g.Key.Currency,
+                    NoOfLicences = g.Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo).Distinct().Count(),
+                    TotalValue = g.Sum(x => x.Amount),
+                })
+                .ToListAsync(),
+
+            ReportAggregateDimension.Country => await source
+                .GroupBy(row => new { Label = row.SellerCountry, Sakhan = includeSakhan ? row.SakhanCode : null, row.Currency })
+                .Select(g => new AggregateGroupRow
+                {
+                    Label = g.Key.Label,
+                    SakhanCode = g.Key.Sakhan,
+                    Currency = g.Key.Currency,
+                    NoOfLicences = g.Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo).Distinct().Count(),
+                    TotalValue = g.Sum(x => x.Amount),
+                })
+                .ToListAsync(),
+
+            ReportAggregateDimension.Company => await source
+                .GroupBy(row => new { row.CompanyName, row.CompanyRegistrationNo, Sakhan = includeSakhan ? row.SakhanCode : null, row.Currency })
+                .Select(g => new AggregateGroupRow
+                {
+                    CompanyName = g.Key.CompanyName,
+                    CompanyRegistrationNo = g.Key.CompanyRegistrationNo,
+                    SakhanCode = g.Key.Sakhan,
+                    Currency = g.Key.Currency,
+                    NoOfLicences = g.Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo).Distinct().Count(),
+                    TotalValue = g.Sum(x => x.Amount),
+                })
+                .ToListAsync(),
+
+            ReportAggregateDimension.HSCode => await source
+                .GroupBy(row => new { Label = row.HSCode, row.CompanyName, row.CompanyRegistrationNo, row.HSDescription, Sakhan = includeSakhan ? row.SakhanCode : null, row.Currency })
+                .Select(g => new AggregateGroupRow
+                {
+                    Label = g.Key.Label,
+                    CompanyName = g.Key.CompanyName,
+                    CompanyRegistrationNo = g.Key.CompanyRegistrationNo,
+                    HSDescription = g.Key.HSDescription,
+                    SakhanCode = g.Key.Sakhan,
+                    Currency = g.Key.Currency,
+                    NoOfLicences = g.Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo).Distinct().Count(),
+                    TotalValue = g.Sum(x => x.Amount),
+                })
+                .ToListAsync(),
+
+            ReportAggregateDimension.Daily => await source
+                .GroupBy(row => new { Date = (DateTime?)row.LicenceDate!.Value.Date, Sakhan = includeSakhan ? row.SakhanCode : null, row.Currency })
+                .Select(g => new AggregateGroupRow
+                {
+                    Date = g.Key.Date,
+                    SakhanCode = g.Key.Sakhan,
+                    Currency = g.Key.Currency,
+                    NoOfLicences = g.Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo).Distinct().Count(),
+                    TotalValue = g.Sum(x => x.Amount),
+                })
+                .ToListAsync(),
+
+            // TotalValue (and any other dimension): group by currency (plus Sakhan) only.
+            _ => await source
+                .GroupBy(row => new { Sakhan = includeSakhan ? row.SakhanCode : null, row.Currency })
+                .Select(g => new AggregateGroupRow
+                {
+                    SakhanCode = g.Key.Sakhan,
+                    Currency = g.Key.Currency,
+                    NoOfLicences = g.Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo).Distinct().Count(),
+                    TotalValue = g.Sum(x => x.Amount),
+                })
+                .ToListAsync(),
+        };
+
+        return groups.Select(group => MapGroup(group, dimension, includeSakhan)).ToList();
+    }
+
+    private static ReportAggregateResult MapGroup(
+        AggregateGroupRow group,
+        ReportAggregateDimension dimension,
+        bool includeSakhan)
+    {
+        var isCompanyOrHsCode = dimension is ReportAggregateDimension.Company or ReportAggregateDimension.HSCode;
+
+        return new ReportAggregateResult
+        {
+            SakhanCode = includeSakhan ? group.SakhanCode : null,
+            SectionName = dimension == ReportAggregateDimension.Section ? group.Label : null,
+            MethodName = dimension == ReportAggregateDimension.Method ? group.Label : null,
+            Country = dimension == ReportAggregateDimension.Country ? group.Label : null,
+            CompanyName = isCompanyOrHsCode ? group.CompanyName : null,
+            CompanyRegistrationNo = isCompanyOrHsCode ? group.CompanyRegistrationNo : null,
+            HSCode = dimension == ReportAggregateDimension.HSCode ? group.Label : null,
+            HSDescription = dimension == ReportAggregateDimension.HSCode ? group.HSDescription : null,
+            Date = dimension == ReportAggregateDimension.Daily
+                ? group.Date?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+                : null,
+            Currency = group.Currency,
+            NoOfLicences = group.NoOfLicences,
+            TotalValue = group.TotalValue,
+            TotalUSDValue = null,
+        };
     }
 
     private static IQueryable<ImportLicenceDetailFastRow> Rows(
         TradeNetDbContext db,
         sp_ImportLicenceDetailReportRequest request)
     {
+        return RowsUnordered(db, request).OrderBy(row => row.CreatedDate);
+    }
+
+    private static IQueryable<ImportLicenceDetailFastRow> RowsUnordered(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request)
+    {
         return request.Type switch
         {
-            "Oversea" => OverseaRows(db, request)
-                .OrderBy(row => row.CreatedDate),
+            "Oversea" => OverseaRows(db, request),
             "Border" => BorderPaThaKaRows(db, request)
-                .Concat(BorderIndividualTradingRows(db, request))
-                .OrderBy(row => row.CreatedDate),
+                .Concat(BorderIndividualTradingRows(db, request)),
             _ => OverseaRows(db, request)
                 .Where(_ => false)
-                .OrderBy(row => row.CreatedDate)
         };
     }
 
@@ -400,6 +613,29 @@ public static class sp_ImportLicenceDetailReport_Fast
                 CommodityType = licence.CommodityType,
                 ApproveDate = licence.ApproveDate
             };
+    }
+
+    /// <summary>Intermediate shape returned by the By Section SQL GROUP BY.</summary>
+    private sealed class SectionAggregateRow
+    {
+        public string? SectionName { get; init; }
+        public string? Currency { get; init; }
+        public int NoOfLicences { get; init; }
+        public decimal TotalValue { get; init; }
+    }
+
+    /// <summary>Intermediate shape returned by the SQL GROUP BY; mapped to <see cref="ReportAggregateResult"/>.</summary>
+    private sealed class AggregateGroupRow
+    {
+        public string? Label { get; init; }
+        public string? CompanyName { get; init; }
+        public string? CompanyRegistrationNo { get; init; }
+        public string? HSDescription { get; init; }
+        public DateTime? Date { get; init; }
+        public string? SakhanCode { get; init; }
+        public string? Currency { get; init; }
+        public int NoOfLicences { get; init; }
+        public decimal TotalValue { get; init; }
     }
 
     private sealed class ImportLicenceDetailFastRow

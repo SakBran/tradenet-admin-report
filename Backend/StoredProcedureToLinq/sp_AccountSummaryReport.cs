@@ -1,6 +1,10 @@
 using API.DBContext;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
 
@@ -29,8 +33,89 @@ public sealed class sp_AccountSummaryReportResult
     public string FormType { get; set; } = null!;
 }
 
+public sealed class sp_AccountSummaryReportRow
+{
+    public string Id { get; set; } = null!;
+    public DateTime? VoucherDate { get; set; }
+    public DateTime? PaymentDate { get; set; }
+    public string? CompanyRegistrationNo { get; set; }
+    public string? VoucherNo { get; set; }
+    public string? CompanyName { get; set; }
+    public string TransactionTitle { get; set; } = null!;
+    public double Amount { get; set; }
+    public string AccountTitleCode { get; set; } = null!;
+    public int SortOrder { get; set; }
+    public int SakhanId { get; set; }
+    public string? LocationCode { get; set; }
+    public string FormType { get; set; } = null!;
+    public int? TotalCount { get; set; }
+
+    public sp_AccountSummaryReportResult ToResult() => new()
+    {
+        Id = Id,
+        VoucherDate = VoucherDate,
+        PaymentDate = PaymentDate,
+        CompanyRegistrationNo = CompanyRegistrationNo,
+        VoucherNo = VoucherNo,
+        CompanyName = CompanyName,
+        TransactionTitle = TransactionTitle,
+        Amount = Amount,
+        AccountTitleCode = AccountTitleCode,
+        SortOrder = SortOrder,
+        SakhanId = SakhanId,
+        LocationCode = LocationCode,
+        FormType = FormType,
+    };
+}
+
 public static class sp_AccountSummaryReport
 {
+    private const int CommandTimeoutSeconds = 180;
+
+    public static async Task<List<sp_AccountSummaryReportRow>> ExecuteAsync(
+        TradeNetDbContext db,
+        sp_AccountSummaryReportRequest request,
+        string? sortColumn = null,
+        string? sortOrder = null,
+        int? pageIndex = null,
+        int? pageSize = null,
+        bool includeTotalCount = true)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var parameters = new[]
+        {
+            new SqlParameter("@FromDate", request.FromDate),
+            new SqlParameter("@ToDate", request.ToDate),
+            new SqlParameter("@FormType", request.FormType ?? string.Empty),
+            new SqlParameter("@SakhanId", request.SakhanId),
+            new SqlParameter("@SortColumn", (object?)sortColumn ?? DBNull.Value),
+            new SqlParameter("@SortOrder", (object?)sortOrder ?? DBNull.Value),
+            new SqlParameter("@PageIndex", (object?)pageIndex ?? DBNull.Value),
+            new SqlParameter("@PageSize", (object?)pageSize ?? DBNull.Value),
+            new SqlParameter("@IncludeTotalCount", includeTotalCount),
+        };
+
+        const string sql =
+            "EXEC dbo.sp_AccountSummaryReport_pagination @FromDate, @ToDate, @FormType, @SakhanId, " +
+            "@SortColumn, @SortOrder, @PageIndex, @PageSize, @IncludeTotalCount";
+
+        var previousTimeout = db.Database.GetCommandTimeout();
+        db.Database.SetCommandTimeout(CommandTimeoutSeconds);
+
+        try
+        {
+            return await db.Database
+                .SqlQueryRaw<sp_AccountSummaryReportRow>(sql, parameters)
+                .ToListAsync();
+        }
+        finally
+        {
+            db.Database.SetCommandTimeout(previousTimeout);
+        }
+    }
+
     public static IQueryable<sp_AccountSummaryReportResult> Query(
         TradeNetDbContext db,
         sp_AccountSummaryReportRequest request)

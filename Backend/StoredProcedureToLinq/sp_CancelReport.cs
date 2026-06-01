@@ -1,6 +1,10 @@
 ﻿using API.DBContext;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
 
@@ -39,12 +43,96 @@ public sealed class sp_CancelReportResult
     public string? SakhanName { get; set; }
 }
 
+public sealed class sp_CancelReportRow
+{
+    public DateTime? Date { get; set; }
+    public string? SectionCode { get; set; }
+    public string? SectionName { get; set; }
+    public string? OldLicenceNo { get; set; }
+    public string? LicenceNo { get; set; }
+    public string? SDate { get; set; }
+    public string? CompanyRegistrationNo { get; set; }
+    public string? CompanyName { get; set; }
+    public string? UnitLevel { get; set; }
+    public string? StreetNumberStreetName { get; set; }
+    public string? QuarterCityTownship { get; set; }
+    public string? State { get; set; }
+    public string? Country { get; set; }
+    public string? PostalCode { get; set; }
+    public string? Currency { get; set; }
+    public decimal? Amount { get; set; }
+    public string? Remark { get; set; }
+    public int? TotalCount { get; set; }
+
+    public sp_CancelReportResult ToResult() => new()
+    {
+        Date = Date,
+        SectionCode = SectionCode,
+        SectionName = SectionName,
+        OldLicenceNo = OldLicenceNo,
+        LicenceNo = LicenceNo,
+        SDate = SDate,
+        CompanyRegistrationNo = CompanyRegistrationNo,
+        CompanyName = CompanyName,
+        UnitLevel = UnitLevel,
+        StreetNumberStreetName = StreetNumberStreetName,
+        QuarterCityTownship = QuarterCityTownship,
+        State = State,
+        Country = Country,
+        PostalCode = PostalCode,
+        Currency = Currency,
+        Amount = Amount,
+        Remark = Remark,
+    };
+}
+
 public static class sp_CancelReport
 {
     private const string Cancel = "Cancel";
     private const string Approved = "Approved";
     private const string PaThaKaCardType = "Pa Tha Ka";
     private const string IndividualTradingCardType = "Individual Trading";
+
+    /// <summary>
+    /// Executes <c>dbo.sp_CancelReport_pagination</c> (DB-side paging via INSERT-EXEC
+    /// wrapper over the untouched <c>sp_CancelReport</c>). The LINQ <see cref="Query"/>
+    /// below is retained for not-yet-converted sibling report families.
+    /// </summary>
+    public static async Task<List<sp_CancelReportRow>> ExecuteAsync(
+        TradeNetDbContext db,
+        sp_CancelReportRequest request,
+        string? sortColumn = null,
+        string? sortOrder = null,
+        int? pageIndex = null,
+        int? pageSize = null,
+        bool includeTotalCount = true)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var parameters = new[]
+        {
+            new SqlParameter("@FormType", request.FormType ?? string.Empty),
+            new SqlParameter("@FromDate", request.FromDate),
+            new SqlParameter("@ToDate", request.ToDate),
+            new SqlParameter("@ExportImportSectionId", request.ExportImportSectionId),
+            new SqlParameter("@CompanyRegistrationNo", request.CompanyRegistrationNo ?? string.Empty),
+            new SqlParameter("@SakhanId", request.SakhanId),
+            new SqlParameter("@SortColumn", (object?)sortColumn ?? DBNull.Value),
+            new SqlParameter("@SortOrder", (object?)sortOrder ?? DBNull.Value),
+            new SqlParameter("@PageIndex", (object?)pageIndex ?? DBNull.Value),
+            new SqlParameter("@PageSize", (object?)pageSize ?? DBNull.Value),
+            new SqlParameter("@IncludeTotalCount", includeTotalCount),
+        };
+
+        const string sql =
+            "EXEC dbo.sp_CancelReport_pagination @FormType, @FromDate, @ToDate, @ExportImportSectionId, " +
+            "@CompanyRegistrationNo, @SakhanId, @SortColumn, @SortOrder, @PageIndex, @PageSize, @IncludeTotalCount";
+
+        return await db.Database
+            .SqlQueryRaw<sp_CancelReportRow>(sql, parameters)
+            .ToListAsync();
+    }
 
     public static IQueryable<sp_CancelReportResult> Query(
         TradeNetDbContext db,

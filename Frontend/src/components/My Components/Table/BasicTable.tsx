@@ -178,7 +178,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
       sortOrder: '',
       filterColumn,
       filterQuery,
-      includeTotalCount: false,
+      includeTotalCount: true,
     }),
     [filterColumn, filterQuery, pageIndex, pageSize]
   );
@@ -407,6 +407,9 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
         <div className="pagination">
           <Pagination
             showSizeChanger
+            showTotal={(total, range) =>
+              `${range[0]}-${range[1]} of ${total} total`
+            }
             pageSizeOptions={[10, 20, 50, 100, 1000]}
             defaultPageSize={initialPageSize}
             onShowSizeChange={(_, size) => {

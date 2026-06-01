@@ -1,6 +1,7 @@
 using API.DBContext;
 using API.Model;
 using API.Service.Reports;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;

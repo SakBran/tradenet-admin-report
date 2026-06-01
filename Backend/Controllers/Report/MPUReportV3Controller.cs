@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 using API.DBContext;
 using API.Model;
@@ -14,6 +15,12 @@ namespace Backend.Controllers.Report
     [Route("api/[controller]")]
     public class MPUReportV3Controller : ControllerBase
     {
+        private const int DefaultPageSize = 10;
+        private const int MaxPageSize = 1000;
+
+        // Excel worksheets allow 1,048,576 rows including the header.
+        private const int MaxExcelDataRows = 1_048_576 - 1;
+
         private readonly TradeNetDbContext _context;
 
         public MPUReportV3Controller(TradeNetDbContext context)
@@ -29,8 +36,22 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var query = sp_MPUReport_V3.Query(_context, procedureRequest!);
-            var result = await ReportQueryService.CreatePagedResultAsync(query, request!);
+            var pageIndex = Math.Max(0, request!.PageIndex);
+            var pageSize = request.PageSize <= 0
+                ? DefaultPageSize
+                : Math.Min(request.PageSize, MaxPageSize);
+
+            var sortColumn = string.IsNullOrWhiteSpace(request.SortColumn) ? null : request.SortColumn;
+            var sortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? null : request.SortOrder;
+
+            var rows = await sp_MPUReport_V3.ExecuteAsync(
+                _context, procedureRequest!, sortColumn, sortOrder, pageIndex, pageSize, includeTotalCount: true);
+
+            var data = rows.Select(row => row.ToResult()).ToList();
+
+            var result = ApiResult<sp_MPUReport_V3Result>.CreatePageFromRows(
+                data, rows.Count > 0 ? (rows[0].TotalCount ?? 0) : 0, pageIndex, pageSize,
+                request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
 
             return Ok(result);
         }
@@ -43,19 +64,19 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var query = sp_MPUReport_V3.Query(_context, procedureRequest!);
-            byte[] fileBytes;
-            try
+            var sortColumn = string.IsNullOrWhiteSpace(request!.SortColumn) ? null : request.SortColumn;
+            var sortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? null : request.SortOrder;
+
+            var rows = await sp_MPUReport_V3.ExecuteAsync(
+                _context, procedureRequest!, sortColumn, sortOrder, pageIndex: null, pageSize: null);
+
+            if (rows.Count > MaxExcelDataRows)
             {
-                fileBytes = await ExcelGenerator.CreateWorkbookAsync(
-                    query,
-                    request!,
-                    "MPU Report V3");
+                return BadRequest($"Excel export supports up to {MaxExcelDataRows} data rows.");
             }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+
+            var data = rows.Select(row => row.ToResult()).ToList();
+            var fileBytes = ExcelGenerator.CreateWorkbook(data, "MPU Report V3");
 
             return File(
                 fileBytes,
@@ -94,6 +115,7 @@ namespace Backend.Controllers.Report
                 errorResult = BadRequest("ToDate must be greater than or equal to FromDate.");
                 return false;
             }
+
             procedureRequest = new sp_MPUReport_V3Request
             {
                 FromDate = request.FromDate,
@@ -114,4 +136,3 @@ namespace Backend.Controllers.Report
         public string PaymentType { get; set; } = string.Empty;
     }
 }
-
