@@ -46,7 +46,7 @@ export const Logo = ({
             borderRadius,
           }}
         >
-          Antd Admin
+          T2.0 Report
         </Typography.Title>
       </Flex>
     </Link>

@@ -1,10 +1,26 @@
+import { ReactNode } from 'react';
 import { MenuProps } from 'antd';
+import {
+  BankOutlined,
+  DollarOutlined,
+  FileDoneOutlined,
+  FileProtectOutlined,
+  FileTextOutlined,
+  ImportOutlined,
+  ExportOutlined,
+  LoginOutlined,
+  LogoutOutlined,
+  SafetyCertificateOutlined,
+  SafetyOutlined,
+  TeamOutlined,
+} from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { reportConfigList } from './config/reportConfigs';
 
 type ReportCategory = {
   key: string;
   title: string;
+  icon: ReactNode;
   matches: (controllerName: string) => boolean;
 };
 
@@ -12,11 +28,13 @@ const reportCategoryDefinitions: ReportCategory[] = [
   {
     key: 'report-member',
     title: 'Member',
+    icon: <TeamOutlined />,
     matches: (controllerName) => controllerName === 'MemberRegistrationReport',
   },
   {
     key: 'report-pathaka',
     title: 'Pathaka',
+    icon: <BankOutlined />,
     matches: (controllerName) =>
       [
         'PaThaKaRegisteredBusinessOrganizationReport',
@@ -35,50 +53,59 @@ const reportCategoryDefinitions: ReportCategory[] = [
   {
     key: 'report-import-licence',
     title: 'Import Licence',
+    icon: <ImportOutlined />,
     matches: (controllerName) => controllerName.startsWith('ImportLicence'),
   },
   {
     key: 'report-import-permit',
     title: 'Import Permit',
+    icon: <LoginOutlined />,
     matches: (controllerName) => controllerName.startsWith('ImportPermit'),
   },
   {
     key: 'report-border-import-licence',
     title: 'Border Import Licence',
+    icon: <FileProtectOutlined />,
     matches: (controllerName) =>
       controllerName.startsWith('BorderImportLicence'),
   },
   {
     key: 'report-border-import-permit',
     title: 'Border Import Permit',
+    icon: <SafetyCertificateOutlined />,
     matches: (controllerName) =>
       controllerName.startsWith('BorderImportPermit'),
   },
   {
     key: 'report-border-export-permit',
     title: 'Border Export Permit',
+    icon: <SafetyOutlined />,
     matches: (controllerName) =>
       controllerName.startsWith('BorderExportPermit'),
   },
   {
     key: 'report-export-licence',
     title: 'Export Licence',
+    icon: <ExportOutlined />,
     matches: (controllerName) => controllerName.startsWith('ExportLicence'),
   },
   {
     key: 'report-export-permit',
     title: 'Export Permit',
+    icon: <LogoutOutlined />,
     matches: (controllerName) => controllerName.startsWith('ExportPermit'),
   },
   {
     key: 'report-border-export-licence',
     title: 'Border Export Licence',
+    icon: <FileDoneOutlined />,
     matches: (controllerName) =>
       controllerName.startsWith('BorderExportLicence'),
   },
   {
     key: 'report-payment',
     title: 'Payment',
+    icon: <DollarOutlined />,
     matches: (controllerName) =>
       [
         'MPUReport',
@@ -92,6 +119,7 @@ const reportCategoryDefinitions: ReportCategory[] = [
 
 const createReportItem = (config: (typeof reportConfigList)[number]) => ({
   key: config.controllerName,
+  icon: <FileTextOutlined />,
   label: <Link to={`/Report/${config.controllerName}`}>{config.title}</Link>,
 });
 
@@ -108,6 +136,7 @@ export const reportNavItems: Required<MenuProps>['items'] = [
     .map((category) => ({
       key: category.key,
       label: category.title,
+      icon: category.icon,
       children: reportConfigList
         .filter((config) => category.matches(config.controllerName))
         .map(createReportItem),

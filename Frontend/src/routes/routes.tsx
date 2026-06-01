@@ -1,4 +1,4 @@
-import { createBrowserRouter, useLocation } from 'react-router-dom';
+import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom';
 import {
   AccountDeactivePage,
   Error400Page,
@@ -7,7 +7,6 @@ import {
   Error500Page,
   Error503Page,
   ErrorPage,
-  HomePage,
   PasswordResetPage,
   ProjectsDashboardPage,
   SignInPage,
@@ -64,7 +63,7 @@ const router = createBrowserRouter([
       {
         index: true,
         path: '',
-        element: <HomePage />,
+        element: <Navigate to="/auth/signin" replace />,
       },
     ],
   },

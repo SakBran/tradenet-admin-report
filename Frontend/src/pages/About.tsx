@@ -82,7 +82,7 @@ export const AboutPage = () => {
         <Card>
           <Flex vertical gap="small">
             <Title level={3} className="m-0">
-              Antd Admin
+              T2.0 Report
             </Title>
             <Text>
               A dynamic and versatile multipurpose dashboard template built

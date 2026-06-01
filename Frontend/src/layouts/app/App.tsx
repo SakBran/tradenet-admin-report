@@ -1,4 +1,5 @@
 import {
+  Avatar,
   Button,
   Dropdown,
   Flex,
@@ -15,9 +16,6 @@ import {
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  MessageOutlined,
-  QuestionOutlined,
-  SettingOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import {
@@ -35,7 +33,6 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../redux/store.ts';
 import AuthContext from '../../context/AuthContext.tsx';
 import axiosInstance from '../../services/AxiosInstance.ts';
-import Apply from './Apply.tsx';
 const { Content } = Layout;
 const SIDE_NAV_WIDTH = 320;
 
@@ -66,16 +63,6 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
       onClick: () => {
         navigate('/User/Edit/' + auth?.user?.id);
       },
-    },
-    {
-      key: 'user-settings-link',
-      label: 'settings',
-      icon: <SettingOutlined />,
-    },
-    {
-      key: 'user-help-link',
-      label: 'help center',
-      icon: <QuestionOutlined />,
     },
     {
       type: 'divider',
@@ -246,19 +233,11 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
               </Tooltip>
             </Flex>
             <Flex align="center" gap="small">
-              <Apply></Apply>
-              <Tooltip title="Messages">
-                <Button icon={<MessageOutlined />} type="text" size="large" />
-              </Tooltip>
-
               <Dropdown menu={{ items }} trigger={['click']}>
                 <Flex>
-                  <img
-                    src="/me.jpg"
-                    alt="user profile photo"
-                    height={36}
-                    width={36}
-                    style={{ borderRadius, objectFit: 'cover' }}
+                  <Avatar
+                    icon={<UserOutlined />}
+                    style={{ cursor: 'pointer' }}
                   />
                 </Flex>
               </Dropdown>

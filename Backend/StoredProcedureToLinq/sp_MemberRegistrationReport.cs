@@ -18,16 +18,9 @@ public sealed class sp_MemberRegistrationReportResult
     public string MemberCode { get; set; } = null!;
     public string Email { get; set; } = null!;
     public string FullName { get; set; } = null!;
-    public string Mobile1 { get; set; } = null!;
-    public string? Mobile2 { get; set; }
-    public string? Mobile3 { get; set; }
+    public string Mobile { get; set; } = null!;
     public string? NRCNo { get; set; }
-    public string? UnitLevel { get; set; }
-    public string StreetNumberStreetName { get; set; } = null!;
-    public string QuarterCityTownship { get; set; } = null!;
-    public string? State { get; set; }
-    public string? Country { get; set; }
-    public string? PostalCode { get; set; }
+    public string Address { get; set; } = null!;
     public DateTime? IssuedDate { get; set; }
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
@@ -96,20 +89,20 @@ public static class sp_MemberRegistrationReport
                    MemberCode = registration.MemberCode,
                    Email = registration.Email,
                    FullName = registration.FullName,
-                   Mobile1 = registration.Mobile1,
-                   Mobile2 = registration.Mobile2,
-                   Mobile3 = registration.Mobile3,
+                   Mobile = registration.Mobile1
+                       + (string.IsNullOrEmpty(registration.Mobile2) ? string.Empty : ", " + registration.Mobile2)
+                       + (string.IsNullOrEmpty(registration.Mobile3) ? string.Empty : ", " + registration.Mobile3),
                    NRCNo = registration.Nrctype == CurrentNrcType && registration.Nrcno != string.Empty
                        ? nrcPrefix.StatePrefix.ToString() + "/" + nrcPrefix.TownshipPrefix + nrcPrefixCode.Code + registration.Nrcno
                        : registration.Nrctype == OldNrcType && registration.Nrcno != string.Empty
                            ? registration.Nrcno
                            : string.Empty,
-                   UnitLevel = registration.UnitLevel,
-                   StreetNumberStreetName = registration.StreetNumberStreetName,
-                   QuarterCityTownship = registration.QuarterCityTownship,
-                   State = state.Name,
-                   Country = country.Name,
-                   PostalCode = registration.PostalCode,
+                   Address = (string.IsNullOrEmpty(registration.UnitLevel) ? string.Empty : registration.UnitLevel + ", ")
+                       + registration.StreetNumberStreetName
+                       + ", " + registration.QuarterCityTownship
+                       + (string.IsNullOrEmpty(state.Name) ? string.Empty : ", " + state.Name)
+                       + (string.IsNullOrEmpty(country.Name) ? string.Empty : ", " + country.Name)
+                       + (string.IsNullOrEmpty(registration.PostalCode) ? string.Empty : ", " + registration.PostalCode),
                    IssuedDate = registration.IssuedDate,
                    StartDate = registration.StartDate,
                    EndDate = registration.EndDate
@@ -141,20 +134,20 @@ public static class sp_MemberRegistrationReport
                    MemberCode = registration.MemberCode,
                    Email = registration.Email,
                    FullName = registration.FullName,
-                   Mobile1 = registration.Mobile1,
-                   Mobile2 = registration.Mobile2,
-                   Mobile3 = registration.Mobile3,
+                   Mobile = registration.Mobile1
+                       + (string.IsNullOrEmpty(registration.Mobile2) ? string.Empty : ", " + registration.Mobile2)
+                       + (string.IsNullOrEmpty(registration.Mobile3) ? string.Empty : ", " + registration.Mobile3),
                    NRCNo = registration.Nrctype == CurrentNrcType && registration.Nrcno != string.Empty
                        ? nrcPrefix.StatePrefix.ToString() + "/" + nrcPrefix.TownshipPrefix + nrcPrefixCode.Code + registration.Nrcno
                        : registration.Nrctype == OldNrcType && registration.Nrcno != string.Empty
                            ? registration.Nrcno
                            : string.Empty,
-                   UnitLevel = registration.UnitLevel,
-                   StreetNumberStreetName = registration.StreetNumberStreetName,
-                   QuarterCityTownship = registration.QuarterCityTownship,
-                   State = state.Name,
-                   Country = country.Name,
-                   PostalCode = registration.PostalCode,
+                   Address = (string.IsNullOrEmpty(registration.UnitLevel) ? string.Empty : registration.UnitLevel + ", ")
+                       + registration.StreetNumberStreetName
+                       + ", " + registration.QuarterCityTownship
+                       + (string.IsNullOrEmpty(state.Name) ? string.Empty : ", " + state.Name)
+                       + (string.IsNullOrEmpty(country.Name) ? string.Empty : ", " + country.Name)
+                       + (string.IsNullOrEmpty(registration.PostalCode) ? string.Empty : ", " + registration.PostalCode),
                    IssuedDate = useExtensionDateAsIssuedDate ? registration.ExtensionDate : registration.IssuedDate,
                    StartDate = registration.StartDate,
                    EndDate = registration.EndDate

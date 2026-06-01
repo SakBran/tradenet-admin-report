@@ -29,16 +29,9 @@ interface MemberRegistrationRow extends AnyObject {
   memberCode: string;
   email: string;
   fullName: string;
-  mobile1: string;
-  mobile2?: string | null;
-  mobile3?: string | null;
+  mobile: string;
   nrcNo?: string | null;
-  unitLevel?: string | null;
-  streetNumberStreetName: string;
-  quarterCityTownship: string;
-  state?: string | null;
-  country?: string | null;
-  postalCode?: string | null;
+  address: string;
   issuedDate?: string | null;
   startDate?: string | null;
   endDate?: string | null;
@@ -110,24 +103,9 @@ const memberRegistrationColumns: BasicTableColumn<MemberRegistrationRow>[] = [
   { key: 'MemberCode', dataIndex: 'memberCode', title: 'Member Code' },
   { key: 'Email', dataIndex: 'email', title: 'Email' },
   { key: 'FullName', dataIndex: 'fullName', title: 'Full Name' },
-  { key: 'Mobile1', dataIndex: 'mobile1', title: 'Mobile 1' },
-  { key: 'Mobile2', dataIndex: 'mobile2', title: 'Mobile 2' },
-  { key: 'Mobile3', dataIndex: 'mobile3', title: 'Mobile 3' },
+  { key: 'Mobile', dataIndex: 'mobile', title: 'Mobile' },
   { key: 'NRCNo', dataIndex: 'nrcNo', title: 'NRC No' },
-  { key: 'UnitLevel', dataIndex: 'unitLevel', title: 'Unit Level' },
-  {
-    key: 'StreetNumberStreetName',
-    dataIndex: 'streetNumberStreetName',
-    title: 'Street',
-  },
-  {
-    key: 'QuarterCityTownship',
-    dataIndex: 'quarterCityTownship',
-    title: 'Township',
-  },
-  { key: 'State', dataIndex: 'state', title: 'State' },
-  { key: 'Country', dataIndex: 'country', title: 'Country' },
-  { key: 'PostalCode', dataIndex: 'postalCode', title: 'Postal Code' },
+  { key: 'Address', dataIndex: 'address', title: 'Address' },
   {
     key: 'IssuedDate',
     dataIndex: 'issuedDate',

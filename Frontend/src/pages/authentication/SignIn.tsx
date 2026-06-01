@@ -83,7 +83,7 @@ export const SignInPage = () => {
         >
           <Logo color="white" />
           <Title level={2} className="text-white">
-            Welcome back to Antd Admin
+            Welcome back to T2.0 Report
           </Title>
           <Text className="text-white" style={{ fontSize: 18 }}>
             A dynamic and versatile multipurpose dashboard utilizing Ant Design,

@@ -107,19 +107,40 @@ tbody tr:hover {
     width: min(180px, 78%) !important;
 }
 
+/* Report Viewer (SSRS / .NET Framework ReportViewer) look:
+   full gridlines on every cell, flat gray header, compact rows, small font. */
 .table-container table {
     width: 100%;
     border-collapse: collapse;
-    border: none;
-    /* Remove outer border, shadow handles it */
+    border: 1px solid #a3a3a3;
+    /* outer frame like the ReportViewer tablix */
+    font-family: Arial, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 12px;
+    color: #000000;
 }
 
 .table-container th,
 .table-container td {
-    padding: 0.8rem 1rem;
-    /* Consistent padding */
-    /* border: 1px solid #e0e0e0; */
-    /* Consistent border color */
+    border: 1px solid #c0c0c0;
+    /* gridlines on all sides */
+    padding: 4px 8px;
+    /* compact ReportViewer-style rows */
+    vertical-align: top;
+    text-align: left;
+}
+
+.table-container thead th {
+    background-color: #e4e4e4;
+    /* flat gray header band */
+    border: 1px solid #a3a3a3;
+    color: #000000;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+/* ReportViewer rows are flat; keep only a subtle gray hover for usability */
+.table-container tbody tr:hover {
+    background-color: #f2f2f2;
 }
 
 /* Custom Text Colors */
