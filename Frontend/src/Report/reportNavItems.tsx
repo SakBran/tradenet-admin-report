@@ -13,6 +13,15 @@ import {
   SafetyCertificateOutlined,
   SafetyOutlined,
   TeamOutlined,
+  ShopOutlined,
+  ShoppingOutlined,
+  ShoppingCartOutlined,
+  GoldOutlined,
+  CarOutlined,
+  ThunderboltOutlined,
+  AuditOutlined,
+  ContainerOutlined,
+  ApartmentOutlined,
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { reportConfigList } from './config/reportConfigs';
@@ -101,6 +110,85 @@ const reportCategoryDefinitions: ReportCategory[] = [
     icon: <FileDoneOutlined />,
     matches: (controllerName) =>
       controllerName.startsWith('BorderExportLicence'),
+  },
+  {
+    key: 'report-wholesale',
+    title: 'WholeSale',
+    icon: <ShopOutlined />,
+    matches: (controllerName) =>
+      controllerName.startsWith('WholeSale') &&
+      !controllerName.startsWith('WholeSaleAndRetail'),
+  },
+  {
+    key: 'report-retail',
+    title: 'Retail',
+    icon: <ShoppingCartOutlined />,
+    matches: (controllerName) => controllerName.startsWith('Retail'),
+  },
+  {
+    key: 'report-wholesale-retail',
+    title: 'Whole Sale and Retail',
+    icon: <ShoppingOutlined />,
+    matches: (controllerName) =>
+      controllerName.startsWith('WholeSaleAndRetail'),
+  },
+  {
+    key: 'report-alcoholic-beverages',
+    title: 'Alcoholic Beverages Importation',
+    icon: <GoldOutlined />,
+    matches: (controllerName) =>
+      controllerName.startsWith('AlcoholicBeveragesImportation'),
+  },
+  {
+    key: 'report-duty-free-shop',
+    title: 'Duty Free Shop',
+    icon: <ContainerOutlined />,
+    matches: (controllerName) => controllerName.startsWith('DutyFreeShop'),
+  },
+  {
+    key: 'report-re-export',
+    title: 'Re-Export',
+    icon: <ExportOutlined />,
+    matches: (controllerName) => controllerName.startsWith('ReExport'),
+  },
+  {
+    key: 'report-business-service-agency',
+    title: 'Business Service Agency',
+    icon: <ApartmentOutlined />,
+    matches: (controllerName) =>
+      controllerName.startsWith('BusinessServiceAgency'),
+  },
+  {
+    key: 'report-sale-center',
+    title: 'Sale Center',
+    icon: <BankOutlined />,
+    matches: (controllerName) => controllerName.startsWith('SaleCenter'),
+  },
+  {
+    key: 'report-show-room',
+    title: 'Show Room',
+    icon: <ShopOutlined />,
+    matches: (controllerName) => controllerName.startsWith('ShowRoom'),
+  },
+  {
+    key: 'report-evcycle-show-room',
+    title: 'EVCycle Show Room',
+    icon: <ThunderboltOutlined />,
+    matches: (controllerName) =>
+      controllerName.startsWith('EVCycleShowRoom'),
+  },
+  {
+    key: 'report-ev-show-room',
+    title: 'EV Show Room',
+    icon: <CarOutlined />,
+    matches: (controllerName) => controllerName.startsWith('EVShowRoom'),
+  },
+  {
+    key: 'report-oga-recommendation',
+    title: 'OGA Recommendation',
+    icon: <AuditOutlined />,
+    matches: (controllerName) =>
+      controllerName.startsWith('OGARecommendation'),
   },
   {
     key: 'report-payment',

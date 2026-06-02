@@ -123,6 +123,15 @@ import OnlineFeesReport from './Page/OnlineFeesReport';
 import PaThaKaRegisteredBusinessOrganizationReport from './Page/PaThaKaRegisteredBusinessOrganizationReport';
 import RegistrationByBusinessType from './Page/RegistrationByBusinessType';
 import RegistrationByVoucher from './Page/RegistrationByVoucher';
+import WholeSaleSummaryReport from './Page/WholeSaleSummaryReport';
+import WholeSaleDetailReport from './Page/WholeSaleDetailReport';
+import WholeSaleRegistrationByVoucher from './Page/WholeSaleRegistrationByVoucher';
+import RetailSummaryReport from './Page/RetailSummaryReport';
+import RetailDetailReport from './Page/RetailDetailReport';
+import RetailRegistrationByVoucher from './Page/RetailRegistrationByVoucher';
+import WholeSaleAndRetailSummaryReport from './Page/WholeSaleAndRetailSummaryReport';
+import WholeSaleAndRetailDetailReport from './Page/WholeSaleAndRetailDetailReport';
+import WholeSaleAndRetailRegistrationByVoucher from './Page/WholeSaleAndRetailRegistrationByVoucher';
 
 export const reportRoutes = [
   { path: 'AccountSummaryReport', element: <AccountSummaryReport /> },
@@ -250,4 +259,13 @@ export const reportRoutes = [
   { path: 'PaThaKaRegisteredBusinessOrganizationReport', element: <PaThaKaRegisteredBusinessOrganizationReport /> },
   { path: 'RegistrationByBusinessType', element: <RegistrationByBusinessType /> },
   { path: 'RegistrationByVoucher', element: <RegistrationByVoucher /> },
+  { path: 'WholeSaleSummaryReport', element: <WholeSaleSummaryReport /> },
+  { path: 'WholeSaleDetailReport', element: <WholeSaleDetailReport /> },
+  { path: 'WholeSaleRegistrationByVoucher', element: <WholeSaleRegistrationByVoucher /> },
+  { path: 'RetailSummaryReport', element: <RetailSummaryReport /> },
+  { path: 'RetailDetailReport', element: <RetailDetailReport /> },
+  { path: 'RetailRegistrationByVoucher', element: <RetailRegistrationByVoucher /> },
+  { path: 'WholeSaleAndRetailSummaryReport', element: <WholeSaleAndRetailSummaryReport /> },
+  { path: 'WholeSaleAndRetailDetailReport', element: <WholeSaleAndRetailDetailReport /> },
+  { path: 'WholeSaleAndRetailRegistrationByVoucher', element: <WholeSaleAndRetailRegistrationByVoucher /> },
 ];
