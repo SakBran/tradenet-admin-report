@@ -22,6 +22,7 @@ import {
   AuditOutlined,
   ContainerOutlined,
   ApartmentOutlined,
+  CloudDownloadOutlined,
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { reportConfigList } from './config/reportConfigs';
@@ -220,6 +221,11 @@ export const reportCategoryKeys = reportCategoryDefinitions.map(
 );
 
 export const reportNavItems: Required<MenuProps>['items'] = [
+  {
+    key: 'Exports',
+    icon: <CloudDownloadOutlined />,
+    label: <Link to="/Report/Exports">Exports</Link>,
+  },
   ...reportCategoryDefinitions
     .map((category) => ({
       key: category.key,

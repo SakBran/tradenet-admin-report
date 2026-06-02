@@ -1,6 +1,7 @@
 using API.DBContext;
 using API.Interface;
 using API.Service;
+using API.Service.ExcelExport;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -90,6 +91,8 @@ internal class Program
         });
         builder.Services.AddScoped<IJWTManagerService, JWTManagerService>();
         builder.Services.AddScoped(typeof(ICommonService<>), typeof(CommonService<>));
+        // Async Excel export queue: jobs in TemplateDB, files on disk, background worker.
+        builder.Services.AddExcelExportQueue(builder.Configuration);
 
         var app = builder.Build();
 

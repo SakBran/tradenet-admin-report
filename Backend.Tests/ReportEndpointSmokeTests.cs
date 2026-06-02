@@ -1,3 +1,4 @@
+using API.Service.ExcelExport;
 using API.Service.Reports;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -45,13 +46,23 @@ public sealed class ReportEndpointSmokeTests(ReportSqlServerFixture sqlServerFix
 
     [Theory]
     [MemberData(nameof(Controllers))]
-    public async Task Report_excel_endpoint_returns_xlsx_for_empty_authenticated_fixture(Type controllerType)
+    public async Task Report_excel_endpoint_returns_xlsx_or_queues_job_for_empty_authenticated_fixture(Type controllerType)
     {
         var actionResult = await ReportTestHelper.InvokeExcelAsync(
             controllerType,
             sqlServerFixture.CreateDbContext);
-        var fileResult = Assert.IsType<FileContentResult>(actionResult);
 
+        // Two valid shapes during the queue rollout:
+        //  - legacy: the endpoint still generates an .xlsx synchronously (FileContentResult);
+        //  - migrated: the endpoint enqueues a job and returns an EnqueueResult (Ok(...)).
+        if (actionResult is OkObjectResult ok)
+        {
+            var enqueue = Assert.IsType<EnqueueResult>(ok.Value);
+            Assert.NotEqual(Guid.Empty, enqueue.JobId);
+            return;
+        }
+
+        var fileResult = Assert.IsType<FileContentResult>(actionResult);
         Assert.Equal(ExcelGenerator.ContentType, fileResult.ContentType);
         Assert.EndsWith(".xlsx", fileResult.FileDownloadName, StringComparison.OrdinalIgnoreCase);
         Assert.StartsWith("PK", System.Text.Encoding.ASCII.GetString(fileResult.FileContents, 0, 2), StringComparison.Ordinal);

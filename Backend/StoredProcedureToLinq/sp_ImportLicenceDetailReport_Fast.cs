@@ -1,11 +1,14 @@
 using API.DBContext;
 using API.Model;
+using API.Service.ExcelExport;
 using API.Service.Reports;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
@@ -95,6 +98,31 @@ public static class sp_ImportLicenceDetailReport_Fast
             .ToList();
 
         return await ExcelGenerator.CreateWorkbookAsync(resolved.AsQueryable(), pagingRequest, worksheetName);
+    }
+
+    /// <summary>
+    /// Streams the detail rows for the async Excel export queue: pages the DB
+    /// cursor in chunks (flat memory) and resolves the Consigned/Origin country
+    /// CSVs from the cache per chunk in C#, exactly like the paged/Excel paths.
+    /// </summary>
+    public static async IAsyncEnumerable<List<sp_ImportLicenceDetailReportResult>> StreamResolvedChunksAsync(
+        TradeNetDbContext db,
+        ICountryCache countryCache,
+        sp_ImportLicenceDetailReportRequest request,
+        int chunkSize,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(countryCache);
+        ArgumentNullException.ThrowIfNull(request);
+
+        await countryCache.EnsureLoadedAsync();
+        var countryNames = countryCache.Countries;
+
+        await foreach (var rawChunk in Rows(db, request).AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
+        {
+            yield return rawChunk.Select(row => row.ToResult(countryNames)).ToList();
+        }
     }
 
     public static async Task<ApiResult<ReportAggregateResult>> CreateAggregateResultAsync(

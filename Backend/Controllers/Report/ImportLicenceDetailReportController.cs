@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using API.DBContext;
 using API.Model;
+using API.Service.ExcelExport;
 using API.Service.Reports;
 using API.StoredProcedureToLinq;
 using Microsoft.AspNetCore.Authorization;
@@ -15,13 +17,20 @@ namespace Backend.Controllers.Report
     [Route("api/[controller]")]
     public class ImportLicenceDetailReportController : ControllerBase
     {
+        private const string ReportKey = "ImportLicenceDetailReport";
+
         private readonly TradeNetDbContext _context;
         private readonly ICountryCache _countryCache;
+        private readonly IExcelExportJobService _excelExportJobs;
 
-        public ImportLicenceDetailReportController(TradeNetDbContext context, ICountryCache countryCache)
+        public ImportLicenceDetailReportController(
+            TradeNetDbContext context,
+            ICountryCache countryCache,
+            IExcelExportJobService excelExportJobs)
         {
             _context = context;
             _countryCache = countryCache;
+            _excelExportJobs = excelExportJobs;
         }
 
         [HttpPost]
@@ -43,15 +52,19 @@ namespace Backend.Controllers.Report
         [HttpPost("Excel")]
         public async Task<IActionResult> Excel([FromBody] ImportLicenceDetailReportRequest? request)
         {
-            if (!TryCreateReportRequest(request, out var procedureRequest, out var errorResult))
+            // Validate up front so the background worker can trust the stored request.
+            if (!TryCreateReportRequest(request, out _, out var errorResult))
             {
                 return errorResult!;
             }
 
-            var fileBytes = await sp_ImportLicenceDetailReport_Fast.CreateExcelWorkbookAsync(
-                _context, _countryCache, procedureRequest!, request!, "Import Licence Detail Report");
+            var result = await _excelExportJobs.EnqueueAsync(
+                ReportKey,
+                request!,
+                request!.ToDate,
+                User.FindFirst(ClaimTypes.Name)?.Value);
 
-            return File(fileBytes, ExcelGenerator.ContentType, "ImportLicenceDetailReport.xlsx");
+            return Ok(result);
         }
 
         private bool TryCreateReportRequest(

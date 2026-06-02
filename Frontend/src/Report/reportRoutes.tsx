@@ -156,8 +156,10 @@ import EVShowRoomSummaryReport from './Page/EVShowRoomSummaryReport';
 import EVShowRoomDetailReport from './Page/EVShowRoomDetailReport';
 import EVShowRoomRegistrationByVoucher from './Page/EVShowRoomRegistrationByVoucher';
 import OGARecommendationReport from './Page/OGARecommendationReport';
+import ExportsDrive from './Page/ExportsDrive';
 
 export const reportRoutes = [
+  { path: 'Exports', element: <ExportsDrive /> },
   { path: 'AccountSummaryReport', element: <AccountSummaryReport /> },
   { path: 'BorderExportLicenceActualAmendmentReport', element: <BorderExportLicenceActualAmendmentReport /> },
   { path: 'BorderExportLicenceAmendmentReport', element: <BorderExportLicenceAmendmentReport /> },

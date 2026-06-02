@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using API.DBContext;
 using API.Model;
+using API.Service.ExcelExport;
 using API.Service.Reports;
 using API.StoredProcedureToLinq;
 using Microsoft.AspNetCore.Authorization;
@@ -14,11 +16,15 @@ namespace Backend.Controllers.Report
     [Route("api/[controller]")]
     public class MemberRegistrationReportController : ControllerBase
     {
-        private readonly TradeNetDbContext _context;
+        private const string ReportKey = "MemberRegistrationReport";
 
-        public MemberRegistrationReportController(TradeNetDbContext context)
+        private readonly TradeNetDbContext _context;
+        private readonly IExcelExportJobService _excelExportJobs;
+
+        public MemberRegistrationReportController(TradeNetDbContext context, IExcelExportJobService excelExportJobs)
         {
             _context = context;
+            _excelExportJobs = excelExportJobs;
         }
 
         [HttpPost]
@@ -39,29 +45,19 @@ namespace Backend.Controllers.Report
         [HttpPost("Excel")]
         public async Task<IActionResult> Excel([FromBody] MemberRegistrationReportRequest? request)
         {
-            if (!TryCreateReportRequest(request, out var reportRequest, out var errorResult))
+            // Validate up front so the background worker can trust the stored request.
+            if (!TryCreateReportRequest(request, out _, out var errorResult))
             {
                 return errorResult!;
             }
 
-            var query = sp_MemberRegistrationReport.Query(_context, reportRequest!);
-            byte[] fileBytes;
-            try
-            {
-                fileBytes = await ExcelGenerator.CreateWorkbookAsync(
-                    query,
-                    request!,
-                    "Member Registration Report");
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await _excelExportJobs.EnqueueAsync(
+                ReportKey,
+                request!,
+                request!.ToDate,
+                User.FindFirst(ClaimTypes.Name)?.Value);
 
-            return File(
-                fileBytes,
-                ExcelGenerator.ContentType,
-                "MemberRegistrationReport.xlsx");
+            return Ok(result);
         }
 
         private static string? NormalizeApplyType(string? applyType)

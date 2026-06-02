@@ -10,6 +10,7 @@ import {
   Row,
   Select,
   Space,
+  message,
 } from 'antd';
 import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
@@ -27,6 +28,14 @@ import {
   ReportFilterConfig,
   ReportPageConfig,
 } from '../config/reportTypes';
+
+type ExcelEnqueueResult = {
+  status: 'Ready' | 'Queued' | 'Processing';
+  jobId: string;
+  fileName?: string;
+  downloadUrl?: string;
+  message?: string;
+};
 
 type FilterValue =
   | string
@@ -565,16 +574,37 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
 
   const generateExcel = useCallback(
     async (query: BasicTableQuery) => {
-      const response = await axiosInstance.post(
+      // Excel is now asynchronous: the endpoint enqueues a job (or returns an
+      // already-finished file to reuse). See docs/ExcelJobQueueTask.md.
+      const response = await axiosInstance.post<ExcelEnqueueResult>(
         config.excelRoute,
-        buildRequest(filters, query),
-        { responseType: 'blob' }
+        buildRequest(filters, query)
       );
-      const blob = new Blob([response.data], {
-        type: String(response.headers['content-type'] ?? excelContentType),
-      });
+      const result = response.data;
 
-      downloadBlob(blob, config.excelFileName);
+      if (result.status === 'Ready' && result.downloadUrl) {
+        const fileResponse = await axiosInstance.get(result.downloadUrl, {
+          responseType: 'blob',
+        });
+        const blob = new Blob([fileResponse.data], {
+          type: String(
+            fileResponse.headers['content-type'] ?? excelContentType
+          ),
+        });
+        downloadBlob(blob, result.fileName ?? config.excelFileName);
+        message.success('Your Excel export is ready and downloading.');
+        return;
+      }
+
+      if (result.status === 'Processing') {
+        message.info(
+          'This export is already being generated. It will appear in Exports when ready.'
+        );
+      } else {
+        message.success(
+          'Export queued. It will appear in Exports when ready.'
+        );
+      }
     },
     [config.excelFileName, config.excelRoute, filters]
   );

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Reflection;
 using API.DBContext;
 using API.Model;
+using API.Service.ExcelExport;
 using API.Service.Reports;
 using Backend.Controllers.Report;
 using Microsoft.AspNetCore.Http;
@@ -80,11 +81,13 @@ internal static class ReportTestHelper
             .FirstOrDefault(parameters => parameters.All(parameter =>
                 parameter.ParameterType == typeof(TradeNetDbContext)
                 || parameter.ParameterType == typeof(ICountryCache)
-                || parameter.ParameterType == typeof(IMemoryCache)))
+                || parameter.ParameterType == typeof(IMemoryCache)
+                || parameter.ParameterType == typeof(IExcelExportJobService)))
             ?.Select(parameter => parameter.ParameterType switch
             {
                 Type type when type == typeof(ICountryCache) => new EmptyCountryCache(),
                 Type type when type == typeof(IMemoryCache) => new MemoryCache(new MemoryCacheOptions()),
+                Type type when type == typeof(IExcelExportJobService) => (object)new FakeExcelExportJobService(),
                 _ => (object)db
             })
             .ToArray()
@@ -298,6 +301,28 @@ internal static class ReportTestHelper
         return DateTime.TryParse(value, out var parsed)
             ? parsed
             : fallback;
+    }
+
+    /// <summary>
+    /// No-op enqueue service for migrated controllers' Excel endpoints — returns a
+    /// Queued result without touching TemplateDB or generating a file.
+    /// </summary>
+    private sealed class FakeExcelExportJobService : IExcelExportJobService
+    {
+        public Task<EnqueueResult> EnqueueAsync(
+            string reportKey,
+            object request,
+            DateTime toDate,
+            string? requestedByUserName)
+        {
+            return Task.FromResult(new EnqueueResult
+            {
+                Status = EnqueueStatus.Queued,
+                JobId = Guid.NewGuid(),
+                FileName = reportKey + ".xlsx",
+                Message = "Queued (test)."
+            });
+        }
     }
 
     private sealed class EmptyCountryCache : ICountryCache
