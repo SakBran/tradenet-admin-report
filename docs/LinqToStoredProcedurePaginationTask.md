@@ -437,7 +437,10 @@ group converts every controller that shares that procedure.
 | ⬜ | `sp_MemberRegistrationReport` | `sp_MemberRegistrationReport_pagination` | MemberRegistrationReport |
 | ⬜ | `sp_OnlineFeesReport` | `sp_OnlineFeesReport_pagination` | OnlineFeesReport |
 
-**Totals:** 28 source procedures · 125 controllers. Done: 9 PaThaKa procedures /
+**Historical tracker scope:** 28 source procedures · 125 controllers at the
+time this pagination conversion tracker was written. The current repository has
+158 report controllers; use `ReportAndLinqMappingList.md` and
+`ReportIndexAudit.md` for the full current inventory. Done: 9 PaThaKa procedures /
 11 controllers + the **Import Licence menu (16 controllers)** across 10 procedures
 (those 10 procedures' other report families remain on LINQ — see 🟡 rows).
 

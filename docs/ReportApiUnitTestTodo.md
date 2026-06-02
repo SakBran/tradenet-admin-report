@@ -26,7 +26,8 @@ Last updated: 2026-05-28.
 - [x] Added authenticated Excel smoke tests for every `/api/{ReportController}/Excel` endpoint.
 - [x] Added a report payload fixture test that records and validates the request payload used for every endpoint.
 - [x] Ran seeded `TradeNetDBTest` POST smoke tests for every report endpoint:
-  - 125 endpoints tested.
+  - 125 endpoints tested at that checkpoint; the repository has since expanded
+    to 158 report controllers.
   - 9 data-returning endpoints.
   - 116 empty-by-fixture endpoints.
   - 0 failing endpoints.
