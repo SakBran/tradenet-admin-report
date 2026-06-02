@@ -160,3 +160,6 @@ fabric.properties
 # End of https://www.toptal.com/developers/gitignore/api/webstorm+all
 *.zip
 Backend/appsettings.json
+
+# Generated Excel exports (async export queue)
+Backend/App_Data/**/*.xlsx

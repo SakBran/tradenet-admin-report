@@ -118,6 +118,6 @@ namespace API.Service.ExcelExport
             };
         }
 
-        private static string DownloadUrl(Guid id) => $"api/ExcelExport/{id}/download";
+        private static string DownloadUrl(Guid id) => $"ExcelExport/{id}/download";
     }
 }

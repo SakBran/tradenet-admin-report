@@ -111,7 +111,7 @@ namespace Backend.Controllers
             startedAtUtc = j.StartedAtUtc,
             completedAtUtc = j.CompletedAtUtc,
             expiresAtUtc = j.ExpiresAtUtc,
-            downloadUrl = j.Status == ExcelExportJobStatus.Completed ? $"api/ExcelExport/{j.Id}/download" : null
+            downloadUrl = j.Status == ExcelExportJobStatus.Completed ? $"ExcelExport/{j.Id}/download" : null
         };
     }
 }

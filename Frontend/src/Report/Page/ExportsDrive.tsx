@@ -84,7 +84,7 @@ const ExportsDrive = () => {
     setLoading(true);
     try {
       const response = await axiosInstance.get<ExportJob[]>(
-        'api/ExcelExport/jobs'
+        'ExcelExport/jobs'
       );
       setJobs(response.data ?? []);
     } catch {
@@ -152,7 +152,7 @@ const ExportsDrive = () => {
   const handleDelete = useCallback(
     async (job: ExportJob) => {
       try {
-        await axiosInstance.delete(`api/ExcelExport/${job.id}`);
+        await axiosInstance.delete(`ExcelExport/${job.id}`);
         message.success('Export deleted.');
         fetchJobs();
       } catch {
