@@ -75,6 +75,11 @@ interface PropsType<T extends AnyObject = AnyObject> {
   excelEnabled?: boolean;
   idleText?: string;
   showRowNumber?: boolean;
+  /**
+   * Optional centered heading lines rendered inside the table, spanning all
+   * columns above the column-header row (mirrors the legacy RDLC report header).
+   */
+  reportHeaderLines?: string[];
 }
 
 const emptyPage = <T extends AnyObject>(): PaginationType<T> => ({
@@ -131,6 +136,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   excelEnabled = enabled,
   idleText = 'Set filters, then click Filter to load data',
   showRowNumber = true,
+  reportHeaderLines,
 }: PropsType<T>) => {
   const normalizedColumns = useMemo<BasicTableColumn<T>[]>(() => {
     if (columns?.length) {
@@ -331,6 +337,18 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
 
           <table id={tableId}>
             <thead>
+              {reportHeaderLines
+                ?.filter((line) => line?.trim())
+                .map((line) => (
+                  <tr key={line} className="report-header-row">
+                    <th
+                      colSpan={columnCount}
+                      style={{ textAlign: 'center', fontWeight: 700 }}
+                    >
+                      {line}
+                    </th>
+                  </tr>
+                ))}
               <tr>
                 {showRowNumber && <th>No</th>}
                 {normalizedColumns.map((column) => {

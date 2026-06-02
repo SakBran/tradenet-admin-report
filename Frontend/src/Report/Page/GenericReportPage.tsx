@@ -632,6 +632,16 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
     setRefreshKey((current) => current + 1);
   };
 
+  // Legacy RDLC-style report header rendered inside the grid, shown only once
+  // filters are applied. Reflects the applied Type/Date via reportSubtitle.
+  const reportHeaderLines =
+    hasAppliedFilters && (config.reportHeading?.length || config.reportSubtitle)
+      ? [
+          ...(config.reportHeading ?? []),
+          ...(config.reportSubtitle ? [config.reportSubtitle(filters)] : []),
+        ]
+      : undefined;
+
   return (
     <>
       <PageHeader title={config.title} />
@@ -688,6 +698,7 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
 
       <BasicTable<AnyObject>
         title={config.title}
+        reportHeaderLines={reportHeaderLines}
         tableId={`${config.controllerName}Table`}
         columns={tableColumns}
         fetchData={fetchRows}

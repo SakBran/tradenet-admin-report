@@ -49,4 +49,16 @@ export interface ReportPageConfig {
   filters: ReportFilterConfig[];
   initialSortColumn?: string;
   showRowNumber?: boolean;
+  /**
+   * Optional centered heading lines shown above the report grid once filters
+   * are applied (e.g. ['Ministry of Commerce', 'Directorate of Trade']),
+   * mirroring the legacy RDLC report header.
+   */
+  reportHeading?: string[];
+  /**
+   * Optional dynamic subtitle rendered under the heading lines. Receives the
+   * applied (normalized) filter values so it can reflect the chosen Type/Date,
+   * e.g. `${Type} Company Business Organization (${Date})`.
+   */
+  reportSubtitle?: (filters: Record<string, unknown>) => string;
 }

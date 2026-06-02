@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { ReportFilterOption, ReportPageConfig } from './reportTypes';
 import { newReportConfigs } from './newReportConfigs';
 
@@ -12772,6 +12773,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ListOfValidAndInvalidCompany.xlsx',
     initialSortColumn: 'CompanyRegistrationNo',
     showRowNumber: true,
+    // Legacy RDLC report header: Ministry of Commerce / Directorate of Trade /
+    // "{Valid|Invalid} Company Business Organization ({date})".
+    reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
+    reportSubtitle: (filters) => {
+      const type =
+        String(filters.Type).toLowerCase() === 'invalid' ? 'Invalid' : 'Valid';
+      const date = filters.Date
+        ? dayjs(String(filters.Date)).format('DD/MM/YYYY')
+        : '';
+      return `${type} Company Business Organization (${date})`;
+    },
     filters: [
       {
         name: 'Date',

@@ -18,6 +18,14 @@ namespace Backend.Controllers
         private const string CacheKeyPrefix = "ReportLookups:";
         private static readonly TimeSpan CacheDuration = TimeSpan.FromDays(1);
 
+        // BusinessType is a shared table partitioned by FormType (Pa Tha Ka, Whole Sale,
+        // Retail, Duty Free Shop, ...). The business-type dropdown for these reports must
+        // only list the "Pa Tha Ka" entries, mirroring the legacy admin which called
+        // BusinessTypeRepository.GetAll(AppConfig.PaThaKa). Without this filter the dropdown
+        // shows every form type's "Trading" et al., and selecting a non-PaThaKa id returns
+        // no rows because PaThaKa records only reference Pa Tha Ka business type ids.
+        private const string PaThaKaFormType = "Pa Tha Ka";
+
         private readonly TradeNetDbContext _context;
         private readonly IMemoryCache _cache;
 
@@ -79,7 +87,7 @@ namespace Backend.Controllers
         private Task<List<ReportLookupOption>> GetBusinessTypes() =>
             _context.BusinessTypes
                 .AsNoTracking()
-                .Where(item => item.IsActive && !item.IsDeleted)
+                .Where(item => item.IsActive && !item.IsDeleted && item.FormType == PaThaKaFormType)
                 .OrderBy(item => item.SortOrder)
                 .ThenBy(item => item.Name)
                 .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
