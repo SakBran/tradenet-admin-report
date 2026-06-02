@@ -72,6 +72,29 @@ public static class sp_WineImportationByPaThaKaReport_Fast
             pagingRequest.FilterQuery);
     }
 
+    /// <summary>
+    /// Returns every Wine Importation (Alcoholic Beverages) card for the company,
+    /// with NRC and wine-type values resolved. No paging — intended for the
+    /// composite CardListsByPaThaKa detail report.
+    /// </summary>
+    public static async Task<List<sp_WineImportationByPaThaKaReportResult>> GetAllResolvedAsync(
+        TradeNetDbContext db,
+        IMemoryCache cache,
+        sp_WineImportationByPaThaKaReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(cache);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var wineTypes = await ReportLookupCache.GetWineTypeNamesAsync(db, cache);
+
+        var rows = await Rows(db, request).ToListAsync();
+
+        return rows
+            .Select(row => row.ToResult(wineTypes))
+            .ToList();
+    }
+
     public static async Task<byte[]> CreateExcelWorkbookAsync(
         TradeNetDbContext db,
         IMemoryCache cache,

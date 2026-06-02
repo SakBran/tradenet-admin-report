@@ -1,135 +1,135 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
-using System.Threading;
 using System.Threading.Tasks;
 using API.DBContext;
-using API.Model;
-using API.Service.ExcelExport;
-using API.Service.Reports;
 using API.StoredProcedureToLinq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Backend.Controllers.Report
 {
+    /// <summary>
+    /// Composite "Card Lists By Company Registration Number" (Pathaka) detail report.
+    /// Restores the old TradeNet admin RDLC layout: company header + Permit Business,
+    /// Director Info and every related card type for a single company. This is a
+    /// document-style report keyed by one CompanyRegistrationNo (no paging / no Excel).
+    /// </summary>
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class CardListsByCompanyRegistrationNumberController : ControllerBase, IStreamingExcelReport
+    public class CardListsByCompanyRegistrationNumberController : ControllerBase
     {
-        private const string ReportKey = "CardListsByCompanyRegistrationNumber";
-
-        private const int DefaultPageSize = 10;
-        private const int MaxPageSize = 1000;
-
-        // Excel worksheets allow 1,048,576 rows including the header.
-        private const int MaxExcelDataRows = 1_048_576 - 1;
-
         private readonly TradeNetDbContext _context;
-        private readonly IExcelExportJobService _excelExportJobs;
+        private readonly IMemoryCache _cache;
 
-        public CardListsByCompanyRegistrationNumberController(TradeNetDbContext context, IExcelExportJobService excelExportJobs)
+        public CardListsByCompanyRegistrationNumberController(
+            TradeNetDbContext context,
+            IMemoryCache cache)
         {
             _context = context;
-            _excelExportJobs = excelExportJobs;
+            _cache = cache;
         }
 
-        [HttpPost]
-        public async Task<ActionResult<ApiResult<sp_CardListsByPaThaKaReportResult>>> Post([FromBody] CardListsByCompanyRegistrationNumberRequest? request)
+        [HttpPost("Detail")]
+        public async Task<ActionResult<CardListsByPaThaKaDetailResult>> Detail(
+            [FromBody] CardListsByCompanyRegistrationNumberRequest? request)
         {
-            if (!TryCreateReportRequest(request, out var procedureRequest, out var errorResult))
+            var registrationNo = request?.CompanyRegistrationNo?.Trim();
+            if (string.IsNullOrWhiteSpace(registrationNo))
             {
-                return errorResult!;
+                return BadRequest("Company Registration No is required.");
             }
 
-            var pageIndex = Math.Max(0, request!.PageIndex);
-            var pageSize = request.PageSize <= 0
-                ? DefaultPageSize
-                : Math.Min(request.PageSize, MaxPageSize);
+            // 1. Company header
+            var companyRows = await sp_CardListsByPaThaKaReport.ExecuteAsync(
+                _context,
+                new sp_CardListsByPaThaKaReportRequest { CompanyRegistrationNo = registrationNo });
+            var company = companyRows.FirstOrDefault()?.ToResult();
 
-            var sortColumn = string.IsNullOrWhiteSpace(request.SortColumn) ? null : request.SortColumn;
-            var sortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? null : request.SortOrder;
-
-            var rows = await sp_CardListsByPaThaKaReport.ExecuteAsync(
-                _context, procedureRequest!, sortColumn, sortOrder, pageIndex, pageSize);
-
-            var totalCount = rows.Count > 0 ? rows[0].TotalCount : 0;
-            var data = rows.Select(row => row.ToResult()).ToList();
-
-            var result = ApiResult<sp_CardListsByPaThaKaReportResult>.CreatePageFromRows(
-                data, totalCount, pageIndex, pageSize,
-                request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
-
-            return Ok(result);
-        }
-
-        [HttpPost("Excel")]
-        public async Task<IActionResult> Excel([FromBody] CardListsByCompanyRegistrationNumberRequest? request)
-        {
-            if (!TryCreateReportRequest(request, out _, out var errorResult))
+            if (company == null)
             {
-                return errorResult!;
+                return Ok(new CardListsByPaThaKaDetailResult
+                {
+                    CompanyRegistrationNo = registrationNo,
+                });
             }
 
-            var result = await _excelExportJobs.EnqueueAsync(
-                ReportKey,
-                request!,
-                DateTime.Today,
-                User.FindFirst(ClaimTypes.Name)?.Value);
+            // 2. Permit Business descriptions
+            var permitBusinesses = await sp_PermitBusinessByPaThaKaReport
+                .Query(_context, new sp_PermitBusinessByPaThaKaReportRequest { CompanyRegistrationNo = registrationNo })
+                .Where(row => row.Description != null && row.Description != "")
+                .Select(row => row.Description!)
+                .ToListAsync();
 
-            return Ok(result);
-        }
+            // 3. Director info
+            var directors = await sp_DirectorByPaThaKaReport
+                .Query(_context, new sp_DirectorByPaThaKaReportRequest { CompanyRegistrationNo = registrationNo })
+                .ToListAsync();
 
-        // --- Async Excel export streaming (used by the background queue worker) ---
-        public string ExcelWorksheetTitle => "CardListsByCompanyRegistrationNumber";
-        public Type ExcelRequestType => typeof(CardListsByCompanyRegistrationNumberRequest);
+            // 4..N. Related cards
+            var wholeSaleRetail = await sp_WholeSaleAndRetailByPaThaKaReport
+                .Query(_context, new sp_WholeSaleAndRetailByPaThaKaReportRequest { CompanyRegistrationNo = registrationNo })
+                .ToListAsync();
 
-        [NonAction]
-        public Task WriteRowsAsync(object request, IExcelRowSink sink, int chunkSize, CancellationToken cancellationToken)
-            => WriteRowsAsync((CardListsByCompanyRegistrationNumberRequest)request, sink, chunkSize, cancellationToken);
+            var alcoholicBeverages = await sp_WineImportationByPaThaKaReport_Fast.GetAllResolvedAsync(
+                _context, _cache, new sp_WineImportationByPaThaKaReportRequest { CompanyRegistrationNo = registrationNo });
 
-        private async Task WriteRowsAsync(
-            CardListsByCompanyRegistrationNumberRequest request,
-            IExcelRowSink sink,
-            int chunkSize,
-            CancellationToken cancellationToken)
-        {
-            TryCreateReportRequest(request, out var procedureRequest, out _);
-            await foreach (var chunk in sp_CardListsByPaThaKaReport.ExecuteQueryable(_context, procedureRequest!)
-                .AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
+            var businessServiceAgency = await sp_BusinessServiceAgencyByPaThakaReport
+                .Query(_context, new sp_BusinessServiceAgencyByPaThakaReportRequest { CompanyRegistrationNo = registrationNo })
+                .ToListAsync();
+
+            var reExport = await sp_ReExportByPaThaKaReport
+                .Query(_context, new sp_ReExportByPaThaKaReportRequest { CompanyRegistrationNo = registrationNo })
+                .ToListAsync();
+
+            var saleCenter = await sp_SaleCenterByPaThaKaReport
+                .Query(_context, new sp_SaleCenterByPaThaKaReportRequest { CompanyRegistrationNo = registrationNo })
+                .ToListAsync();
+
+            var showRoom = await sp_ShowRoomByPaThaKaReport
+                .Query(_context, new sp_ShowRoomByPaThaKaReportRequest { CompanyRegistrationNo = registrationNo })
+                .ToListAsync();
+
+            var dutyFreeShop = await sp_DutyFreeShopByReport
+                .Query(_context, new sp_DutyFreeShopByReportRequest { CompanyRegistrationNo = registrationNo })
+                .ToListAsync();
+
+            return Ok(new CardListsByPaThaKaDetailResult
             {
-                sink.Append(chunk.Select(row => row.ToResult()).ToList());
-            }
-        }
-
-        private bool TryCreateReportRequest(
-            CardListsByCompanyRegistrationNumberRequest? request,
-            out sp_CardListsByPaThaKaReportRequest? procedureRequest,
-            out ActionResult? errorResult)
-        {
-            procedureRequest = null;
-            errorResult = null;
-
-            if (request == null)
-            {
-                errorResult = BadRequest("Request body is required.");
-                return false;
-            }
-
-            procedureRequest = new sp_CardListsByPaThaKaReportRequest
-            {
-                CompanyRegistrationNo = request.CompanyRegistrationNo,
-            };
-
-            return true;
+                CompanyRegistrationNo = registrationNo,
+                Company = company,
+                PermitBusinesses = permitBusinesses,
+                Directors = directors,
+                WholeSaleRetail = wholeSaleRetail,
+                AlcoholicBeverages = alcoholicBeverages,
+                BusinessServiceAgency = businessServiceAgency,
+                ReExport = reExport,
+                SaleCenter = saleCenter,
+                ShowRoom = showRoom,
+                DutyFreeShop = dutyFreeShop,
+            });
         }
     }
 
-    public sealed class CardListsByCompanyRegistrationNumberRequest : ReportQueryRequest
+    public sealed class CardListsByCompanyRegistrationNumberRequest
     {
         public string CompanyRegistrationNo { get; set; } = string.Empty;
+    }
+
+    public sealed class CardListsByPaThaKaDetailResult
+    {
+        public string CompanyRegistrationNo { get; set; } = string.Empty;
+        public sp_CardListsByPaThaKaReportResult? Company { get; set; }
+        public List<string> PermitBusinesses { get; set; } = new();
+        public List<sp_DirectorByPaThaKaReportResult> Directors { get; set; } = new();
+        public List<sp_WholeSaleAndRetailByPaThaKaReportResult> WholeSaleRetail { get; set; } = new();
+        public List<sp_WineImportationByPaThaKaReportResult> AlcoholicBeverages { get; set; } = new();
+        public List<sp_BusinessServiceAgencyByPaThakaReportResult> BusinessServiceAgency { get; set; } = new();
+        public List<sp_ReExportByPaThaKaReportResult> ReExport { get; set; } = new();
+        public List<sp_SaleCenterByPaThaKaReportResult> SaleCenter { get; set; } = new();
+        public List<sp_ShowRoomByPaThaKaReportResult> ShowRoom { get; set; } = new();
+        public List<sp_DutyFreeShopByReportResult> DutyFreeShop { get; set; } = new();
     }
 }
