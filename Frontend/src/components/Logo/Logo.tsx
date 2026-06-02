@@ -1,4 +1,4 @@
-import { Flex, FlexProps, theme, Typography } from 'antd';
+import { Flex, FlexProps } from 'antd';
 import { Link } from 'react-router-dom';
 import { CSSProperties } from 'react';
 
@@ -23,53 +23,36 @@ export const Logo = ({
   bgColor,
   ...others
 }: LogoProps) => {
-  const {
-    token: { borderRadius },
-  } = theme.useToken();
+  // Auth screens render the lockup on a dark/branded background with
+  // color="white"; the official wordmark is navy, so it needs a light plate
+  // there to stay legible. On light surfaces it sits on its own.
+  const onDark = color === 'white';
+
+  const brand = (
+    <Flex align="center" justify="center" {...others}>
+      <span
+        className={`logo-mark${onDark ? ' logo-mark--ondark' : ''}`}
+        style={bgColor ? { background: bgColor } : undefined}
+      >
+        <img
+          className="logo-img"
+          src="/tradenet-logo.png"
+          alt="Myanmar TradeNet 2.0 — Ministry of Commerce"
+          style={{ height: imgSize?.h ?? 40 }}
+        />
+      </span>
+    </Flex>
+  );
 
   return asLink ? (
-    <Link to={href || '#'} className="logo-link">
-      <Flex gap={others.gap || 'small'} align="center" {...others}>
-        <img
-          src="/moc-logo.png"
-          alt="Ministry of Commerce logo"
-          height={imgSize?.h || 48}
-        />
-        <Typography.Title
-          level={5}
-          type="secondary"
-          style={{
-            color,
-            margin: 0,
-            padding: `4px 8px`,
-            backgroundColor: bgColor,
-            borderRadius,
-          }}
-        >
-          T2.0 Report
-        </Typography.Title>
-      </Flex>
+    <Link
+      to={href || '#'}
+      className="logo-link"
+      aria-label="Myanmar TradeNet 2.0 Report"
+    >
+      {brand}
     </Link>
   ) : (
-    <Flex gap={others.gap || 'small'} align="center" {...others}>
-      <img
-        src="/logo-no-background.png"
-        alt="design sparx logo"
-        height={imgSize?.h || 48}
-      />
-      <Typography.Title
-        level={4}
-        type="secondary"
-        style={{
-          color,
-          margin: 0,
-          padding: `4px 8px`,
-          backgroundColor: bgColor,
-          borderRadius,
-        }}
-      >
-        Antd Admin
-      </Typography.Title>
-    </Flex>
+    brand
   );
 };

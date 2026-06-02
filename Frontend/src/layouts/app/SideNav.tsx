@@ -66,9 +66,12 @@ const SideNav = ({ setCollapse, className, ...others }: SideNavProps) => {
         asLink
         href={PATH_DASHBOARD.default}
         justify="center"
-        gap="small"
-        imgSize={{ h: 28, w: 28 }}
-        style={{ padding: '1rem 0' }}
+        imgSize={{ h: 40 }}
+        style={{
+          height: 64,
+          padding: '0 1rem',
+          borderBottom: '1px solid #d9d9d9',
+        }}
       />
       <ConfigProvider
         theme={{
