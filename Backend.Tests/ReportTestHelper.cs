@@ -2,6 +2,7 @@ using System.Collections;
 using System.Reflection;
 using API.DBContext;
 using API.Model;
+using API.Service.Reports;
 using Backend.Controllers.Report;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -74,10 +75,14 @@ internal static class ReportTestHelper
             .Select(constructor => constructor.GetParameters())
             .FirstOrDefault(parameters => parameters.All(parameter =>
                 parameter.ParameterType == typeof(TradeNetDbContext)
+                || parameter.ParameterType == typeof(ICountryCache)
                 || parameter.ParameterType == typeof(IMemoryCache)))
-            ?.Select(parameter => parameter.ParameterType == typeof(IMemoryCache)
-                ? new MemoryCache(new MemoryCacheOptions())
-                : (object)db)
+            ?.Select(parameter => parameter.ParameterType switch
+            {
+                Type type when type == typeof(ICountryCache) => new EmptyCountryCache(),
+                Type type when type == typeof(IMemoryCache) => new MemoryCache(new MemoryCacheOptions()),
+                _ => (object)db
+            })
             .ToArray()
             ?? [db];
 
@@ -274,5 +279,15 @@ internal static class ReportTestHelper
         }
 
         return null;
+    }
+
+    private sealed class EmptyCountryCache : ICountryCache
+    {
+        public IReadOnlyList<ReportLookupEntry> Countries => Array.Empty<ReportLookupEntry>();
+
+        public string ResolveCsv(string? csvIds) => string.Empty;
+
+        public Task EnsureLoadedAsync(CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
     }
 }

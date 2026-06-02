@@ -132,6 +132,30 @@ import RetailRegistrationByVoucher from './Page/RetailRegistrationByVoucher';
 import WholeSaleAndRetailSummaryReport from './Page/WholeSaleAndRetailSummaryReport';
 import WholeSaleAndRetailDetailReport from './Page/WholeSaleAndRetailDetailReport';
 import WholeSaleAndRetailRegistrationByVoucher from './Page/WholeSaleAndRetailRegistrationByVoucher';
+import AlcoholicBeveragesImportationSummaryReport from './Page/AlcoholicBeveragesImportationSummaryReport';
+import AlcoholicBeveragesImportationDetailReport from './Page/AlcoholicBeveragesImportationDetailReport';
+import AlcoholicBeveragesImportationRegistrationByVoucher from './Page/AlcoholicBeveragesImportationRegistrationByVoucher';
+import DutyFreeShopSummaryReport from './Page/DutyFreeShopSummaryReport';
+import DutyFreeShopDetailReport from './Page/DutyFreeShopDetailReport';
+import DutyFreeShopRegistrationByVoucher from './Page/DutyFreeShopRegistrationByVoucher';
+import ReExportSummaryReport from './Page/ReExportSummaryReport';
+import ReExportDetailReport from './Page/ReExportDetailReport';
+import BusinessServiceAgencySummaryReport from './Page/BusinessServiceAgencySummaryReport';
+import BusinessServiceAgencyDetailReport from './Page/BusinessServiceAgencyDetailReport';
+import BusinessServiceAgencyRegistrationByVoucher from './Page/BusinessServiceAgencyRegistrationByVoucher';
+import SaleCenterSummaryReport from './Page/SaleCenterSummaryReport';
+import SaleCenterDetailReport from './Page/SaleCenterDetailReport';
+import SaleCenterRegistrationByVoucher from './Page/SaleCenterRegistrationByVoucher';
+import ShowRoomSummaryReport from './Page/ShowRoomSummaryReport';
+import ShowRoomDetailReport from './Page/ShowRoomDetailReport';
+import ShowRoomRegistrationByVoucher from './Page/ShowRoomRegistrationByVoucher';
+import EVCycleShowRoomSummaryReport from './Page/EVCycleShowRoomSummaryReport';
+import EVCycleShowRoomDetailReport from './Page/EVCycleShowRoomDetailReport';
+import EVCycleShowRoomRegistrationByVoucher from './Page/EVCycleShowRoomRegistrationByVoucher';
+import EVShowRoomSummaryReport from './Page/EVShowRoomSummaryReport';
+import EVShowRoomDetailReport from './Page/EVShowRoomDetailReport';
+import EVShowRoomRegistrationByVoucher from './Page/EVShowRoomRegistrationByVoucher';
+import OGARecommendationReport from './Page/OGARecommendationReport';
 
 export const reportRoutes = [
   { path: 'AccountSummaryReport', element: <AccountSummaryReport /> },
@@ -268,4 +292,28 @@ export const reportRoutes = [
   { path: 'WholeSaleAndRetailSummaryReport', element: <WholeSaleAndRetailSummaryReport /> },
   { path: 'WholeSaleAndRetailDetailReport', element: <WholeSaleAndRetailDetailReport /> },
   { path: 'WholeSaleAndRetailRegistrationByVoucher', element: <WholeSaleAndRetailRegistrationByVoucher /> },
+  { path: 'AlcoholicBeveragesImportationSummaryReport', element: <AlcoholicBeveragesImportationSummaryReport /> },
+  { path: 'AlcoholicBeveragesImportationDetailReport', element: <AlcoholicBeveragesImportationDetailReport /> },
+  { path: 'AlcoholicBeveragesImportationRegistrationByVoucher', element: <AlcoholicBeveragesImportationRegistrationByVoucher /> },
+  { path: 'DutyFreeShopSummaryReport', element: <DutyFreeShopSummaryReport /> },
+  { path: 'DutyFreeShopDetailReport', element: <DutyFreeShopDetailReport /> },
+  { path: 'DutyFreeShopRegistrationByVoucher', element: <DutyFreeShopRegistrationByVoucher /> },
+  { path: 'ReExportSummaryReport', element: <ReExportSummaryReport /> },
+  { path: 'ReExportDetailReport', element: <ReExportDetailReport /> },
+  { path: 'BusinessServiceAgencySummaryReport', element: <BusinessServiceAgencySummaryReport /> },
+  { path: 'BusinessServiceAgencyDetailReport', element: <BusinessServiceAgencyDetailReport /> },
+  { path: 'BusinessServiceAgencyRegistrationByVoucher', element: <BusinessServiceAgencyRegistrationByVoucher /> },
+  { path: 'SaleCenterSummaryReport', element: <SaleCenterSummaryReport /> },
+  { path: 'SaleCenterDetailReport', element: <SaleCenterDetailReport /> },
+  { path: 'SaleCenterRegistrationByVoucher', element: <SaleCenterRegistrationByVoucher /> },
+  { path: 'ShowRoomSummaryReport', element: <ShowRoomSummaryReport /> },
+  { path: 'ShowRoomDetailReport', element: <ShowRoomDetailReport /> },
+  { path: 'ShowRoomRegistrationByVoucher', element: <ShowRoomRegistrationByVoucher /> },
+  { path: 'EVCycleShowRoomSummaryReport', element: <EVCycleShowRoomSummaryReport /> },
+  { path: 'EVCycleShowRoomDetailReport', element: <EVCycleShowRoomDetailReport /> },
+  { path: 'EVCycleShowRoomRegistrationByVoucher', element: <EVCycleShowRoomRegistrationByVoucher /> },
+  { path: 'EVShowRoomSummaryReport', element: <EVShowRoomSummaryReport /> },
+  { path: 'EVShowRoomDetailReport', element: <EVShowRoomDetailReport /> },
+  { path: 'EVShowRoomRegistrationByVoucher', element: <EVShowRoomRegistrationByVoucher /> },
+  { path: 'OGARecommendationReport', element: <OGARecommendationReport /> },
 ];

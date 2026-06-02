@@ -2,9 +2,9 @@
 
 This document maps each report name to its related SQL stored procedure and tracks API build status.
 
-- Total modules: 11
-- Total mappings: 125
-- API completed: 125
+- Total modules: 23
+- Total mappings: 158
+- API completed: 158
 - API remaining: 0
 
 Status values:
@@ -28,6 +28,18 @@ Status values:
 |   9 | Export Permit         |            12 |
 |  10 | Border Export Licence |            14 |
 |  11 | Payment               |             5 |
+|  12 | WholeSale             |             3 |
+|  13 | Retail                |             3 |
+|  14 | Whole Sale and Retail |             3 |
+|  15 | Alcoholic Beverages Importation |      3 |
+|  16 | Duty Free Shop        |             3 |
+|  17 | Re-Export             |             2 |
+|  18 | Business Service Agency |           3 |
+|  19 | Sale Center           |             3 |
+|  20 | Show Room             |             3 |
+|  21 | EVCycle Show Room     |             3 |
+|  22 | EV Show Room          |             3 |
+|  23 | OGA Recommendation    |             1 |
 
 ## 1. Member
 
@@ -208,4 +220,97 @@ Status values:
 |   3 | Online Fees Report     | `dbo.sp_OnlineFeesReport`     | Completed  |
 |   4 | Account Summary Report | `dbo.sp_AccountSummaryReport` | Completed  |
 |   5 | MPU Report V3          | `dbo.sp_MPUReport_V3`         | Completed  |
+
+## 12. WholeSale
+
+| No. | Report Name                        | Stored Procedure                            | API Status |
+| --: | ---------------------------------- | ------------------------------------------- | ---------- |
+|   1 | Whole Sale Summary Report          | `dbo.sp_WholeSaleRetailReport`              | Completed  |
+|   2 | Whole Sale Detail Report           | `dbo.sp_WholeSaleRetailReport`              | Completed  |
+|   3 | WholeSale Registration By Voucher  | `dbo.sp_WholeSaleRetailRegistrationReport`  | Completed  |
+
+## 13. Retail
+
+| No. | Report Name                    | Stored Procedure                            | API Status |
+| --: | ------------------------------ | ------------------------------------------- | ---------- |
+|   1 | Retail Summary Report          | `dbo.sp_WholeSaleRetailReport`              | Completed  |
+|   2 | Retail Detail Report           | `dbo.sp_WholeSaleRetailReport`              | Completed  |
+|   3 | Retail Registration By Voucher | `dbo.sp_WholeSaleRetailRegistrationReport`  | Completed  |
+
+## 14. Whole Sale and Retail
+
+| No. | Report Name                             | Stored Procedure                            | API Status |
+| --: | --------------------------------------- | ------------------------------------------- | ---------- |
+|   1 | Whole Sale and Retail Summary Report    | `dbo.sp_WholeSaleRetailReport`              | Completed  |
+|   2 | Whole Sale and Retail Detail Report     | `dbo.sp_WholeSaleRetailReport`              | Completed  |
+|   3 | WS and R Registration By Voucher        | `dbo.sp_WholeSaleRetailRegistrationReport`  | Completed  |
+
+## 15. Alcoholic Beverages Importation
+
+| No. | Report Name                                             | Stored Procedure                                  | API Status |
+| --: | ------------------------------------------------------- | ------------------------------------------------- | ---------- |
+|   1 | Alcoholic Beverages Importation Summary Report          | `dbo.sp_WineImportationReport`                    | Completed  |
+|   2 | Alcoholic Beverages Importation Detail Report           | `dbo.sp_WineImportationReport`                    | Completed  |
+|   3 | AB Registration By Voucher                              | `dbo.sp_WineImportationRegistrationReport`        | Completed  |
+
+## 16. Duty Free Shop
+
+| No. | Report Name                              | Stored Procedure                                | API Status |
+| --: | ---------------------------------------- | ----------------------------------------------- | ---------- |
+|   1 | Duty Free Shop Summary Report            | `dbo.sp_DutyFreeShopReport`                     | Completed  |
+|   2 | Duty Free Shop Detail Report             | `dbo.sp_DutyFreeShopReport`                     | Completed  |
+|   3 | Duty Free Shop Registration By Voucher   | `dbo.sp_DutyFreeShopRegistrationReport`         | Completed  |
+
+## 17. Re-Export
+
+| No. | Report Name              | Stored Procedure          | API Status |
+| --: | ------------------------ | ------------------------- | ---------- |
+|   1 | Re-Export Summary Report | `dbo.sp_ReExportReport`   | Completed  |
+|   2 | Re-Export Detail Report  | `dbo.sp_ReExportReport`   | Completed  |
+
+## 18. Business Service Agency
+
+| No. | Report Name                                    | Stored Procedure                                      | API Status |
+| --: | ---------------------------------------------- | ----------------------------------------------------- | ---------- |
+|   1 | Business Service Agency Summary Report         | `dbo.sp_BusinessServiceAgencyReport`                  | Completed  |
+|   2 | Business Service Agency Detail Report          | `dbo.sp_BusinessServiceAgencyReport`                  | Completed  |
+|   3 | BSA Registration By Voucher                    | `dbo.sp_BusinessServiceAgencyRegistrationReport`      | Completed  |
+
+## 19. Sale Center
+
+| No. | Report Name                         | Stored Procedure                          | API Status |
+| --: | ----------------------------------- | ----------------------------------------- | ---------- |
+|   1 | Sale Center Summary Report          | `dbo.sp_SaleCenterReport`                 | Completed  |
+|   2 | Sale Center Detail Report           | `dbo.sp_SaleCenterReport`                 | Completed  |
+|   3 | Sale Center Registration By Voucher | `dbo.sp_SaleCenterRegistrationReport`     | Completed  |
+
+## 20. Show Room
+
+| No. | Report Name                       | Stored Procedure                        | API Status |
+| --: | --------------------------------- | --------------------------------------- | ---------- |
+|   1 | Show Room Summary Report          | `dbo.sp_ShowRoomReport`                 | Completed  |
+|   2 | Show Room Detail Report           | `dbo.sp_ShowRoomReport`                 | Completed  |
+|   3 | Show Room Registration By Voucher | `dbo.sp_ShowRoomRegistrationReport`     | Completed  |
+
+## 21. EVCycle Show Room
+
+| No. | Report Name                               | Stored Procedure                               | API Status |
+| --: | ----------------------------------------- | ---------------------------------------------- | ---------- |
+|   1 | EVCycle Show Room Summary Report          | `dbo.sp_EVCycleShowRoomReport`                 | Completed  |
+|   2 | EVCycle Show Room Detail Report           | `dbo.sp_EVCycleShowRoomReport`                 | Completed  |
+|   3 | EVCycle Show Room Registration By Voucher | `dbo.sp_EVCycleShowRoomRegistrationReport`     | Completed  |
+
+## 22. EV Show Room
+
+| No. | Report Name                          | Stored Procedure                          | API Status |
+| --: | ------------------------------------ | ----------------------------------------- | ---------- |
+|   1 | EV Show Room Summary Report          | `dbo.sp_EVShowRoomReport`                 | Completed  |
+|   2 | EV Show Room Detail Report           | `dbo.sp_EVShowRoomReport`                 | Completed  |
+|   3 | EV Show Room Registration By Voucher | `dbo.sp_EVShowRoomRegistrationReport`     | Completed  |
+
+## 23. OGA Recommendation
+
+| No. | Report Name               | Stored Procedure                         | API Status |
+| --: | ------------------------- | ---------------------------------------- | ---------- |
+|   1 | OGA Recommendation Report | `dbo.sp_OGARecommendationListReport`     | Completed  |
 

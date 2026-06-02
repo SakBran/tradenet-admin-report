@@ -82,6 +82,8 @@ const idFilterLookups: Record<string, LookupFilterConfig> = {
   },
   NRCPrefixCodeId: { lookupName: 'nrcprefixCodes', label: 'NRC Prefix Code' },
   NRCPrefixId: { lookupName: 'nrcprefixes', label: 'NRC Prefix' },
+  OGADepartmentId: { lookupName: 'ogaDepartments', label: 'OGA Department' },
+  OGASectionId: { lookupName: 'ogaSections', label: 'OGA Section' },
   PaThaKaTypeId: { lookupName: 'paThaKaTypes', label: 'PaThaKa Type' },
   SakhanId: { lookupName: 'sakhans', label: 'Sakhan' },
   SellerCountryId: { lookupName: 'countries', label: 'Seller Country' },

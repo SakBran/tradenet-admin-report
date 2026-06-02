@@ -1,4 +1,5 @@
 import { ReportFilterOption, ReportPageConfig } from './reportTypes';
+import { newReportConfigs } from './newReportConfigs';
 
 // Shared PaThaKa State/Status filter options. '--- All ---' = no filter ('').
 const pathakaStateFilterOptions: ReportFilterOption[] = [
@@ -14132,6 +14133,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
     ],
   },
+  ...newReportConfigs,
 };
 
 export const reportConfigList = Object.values(reportConfigs);

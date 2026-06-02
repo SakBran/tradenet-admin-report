@@ -141,53 +141,43 @@ Status: ⬜ To Do · 🟡 Backend done (frontend pending) · ✅ Backend + Front
 | 14.1 | WholeSaleAndRetailSummaryReport | ✅ | ✅ |
 | 14.2 | WholeSaleAndRetailDetailReport | ✅ | ✅ |
 | 14.3 | WholeSaleAndRetailRegistrationByVoucher | ✅ | ✅ |
-| 15.1 | AlcoholicBeveragesImportationSummaryReport | 🚫 | 🚫 |
-| 15.2 | AlcoholicBeveragesImportationDetailReport | 🚫 | 🚫 |
-| 15.3 | AlcoholicBeveragesImportationRegistrationByVoucher | 🚫 | 🚫 |
-| 16.1 | DutyFreeShopSummaryReport | 🟡 | ⬜ |
-| 16.2 | DutyFreeShopDetailReport | 🟡 | ⬜ |
-| 16.3 | DutyFreeShopRegistrationByVoucher | 🟡 | ⬜ |
-| 17.1 | ReExportSummaryReport | 🟡 | ⬜ |
-| 17.2 | ReExportDetailReport | 🟡 | ⬜ |
-| 18.1 | BusinessServiceAgencySummaryReport | 🟡 | ⬜ |
-| 18.2 | BusinessServiceAgencyDetailReport | 🟡 | ⬜ |
-| 18.3 | BusinessServiceAgencyRegistrationByVoucher | 🟡 | ⬜ |
-| 19.1 | SaleCenterSummaryReport | 🟡 | ⬜ |
-| 19.2 | SaleCenterDetailReport | 🟡 | ⬜ |
-| 19.3 | SaleCenterRegistrationByVoucher | 🟡 | ⬜ |
-| 20.1 | ShowRoomSummaryReport | 🟡 | ⬜ |
-| 20.2 | ShowRoomDetailReport | 🟡 | ⬜ |
-| 20.3 | ShowRoomRegistrationByVoucher | 🟡 | ⬜ |
-| 21.1 | EVCycleShowRoomSummaryReport | 🟡 | ⬜ |
-| 21.2 | EVCycleShowRoomDetailReport | 🟡 | ⬜ |
-| 21.3 | EVCycleShowRoomRegistrationByVoucher | 🟡 | ⬜ |
-| 22.1 | EVShowRoomSummaryReport | 🟡 | ⬜ |
-| 22.2 | EVShowRoomDetailReport | 🟡 | ⬜ |
-| 22.3 | EVShowRoomRegistrationByVoucher | 🟡 | ⬜ |
-| 23.1 | OGARecommendationReport | 🟡 | ⬜ |
+| 15.1 | AlcoholicBeveragesImportationSummaryReport | ✅ | ✅ |
+| 15.2 | AlcoholicBeveragesImportationDetailReport | ✅ | ✅ |
+| 15.3 | AlcoholicBeveragesImportationRegistrationByVoucher | ✅ | ✅ |
+| 16.1 | DutyFreeShopSummaryReport | ✅ | ✅ |
+| 16.2 | DutyFreeShopDetailReport | ✅ | ✅ |
+| 16.3 | DutyFreeShopRegistrationByVoucher | ✅ | ✅ |
+| 17.1 | ReExportSummaryReport | ✅ | ✅ |
+| 17.2 | ReExportDetailReport | ✅ | ✅ |
+| 18.1 | BusinessServiceAgencySummaryReport | ✅ | ✅ |
+| 18.2 | BusinessServiceAgencyDetailReport | ✅ | ✅ |
+| 18.3 | BusinessServiceAgencyRegistrationByVoucher | ✅ | ✅ |
+| 19.1 | SaleCenterSummaryReport | ✅ | ✅ |
+| 19.2 | SaleCenterDetailReport | ✅ | ✅ |
+| 19.3 | SaleCenterRegistrationByVoucher | ✅ | ✅ |
+| 20.1 | ShowRoomSummaryReport | ✅ | ✅ |
+| 20.2 | ShowRoomDetailReport | ✅ | ✅ |
+| 20.3 | ShowRoomRegistrationByVoucher | ✅ | ✅ |
+| 21.1 | EVCycleShowRoomSummaryReport | ✅ | ✅ |
+| 21.2 | EVCycleShowRoomDetailReport | ✅ | ✅ |
+| 21.3 | EVCycleShowRoomRegistrationByVoucher | ✅ | ✅ |
+| 22.1 | EVShowRoomSummaryReport | ✅ | ✅ |
+| 22.2 | EVShowRoomDetailReport | ✅ | ✅ |
+| 22.3 | EVShowRoomRegistrationByVoucher | ✅ | ✅ |
+| 23.1 | OGARecommendationReport | ✅ | ✅ |
 
-### 🚫 Blocker — Alcoholic Beverages Importation (module 15)
+### Resolved — Alcoholic Beverages Importation (module 15)
 
-`sp_WineImportationReport.cs` and `sp_WineImportationRegistrationReport.cs` contain
-**only the Request/Result DTO classes — no `public static class … { Query(...) }`**
-(every other module has one). The LINQ converter for Wine was never implemented,
-so the 3 Wine controllers cannot be wired and were removed to keep the build green.
-**Next step:** implement `sp_WineImportationReport.Query` /
-`sp_WineImportationRegistrationReport.Query` (mirror `sp_WholeSaleRetailReport` —
-identical Summary/Detail/Registration shape, with Wine's extra FL/WineType columns),
-then regenerate the 3 controllers + frontend.
+Wine uses the existing `sp_WineImportationReport_Fast` and
+`sp_WineImportationRegistrationReport_Fast` converters. They page scalar rows
+first and resolve WineType CSV ids through `ReportLookupCache` after
+materialization, avoiding an EF correlated-subquery translation problem.
 
 ### Progress (this session)
 
-- ✅ **Done end-to-end (9):** WholeSale, Retail, Whole Sale and Retail (Summary +
-  Detail + RegByVoucher each). Backend builds 0 errors; frontend `npm run build` green.
-- 🟡 **Backend controllers done, frontend pending (21):** Duty Free Shop, Re-Export,
-  Business Service Agency, Sale Center, Show Room, EVCycle Show Room, EV Show Room
-  (controllers compile), and OGA Recommendation. Still need: `reportConfigs.ts`
-  entries, page wrappers, `reportRoutes.tsx` lines (nav categories already added).
-- 🚫 **Blocked (3):** Alcoholic Beverages Importation — missing LINQ converter.
-- ⬜ **Not started:** tracker rows in `docs/ReportAndLinqMappingList.md` (new module
-  sections) and `docs/FrontEndImplementationGuide.md`.
+- ✅ **Done end-to-end (33):** all module 12-23 reports have backend APIs,
+  frontend config/pages/routes/nav coverage, tracker rows, and green
+  backend/frontend builds.
 
 **Total: 33 reports.**
 

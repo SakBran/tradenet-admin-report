@@ -44,6 +44,8 @@ namespace Backend.Controllers
                 "lineofbusinesses" => GetLineofBusinesses,
                 "nrcprefixcodes" => GetNrcprefixCodes,
                 "nrcprefixes" => GetNrcprefixes,
+                "ogadepartments" => GetOgaDepartments,
+                "ogasections" => GetOgaSections,
                 "pathakatypes" => GetPaThaKaTypes,
                 "sakhans" => GetSakhans,
                 _ => null,
@@ -154,6 +156,24 @@ namespace Backend.Controllers
                     item.Id,
                     item.TownshipPrefix,
                     item.StatePrefix + "/" + item.TownshipPrefix))
+                .ToListAsync();
+
+        private Task<List<ReportLookupOption>> GetOgaDepartments() =>
+            _context.Ogadepartments
+                .AsNoTracking()
+                .Where(item => item.IsActive && !item.IsDeleted)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.EnglishName)
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.EnglishName ?? string.Empty))
+                .ToListAsync();
+
+        private Task<List<ReportLookupOption>> GetOgaSections() =>
+            _context.Ogasections
+                .AsNoTracking()
+                .Where(item => item.IsActive && !item.IsDeleted)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.EnglishName)
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.EnglishName ?? string.Empty))
                 .ToListAsync();
 
         private Task<List<ReportLookupOption>> GetPaThaKaTypes() =>

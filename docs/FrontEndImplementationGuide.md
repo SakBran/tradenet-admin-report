@@ -16,8 +16,8 @@ Create one frontend report page for one report API controller.
 
 ## Current Status
 
-- Total report API controllers: 125
-- Frontend completed: 125
+- Total report API controllers: 158
+- Frontend completed: 158
 - Frontend remaining: 0
 
 Status values:
@@ -346,3 +346,36 @@ All report controllers currently have frontend pages generated and included in p
 | 123 | PaThaKaRegisteredBusinessOrganizationReport | `/api/PaThaKaRegisteredBusinessOrganizationReport` | `Frontend/src/Report/Page/PaThaKaRegisteredBusinessOrganizationReport.tsx` | Completed |
 | 124 | RegistrationByBusinessType | `/api/RegistrationByBusinessType` | `Frontend/src/Report/Page/RegistrationByBusinessType.tsx` | Completed |
 | 125 | RegistrationByVoucher | `/api/RegistrationByVoucher` | `Frontend/src/Report/Page/RegistrationByVoucher.tsx` | Completed |
+| 126 | WholeSaleSummaryReport | `/api/WholeSaleSummaryReport` | `Frontend/src/Report/Page/WholeSaleSummaryReport.tsx` | Completed |
+| 127 | WholeSaleDetailReport | `/api/WholeSaleDetailReport` | `Frontend/src/Report/Page/WholeSaleDetailReport.tsx` | Completed |
+| 128 | WholeSaleRegistrationByVoucher | `/api/WholeSaleRegistrationByVoucher` | `Frontend/src/Report/Page/WholeSaleRegistrationByVoucher.tsx` | Completed |
+| 129 | RetailSummaryReport | `/api/RetailSummaryReport` | `Frontend/src/Report/Page/RetailSummaryReport.tsx` | Completed |
+| 130 | RetailDetailReport | `/api/RetailDetailReport` | `Frontend/src/Report/Page/RetailDetailReport.tsx` | Completed |
+| 131 | RetailRegistrationByVoucher | `/api/RetailRegistrationByVoucher` | `Frontend/src/Report/Page/RetailRegistrationByVoucher.tsx` | Completed |
+| 132 | WholeSaleAndRetailSummaryReport | `/api/WholeSaleAndRetailSummaryReport` | `Frontend/src/Report/Page/WholeSaleAndRetailSummaryReport.tsx` | Completed |
+| 133 | WholeSaleAndRetailDetailReport | `/api/WholeSaleAndRetailDetailReport` | `Frontend/src/Report/Page/WholeSaleAndRetailDetailReport.tsx` | Completed |
+| 134 | WholeSaleAndRetailRegistrationByVoucher | `/api/WholeSaleAndRetailRegistrationByVoucher` | `Frontend/src/Report/Page/WholeSaleAndRetailRegistrationByVoucher.tsx` | Completed |
+| 135 | AlcoholicBeveragesImportationSummaryReport | `/api/AlcoholicBeveragesImportationSummaryReport` | `Frontend/src/Report/Page/AlcoholicBeveragesImportationSummaryReport.tsx` | Completed |
+| 136 | AlcoholicBeveragesImportationDetailReport | `/api/AlcoholicBeveragesImportationDetailReport` | `Frontend/src/Report/Page/AlcoholicBeveragesImportationDetailReport.tsx` | Completed |
+| 137 | AlcoholicBeveragesImportationRegistrationByVoucher | `/api/AlcoholicBeveragesImportationRegistrationByVoucher` | `Frontend/src/Report/Page/AlcoholicBeveragesImportationRegistrationByVoucher.tsx` | Completed |
+| 138 | DutyFreeShopSummaryReport | `/api/DutyFreeShopSummaryReport` | `Frontend/src/Report/Page/DutyFreeShopSummaryReport.tsx` | Completed |
+| 139 | DutyFreeShopDetailReport | `/api/DutyFreeShopDetailReport` | `Frontend/src/Report/Page/DutyFreeShopDetailReport.tsx` | Completed |
+| 140 | DutyFreeShopRegistrationByVoucher | `/api/DutyFreeShopRegistrationByVoucher` | `Frontend/src/Report/Page/DutyFreeShopRegistrationByVoucher.tsx` | Completed |
+| 141 | ReExportSummaryReport | `/api/ReExportSummaryReport` | `Frontend/src/Report/Page/ReExportSummaryReport.tsx` | Completed |
+| 142 | ReExportDetailReport | `/api/ReExportDetailReport` | `Frontend/src/Report/Page/ReExportDetailReport.tsx` | Completed |
+| 143 | BusinessServiceAgencySummaryReport | `/api/BusinessServiceAgencySummaryReport` | `Frontend/src/Report/Page/BusinessServiceAgencySummaryReport.tsx` | Completed |
+| 144 | BusinessServiceAgencyDetailReport | `/api/BusinessServiceAgencyDetailReport` | `Frontend/src/Report/Page/BusinessServiceAgencyDetailReport.tsx` | Completed |
+| 145 | BusinessServiceAgencyRegistrationByVoucher | `/api/BusinessServiceAgencyRegistrationByVoucher` | `Frontend/src/Report/Page/BusinessServiceAgencyRegistrationByVoucher.tsx` | Completed |
+| 146 | SaleCenterSummaryReport | `/api/SaleCenterSummaryReport` | `Frontend/src/Report/Page/SaleCenterSummaryReport.tsx` | Completed |
+| 147 | SaleCenterDetailReport | `/api/SaleCenterDetailReport` | `Frontend/src/Report/Page/SaleCenterDetailReport.tsx` | Completed |
+| 148 | SaleCenterRegistrationByVoucher | `/api/SaleCenterRegistrationByVoucher` | `Frontend/src/Report/Page/SaleCenterRegistrationByVoucher.tsx` | Completed |
+| 149 | ShowRoomSummaryReport | `/api/ShowRoomSummaryReport` | `Frontend/src/Report/Page/ShowRoomSummaryReport.tsx` | Completed |
+| 150 | ShowRoomDetailReport | `/api/ShowRoomDetailReport` | `Frontend/src/Report/Page/ShowRoomDetailReport.tsx` | Completed |
+| 151 | ShowRoomRegistrationByVoucher | `/api/ShowRoomRegistrationByVoucher` | `Frontend/src/Report/Page/ShowRoomRegistrationByVoucher.tsx` | Completed |
+| 152 | EVCycleShowRoomSummaryReport | `/api/EVCycleShowRoomSummaryReport` | `Frontend/src/Report/Page/EVCycleShowRoomSummaryReport.tsx` | Completed |
+| 153 | EVCycleShowRoomDetailReport | `/api/EVCycleShowRoomDetailReport` | `Frontend/src/Report/Page/EVCycleShowRoomDetailReport.tsx` | Completed |
+| 154 | EVCycleShowRoomRegistrationByVoucher | `/api/EVCycleShowRoomRegistrationByVoucher` | `Frontend/src/Report/Page/EVCycleShowRoomRegistrationByVoucher.tsx` | Completed |
+| 155 | EVShowRoomSummaryReport | `/api/EVShowRoomSummaryReport` | `Frontend/src/Report/Page/EVShowRoomSummaryReport.tsx` | Completed |
+| 156 | EVShowRoomDetailReport | `/api/EVShowRoomDetailReport` | `Frontend/src/Report/Page/EVShowRoomDetailReport.tsx` | Completed |
+| 157 | EVShowRoomRegistrationByVoucher | `/api/EVShowRoomRegistrationByVoucher` | `Frontend/src/Report/Page/EVShowRoomRegistrationByVoucher.tsx` | Completed |
+| 158 | OGARecommendationReport | `/api/OGARecommendationReport` | `Frontend/src/Report/Page/OGARecommendationReport.tsx` | Completed |
