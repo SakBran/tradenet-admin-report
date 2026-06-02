@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading;
@@ -19,6 +20,12 @@ namespace Backend.Controllers.Report
     [Route("api/[controller]")]
     public class BorderExportPermitActualAmendmentReportController : ControllerBase, IStreamingExcelReport
     {
+        private const int DefaultPageSize = 10;
+        private const int MaxPageSize = 1000;
+
+        // Excel worksheets allow 1,048,576 rows including the header.
+        private const int MaxExcelDataRows = 1_048_576 - 1;
+
         private const string ReportKey = "BorderExportPermitActualAmendmentReport";
 
         private readonly TradeNetDbContext _context;
@@ -38,8 +45,26 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var query = sp_ActualAmendReport.Query(_context, procedureRequest!);
-            var result = await ReportQueryService.CreatePagedResultAsync(query, request!);
+            var pageIndex = Math.Max(0, request!.PageIndex);
+            var pageSize = request.PageSize <= 0
+                ? DefaultPageSize
+                : Math.Min(request.PageSize, MaxPageSize);
+
+            var sortColumn = string.IsNullOrWhiteSpace(request.SortColumn) ? null : request.SortColumn;
+            var sortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? null : request.SortOrder;
+
+            var rows = await sp_ActualAmendReport.ExecuteAsync(
+                _context, procedureRequest!, sortColumn, sortOrder, pageIndex, pageSize, request.IncludeTotalCount);
+
+            var data = rows.Select(row => row.ToResult()).ToList();
+
+            var result = request.IncludeTotalCount
+                ? ApiResult<sp_ActualAmendReportResult>.CreatePageFromRows(
+                    data, rows.Count > 0 ? (rows[0].TotalCount ?? 0) : 0, pageIndex, pageSize,
+                    request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery)
+                : ApiResult<sp_ActualAmendReportResult>.CreateFastPageFromRows(
+                    data, pageIndex, pageSize,
+                    request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
 
             return Ok(result);
         }
@@ -47,6 +72,29 @@ namespace Backend.Controllers.Report
         [HttpPost("Excel")]
         public async Task<IActionResult> Excel([FromBody] BorderExportPermitActualAmendmentReportRequest? request)
         {
+            // if (!TryCreateReportRequest(request, out var procedureRequest, out var errorResult))
+            // {
+            //     return errorResult!;
+            // }
+
+            // var sortColumn = string.IsNullOrWhiteSpace(request!.SortColumn) ? null : request.SortColumn;
+            // var sortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? null : request.SortOrder;
+
+            // var rows = await sp_ActualAmendReport.ExecuteAsync(
+            //     _context, procedureRequest!, sortColumn, sortOrder, pageIndex: null, pageSize: null);
+
+            // if (rows.Count > MaxExcelDataRows)
+            // {
+            //     return BadRequest($"Excel export supports up to {MaxExcelDataRows} data rows.");
+            // }
+
+            // var data = rows.Select(row => row.ToResult()).ToList();
+            // var fileBytes = ExcelGenerator.CreateWorkbook(data, "Border Export Permit Actual Amendment Report");
+
+            // return File(
+            //     fileBytes,
+            //     ExcelGenerator.ContentType,
+            //     "BorderExportPermitActualAmendmentReport.xlsx");
             if (!TryCreateReportRequest(request, out _, out var errorResult))
             {
                 return errorResult!;
@@ -114,6 +162,7 @@ namespace Backend.Controllers.Report
                 errorResult = BadRequest("ToDate must be greater than or equal to FromDate.");
                 return false;
             }
+
             procedureRequest = new sp_ActualAmendReportRequest
             {
                 FormType = "Border Export Permit",
@@ -140,4 +189,3 @@ namespace Backend.Controllers.Report
         public int SakhanId { get; set; }
     }
 }
-
