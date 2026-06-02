@@ -32,7 +32,54 @@ BEGIN
     DECLARE @sql nvarchar(max);
 
     -- TotalCount only when requested, computed over the UN-paged base (no subqueries) as a separate scalar.
-    IF @FormType = N'Import Permit'
+    IF @FormType = N'Export Licence'
+    BEGIN
+        SET @cntpart = CASE WHEN @IncludeTotalCount = 1
+            THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM ExportLicence
+		INNER JOIN PaThaKa ON ExportLicence.PaThaKaId = PaThaKa.Id
+		INNER JOIN ExportImportSection section ON ExportLicence.ExportImportSectionId = section.Id
+		WHERE ApplyType=''Amend'' AND ExportLicence.Status=''Approved''
+		AND (ExportLicence.CreatedDate>=@FromDate AND ExportLicence.CreatedDate<=@ToDate)
+		AND ExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND ExportLicence.AmendRemarkId=(CASE WHEN @AmendRemarkId=0 then ExportLicence.AmendRemarkId ELSE @AmendRemarkId END)
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)); '
+            ELSE N'DECLARE @__total int = NULL; ' END;
+
+        SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM ExportLicenceItem
+		INNER JOIN Currency currency ON ExportLicenceItem.CurrencyId = currency.Id
+		WHERE ExportLicenceItem.ExportLicenceId=pg.__k_Id) Currency,
+        (SELECT top 1 ISNULL(ExportLicenceItem.Amount,0) FROM ExportLicenceItem
+		WHERE ExportLicenceItem.ExportLicenceId=pg.__k_Id) Amount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
+    FROM (
+        SELECT ExportLicence.CreatedDate Date,
+section.Code SectionCode,
+section.Name SectionName,
+OldExportLicenceNo OldLicenceNo,
+ExportLicenceNo LicenceNo,
+CONVERT(varchar,ExportLicence.CreatedDate,103) sDate,
+PaThaKa.CompanyRegistrationNo,
+PaThaKa.CompanyName,
+UnitLevel,
+StreetNumberStreetName,
+QuarterCityTownship,
+State,
+Country,
+PostalCode,
+ExportLicence.Id AS __k_Id
+        FROM ExportLicence
+		INNER JOIN PaThaKa ON ExportLicence.PaThaKaId = PaThaKa.Id
+		INNER JOIN ExportImportSection section ON ExportLicence.ExportImportSectionId = section.Id
+		WHERE ApplyType=''Amend'' AND ExportLicence.Status=''Approved''
+		AND (ExportLicence.CreatedDate>=@FromDate AND ExportLicence.CreatedDate<=@ToDate)
+		AND ExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND ExportLicence.AmendRemarkId=(CASE WHEN @AmendRemarkId=0 then ExportLicence.AmendRemarkId ELSE @AmendRemarkId END)
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+        ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
+    ) pg
+    ORDER BY ' + @ob + N'
+    OPTION (RECOMPILE);';
+    END
+    ELSE IF @FormType = N'Import Permit'
     BEGIN
         SET @cntpart = CASE WHEN @IncludeTotalCount = 1
             THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM ImportPermit
@@ -219,6 +266,60 @@ BorderExportLicence.Id AS __k_Id
 		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
 		AND BorderExportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderExportLicence.SakhanId ELSE @SakhanId END)
         ) u
+        ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
+    ) pg
+    ORDER BY ' + @ob + N'
+    OPTION (RECOMPILE);';
+    END
+    ELSE IF @FormType = N'Border Export Permit'
+    BEGIN
+        SET @cntpart = CASE WHEN @IncludeTotalCount = 1
+            THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM BorderExportPermit
+		INNER JOIN PaThaKa ON BorderExportPermit.PaThaKaId = PaThaKa.Id
+		INNER JOIN ExportImportSection section ON BorderExportPermit.ExportImportSectionId = section.Id
+		INNER JOIN Sakhan sakhan ON BorderExportPermit.SakhanId = sakhan.Id
+		WHERE ApplyType=''Amend'' AND BorderExportPermit.Status=''Approved''
+		AND (BorderExportPermit.CreatedDate>=@FromDate AND BorderExportPermit.CreatedDate<=@ToDate)
+		AND BorderExportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND BorderExportPermit.AmendRemarkId=(CASE WHEN @AmendRemarkId=0 then BorderExportPermit.AmendRemarkId ELSE @AmendRemarkId END)
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+		AND BorderExportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderExportPermit.SakhanId ELSE @SakhanId END)); '
+            ELSE N'DECLARE @__total int = NULL; ' END;
+
+        SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM BorderExportPermitItem
+		INNER JOIN Currency currency ON BorderExportPermitItem.CurrencyId = currency.Id
+		WHERE BorderExportPermitItem.BorderExportPermitId=pg.__k_Id) Currency,
+        (SELECT top 1 ISNULL(BorderExportPermitItem.Amount,0) FROM BorderExportPermitItem
+		WHERE BorderExportPermitItem.BorderExportPermitId=pg.__k_Id) Amount, @__total AS TotalCount
+    FROM (
+        SELECT BorderExportPermit.CreatedDate Date,
+section.Code SectionCode,
+section.Name SectionName,
+OldExportPermitNo OldLicenceNo,
+ExportPermitNo LicenceNo,
+CONVERT(varchar,BorderExportPermit.CreatedDate,103) sDate,
+PaThaKa.CompanyRegistrationNo,
+PaThaKa.CompanyName,
+UnitLevel,
+StreetNumberStreetName,
+QuarterCityTownship,
+State,
+Country,
+PostalCode,
+sakhan.Id SakhanId,
+sakhan.Code SakhanCode,
+sakhan.Name SakhanName,
+BorderExportPermit.Id AS __k_Id
+        FROM BorderExportPermit
+		INNER JOIN PaThaKa ON BorderExportPermit.PaThaKaId = PaThaKa.Id
+		INNER JOIN ExportImportSection section ON BorderExportPermit.ExportImportSectionId = section.Id
+		INNER JOIN Sakhan sakhan ON BorderExportPermit.SakhanId = sakhan.Id
+		WHERE ApplyType=''Amend'' AND BorderExportPermit.Status=''Approved''
+		AND (BorderExportPermit.CreatedDate>=@FromDate AND BorderExportPermit.CreatedDate<=@ToDate)
+		AND BorderExportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND BorderExportPermit.AmendRemarkId=(CASE WHEN @AmendRemarkId=0 then BorderExportPermit.AmendRemarkId ELSE @AmendRemarkId END)
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+		AND BorderExportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderExportPermit.SakhanId ELSE @SakhanId END)
         ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
     ) pg
     ORDER BY ' + @ob + N'
