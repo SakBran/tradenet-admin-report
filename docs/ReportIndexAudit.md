@@ -25,6 +25,88 @@ The earlier `125 controllers` references in pagination and smoke-test notes are
 historical checkpoints from a smaller scope. The current full report API
 inventory is 158 controllers.
 
+## Repeatable Audit
+
+Run the reusable audit from the repository root:
+
+```powershell
+./tools/audit-tradenet-report-indexes.ps1
+```
+
+The script reads the selected connection string from configuration without
+printing credentials. It writes ignored local evidence under
+`artifacts/report-index-audit/`, including CSV and JSON snapshots for table
+sizes, index definitions and usage, duplicate-key candidates, missing-index
+DMVs, indexed views, pagination procedures, runtime stats, controller mappings,
+and query-class mappings. The query-class inventory is also exported as a
+readable `query-class-inventory.md` snapshot with controllers, tables, request
+predicates, static join targets, and ordering columns.
+
+The 2026-06-02 snapshot recorded 229 tables, 665 indexes, 32 duplicate-key
+candidate pairs, 169 missing-index DMV suggestions, 3 indexed views, 22
+pagination wrappers, and 75 procedure-runtime rows. DMV suggestions remain
+evidence inputs; the migration does not drop historical indexes.
+
+## Query-Class Review
+
+The generated inventory contains the detailed controller, table, predicate,
+join, and ordering map. This committed summary records every active shared
+query class and the controller branches that were scanned:
+
+| Query class | Controller branches | Review action |
+| --- | --- | --- |
+| `sp_AccountSummaryReport` | AccountSummaryReport | Measured below 5 s; add proactive payment-date cover. |
+| `sp_ActualAmendReport` | Border Export Licence; Border Export Permit; Border Import Licence; Border Import Permit; Export Licence; Export Permit; Import Licence; Import Permit | Use Batch 1 item covers; monitor shared base-table indexes. |
+| `sp_AmendReport` | Border Export Licence; Border Export Permit; Border Import Licence; Border Import Permit; Export Licence; Export Permit; Import Licence; Import Permit | Use Batch 1 item covers; monitor shared base-table indexes. |
+| `sp_BusinessServiceAgencyRegistrationReport` | BusinessServiceAgencyRegistrationByVoucher | Existing voucher coverage; no extra DDL. |
+| `sp_BusinessServiceAgencyReport` | BusinessServiceAgencyDetailReport; BusinessServiceAgencySummaryReport | Existing registration coverage; no extra DDL. |
+| `sp_CancelReport` | Border Export Licence; Border Export Permit; Border Import Licence; Border Import Permit; Export Licence; Export Permit; Import Licence; Import Permit | Use Batch 1 item covers; monitor shared base-table indexes. |
+| `sp_CardListsByPaThaKaReport` | CardListsByCompanyRegistrationNumber | Existing lookup coverage; no extra DDL. |
+| `sp_ChequeNoReport` | ChequeNoReport | Existing account coverage; MPU reference cover is available for related lookups. |
+| `sp_CompanyProfileReport` | CompanyProfile | Measured below 1 s; add proactive Company Profile cover. |
+| `sp_DirectorListReport` | ListOfDirectors; ListOfDirectorsByCompanyRegistrationNo | Existing lookup coverage; no extra DDL. |
+| `sp_DutyFreeShopRegistrationReport` | DutyFreeShopRegistrationByVoucher | Existing voucher coverage; no extra DDL. |
+| `sp_DutyFreeShopReport` | DutyFreeShopDetailReport; DutyFreeShopSummaryReport | Existing registration coverage; no extra DDL. |
+| `sp_EVCycleShowRoomRegistrationReport` | EVCycleShowRoomRegistrationByVoucher | Existing voucher coverage; no extra DDL. |
+| `sp_EVCycleShowRoomReport` | EVCycleShowRoomDetailReport; EVCycleShowRoomSummaryReport | Existing registration coverage; no extra DDL. |
+| `sp_EVShowRoomRegistrationReport` | EVShowRoomRegistrationByVoucher | Existing voucher coverage; no extra DDL. |
+| `sp_EVShowRoomReport` | EVShowRoomDetailReport; EVShowRoomSummaryReport | Existing registration coverage; no extra DDL. |
+| `sp_ExportLicenceDetailReport_Fast` | Border Export Licence; Export Licence | Existing licence-item cover; no extra DDL. |
+| `sp_ExportPermitDetailReport_Fast` | Border Export Permit; Export Permit | Add Batch 1 permit-item covers. |
+| `sp_ExtensionReport` | Border Export Licence; Border Export Permit; Border Import Licence; Border Import Permit; Export Licence; Export Permit; Import Licence; Import Permit | Use Batch 1 item covers; monitor shared base-table indexes. |
+| `sp_HSCodeReport` | Border Export Licence; Border Export Permit; Border Import Licence; Border Import Permit; Export Licence; Export Permit; Import Licence; Import Permit | Add Batch 1 permit-item covers; retain existing licence covers. |
+| `sp_ImportLicenceDetailReport_Fast` | Border Import Licence; Import Licence | Existing licence-item cover; no duplicate item DDL. |
+| `sp_ImportLicencePendingDetailReport` | Import Licence | Add Batch 2 pending index. |
+| `sp_ImportLicencePendingDetailReport_Fast` | Border Import Licence | Add proactive border-pending index. |
+| `sp_ImportPermitDetailReport_Fast` | Border Import Permit; Import Permit | Existing import-permit item cover; add border permit cover. |
+| `sp_MemberRegistrationReport` | MemberRegistrationReport | Existing registration coverage; no extra DDL. |
+| `sp_MPUReport` | MPUReport | Measured below 200 ms; add proactive MPU reference cover. |
+| `sp_MPUReport_V3` | MPUReportV3 | Measured below 100 ms; retain existing response/date cover. |
+| `sp_NewReport` | Border Export Licence; Border Export Permit; Border Import Licence; Border Import Permit; Export Licence; Export Permit; Import Licence; Import Permit | Use Batch 1 item covers; escalate query shape only if a branch exceeds 5 s. |
+| `sp_OGARecommendationListReport` | OGARecommendationReport | Existing recommendation coverage; no extra DDL. |
+| `sp_OnlineFeesReport` | OnlineFeesReport | Collapse repeated fee scans; add Batch 4 online-fees cover. |
+| `sp_PaThaKaAllReport` | ListOfCompany | Existing registration coverage; no extra DDL. |
+| `sp_PathakaBindReport` | EIRCardBindReport | Existing PaThaKa coverage; no extra DDL. |
+| `sp_PaThaKaByBusinessTypeReport` | RegistrationByBusinessType | Existing PaThaKa coverage; no extra DDL. |
+| `sp_PaThaKaRegistrationReport` | RegistrationByVoucher | Existing PaThaKa coverage; no extra DDL. |
+| `sp_PaThaKaReport` | ListOfTopCapitalCompany; PaThaKaRegisteredBusinessOrganizationReport | Existing PaThaKa coverage; no extra DDL. |
+| `sp_PaThaKaValidInvalidReport` | ListOfValidAndInvalidCompany | Existing PaThaKa coverage; no extra DDL. |
+| `sp_PendingReport` | Border Import Licence; Import Licence | Add Batch 2 import and proactive border pending covers. |
+| `sp_ReExportReport` | ReExportDetailReport; ReExportSummaryReport | Existing registration coverage; no extra DDL. |
+| `sp_SaleCenterRegistrationReport` | SaleCenterRegistrationByVoucher | Existing voucher coverage; no extra DDL. |
+| `sp_SaleCenterReport` | SaleCenterDetailReport; SaleCenterSummaryReport | Existing registration coverage; no extra DDL. |
+| `sp_ShowRoomRegistrationReport` | ShowRoomRegistrationByVoucher | Existing voucher coverage; no extra DDL. |
+| `sp_ShowRoomReport` | ShowRoomDetailReport; ShowRoomSummaryReport | Existing registration coverage; no extra DDL. |
+| `sp_VoucherReport` | Border Export Licence; Border Export Permit; Border Import Licence; Border Import Permit; Export Licence; Export Permit; Import Licence; Import Permit | Use Batch 1 item covers; monitor shared base-table indexes. |
+| `sp_WholeSaleRetailRegistrationReport` | RetailRegistrationByVoucher; WholeSaleAndRetailRegistrationByVoucher; WholeSaleRegistrationByVoucher | Existing voucher coverage; no extra DDL. |
+| `sp_WholeSaleRetailReport` | RetailDetailReport; RetailSummaryReport; WholeSaleAndRetailDetailReport; WholeSaleAndRetailSummaryReport; WholeSaleDetailReport; WholeSaleSummaryReport | Existing registration coverage; no extra DDL. |
+| `sp_WineImportationRegistrationReport_Fast` | AlcoholicBeveragesImportationRegistrationByVoucher | Existing voucher coverage; no extra DDL. |
+| `sp_WineImportationReport_Fast` | AlcoholicBeveragesImportationDetailReport; AlcoholicBeveragesImportationSummaryReport | Existing registration coverage; no extra DDL. |
+
+`ImportLicenceBySectionReportController` is the one custom direct-query
+controller outside the 47 shared query classes. It is included in the generated
+controller map.
+
 ## Existing Coverage
 
 The live catalog already contains:
@@ -60,11 +142,22 @@ not already installed:
 | 1 | `IX_BorderImportPermitItem_ReportCover` | Cover border import permit detail and HS-code item joins. |
 | 1 | `IX_BorderExportPermitItem_ReportCover` | Cover border export permit detail and HS-code item joins. |
 | 2 | `IX_ImportLicence_PendingReport` | Support pending-report status filtering and stable application-date paging. |
+| 3 | `IX_BorderImportLicence_PendingReport` | Add forward capacity for border pending-report paging. |
+| 3 | `IX_AccountTransaction_PaymentReport` | Add the payment-date access order requested for future payment-report growth. |
+| 3 | `IX_MPUPaymentTransaction_TransactionRefNo` | Support MPU transaction-reference lookups. |
+| 3 | `IX_PaThaKaRegistration_CompanyProfile` | Add a Company Profile lookup path by registration number, apply type, and status. |
+| 4 | `IX_AccountTransaction_OnlineFees` | Cover the online-fees transaction scan after its query-shape fix. |
 
 The nearby deployed `ImportLicence` index begins with
 `(Status, ApplicationDate, ApplyType, ApplicationNo)`. It is not equivalent to
 the pending-report index because `ApplyType` interrupts the required paging
 order before `ApplicationNo`.
+
+The first five indexes were validated and installed through the configured
+test connection. The five Batch 3 and Batch 4 additions are proactive,
+manual-rollout candidates requested for future growth. They remain protected
+by the same semantic left-prefix covering checks and have not been applied
+automatically by this repository change.
 
 ## Production Behavior
 
@@ -83,7 +176,7 @@ The canonical SQL file:
 ## Validation Record
 
 The canonical SQL file was executed twice against the configured TradeNet test
-connection:
+connection before the proactive Batch 3 and Batch 4 additions:
 
 | Pass | Result | Duration |
 | --- | --- | ---: |
@@ -92,6 +185,9 @@ connection:
 
 The installed index definitions matched the requested keys and included
 columns. No existing index was dropped or rebuilt.
+
+The expanded ten-index script was syntax-checked as seven SQL batches without
+executing its new DDL. Production application remains a manual DBA action.
 
 ### Warm Paging Benchmark
 
@@ -122,6 +218,36 @@ below 5 s:
 These checks measure the database work used by the report helpers. They do not
 include HTTP transport or authentication overhead.
 
+### Proactive Candidate Benchmark
+
+The Batch 3 paths were measured over a representative May 2026 window with
+`PageSize = 10`, `IncludeTotalCount = false`, and three warm timed runs. They
+already passed before the proactive indexes are installed:
+
+| Query shape | Warm median |
+| --- | ---: |
+| Account Summary, page 0 | 2,156.556 ms |
+| Account Summary, page 1 | 2,081.537 ms |
+| MPU, page 0 | 116.090 ms |
+| MPU, page 1 | 115.051 ms |
+| MPU V3, page 0 | 56.746 ms |
+| Company Profile, page 0 | 649.792 ms |
+| Border pending base page, page 0 | 16.429 ms |
+
+These indexes are therefore capacity additions, not claims that every current
+plan requires a new index.
+
+### Online Fees Query Fix
+
+The configured reflection smoke initially timed out after 30 seconds in
+`OnlineFeesReportController`. The LINQ helper repeated the same account-fee
+scan in every registration union branch. It now builds one registration union
+and joins the account-fee rows once.
+
+On the existing catalog, before installing `IX_AccountTransaction_OnlineFees`,
+the isolated POST smoke measured 2,069.738 ms, 2,067.095 ms, and 2,014.061 ms
+across three warm runs: a 2,067.095 ms median.
+
 ### Logical Reads And Plans
 
 Forced old-path versus new-path comparisons used identical page queries:
@@ -151,14 +277,24 @@ test slice passed:
 
 `323 passed, 0 failed`
 
-The complete suite is not green in this workstation environment for existing
-database-fixture reasons:
+The configuration-aware endpoint reflection smoke passed against the selected
+TradeNet connection:
 
-- seeded smoke tests target a local `TradeNetDBTest` database that is not
-  available;
+`159 passed, 0 failed` (`158` report POST endpoints plus one availability check)
+
+The local controller payload/default slice also passed:
+
+`267 passed, 0 failed`
+
+The complete suite is still not claimed green in the default workstation
+environment for existing database-fixture reasons:
+
+- seeded smoke tests target a local `TradeNetDBTest` database unless
+  `TRADENET_REPORT_TEST_CONNECTION_STRING` is supplied;
 - localdb endpoint smoke tests do not have the pagination procedures deployed;
-- the existing `TempSectionValidation` broad section checks exceed their
-  command timeout.
+- broad section checks are tracked separately from the bounded POST smoke.
 
-No targeted query-shape source fix was required because every affected
-database path measured in this rollout remained below the 5 s threshold.
+The test helper now also accepts `TRADENET_REPORT_TEST_FROM_DATE` and
+`TRADENET_REPORT_TEST_TO_DATE`. A previously embedded shared-database
+credential in `TempSectionValidation` was removed; shared-database checks now
+require the environment variable.

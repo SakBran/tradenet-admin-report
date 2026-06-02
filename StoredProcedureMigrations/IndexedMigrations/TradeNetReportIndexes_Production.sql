@@ -56,6 +56,10 @@ VALUES
     (N'dbo.BorderImportPermitItem', N'U'),
     (N'dbo.BorderExportPermitItem', N'U'),
     (N'dbo.ImportLicence', N'U'),
+    (N'dbo.BorderImportLicence', N'U'),
+    (N'dbo.AccountTransaction', N'U'),
+    (N'dbo.MPUPaymentTransaction', N'U'),
+    (N'dbo.PaThaKaRegistration', N'U'),
     (N'dbo.sp_AccountSummaryReport_pagination', N'P'),
     (N'dbo.sp_ActualAmendReport_pagination', N'P'),
     (N'dbo.sp_AmendReport_pagination', N'P'),
@@ -162,7 +166,35 @@ VALUES
     (N'dbo.ImportLicence', N'ApplyType'),
     (N'dbo.ImportLicence', N'CommodityType'),
     (N'dbo.ImportLicence', N'PaThaKaId'),
-    (N'dbo.ImportLicence', N'ExportImportSectionId');
+    (N'dbo.ImportLicence', N'ExportImportSectionId'),
+    (N'dbo.BorderImportLicence', N'Status'),
+    (N'dbo.BorderImportLicence', N'ApplicationDate'),
+    (N'dbo.BorderImportLicence', N'ApplicationNo'),
+    (N'dbo.BorderImportLicence', N'ApplyType'),
+    (N'dbo.BorderImportLicence', N'CardType'),
+    (N'dbo.BorderImportLicence', N'PaThaKaId'),
+    (N'dbo.BorderImportLicence', N'ExportImportSectionId'),
+    (N'dbo.BorderImportLicence', N'SakhanId'),
+    (N'dbo.AccountTransaction', N'IsPayment'),
+    (N'dbo.AccountTransaction', N'PaymentDate'),
+    (N'dbo.AccountTransaction', N'VoucherDate'),
+    (N'dbo.AccountTransaction', N'TransactionId'),
+    (N'dbo.AccountTransaction', N'TransactionFormType'),
+    (N'dbo.AccountTransaction', N'PaymentType'),
+    (N'dbo.AccountTransaction', N'VoucherNo'),
+    (N'dbo.MPUPaymentTransaction', N'TransactionRefNo'),
+    (N'dbo.MPUPaymentTransaction', N'TransactionId'),
+    (N'dbo.MPUPaymentTransaction', N'ApplicationNo'),
+    (N'dbo.MPUPaymentTransaction', N'ApprovalCode'),
+    (N'dbo.MPUPaymentTransaction', N'ResponseCode'),
+    (N'dbo.MPUPaymentTransaction', N'TransactionDateTime'),
+    (N'dbo.MPUPaymentTransaction', N'PaymentType'),
+    (N'dbo.PaThaKaRegistration', N'CompanyRegistrationNo'),
+    (N'dbo.PaThaKaRegistration', N'ApplyType'),
+    (N'dbo.PaThaKaRegistration', N'Status'),
+    (N'dbo.PaThaKaRegistration', N'ApplicationNo'),
+    (N'dbo.PaThaKaRegistration', N'CompanyName'),
+    (N'dbo.PaThaKaRegistration', N'ApproveDate');
 
 IF EXISTS
 (
@@ -272,7 +304,22 @@ VALUES
         N'[Id], [UniqueId], [HSCode], [HSYear], [Description], [UnitId], [Price], [Quantity], [Amount], [CurrencyId], [ParentId], [CheckId], [CreatedDate]'),
     (5, 2, N'dbo', N'ImportLicence', N'IX_ImportLicence_PendingReport',
         N'[Status], [ApplicationDate], [ApplicationNo]',
-        N'[ApplyType], [CommodityType], [PaThaKaId], [ExportImportSectionId]');
+        N'[ApplyType], [CommodityType], [PaThaKaId], [ExportImportSectionId]'),
+    (6, 3, N'dbo', N'BorderImportLicence', N'IX_BorderImportLicence_PendingReport',
+        N'[Status], [ApplicationDate], [ApplicationNo]',
+        N'[ApplyType], [CardType], [PaThaKaId], [ExportImportSectionId], [SakhanId]'),
+    (7, 3, N'dbo', N'AccountTransaction', N'IX_AccountTransaction_PaymentReport',
+        N'[IsPayment], [PaymentDate], [TransactionId]',
+        N'[PaymentType]'),
+    (8, 3, N'dbo', N'MPUPaymentTransaction', N'IX_MPUPaymentTransaction_TransactionRefNo',
+        N'[TransactionRefNo]',
+        N'[TransactionId], [ApplicationNo], [ApprovalCode], [ResponseCode], [TransactionDateTime], [PaymentType]'),
+    (9, 3, N'dbo', N'PaThaKaRegistration', N'IX_PaThaKaRegistration_CompanyProfile',
+        N'[CompanyRegistrationNo], [ApplyType], [Status]',
+        N'[ApplicationNo], [CompanyName], [ApproveDate]'),
+    (10, 4, N'dbo', N'AccountTransaction', N'IX_AccountTransaction_OnlineFees',
+        N'[IsPayment], [VoucherDate]',
+        N'[TransactionId], [TransactionFormType], [PaymentDate], [PaymentType], [VoucherNo]');
 
 INSERT INTO #IndexCandidateKeys (CandidateId, KeyOrdinal, ColumnName)
 VALUES
@@ -288,7 +335,19 @@ VALUES
     (4, 3, N'ItemNo'),
     (5, 1, N'Status'),
     (5, 2, N'ApplicationDate'),
-    (5, 3, N'ApplicationNo');
+    (5, 3, N'ApplicationNo'),
+    (6, 1, N'Status'),
+    (6, 2, N'ApplicationDate'),
+    (6, 3, N'ApplicationNo'),
+    (7, 1, N'IsPayment'),
+    (7, 2, N'PaymentDate'),
+    (7, 3, N'TransactionId'),
+    (8, 1, N'TransactionRefNo'),
+    (9, 1, N'CompanyRegistrationNo'),
+    (9, 2, N'ApplyType'),
+    (9, 3, N'Status'),
+    (10, 1, N'IsPayment'),
+    (10, 2, N'VoucherDate');
 
 INSERT INTO #IndexCandidateCoverage (CandidateId, ColumnName)
 VALUES
@@ -335,12 +394,34 @@ VALUES
     (5, N'ApplyType'),
     (5, N'CommodityType'),
     (5, N'PaThaKaId'),
-    (5, N'ExportImportSectionId');
+    (5, N'ExportImportSectionId'),
+    (6, N'ApplyType'),
+    (6, N'CardType'),
+    (6, N'PaThaKaId'),
+    (6, N'ExportImportSectionId'),
+    (6, N'SakhanId'),
+    (7, N'PaymentType'),
+    (8, N'TransactionId'),
+    (8, N'ApplicationNo'),
+    (8, N'ApprovalCode'),
+    (8, N'ResponseCode'),
+    (8, N'TransactionDateTime'),
+    (8, N'PaymentType'),
+    (9, N'ApplicationNo'),
+    (9, N'CompanyName'),
+    (9, N'ApproveDate'),
+    (10, N'TransactionId'),
+    (10, N'TransactionFormType'),
+    (10, N'PaymentDate'),
+    (10, N'PaymentType'),
+    (10, N'VoucherNo');
 GO
 
 /*
     Batch 1: clear join gaps
     Batch 2: pending report
+    Batch 3: proactive future-capacity indexes
+    Batch 4: online-fees hot-path cover
 
     The semantic guard accepts an existing index when it has the requested key
     columns as a left prefix and physically covers every requested projection
@@ -386,7 +467,15 @@ BEGIN
     IF @BatchNo <> @PreviousBatchNo
     BEGIN
         PRINT N'============================================================';
-        PRINT N'TradeNet report index migration: batch 2 - pending report';
+        PRINT N'TradeNet report index migration: batch '
+            + CONVERT(nvarchar(10), @BatchNo)
+            + N' - '
+            + CASE @BatchNo
+                WHEN 2 THEN N'pending report'
+                WHEN 3 THEN N'proactive future capacity'
+                WHEN 4 THEN N'online-fees hot-path cover'
+                ELSE N'additional indexes'
+              END;
         PRINT N'============================================================';
         SET @PreviousBatchNo = @BatchNo;
     END;
@@ -596,6 +685,11 @@ GO
     Manual rollback reference only.
     Never run rollback statements without DBA review and an approved change.
 
+    DROP INDEX IF EXISTS [IX_AccountTransaction_OnlineFees] ON [dbo].[AccountTransaction];
+    DROP INDEX IF EXISTS [IX_PaThaKaRegistration_CompanyProfile] ON [dbo].[PaThaKaRegistration];
+    DROP INDEX IF EXISTS [IX_MPUPaymentTransaction_TransactionRefNo] ON [dbo].[MPUPaymentTransaction];
+    DROP INDEX IF EXISTS [IX_AccountTransaction_PaymentReport] ON [dbo].[AccountTransaction];
+    DROP INDEX IF EXISTS [IX_BorderImportLicence_PendingReport] ON [dbo].[BorderImportLicence];
     DROP INDEX IF EXISTS [IX_ImportLicence_PendingReport] ON [dbo].[ImportLicence];
     DROP INDEX IF EXISTS [IX_BorderExportPermitItem_ReportCover] ON [dbo].[BorderExportPermitItem];
     DROP INDEX IF EXISTS [IX_BorderImportPermitItem_ReportCover] ON [dbo].[BorderImportPermitItem];

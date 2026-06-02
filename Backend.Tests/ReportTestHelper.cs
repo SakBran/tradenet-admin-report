@@ -13,8 +13,12 @@ namespace Backend.Tests;
 
 internal static class ReportTestHelper
 {
-    internal static readonly DateTime FromDate = new(2000, 1, 1);
-    internal static readonly DateTime ToDate = new(2100, 12, 31, 23, 59, 59);
+    internal static readonly DateTime FromDate = GetDateEnvironmentVariable(
+        "TRADENET_REPORT_TEST_FROM_DATE",
+        new DateTime(2000, 1, 1));
+    internal static readonly DateTime ToDate = GetDateEnvironmentVariable(
+        "TRADENET_REPORT_TEST_TO_DATE",
+        new DateTime(2100, 12, 31, 23, 59, 59));
 
     internal static IReadOnlyList<Type> ControllerTypes { get; } =
         typeof(BorderExportPermitByHSCodeReportController).Assembly
@@ -120,8 +124,14 @@ internal static class ReportTestHelper
 
     internal static TradeNetDbContext CreateTradeNetDbTestDbContext()
     {
+        var connectionString = Environment.GetEnvironmentVariable("TRADENET_REPORT_TEST_CONNECTION_STRING");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            connectionString = "Server=localhost;Initial Catalog=TradeNetDBTest;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;";
+        }
+
         var options = new DbContextOptionsBuilder<TradeNetDbContext>()
-            .UseSqlServer("Server=localhost;Initial Catalog=TradeNetDBTest;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;")
+            .UseSqlServer(connectionString)
             .Options;
 
         return new TradeNetDbContext(options);
@@ -279,6 +289,15 @@ internal static class ReportTestHelper
         }
 
         return null;
+    }
+
+    private static DateTime GetDateEnvironmentVariable(string name, DateTime fallback)
+    {
+        var value = Environment.GetEnvironmentVariable(name);
+
+        return DateTime.TryParse(value, out var parsed)
+            ? parsed
+            : fallback;
     }
 
     private sealed class EmptyCountryCache : ICountryCache

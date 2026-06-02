@@ -48,162 +48,159 @@ public static class sp_OnlineFeesReport
     {
         return
             (from fee in OnlineFeeRows(db, request)
-             join registration in db.MemberRegistrations on fee.TransactionId equals registration.Id
+             join registration in RegistrationRows(db) on fee.TransactionId equals registration.Id
              select new sp_OnlineFeesReportResult
              {
-                 SakhanId = 0,
+                 SakhanId = registration.SakhanId,
                  VoucherDate = fee.VoucherDate,
-                 CompanyRegistrationNo = registration.ApplicationNo,
-                 CompanyName = string.Empty,
+                 CompanyRegistrationNo = registration.CompanyRegistrationNo,
+                 CompanyName = registration.CompanyName,
                  FormType = fee.FormType,
                  Amount = fee.Amount,
                  Remark = string.Empty
-             })
-            .Concat(PaThaKaRegistrationRows(db, request))
-            .Concat(PaThaKaBranchRows(db, request, db.BusinessServiceAgencyRegistrations.Select(row => new PaThaKaOnlineFeeRegistration
-            {
-                Id = row.Id,
-                PaThaKaId = row.PaThaKaId,
-                ApplicationNo = row.ApplicationNo,
-                SakhanId = 0
-            })))
-            .Concat(PaThaKaBranchRows(db, request, db.DutyFreeShopRegistrations.Select(row => new PaThaKaOnlineFeeRegistration
-            {
-                Id = row.Id,
-                PaThaKaId = row.PaThaKaId,
-                ApplicationNo = row.ApplicationNo,
-                SakhanId = 0
-            })))
-            .Concat(PaThaKaBranchRows(db, request, db.ReExportRegistrations.Select(row => new PaThaKaOnlineFeeRegistration
-            {
-                Id = row.Id,
-                PaThaKaId = row.PaThaKaId,
-                ApplicationNo = row.ApplicationNo,
-                SakhanId = 0
-            })))
-            .Concat(PaThaKaBranchRows(db, request, db.SaleCenterRegistrations.Select(row => new PaThaKaOnlineFeeRegistration
-            {
-                Id = row.Id,
-                PaThaKaId = row.PaThaKaId,
-                ApplicationNo = row.ApplicationNo,
-                SakhanId = 0
-            })))
-            .Concat(PaThaKaBranchRows(db, request, db.ShowRoomRegistrations.Select(row => new PaThaKaOnlineFeeRegistration
-            {
-                Id = row.Id,
-                PaThaKaId = row.PaThaKaId,
-                ApplicationNo = row.ApplicationNo,
-                SakhanId = 0
-            })))
-            .Concat(PaThaKaBranchRows(db, request, db.WholeSaleRetailRegistrations.Select(row => new PaThaKaOnlineFeeRegistration
-            {
-                Id = row.Id,
-                PaThaKaId = row.PaThaKaId,
-                ApplicationNo = row.ApplicationNo,
-                SakhanId = 0
-            })))
-            .Concat(PaThaKaBranchRows(db, request, db.WineImportationRegistrations.Select(row => new PaThaKaOnlineFeeRegistration
-            {
-                Id = row.Id,
-                PaThaKaId = row.PaThaKaId,
-                ApplicationNo = row.ApplicationNo,
-                SakhanId = 0
-            })))
-            .Concat(PaThaKaBranchRows(db, request, db.BorderExportLicences.Select(row => new PaThaKaOnlineFeeRegistration
-            {
-                Id = row.Id,
-                PaThaKaId = row.PaThaKaId!,
-                ApplicationNo = row.ApplicationNo,
-                SakhanId = row.SakhanId
-            })))
-            .Concat(PaThaKaBranchRows(db, request, db.BorderExportPermits.Select(row => new PaThaKaOnlineFeeRegistration
-            {
-                Id = row.Id,
-                PaThaKaId = row.PaThaKaId!,
-                ApplicationNo = row.ApplicationNo,
-                SakhanId = row.SakhanId
-            })))
-            .Concat(PaThaKaBranchRows(db, request, db.BorderImportLicences.Select(row => new PaThaKaOnlineFeeRegistration
-            {
-                Id = row.Id,
-                PaThaKaId = row.PaThaKaId!,
-                ApplicationNo = row.ApplicationNo,
-                SakhanId = row.SakhanId
-            })))
-            .Concat(PaThaKaBranchRows(db, request, db.BorderImportPermits.Select(row => new PaThaKaOnlineFeeRegistration
-            {
-                Id = row.Id,
-                PaThaKaId = row.PaThaKaId!,
-                ApplicationNo = row.ApplicationNo,
-                SakhanId = row.SakhanId
-            })))
-            .Concat(PaThaKaBranchRows(db, request, db.ExportLicences.Select(row => new PaThaKaOnlineFeeRegistration
-            {
-                Id = row.Id,
-                PaThaKaId = row.PaThaKaId,
-                ApplicationNo = row.ApplicationNo,
-                SakhanId = 0
-            })))
-            .Concat(PaThaKaBranchRows(db, request, db.ExportPermits.Select(row => new PaThaKaOnlineFeeRegistration
-            {
-                Id = row.Id,
-                PaThaKaId = row.PaThaKaId,
-                ApplicationNo = row.ApplicationNo,
-                SakhanId = 0
-            })))
-            .Concat(PaThaKaBranchRows(db, request, db.ImportLicences.Select(row => new PaThaKaOnlineFeeRegistration
-            {
-                Id = row.Id,
-                PaThaKaId = row.PaThaKaId,
-                ApplicationNo = row.ApplicationNo,
-                SakhanId = 0
-            })))
-            .Concat(PaThaKaBranchRows(db, request, db.ImportPermits.Select(row => new PaThaKaOnlineFeeRegistration
-            {
-                Id = row.Id,
-                PaThaKaId = row.PaThaKaId,
-                ApplicationNo = row.ApplicationNo,
-                SakhanId = 0
-            })));
+             });
     }
 
-    private static IQueryable<sp_OnlineFeesReportResult> PaThaKaRegistrationRows(
-        TradeNetDbContext db,
-        sp_OnlineFeesReportRequest request)
+    private static IQueryable<OnlineFeeRegistration> RegistrationRows(TradeNetDbContext db)
     {
-        return
-            from fee in OnlineFeeRows(db, request)
-            join registration in db.PaThaKaRegistrations on fee.TransactionId equals registration.Id
-            select new sp_OnlineFeesReportResult
+        var paThaKaRegistrations =
+            db.BusinessServiceAgencyRegistrations.Select(row => new PaThaKaOnlineFeeRegistration
             {
+                Id = row.Id,
+                PaThaKaId = row.PaThaKaId,
+                ApplicationNo = row.ApplicationNo,
+                SakhanId = 0
+            })
+            .Concat(db.DutyFreeShopRegistrations.Select(row => new PaThaKaOnlineFeeRegistration
+            {
+                Id = row.Id,
+                PaThaKaId = row.PaThaKaId,
+                ApplicationNo = row.ApplicationNo,
+                SakhanId = 0
+            }))
+            .Concat(db.ReExportRegistrations.Select(row => new PaThaKaOnlineFeeRegistration
+            {
+                Id = row.Id,
+                PaThaKaId = row.PaThaKaId,
+                ApplicationNo = row.ApplicationNo,
+                SakhanId = 0
+            }))
+            .Concat(db.SaleCenterRegistrations.Select(row => new PaThaKaOnlineFeeRegistration
+            {
+                Id = row.Id,
+                PaThaKaId = row.PaThaKaId,
+                ApplicationNo = row.ApplicationNo,
+                SakhanId = 0
+            }))
+            .Concat(db.ShowRoomRegistrations.Select(row => new PaThaKaOnlineFeeRegistration
+            {
+                Id = row.Id,
+                PaThaKaId = row.PaThaKaId,
+                ApplicationNo = row.ApplicationNo,
+                SakhanId = 0
+            }))
+            .Concat(db.WholeSaleRetailRegistrations.Select(row => new PaThaKaOnlineFeeRegistration
+            {
+                Id = row.Id,
+                PaThaKaId = row.PaThaKaId,
+                ApplicationNo = row.ApplicationNo,
+                SakhanId = 0
+            }))
+            .Concat(db.WineImportationRegistrations.Select(row => new PaThaKaOnlineFeeRegistration
+            {
+                Id = row.Id,
+                PaThaKaId = row.PaThaKaId,
+                ApplicationNo = row.ApplicationNo,
+                SakhanId = 0
+            }))
+            .Concat(db.BorderExportLicences.Select(row => new PaThaKaOnlineFeeRegistration
+            {
+                Id = row.Id,
+                PaThaKaId = row.PaThaKaId!,
+                ApplicationNo = row.ApplicationNo,
+                SakhanId = row.SakhanId
+            }))
+            .Concat(db.BorderExportPermits.Select(row => new PaThaKaOnlineFeeRegistration
+            {
+                Id = row.Id,
+                PaThaKaId = row.PaThaKaId!,
+                ApplicationNo = row.ApplicationNo,
+                SakhanId = row.SakhanId
+            }))
+            .Concat(db.BorderImportLicences.Select(row => new PaThaKaOnlineFeeRegistration
+            {
+                Id = row.Id,
+                PaThaKaId = row.PaThaKaId!,
+                ApplicationNo = row.ApplicationNo,
+                SakhanId = row.SakhanId
+            }))
+            .Concat(db.BorderImportPermits.Select(row => new PaThaKaOnlineFeeRegistration
+            {
+                Id = row.Id,
+                PaThaKaId = row.PaThaKaId!,
+                ApplicationNo = row.ApplicationNo,
+                SakhanId = row.SakhanId
+            }))
+            .Concat(db.ExportLicences.Select(row => new PaThaKaOnlineFeeRegistration
+            {
+                Id = row.Id,
+                PaThaKaId = row.PaThaKaId,
+                ApplicationNo = row.ApplicationNo,
+                SakhanId = 0
+            }))
+            .Concat(db.ExportPermits.Select(row => new PaThaKaOnlineFeeRegistration
+            {
+                Id = row.Id,
+                PaThaKaId = row.PaThaKaId,
+                ApplicationNo = row.ApplicationNo,
+                SakhanId = 0
+            }))
+            .Concat(db.ImportLicences.Select(row => new PaThaKaOnlineFeeRegistration
+            {
+                Id = row.Id,
+                PaThaKaId = row.PaThaKaId,
+                ApplicationNo = row.ApplicationNo,
+                SakhanId = 0
+            }))
+            .Concat(db.ImportPermits.Select(row => new PaThaKaOnlineFeeRegistration
+            {
+                Id = row.Id,
+                PaThaKaId = row.PaThaKaId,
+                ApplicationNo = row.ApplicationNo,
+                SakhanId = 0
+            }));
+
+        return db.MemberRegistrations
+            .Select(registration => new OnlineFeeRegistration
+            {
+                Id = registration.Id,
                 SakhanId = 0,
-                VoucherDate = fee.VoucherDate,
+                CompanyRegistrationNo = registration.ApplicationNo,
+                CompanyName = string.Empty
+            })
+            .Concat(db.PaThaKaRegistrations.Select(registration => new OnlineFeeRegistration
+            {
+                Id = registration.Id,
+                SakhanId = 0,
                 CompanyRegistrationNo = registration.CompanyRegistrationNo + "@" + registration.ApplicationNo,
-                CompanyName = registration.CompanyName,
-                FormType = fee.FormType,
-                Amount = fee.Amount,
-                Remark = string.Empty
-            };
+                CompanyName = registration.CompanyName
+            }))
+            .Concat(PaThaKaRegistrationRows(db, paThaKaRegistrations));
     }
 
-    private static IQueryable<sp_OnlineFeesReportResult> PaThaKaBranchRows(
+    private static IQueryable<OnlineFeeRegistration> PaThaKaRegistrationRows(
         TradeNetDbContext db,
-        sp_OnlineFeesReportRequest request,
         IQueryable<PaThaKaOnlineFeeRegistration> registrations)
     {
         return
-            from fee in OnlineFeeRows(db, request)
-            join registration in registrations on fee.TransactionId equals registration.Id
+            from registration in registrations
             join paThaKa in db.PaThaKas on registration.PaThaKaId equals paThaKa.Id
-            select new sp_OnlineFeesReportResult
+            select new OnlineFeeRegistration
             {
+                Id = registration.Id,
                 SakhanId = registration.SakhanId,
-                VoucherDate = fee.VoucherDate,
                 CompanyRegistrationNo = paThaKa.CompanyRegistrationNo + "@" + registration.ApplicationNo,
-                CompanyName = paThaKa.CompanyName,
-                FormType = fee.FormType,
-                Amount = fee.Amount,
-                Remark = string.Empty
+                CompanyName = paThaKa.CompanyName
             };
     }
 
@@ -242,5 +239,13 @@ public static class sp_OnlineFeesReport
         public string PaThaKaId { get; set; } = null!;
         public string ApplicationNo { get; set; } = null!;
         public int SakhanId { get; set; }
+    }
+
+    private sealed class OnlineFeeRegistration
+    {
+        public string Id { get; set; } = null!;
+        public int SakhanId { get; set; }
+        public string CompanyRegistrationNo { get; set; } = null!;
+        public string CompanyName { get; set; } = null!;
     }
 }

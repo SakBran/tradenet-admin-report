@@ -9,16 +9,20 @@ namespace Backend.Tests;
 
 public sealed class TempSectionValidation
 {
-    private const string Conn =
-        "Server=203.81.66.111,14330;Initial Catalog=TradeNetDB;User ID=sa;Password=Pr0fessi0nal@IM2022;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;";
-
     private readonly ITestOutputHelper _output;
     public TempSectionValidation(ITestOutputHelper output) => _output = output;
 
     private static TradeNetDbContext NewDb()
     {
+        var connectionString = Environment.GetEnvironmentVariable("TRADENET_REPORT_TEST_CONNECTION_STRING");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException(
+                "Set TRADENET_REPORT_TEST_CONNECTION_STRING before running shared-database validation.");
+        }
+
         var options = new DbContextOptionsBuilder<TradeNetDbContext>()
-            .UseSqlServer(Conn, o => o.CommandTimeout(120))
+            .UseSqlServer(connectionString, o => o.CommandTimeout(120))
             .Options;
         return new TradeNetDbContext(options);
     }
