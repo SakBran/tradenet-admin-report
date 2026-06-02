@@ -158,9 +158,18 @@ const MemberRegistrationReport = () => {
 
   const generateExcel = useCallback(
     async (query: BasicTableQuery) => {
+      // Export the filters currently entered in the form so the user can
+      // export without first clicking Filter. Validate first so the required
+      // date range is still enforced (antd highlights invalid fields).
+      let values: MemberRegistrationFormValues;
+      try {
+        values = await form.validateFields();
+      } catch {
+        return;
+      }
       const response = await axiosInstance.post(
         'MemberRegistrationReport/Excel',
-        buildRequest(filters, query),
+        buildRequest(toFilters(values), query),
         { responseType: 'blob' }
       );
       const blob = new Blob([response.data], {
@@ -169,7 +178,7 @@ const MemberRegistrationReport = () => {
 
       downloadBlob(blob, 'MemberRegistrationReport.xlsx');
     },
-    [filters]
+    [form]
   );
 
   const applyFilters = (values: MemberRegistrationFormValues) => {
@@ -248,6 +257,7 @@ const MemberRegistrationReport = () => {
         onExcel={generateExcel}
         showActions={false}
         enabled={hasAppliedFilters}
+        excelEnabled
         idleText="Set filters, then click Filter to load the report."
         refreshKey={refreshKey}
         initialSortColumn="IssuedDate"

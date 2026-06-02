@@ -576,9 +576,19 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
     async (query: BasicTableQuery) => {
       // Excel is now asynchronous: the endpoint enqueues a job (or returns an
       // already-finished file to reuse). See docs/ExcelJobQueueTask.md.
+      // Export the filters currently entered in the form so the user can
+      // export without first clicking Filter to load the grid. Validate first
+      // so required filters are still enforced (antd highlights invalid fields).
+      let values: FilterFormValues;
+      try {
+        values = await form.validateFields();
+      } catch {
+        return;
+      }
+      const currentFilters = normalizeReportFilters(values);
       const response = await axiosInstance.post<ExcelEnqueueResult>(
         config.excelRoute,
-        buildRequest(filters, query)
+        buildRequest(currentFilters, query)
       );
       const result = response.data;
 
@@ -606,7 +616,7 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
         );
       }
     },
-    [config.excelFileName, config.excelRoute, filters]
+    [config.excelFileName, config.excelRoute, form]
   );
 
   const applyFilters = (values: FilterFormValues) => {
@@ -684,6 +694,7 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
         onExcel={generateExcel}
         showActions={false}
         enabled={hasAppliedFilters}
+        excelEnabled
         idleText="Set filters, then click Filter to load the report."
         refreshKey={refreshKey}
         initialSortColumn={config.initialSortColumn}

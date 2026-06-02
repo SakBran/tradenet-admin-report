@@ -66,6 +66,13 @@ interface PropsType<T extends AnyObject = AnyObject> {
   initialPageSize?: number;
   emptyText?: string;
   enabled?: boolean;
+  /**
+   * Controls the Excel button's enabled state independently of `enabled`
+   * (which gates the grid fetch). Defaults to `enabled` so callers that only
+   * set `enabled` keep the old "Excel after Filter" behavior. Pass `true` to
+   * allow exporting without loading the grid first.
+   */
+  excelEnabled?: boolean;
   idleText?: string;
   showRowNumber?: boolean;
 }
@@ -121,6 +128,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   initialPageSize = 10,
   emptyText = 'No data',
   enabled = true,
+  excelEnabled = enabled,
   idleText = 'Set filters, then click Filter to load data',
   showRowNumber = true,
 }: PropsType<T>) => {
@@ -286,7 +294,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
             type="primary"
             icon={<FileExcelOutlined />}
             loading={excelLoading}
-            disabled={!enabled}
+            disabled={!excelEnabled}
             onClick={handleExcel}
           >
             Excel
