@@ -1,7 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using API.DBContext;
 using API.Model;
+using API.Service.ExcelExport;
 using API.Service.Reports;
 using API.StoredProcedureToLinq;
 using Microsoft.AspNetCore.Authorization;
@@ -13,15 +17,19 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class BorderExportLicenceByMethodReportController : ControllerBase
+    public class BorderExportLicenceByMethodReportController : ControllerBase, IStreamingExcelReport
     {
+        private const string ReportKey = "BorderExportLicenceByMethodReport";
+
         private readonly TradeNetDbContext _context;
         private readonly IMemoryCache _cache;
+        private readonly IExcelExportJobService _excelExportJobs;
 
-        public BorderExportLicenceByMethodReportController(TradeNetDbContext context, IMemoryCache cache)
+        public BorderExportLicenceByMethodReportController(TradeNetDbContext context, IMemoryCache cache, IExcelExportJobService excelExportJobs)
         {
             _context = context;
             _cache = cache;
+            _excelExportJobs = excelExportJobs;
         }
 
         [HttpPost]
@@ -41,31 +49,38 @@ namespace Backend.Controllers.Report
         [HttpPost("Excel")]
         public async Task<IActionResult> Excel([FromBody] BorderExportLicenceByMethodReportRequest? request)
         {
-            if (!TryCreateReportRequest(request, out var procedureRequest, out var errorResult))
+            if (!TryCreateReportRequest(request, out _, out var errorResult))
             {
                 return errorResult!;
             }
 
-            byte[] fileBytes;
-            try
-            {
-                fileBytes = await sp_ExportLicenceDetailReport_Fast.CreateAggregateExcelWorkbookAsync(
-                    _context,
-                    procedureRequest!,
-                    request!,
-                    ReportAggregateDimension.Method,
-                    includeSakhan: true,
-                    "Border Export Licence By Method Report");
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await _excelExportJobs.EnqueueAsync(
+                ReportKey,
+                request!,
+                request!.ToDate,
+                User.FindFirst(ClaimTypes.Name)?.Value);
 
-            return File(
-                fileBytes,
-                ExcelGenerator.ContentType,
-                "BorderExportLicenceByMethodReport.xlsx");
+            return Ok(result);
+        }
+
+        // --- Async Excel export streaming (used by the background queue worker) ---
+        public string ExcelWorksheetTitle => "Border Export Licence By Method Report";
+        public Type ExcelRequestType => typeof(BorderExportLicenceByMethodReportRequest);
+
+        [NonAction]
+        public Task WriteRowsAsync(object request, IExcelRowSink sink, int chunkSize, CancellationToken cancellationToken)
+            => WriteRowsAsync((BorderExportLicenceByMethodReportRequest)request, sink, chunkSize, cancellationToken);
+
+        private async Task WriteRowsAsync(
+            BorderExportLicenceByMethodReportRequest request,
+            IExcelRowSink sink,
+            int chunkSize,
+            CancellationToken cancellationToken)
+        {
+            TryCreateReportRequest(request, out var procedureRequest, out _);
+            var rows = await sp_ExportLicenceDetailReport_Fast.GetAggregateRowsAsync(
+                _context, procedureRequest!, ReportAggregateDimension.Method, includeSakhan: true);
+            sink.Append(rows);
         }
 
         private bool TryCreateReportRequest(

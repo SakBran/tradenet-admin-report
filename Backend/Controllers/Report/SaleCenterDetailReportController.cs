@@ -1,26 +1,34 @@
 using System;
+using System.Collections.Generic;
+using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using API.DBContext;
 using API.Model;
+using API.Service.ExcelExport;
 using API.Service.Reports;
 using API.StoredProcedureToLinq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Controllers.Report
 {
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class SaleCenterDetailReportController : ControllerBase
+    public class SaleCenterDetailReportController : ControllerBase, IStreamingExcelReport
     {
+        private const string ReportKey = "SaleCenterDetailReport";
         private const string FormType = "Sale Center for Motor Vehicles";
 
         private readonly TradeNetDbContext _context;
+        private readonly IExcelExportJobService _excelExportJobs;
 
-        public SaleCenterDetailReportController(TradeNetDbContext context)
+        public SaleCenterDetailReportController(TradeNetDbContext context, IExcelExportJobService excelExportJobs)
         {
             _context = context;
+            _excelExportJobs = excelExportJobs;
         }
 
         [HttpPost]
@@ -41,29 +49,40 @@ namespace Backend.Controllers.Report
         [HttpPost("Excel")]
         public async Task<IActionResult> Excel([FromBody] SaleCenterDetailReportRequest? request)
         {
-            if (!TryCreateReportRequest(request, out var reportRequest, out var errorResult))
+            if (!TryCreateReportRequest(request, out _, out var errorResult))
             {
                 return errorResult!;
             }
 
-            var query = sp_SaleCenterReport.Query(_context, reportRequest!);
-            byte[] fileBytes;
-            try
-            {
-                fileBytes = await ExcelGenerator.CreateWorkbookAsync(
-                    query,
-                    request!,
-                    "Sale Center Detail Report");
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await _excelExportJobs.EnqueueAsync(
+                ReportKey,
+                request!,
+                request!.ToDate,
+                User.FindFirst(ClaimTypes.Name)?.Value);
 
-            return File(
-                fileBytes,
-                ExcelGenerator.ContentType,
-                "SaleCenterDetailReport.xlsx");
+            return Ok(result);
+        }
+
+        // --- Async Excel export streaming (used by the background queue worker) ---
+        public string ExcelWorksheetTitle => "Sale Center Detail Report";
+        public Type ExcelRequestType => typeof(SaleCenterDetailReportRequest);
+
+        [NonAction]
+        public Task WriteRowsAsync(object request, IExcelRowSink sink, int chunkSize, CancellationToken cancellationToken)
+            => WriteRowsAsync((SaleCenterDetailReportRequest)request, sink, chunkSize, cancellationToken);
+
+        private async Task WriteRowsAsync(
+            SaleCenterDetailReportRequest request,
+            IExcelRowSink sink,
+            int chunkSize,
+            CancellationToken cancellationToken)
+        {
+            TryCreateReportRequest(request, out var procedureRequest, out _);
+            var query = sp_SaleCenterReport.Query(_context, procedureRequest!);
+            await foreach (var chunk in query.AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
+            {
+                sink.Append(chunk);
+            }
         }
 
         private bool TryCreateReportRequest(

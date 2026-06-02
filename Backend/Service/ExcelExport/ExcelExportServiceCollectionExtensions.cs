@@ -1,7 +1,6 @@
 using System;
-using API.Service.ExcelExport.Handlers;
-using API.StoredProcedureToLinq;
-using Backend.Controllers.Report;
+using System.Linq;
+using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,8 +10,10 @@ namespace API.Service.ExcelExport
     {
         /// <summary>
         /// Registers the async Excel export queue: options, file store, registry,
-        /// enqueue service, background worker + cleanup, and the per-report handlers.
-        /// Add one handler line here per report when rolling out the remaining controllers.
+        /// enqueue service, background worker + cleanup, and one handler per report.
+        /// Handlers are auto-discovered: every controller implementing
+        /// <see cref="IStreamingExcelReport"/> gets a
+        /// <see cref="ControllerStreamingExcelReportJobHandler"/>.
         /// </summary>
         public static IServiceCollection AddExcelExportQueue(this IServiceCollection services, IConfiguration configuration)
         {
@@ -25,42 +26,52 @@ namespace API.Service.ExcelExport
             services.AddHostedService<ExcelExportWorker>();
             services.AddHostedService<ExcelExportCleanupWorker>();
 
-            RegisterHandlers(services);
+            RegisterReportHandlers(services);
 
             return services;
         }
 
-        private static void RegisterHandlers(IServiceCollection services)
+        private static void RegisterReportHandlers(IServiceCollection services)
         {
-            // --- Pilot: simple IQueryable report ---
-            services.AddSingleton<IExcelReportJobHandler>(
-                new QueryableExcelReportJobHandler<MemberRegistrationReportRequest, sp_MemberRegistrationReportResult>(
-                    reportKey: "MemberRegistrationReport",
-                    title: "Member Registration Report",
-                    fileNameBase: "MemberRegistrationReport",
-                    queryFactory: (db, req) => sp_MemberRegistrationReport.Query(db, new sp_MemberRegistrationReportRequest
-                    {
-                        FromDate = req.FromDate,
-                        ToDate = req.ToDate,
-                        ApplyType = NormalizeApplyType(req.ApplyType)
-                    })));
+            var reportTypes = typeof(ExcelExportServiceCollectionExtensions).Assembly
+                .GetTypes()
+                .Where(t => t is { IsClass: true, IsAbstract: false }
+                    && typeof(IStreamingExcelReport).IsAssignableFrom(t));
 
-            // --- Pilot: _Fast report with per-chunk CSV reference resolution ---
-            services.AddSingleton<IExcelReportJobHandler, ImportLicenceDetailReportExcelHandler>();
+            foreach (var type in reportTypes)
+            {
+                var reportKey = StripControllerSuffix(type.Name);
+                var handler = new ControllerStreamingExcelReportJobHandler(
+                    type,
+                    reportKey,
+                    PrettifyTitle(reportKey),
+                    reportKey);
 
-            // Roll out the remaining reports here, one AddSingleton<IExcelReportJobHandler>(...) per report.
+                services.AddSingleton<IExcelReportJobHandler>(handler);
+            }
         }
 
-        /// <summary>Mirrors MemberRegistrationReportController's ApplyType normalization.</summary>
-        private static string NormalizeApplyType(string? applyType)
+        private static string StripControllerSuffix(string typeName)
+            => typeName.EndsWith("Controller", StringComparison.Ordinal)
+                ? typeName[..^"Controller".Length]
+                : typeName;
+
+        /// <summary>Insert spaces before internal capitals: "BorderExportLicence" → "Border Export Licence".</summary>
+        private static string PrettifyTitle(string name)
         {
-            var value = string.IsNullOrWhiteSpace(applyType) ? "All" : applyType.Trim();
-            return value.ToUpperInvariant() switch
+            var sb = new StringBuilder(name.Length + 8);
+            for (var i = 0; i < name.Length; i++)
             {
-                "NEW" => "New",
-                "EXTENSION" => "Extension",
-                _ => "All"
-            };
+                var c = name[i];
+                if (i > 0 && char.IsUpper(c) && !char.IsUpper(name[i - 1]))
+                {
+                    sb.Append(' ');
+                }
+
+                sb.Append(c);
+            }
+
+            return sb.ToString();
         }
     }
 }

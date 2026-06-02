@@ -1,48 +1,52 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace API.Service.ExcelExport
 {
     /// <summary>
-    /// Everything a handler needs to generate one export: the request JSON to
-    /// rebuild its query, scoped services (TradeNetDbContext, caches), the chunk
-    /// size, the streaming writer to append rows to, and a cancellation token.
+    /// What a handler needs to generate one export: the request JSON, scoped
+    /// services, the output stream (a file on disk), the chunk size, and a token.
+    /// The handler sets <see cref="RowCount"/>/<see cref="SheetCount"/> when known.
     /// </summary>
     public sealed class ExcelExportContext
     {
         public ExcelExportContext(
             IServiceProvider services,
             string requestJson,
-            StreamingExcelWriter writer,
+            Stream output,
             int chunkSize,
             CancellationToken cancellationToken)
         {
             Services = services;
             RequestJson = requestJson;
-            Writer = writer;
+            Output = output;
             ChunkSize = chunkSize;
             CancellationToken = cancellationToken;
         }
 
         public IServiceProvider Services { get; }
         public string RequestJson { get; }
-        public StreamingExcelWriter Writer { get; }
+        public Stream Output { get; }
         public int ChunkSize { get; }
         public CancellationToken CancellationToken { get; }
+
+        public int? RowCount { get; set; }
+        public int? SheetCount { get; set; }
     }
 
     /// <summary>
-    /// One per report. Rebuilds the report's query from the stored request and
-    /// streams its rows into <see cref="ExcelExportContext.Writer"/> in chunks.
+    /// One per report. Writes the complete .xlsx for a job to
+    /// <see cref="ExcelExportContext.Output"/>.
     /// </summary>
     public interface IExcelReportJobHandler
     {
         /// <summary>Registry key = controller route name without "Controller".</summary>
         string ReportKey { get; }
 
-        /// <summary>Worksheet title.</summary>
+        /// <summary>Display title shown in the shared Exports drive.</summary>
         string DefaultTitle { get; }
 
         /// <summary>Base download file name (no timestamp / extension).</summary>
@@ -77,5 +81,7 @@ namespace API.Service.ExcelExport
 
             return handler;
         }
+
+        public IReadOnlyCollection<string> Keys => _handlers.Keys;
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
@@ -97,6 +98,18 @@ public static class sp_PaThaKaValidInvalidReport
         int? pageIndex = null,
         int? pageSize = null)
     {
+        return await ExecuteQueryable(db, request, sortColumn, sortOrder, pageIndex, pageSize)
+            .ToListAsync();
+    }
+
+    public static IQueryable<sp_PaThaKaValidInvalidReportRow> ExecuteQueryable(
+        TradeNetDbContext db,
+        sp_PaThaKaValidInvalidReportRequest request,
+        string? sortColumn = null,
+        string? sortOrder = null,
+        int? pageIndex = null,
+        int? pageSize = null)
+    {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
@@ -121,8 +134,6 @@ public static class sp_PaThaKaValidInvalidReport
             "EXEC dbo.sp_PaThaKaValidInvalidReport_pagination @Date, @BusinessTypeId, @LineofBusinessId, " +
             "@State, @Status, @Type, @SortColumn, @SortOrder, @PageIndex, @PageSize";
 
-        return await db.Database
-            .SqlQueryRaw<sp_PaThaKaValidInvalidReportRow>(sql, parameters)
-            .ToListAsync();
+        return db.Database.SqlQueryRaw<sp_PaThaKaValidInvalidReportRow>(sql, parameters);
     }
 }

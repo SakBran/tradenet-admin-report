@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using API.DBContext;
 using API.Model;
@@ -15,7 +17,7 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class ImportLicenceDetailReportController : ControllerBase
+    public class ImportLicenceDetailReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ImportLicenceDetailReport";
 
@@ -65,6 +67,28 @@ namespace Backend.Controllers.Report
                 User.FindFirst(ClaimTypes.Name)?.Value);
 
             return Ok(result);
+        }
+
+        // --- Async Excel export streaming (used by the background queue worker) ---
+        public string ExcelWorksheetTitle => "Import Licence Detail Report";
+        public Type ExcelRequestType => typeof(ImportLicenceDetailReportRequest);
+
+        [NonAction]
+        public Task WriteRowsAsync(object request, IExcelRowSink sink, int chunkSize, CancellationToken cancellationToken)
+            => WriteRowsAsync((ImportLicenceDetailReportRequest)request, sink, chunkSize, cancellationToken);
+
+        private async Task WriteRowsAsync(
+            ImportLicenceDetailReportRequest request,
+            IExcelRowSink sink,
+            int chunkSize,
+            CancellationToken cancellationToken)
+        {
+            TryCreateReportRequest(request, out var procedureRequest, out _);
+            await foreach (var chunk in sp_ImportLicenceDetailReport_Fast.StreamResolvedChunksAsync(
+                _context, _countryCache, procedureRequest!, chunkSize, cancellationToken))
+            {
+                sink.Append(chunk);
+            }
         }
 
         private bool TryCreateReportRequest(

@@ -1,21 +1,28 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using API.DBContext;
 using API.Model;
+using API.Service.ExcelExport;
 using API.Service.Reports;
 using API.StoredProcedureToLinq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Controllers.Report
 {
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class AccountSummaryReportController : ControllerBase
+    public class AccountSummaryReportController : ControllerBase, IStreamingExcelReport
     {
+        private const string ReportKey = "AccountSummaryReport";
+
         private const int DefaultPageSize = 10;
         private const int MaxPageSize = 1000;
 
@@ -23,10 +30,12 @@ namespace Backend.Controllers.Report
         private const int MaxExcelDataRows = 1_048_576 - 1;
 
         private readonly TradeNetDbContext _context;
+        private readonly IExcelExportJobService _excelExportJobs;
 
-        public AccountSummaryReportController(TradeNetDbContext context)
+        public AccountSummaryReportController(TradeNetDbContext context, IExcelExportJobService excelExportJobs)
         {
             _context = context;
+            _excelExportJobs = excelExportJobs;
         }
 
         [HttpPost]
@@ -70,52 +79,39 @@ namespace Backend.Controllers.Report
         [HttpPost("Excel")]
         public async Task<IActionResult> Excel([FromBody] AccountSummaryReportRequest? request)
         {
-            if (!TryCreateReportRequest(request, out var procedureRequest, out var errorResult))
+            if (!TryCreateReportRequest(request, out _, out var errorResult))
             {
                 return errorResult!;
             }
 
-            var sortColumn = string.IsNullOrWhiteSpace(request!.SortColumn) ? null : request.SortColumn;
-            var sortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? null : request.SortOrder;
+            var result = await _excelExportJobs.EnqueueAsync(
+                ReportKey,
+                request!,
+                request!.ToDate,
+                User.FindFirst(ClaimTypes.Name)?.Value);
 
-            try
+            return Ok(result);
+        }
+
+        // --- Async Excel export streaming (used by the background queue worker) ---
+        public string ExcelWorksheetTitle => "Account Summary Report";
+        public Type ExcelRequestType => typeof(AccountSummaryReportRequest);
+
+        [NonAction]
+        public Task WriteRowsAsync(object request, IExcelRowSink sink, int chunkSize, CancellationToken cancellationToken)
+            => WriteRowsAsync((AccountSummaryReportRequest)request, sink, chunkSize, cancellationToken);
+
+        private async Task WriteRowsAsync(
+            AccountSummaryReportRequest request,
+            IExcelRowSink sink,
+            int chunkSize,
+            CancellationToken cancellationToken)
+        {
+            TryCreateReportRequest(request, out var procedureRequest, out _);
+            await foreach (var chunk in sp_AccountSummaryReport.ExecuteQueryable(_context, procedureRequest!)
+                .AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
             {
-                var rows = await sp_AccountSummaryReport.ExecuteAsync(
-                    _context, procedureRequest!, sortColumn, sortOrder, pageIndex: null, pageSize: null);
-
-                if (rows.Count > MaxExcelDataRows)
-                {
-                    return BadRequest($"Excel export supports up to {MaxExcelDataRows} data rows.");
-                }
-
-                var data = rows.Select(row => row.ToResult()).ToList();
-                var fileBytes = ExcelGenerator.CreateWorkbook(data, "Account Summary Report");
-
-                return File(
-                    fileBytes,
-                    ExcelGenerator.ContentType,
-                    "AccountSummaryReport.xlsx");
-            }
-            catch (SqlException ex) when (IsMissingPaginationProcedure(ex))
-            {
-                var query = sp_AccountSummaryReport.Query(_context, procedureRequest!);
-                byte[] fileBytes;
-                try
-                {
-                    fileBytes = await ExcelGenerator.CreateWorkbookAsync(
-                        query,
-                        request!,
-                        "Account Summary Report");
-                }
-                catch (InvalidOperationException invalidOperationException)
-                {
-                    return BadRequest(invalidOperationException.Message);
-                }
-
-                return File(
-                    fileBytes,
-                    ExcelGenerator.ContentType,
-                    "AccountSummaryReport.xlsx");
+                sink.Append(chunk.Select(row => row.ToResult()).ToList());
             }
         }
 

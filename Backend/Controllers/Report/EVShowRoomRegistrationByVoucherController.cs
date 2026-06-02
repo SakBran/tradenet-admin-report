@@ -1,26 +1,34 @@
 using System;
+using System.Collections.Generic;
+using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using API.DBContext;
 using API.Model;
+using API.Service.ExcelExport;
 using API.Service.Reports;
 using API.StoredProcedureToLinq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Controllers.Report
 {
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class EVShowRoomRegistrationByVoucherController : ControllerBase
+    public class EVShowRoomRegistrationByVoucherController : ControllerBase, IStreamingExcelReport
     {
+        private const string ReportKey = "EVShowRoomRegistrationByVoucher";
         private const string RegistrationType = "Show Room for Electric Vehicles";
 
         private readonly TradeNetDbContext _context;
+        private readonly IExcelExportJobService _excelExportJobs;
 
-        public EVShowRoomRegistrationByVoucherController(TradeNetDbContext context)
+        public EVShowRoomRegistrationByVoucherController(TradeNetDbContext context, IExcelExportJobService excelExportJobs)
         {
             _context = context;
+            _excelExportJobs = excelExportJobs;
         }
 
         [HttpPost]
@@ -41,29 +49,40 @@ namespace Backend.Controllers.Report
         [HttpPost("Excel")]
         public async Task<IActionResult> Excel([FromBody] EVShowRoomRegistrationByVoucherRequest? request)
         {
-            if (!TryCreateReportRequest(request, out var reportRequest, out var errorResult))
+            if (!TryCreateReportRequest(request, out _, out var errorResult))
             {
                 return errorResult!;
             }
 
-            var query = sp_EVShowRoomRegistrationReport.Query(_context, reportRequest!);
-            byte[] fileBytes;
-            try
-            {
-                fileBytes = await ExcelGenerator.CreateWorkbookAsync(
-                    query,
-                    request!,
-                    "EV Show Room Registration By Voucher");
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await _excelExportJobs.EnqueueAsync(
+                ReportKey,
+                request!,
+                request!.ToDate,
+                User.FindFirst(ClaimTypes.Name)?.Value);
 
-            return File(
-                fileBytes,
-                ExcelGenerator.ContentType,
-                "EVShowRoomRegistrationByVoucher.xlsx");
+            return Ok(result);
+        }
+
+        // --- Async Excel export streaming (used by the background queue worker) ---
+        public string ExcelWorksheetTitle => "EV Show Room Registration By Voucher";
+        public Type ExcelRequestType => typeof(EVShowRoomRegistrationByVoucherRequest);
+
+        [NonAction]
+        public Task WriteRowsAsync(object request, IExcelRowSink sink, int chunkSize, CancellationToken cancellationToken)
+            => WriteRowsAsync((EVShowRoomRegistrationByVoucherRequest)request, sink, chunkSize, cancellationToken);
+
+        private async Task WriteRowsAsync(
+            EVShowRoomRegistrationByVoucherRequest request,
+            IExcelRowSink sink,
+            int chunkSize,
+            CancellationToken cancellationToken)
+        {
+            TryCreateReportRequest(request, out var procedureRequest, out _);
+            var query = sp_EVShowRoomRegistrationReport.Query(_context, procedureRequest!);
+            await foreach (var chunk in query.AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
+            {
+                sink.Append(chunk);
+            }
         }
 
         private bool TryCreateReportRequest(

@@ -1,6 +1,7 @@
 using API.DBContext;
 using API.Model;
 using API.Model.TradeNet;
+using API.Service.ExcelExport;
 using API.Service.Reports;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -8,6 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
@@ -97,6 +100,38 @@ public static class sp_WineImportationReport_Fast
             .ToList();
 
         return await ExcelGenerator.CreateWorkbookAsync(resolved.AsQueryable(), pagingRequest, worksheetName);
+    }
+
+    public static async IAsyncEnumerable<List<sp_WineImportationReportResult>> StreamResolvedChunksAsync(
+        TradeNetDbContext db,
+        IMemoryCache cache,
+        sp_WineImportationReportRequest request,
+        int chunkSize,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var wineTypes = await ReportLookupCache.GetWineTypeNamesAsync(db, cache);
+
+        // Rows(...) is an in-memory IEnumerable (already materialized + post-processed),
+        // so batch it directly rather than via a DB cursor.
+        var buffer = new List<sp_WineImportationReportResult>(chunkSize);
+        foreach (var row in Rows(db, request))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            buffer.Add(row.ToResult(wineTypes));
+            if (buffer.Count >= chunkSize)
+            {
+                yield return buffer;
+                buffer = new List<sp_WineImportationReportResult>(chunkSize);
+            }
+        }
+
+        if (buffer.Count > 0)
+        {
+            yield return buffer;
+        }
     }
 
     private static IEnumerable<WineImportationFastRow> Rows(

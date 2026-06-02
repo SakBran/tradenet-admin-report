@@ -4,6 +4,7 @@ using API.Service.Reports;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -134,6 +135,16 @@ public static partial class sp_HSCodeReport
 
         var query = AggregateQuery(db, request);
         return await ExcelGenerator.CreateWorkbookAsync(query, pagingRequest, worksheetName);
+    }
+
+    public static async Task<List<ReportAggregateResult>> GetAggregateRowsAsync(
+        TradeNetDbContext db,
+        sp_HSCodeReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        return await AggregateQuery(db, request).ToListAsync();
     }
 
     private static IQueryable<ReportAggregateResult> AggregateQuery(

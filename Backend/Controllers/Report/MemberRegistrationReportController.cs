@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using API.DBContext;
 using API.Model;
@@ -8,13 +10,14 @@ using API.Service.Reports;
 using API.StoredProcedureToLinq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Controllers.Report
 {
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class MemberRegistrationReportController : ControllerBase
+    public class MemberRegistrationReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "MemberRegistrationReport";
 
@@ -58,6 +61,28 @@ namespace Backend.Controllers.Report
                 User.FindFirst(ClaimTypes.Name)?.Value);
 
             return Ok(result);
+        }
+
+        // --- Async Excel export streaming (used by the background queue worker) ---
+        public string ExcelWorksheetTitle => "Member Registration Report";
+        public Type ExcelRequestType => typeof(MemberRegistrationReportRequest);
+
+        [NonAction]
+        public Task WriteRowsAsync(object request, IExcelRowSink sink, int chunkSize, CancellationToken cancellationToken)
+            => WriteRowsAsync((MemberRegistrationReportRequest)request, sink, chunkSize, cancellationToken);
+
+        private async Task WriteRowsAsync(
+            MemberRegistrationReportRequest request,
+            IExcelRowSink sink,
+            int chunkSize,
+            CancellationToken cancellationToken)
+        {
+            TryCreateReportRequest(request, out var reportRequest, out _);
+            var query = sp_MemberRegistrationReport.Query(_context, reportRequest!);
+            await foreach (var chunk in query.AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
+            {
+                sink.Append(chunk);
+            }
         }
 
         private static string? NormalizeApplyType(string? applyType)

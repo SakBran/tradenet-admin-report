@@ -1,27 +1,32 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using API.DBContext;
 using API.Model;
+using API.Service.ExcelExport;
 using API.Service.Reports;
 using API.StoredProcedureToLinq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace Backend.Controllers.Report
 {
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class ImportPermitCompanyListReportController : ControllerBase
+    public class ImportPermitCompanyListReportController : ControllerBase, IStreamingExcelReport
     {
-        private readonly TradeNetDbContext _context;
-        private readonly IMemoryCache _cache;
+        private const string ReportKey = "ImportPermitCompanyListReport";
 
-        public ImportPermitCompanyListReportController(TradeNetDbContext context, IMemoryCache cache)
+        private readonly TradeNetDbContext _context;
+        private readonly IExcelExportJobService _excelExportJobs;
+
+        public ImportPermitCompanyListReportController(TradeNetDbContext context, IExcelExportJobService excelExportJobs)
         {
             _context = context;
-            _cache = cache;
+            _excelExportJobs = excelExportJobs;
         }
 
         [HttpPost]

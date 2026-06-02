@@ -82,6 +82,31 @@ public static class sp_AccountSummaryReport
         bool includeTotalCount = true)
     {
         ArgumentNullException.ThrowIfNull(db);
+
+        var previousTimeout = db.Database.GetCommandTimeout();
+        db.Database.SetCommandTimeout(CommandTimeoutSeconds);
+
+        try
+        {
+            return await ExecuteQueryable(db, request, sortColumn, sortOrder, pageIndex, pageSize, includeTotalCount)
+                .ToListAsync();
+        }
+        finally
+        {
+            db.Database.SetCommandTimeout(previousTimeout);
+        }
+    }
+
+    public static IQueryable<sp_AccountSummaryReportRow> ExecuteQueryable(
+        TradeNetDbContext db,
+        sp_AccountSummaryReportRequest request,
+        string? sortColumn = null,
+        string? sortOrder = null,
+        int? pageIndex = null,
+        int? pageSize = null,
+        bool includeTotalCount = true)
+    {
+        ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
         var parameters = new[]
@@ -101,19 +126,7 @@ public static class sp_AccountSummaryReport
             "EXEC dbo.sp_AccountSummaryReport_pagination @FromDate, @ToDate, @FormType, @SakhanId, " +
             "@SortColumn, @SortOrder, @PageIndex, @PageSize, @IncludeTotalCount";
 
-        var previousTimeout = db.Database.GetCommandTimeout();
-        db.Database.SetCommandTimeout(CommandTimeoutSeconds);
-
-        try
-        {
-            return await db.Database
-                .SqlQueryRaw<sp_AccountSummaryReportRow>(sql, parameters)
-                .ToListAsync();
-        }
-        finally
-        {
-            db.Database.SetCommandTimeout(previousTimeout);
-        }
+        return db.Database.SqlQueryRaw<sp_AccountSummaryReportRow>(sql, parameters);
     }
 
     public static IQueryable<sp_AccountSummaryReportResult> Query(

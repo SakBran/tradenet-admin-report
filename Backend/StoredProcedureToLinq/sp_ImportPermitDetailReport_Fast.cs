@@ -1,11 +1,14 @@
 using API.DBContext;
 using API.Model;
+using API.Service.ExcelExport;
 using API.Service.Reports;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
@@ -99,6 +102,25 @@ public static class sp_ImportPermitDetailReport_Fast
         return await ExcelGenerator.CreateWorkbookAsync(resolved.AsQueryable(), pagingRequest, worksheetName);
     }
 
+    public static async IAsyncEnumerable<List<sp_ImportPermitDetailReportResult>> StreamResolvedChunksAsync(
+        TradeNetDbContext db,
+        IMemoryCache cache,
+        sp_ImportPermitDetailReportRequest request,
+        int chunkSize,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var ports = await ReportLookupCache.GetPortNamesAsync(db, cache);
+        var countries = await ReportLookupCache.GetCountryNamesAsync(db, cache);
+
+        await foreach (var rawChunk in Rows(db, request).AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
+        {
+            yield return rawChunk.Select(row => row.ToResult(ports, countries)).ToList();
+        }
+    }
+
     public static async Task<ApiResult<ReportAggregateResult>> CreateAggregateResultAsync(
         TradeNetDbContext db,
         sp_ImportPermitDetailReportRequest request,
@@ -129,6 +151,19 @@ public static class sp_ImportPermitDetailReport_Fast
         var source = await AggregateSourceRowsAsync(db, request);
         return await ReportAggregationService.CreateExcelWorkbookAsync(
             source, dimension, includeSakhan, pagingRequest, worksheetName);
+    }
+
+    public static async Task<List<ReportAggregateResult>> GetAggregateRowsAsync(
+        TradeNetDbContext db,
+        sp_ImportPermitDetailReportRequest request,
+        ReportAggregateDimension dimension,
+        bool includeSakhan)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var source = await AggregateSourceRowsAsync(db, request);
+        return ReportAggregationService.Aggregate(source, dimension, includeSakhan);
     }
 
     private static async Task<List<AggregateSourceRow>> AggregateSourceRowsAsync(

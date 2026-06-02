@@ -106,6 +106,29 @@ public static class sp_MPUReport_V3
         bool includeTotalCount = true)
     {
         ArgumentNullException.ThrowIfNull(db);
+
+        var previousTimeout = db.Database.GetCommandTimeout();
+        try
+        {
+            return await ExecuteQueryable(db, request, sortColumn, sortOrder, pageIndex, pageSize, includeTotalCount)
+                .ToListAsync();
+        }
+        finally
+        {
+            db.Database.SetCommandTimeout(previousTimeout);
+        }
+    }
+
+    public static IQueryable<sp_MPUReport_V3Row> ExecuteQueryable(
+        TradeNetDbContext db,
+        sp_MPUReport_V3Request request,
+        string? sortColumn = null,
+        string? sortOrder = null,
+        int? pageIndex = null,
+        int? pageSize = null,
+        bool includeTotalCount = true)
+    {
+        ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
         var parameters = new[]
@@ -125,19 +148,9 @@ public static class sp_MPUReport_V3
             "EXEC dbo.sp_MPUReport_V3_pagination @FromDate, @ToDate, @FormType, @PaymentType, " +
             "@SortColumn, @SortOrder, @PageIndex, @PageSize, @IncludeTotalCount";
 
-        var previousTimeout = db.Database.GetCommandTimeout();
         db.Database.SetCommandTimeout(CommandTimeoutSeconds);
 
-        try
-        {
-            return await db.Database
-                .SqlQueryRaw<sp_MPUReport_V3Row>(sql, parameters)
-                .ToListAsync();
-        }
-        finally
-        {
-            db.Database.SetCommandTimeout(previousTimeout);
-        }
+        return db.Database.SqlQueryRaw<sp_MPUReport_V3Row>(sql, parameters);
     }
 
     public static IQueryable<sp_MPUReport_V3Result> Query(

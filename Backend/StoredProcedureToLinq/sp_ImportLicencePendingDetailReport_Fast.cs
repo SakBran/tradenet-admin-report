@@ -1,11 +1,14 @@
 using API.DBContext;
 using API.Model;
+using API.Service.ExcelExport;
 using API.Service.Reports;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
@@ -94,6 +97,24 @@ public static class sp_ImportLicencePendingDetailReport_Fast
             .ToList();
 
         return await ExcelGenerator.CreateWorkbookAsync(resolved.AsQueryable(), pagingRequest, worksheetName);
+    }
+
+    public static async IAsyncEnumerable<List<sp_ImportLicencePendingDetailReportResult>> StreamResolvedChunksAsync(
+        TradeNetDbContext db,
+        IMemoryCache cache,
+        sp_ImportLicencePendingDetailReportRequest request,
+        int chunkSize,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var countries = await ReportLookupCache.GetCountryNamesAsync(db, cache);
+
+        await foreach (var rawChunk in Rows(db, request).AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
+        {
+            yield return rawChunk.Select(row => row.ToResult(countries)).ToList();
+        }
     }
 
     private static IQueryable<ImportLicencePendingDetailFastRow> Rows(

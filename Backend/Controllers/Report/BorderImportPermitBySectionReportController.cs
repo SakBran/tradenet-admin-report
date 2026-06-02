@@ -1,7 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using API.DBContext;
 using API.Model;
+using API.Service.ExcelExport;
 using API.Service.Reports;
 using API.StoredProcedureToLinq;
 using Microsoft.AspNetCore.Authorization;
@@ -13,15 +17,19 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class BorderImportPermitBySectionReportController : ControllerBase
+    public class BorderImportPermitBySectionReportController : ControllerBase, IStreamingExcelReport
     {
+        private const string ReportKey = "BorderImportPermitBySectionReport";
+
         private readonly TradeNetDbContext _context;
         private readonly IMemoryCache _cache;
+        private readonly IExcelExportJobService _excelExportJobs;
 
-        public BorderImportPermitBySectionReportController(TradeNetDbContext context, IMemoryCache cache)
+        public BorderImportPermitBySectionReportController(TradeNetDbContext context, IMemoryCache cache, IExcelExportJobService excelExportJobs)
         {
             _context = context;
             _cache = cache;
+            _excelExportJobs = excelExportJobs;
         }
 
         [HttpPost]

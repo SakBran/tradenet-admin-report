@@ -109,6 +109,19 @@ public static class sp_ExtensionReport
         int? pageSize = null,
         bool includeTotalCount = true)
     {
+        return await ExecuteQueryable(db, request, sortColumn, sortOrder, pageIndex, pageSize, includeTotalCount)
+            .ToListAsync();
+    }
+
+    public static IQueryable<sp_ExtensionReportRow> ExecuteQueryable(
+        TradeNetDbContext db,
+        sp_ExtensionReportRequest request,
+        string? sortColumn = null,
+        string? sortOrder = null,
+        int? pageIndex = null,
+        int? pageSize = null,
+        bool includeTotalCount = true)
+    {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
@@ -131,9 +144,7 @@ public static class sp_ExtensionReport
             "EXEC dbo.sp_ExtensionReport_pagination @FormType, @FromDate, @ToDate, @ExportImportSectionId, " +
             "@CompanyRegistrationNo, @SakhanId, @SortColumn, @SortOrder, @PageIndex, @PageSize, @IncludeTotalCount";
 
-        return await db.Database
-            .SqlQueryRaw<sp_ExtensionReportRow>(sql, parameters)
-            .ToListAsync();
+        return db.Database.SqlQueryRaw<sp_ExtensionReportRow>(sql, parameters);
     }
 
     public static IQueryable<sp_ExtensionReportResult> Query(

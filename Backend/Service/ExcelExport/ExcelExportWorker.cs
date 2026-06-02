@@ -149,13 +149,11 @@ namespace API.Service.ExcelExport
                 int sheetCount;
                 long rowCount;
                 using (var fileStream = fileStore.OpenWrite(relativePath))
-                using (var writer = new StreamingExcelWriter(fileStream, job.ReportTitle))
                 {
-                    var context = new ExcelExportContext(services, job.RequestJson, writer, _options.ChunkSize, stoppingToken);
+                    var context = new ExcelExportContext(services, job.RequestJson, fileStream, _options.ChunkSize, stoppingToken);
                     await handler.GenerateAsync(context);
-                    writer.Finish();
-                    sheetCount = writer.SheetCount;
-                    rowCount = writer.TotalDataRows;
+                    sheetCount = context.SheetCount ?? 0;
+                    rowCount = context.RowCount ?? 0;
                 }
 
                 var size = fileStore.GetSize(relativePath);

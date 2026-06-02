@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
@@ -124,6 +125,18 @@ public static class sp_DirectorListReport
         int? pageIndex = null,
         int? pageSize = null)
     {
+        return await ExecuteQueryable(db, request, sortColumn, sortOrder, pageIndex, pageSize)
+            .ToListAsync();
+    }
+
+    public static IQueryable<sp_DirectorListReportRow> ExecuteQueryable(
+        TradeNetDbContext db,
+        sp_DirectorListReportRequest request,
+        string? sortColumn = null,
+        string? sortOrder = null,
+        int? pageIndex = null,
+        int? pageSize = null)
+    {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
@@ -150,8 +163,6 @@ public static class sp_DirectorListReport
             "@Nationality, @NRCType, @NRCPrefixId, @NRCPrefixCodeId, @NRCNo, @Type, " +
             "@SortColumn, @SortOrder, @PageIndex, @PageSize";
 
-        return await db.Database
-            .SqlQueryRaw<sp_DirectorListReportRow>(sql, parameters)
-            .ToListAsync();
+        return db.Database.SqlQueryRaw<sp_DirectorListReportRow>(sql, parameters);
     }
 }

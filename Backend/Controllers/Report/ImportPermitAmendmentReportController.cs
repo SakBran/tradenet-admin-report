@@ -1,20 +1,27 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using API.DBContext;
 using API.Model;
+using API.Service.ExcelExport;
 using API.Service.Reports;
 using API.StoredProcedureToLinq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Controllers.Report
 {
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class ImportPermitAmendmentReportController : ControllerBase
+    public class ImportPermitAmendmentReportController : ControllerBase, IStreamingExcelReport
     {
+        private const string ReportKey = "ImportPermitAmendmentReport";
+
         private const int DefaultPageSize = 10;
         private const int MaxPageSize = 1000;
 
@@ -22,10 +29,12 @@ namespace Backend.Controllers.Report
         private const int MaxExcelDataRows = 1_048_576 - 1;
 
         private readonly TradeNetDbContext _context;
+        private readonly IExcelExportJobService _excelExportJobs;
 
-        public ImportPermitAmendmentReportController(TradeNetDbContext context)
+        public ImportPermitAmendmentReportController(TradeNetDbContext context, IExcelExportJobService excelExportJobs)
         {
             _context = context;
+            _excelExportJobs = excelExportJobs;
         }
 
         [HttpPost]
@@ -63,26 +72,40 @@ namespace Backend.Controllers.Report
         [HttpPost("Excel")]
         public async Task<IActionResult> Excel([FromBody] ImportPermitAmendmentReportRequest? request)
         {
-            if (!TryCreateReportRequest(request, out var procedureRequest, out var errorResult))
+            if (!TryCreateReportRequest(request, out _, out var errorResult))
             {
                 return errorResult!;
             }
 
-            var sortColumn = string.IsNullOrWhiteSpace(request!.SortColumn) ? null : request.SortColumn;
-            var sortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? null : request.SortOrder;
+            var result = await _excelExportJobs.EnqueueAsync(
+                ReportKey,
+                request!,
+                request!.ToDate,
+                User.FindFirst(ClaimTypes.Name)?.Value);
 
-            var rows = await sp_AmendReport.ExecuteAsync(
-                _context, procedureRequest!, sortColumn, sortOrder, pageIndex: null, pageSize: null);
+            return Ok(result);
+        }
 
-            if (rows.Count > MaxExcelDataRows)
+        // --- Async Excel export streaming (used by the background queue worker) ---
+        public string ExcelWorksheetTitle => "Import Permit Amendment Report";
+        public Type ExcelRequestType => typeof(ImportPermitAmendmentReportRequest);
+
+        [NonAction]
+        public Task WriteRowsAsync(object request, IExcelRowSink sink, int chunkSize, CancellationToken cancellationToken)
+            => WriteRowsAsync((ImportPermitAmendmentReportRequest)request, sink, chunkSize, cancellationToken);
+
+        private async Task WriteRowsAsync(
+            ImportPermitAmendmentReportRequest request,
+            IExcelRowSink sink,
+            int chunkSize,
+            CancellationToken cancellationToken)
+        {
+            TryCreateReportRequest(request, out var procedureRequest, out _);
+            await foreach (var chunk in sp_AmendReport.ExecuteQueryable(_context, procedureRequest!)
+                .AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
             {
-                return BadRequest($"Excel export supports up to {MaxExcelDataRows} data rows.");
+                sink.Append(chunk.Select(row => row.ToResult()).ToList());
             }
-
-            var data = rows.Select(row => row.ToResult()).ToList();
-            var fileBytes = ExcelGenerator.CreateWorkbook(data, "Import Permit Amendment Report");
-
-            return File(fileBytes, ExcelGenerator.ContentType, "ImportPermitAmendmentReport.xlsx");
         }
 
         private bool TryCreateReportRequest(

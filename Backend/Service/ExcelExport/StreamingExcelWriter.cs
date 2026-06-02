@@ -49,17 +49,23 @@ namespace API.Service.ExcelExport
         public int SheetCount => _sheetCount;
         public long TotalDataRows => _totalDataRows;
 
-        /// <summary>Appends a chunk of rows. The first chunk fixes the column set from typeof(T).</summary>
+        /// <summary>
+        /// Appends a chunk of rows. The column set is fixed from the runtime type of
+        /// the first non-null row (so callers may pass boxed <c>object</c> chunks).
+        /// </summary>
         public void AppendRows<T>(IReadOnlyList<T> rows)
         {
             ArgumentNullException.ThrowIfNull(rows);
-            if (_properties == null)
-            {
-                _properties = GetExportProperties<T>();
-            }
 
             foreach (var row in rows)
             {
+                if (row == null)
+                {
+                    continue;
+                }
+
+                _properties ??= GetExportProperties(row.GetType());
+
                 if (_sheetWriter == null || _rowInSheet >= MaxRowsPerSheet)
                 {
                     StartNewSheet();
@@ -137,9 +143,9 @@ namespace API.Service.ExcelExport
             _sheetStream = null;
         }
 
-        private static PropertyInfo[] GetExportProperties<T>()
+        private static PropertyInfo[] GetExportProperties(Type type)
         {
-            return typeof(T)
+            return type
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Where(property => property.GetIndexParameters().Length == 0)
                 .ToArray();

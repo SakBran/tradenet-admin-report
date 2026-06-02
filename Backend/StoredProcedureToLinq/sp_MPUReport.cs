@@ -99,6 +99,19 @@ public static class sp_MPUReport
         int? pageSize = null,
         bool includeTotalCount = true)
     {
+        return await ExecuteQueryable(db, request, sortColumn, sortOrder, pageIndex, pageSize, includeTotalCount)
+            .ToListAsync();
+    }
+
+    public static IQueryable<sp_MPUReportRow> ExecuteQueryable(
+        TradeNetDbContext db,
+        sp_MPUReportRequest request,
+        string? sortColumn = null,
+        string? sortOrder = null,
+        int? pageIndex = null,
+        int? pageSize = null,
+        bool includeTotalCount = true)
+    {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
@@ -119,9 +132,7 @@ public static class sp_MPUReport
             "EXEC dbo.sp_MPUReport_pagination @FromDate, @ToDate, @FormType, @PaymentType, " +
             "@SortColumn, @SortOrder, @PageIndex, @PageSize, @IncludeTotalCount";
 
-        return await db.Database
-            .SqlQueryRaw<sp_MPUReportRow>(sql, parameters)
-            .ToListAsync();
+        return db.Database.SqlQueryRaw<sp_MPUReportRow>(sql, parameters);
     }
 
     public static IQueryable<sp_MPUReportResult> Query(

@@ -1,31 +1,36 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using API.DBContext;
 using API.Model;
+using API.Service.ExcelExport;
 using API.Service.Reports;
 using API.StoredProcedureToLinq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Controllers.Report
 {
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class MPUReportV3Controller : ControllerBase
+    public class MPUReportV3Controller : ControllerBase, IStreamingExcelReport
     {
+        private const string ReportKey = "MPUReportV3";
         private const int DefaultPageSize = 10;
         private const int MaxPageSize = 1000;
 
-        // Excel worksheets allow 1,048,576 rows including the header.
-        private const int MaxExcelDataRows = 1_048_576 - 1;
-
         private readonly TradeNetDbContext _context;
+        private readonly IExcelExportJobService _excelExportJobs;
 
-        public MPUReportV3Controller(TradeNetDbContext context)
+        public MPUReportV3Controller(TradeNetDbContext context, IExcelExportJobService excelExportJobs)
         {
             _context = context;
+            _excelExportJobs = excelExportJobs;
         }
 
         [HttpPost]
@@ -59,29 +64,40 @@ namespace Backend.Controllers.Report
         [HttpPost("Excel")]
         public async Task<IActionResult> Excel([FromBody] MPUReportV3Request? request)
         {
-            if (!TryCreateReportRequest(request, out var procedureRequest, out var errorResult))
+            if (!TryCreateReportRequest(request, out _, out var errorResult))
             {
                 return errorResult!;
             }
 
-            var sortColumn = string.IsNullOrWhiteSpace(request!.SortColumn) ? null : request.SortColumn;
-            var sortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? null : request.SortOrder;
+            var result = await _excelExportJobs.EnqueueAsync(
+                ReportKey,
+                request!,
+                request!.ToDate,
+                User.FindFirst(ClaimTypes.Name)?.Value);
 
-            var rows = await sp_MPUReport_V3.ExecuteAsync(
-                _context, procedureRequest!, sortColumn, sortOrder, pageIndex: null, pageSize: null);
+            return Ok(result);
+        }
 
-            if (rows.Count > MaxExcelDataRows)
+        // --- Async Excel export streaming (used by the background queue worker) ---
+        public string ExcelWorksheetTitle => "MPU Report V3";
+        public Type ExcelRequestType => typeof(MPUReportV3Request);
+
+        [NonAction]
+        public Task WriteRowsAsync(object request, IExcelRowSink sink, int chunkSize, CancellationToken cancellationToken)
+            => WriteRowsAsync((MPUReportV3Request)request, sink, chunkSize, cancellationToken);
+
+        private async Task WriteRowsAsync(
+            MPUReportV3Request request,
+            IExcelRowSink sink,
+            int chunkSize,
+            CancellationToken cancellationToken)
+        {
+            TryCreateReportRequest(request, out var procedureRequest, out _);
+            await foreach (var chunk in sp_MPUReport_V3.ExecuteQueryable(_context, procedureRequest!)
+                .AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
             {
-                return BadRequest($"Excel export supports up to {MaxExcelDataRows} data rows.");
+                sink.Append(chunk.Select(row => row.ToResult()).ToList());
             }
-
-            var data = rows.Select(row => row.ToResult()).ToList();
-            var fileBytes = ExcelGenerator.CreateWorkbook(data, "MPU Report V3");
-
-            return File(
-                fileBytes,
-                ExcelGenerator.ContentType,
-                "MPUReportV3.xlsx");
         }
 
         private bool TryCreateReportRequest(

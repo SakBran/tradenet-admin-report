@@ -157,6 +157,36 @@ public static class sp_ImportLicenceDetailReport_Fast
             groups, dimension, includeSakhan, pagingRequest, worksheetName);
     }
 
+    public static async Task<List<ReportAggregateResult>> GetAggregateRowsAsync(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request,
+        ReportAggregateDimension dimension,
+        bool includeSakhan)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        return await AggregateInSqlAsync(db, request, dimension, includeSakhan);
+    }
+
+    public static async Task<List<ReportAggregateResult>> GetSectionRowsAsync(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        return await SectionGroups(db, request)
+            .Select(group => new ReportAggregateResult
+            {
+                SectionName = group.SectionName,
+                NoOfLicences = group.NoOfLicences,
+                TotalValue = group.TotalValue,
+                Currency = group.Currency,
+            })
+            .ToListAsync();
+    }
+
     /// <summary>
     /// Import Licence By Section report. Groups the filtered detail rows by Section (+ Currency)
     /// entirely in SQL — GROUP BY, ORDER BY and OFFSET/FETCH paging all run on the server, so only

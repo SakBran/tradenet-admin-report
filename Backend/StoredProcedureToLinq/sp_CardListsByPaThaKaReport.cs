@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
@@ -81,6 +82,18 @@ public static class sp_CardListsByPaThaKaReport
         int? pageIndex = null,
         int? pageSize = null)
     {
+        return await ExecuteQueryable(db, request, sortColumn, sortOrder, pageIndex, pageSize)
+            .ToListAsync();
+    }
+
+    public static IQueryable<sp_CardListsByPaThaKaReportRow> ExecuteQueryable(
+        TradeNetDbContext db,
+        sp_CardListsByPaThaKaReportRequest request,
+        string? sortColumn = null,
+        string? sortOrder = null,
+        int? pageIndex = null,
+        int? pageSize = null)
+    {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
@@ -97,8 +110,6 @@ public static class sp_CardListsByPaThaKaReport
             "EXEC dbo.sp_CardListsByPaThaKaReport_pagination @CompanyRegistrationNo, " +
             "@SortColumn, @SortOrder, @PageIndex, @PageSize";
 
-        return await db.Database
-            .SqlQueryRaw<sp_CardListsByPaThaKaReportRow>(sql, parameters)
-            .ToListAsync();
+        return db.Database.SqlQueryRaw<sp_CardListsByPaThaKaReportRow>(sql, parameters);
     }
 }

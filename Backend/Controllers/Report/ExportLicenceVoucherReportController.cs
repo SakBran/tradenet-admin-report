@@ -1,24 +1,33 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using API.DBContext;
 using API.Model;
+using API.Service.ExcelExport;
 using API.Service.Reports;
 using API.StoredProcedureToLinq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Controllers.Report
 {
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class ExportLicenceVoucherReportController : ControllerBase
+    public class ExportLicenceVoucherReportController : ControllerBase, IStreamingExcelReport
     {
-        private readonly TradeNetDbContext _context;
+        private const string ReportKey = "ExportLicenceVoucherReport";
 
-        public ExportLicenceVoucherReportController(TradeNetDbContext context)
+        private readonly TradeNetDbContext _context;
+        private readonly IExcelExportJobService _excelExportJobs;
+
+        public ExportLicenceVoucherReportController(TradeNetDbContext context, IExcelExportJobService excelExportJobs)
         {
             _context = context;
+            _excelExportJobs = excelExportJobs;
         }
 
         [HttpPost]
@@ -38,29 +47,40 @@ namespace Backend.Controllers.Report
         [HttpPost("Excel")]
         public async Task<IActionResult> Excel([FromBody] ExportLicenceVoucherReportRequest? request)
         {
-            if (!TryCreateReportRequest(request, out var procedureRequest, out var errorResult))
+            if (!TryCreateReportRequest(request, out _, out var errorResult))
             {
                 return errorResult!;
             }
 
-            var query = sp_VoucherReport.Query(_context, procedureRequest!);
-            byte[] fileBytes;
-            try
-            {
-                fileBytes = await ExcelGenerator.CreateWorkbookAsync(
-                    query,
-                    request!,
-                    "Export Licence Voucher Report");
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await _excelExportJobs.EnqueueAsync(
+                ReportKey,
+                request!,
+                request!.ToDate,
+                User.FindFirst(ClaimTypes.Name)?.Value);
 
-            return File(
-                fileBytes,
-                ExcelGenerator.ContentType,
-                "ExportLicenceVoucherReport.xlsx");
+            return Ok(result);
+        }
+
+        // --- Async Excel export streaming (used by the background queue worker) ---
+        public string ExcelWorksheetTitle => "Export Licence Voucher Report";
+        public Type ExcelRequestType => typeof(ExportLicenceVoucherReportRequest);
+
+        [NonAction]
+        public Task WriteRowsAsync(object request, IExcelRowSink sink, int chunkSize, CancellationToken cancellationToken)
+            => WriteRowsAsync((ExportLicenceVoucherReportRequest)request, sink, chunkSize, cancellationToken);
+
+        private async Task WriteRowsAsync(
+            ExportLicenceVoucherReportRequest request,
+            IExcelRowSink sink,
+            int chunkSize,
+            CancellationToken cancellationToken)
+        {
+            TryCreateReportRequest(request, out var procedureRequest, out _);
+            var query = sp_VoucherReport.Query(_context, procedureRequest!);
+            await foreach (var chunk in query.AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
+            {
+                sink.Append(chunk);
+            }
         }
 
         private bool TryCreateReportRequest(
