@@ -7,8 +7,10 @@ in **TemplateDB**, an in-process background worker generates the file with
 downloads it from a **shared "Exports" drive** page. Identical requests reuse a
 finished file instead of regenerating.
 
-> Status: **infrastructure + pilot reports done**; remaining 155 controllers
-> roll out per the playbook below.
+> Status: **COMPLETE — all 158 report controllers converted** to the streaming
+> queue. Backend + frontend build green; `StreamingExcelWriterTests` pass.
+> Not yet smoke-tested against the live TradeNetDB (no DB at build time) — verify
+> the streaming queries before production.
 
 ---
 
@@ -104,37 +106,32 @@ Base: `api/ExcelExport` (all `[Authorize]`).
 
 ---
 
-## Handler kinds (registry)
+## How each controller plugs in (final design)
 
-Each report registers one `IExcelReportJobHandler` (in
-`Backend/Service/ExcelExport/Handlers/`). Three shapes cover all reports:
+There are **no per-report handler classes**. Each report **controller** implements
+`IStreamingExcelReport` and is auto-discovered by reflection
+(`ExcelExportServiceCollectionExtensions.RegisterReportHandlers`), wrapped in one
+generic `ControllerStreamingExcelReportJobHandler`. The worker instantiates the
+controller via `ActivatorUtilities` and calls `WriteRowsAsync`, so the
+controller's **own** `TryCreateReportRequest` mapping + converter calls are reused
+(report logic is never duplicated). `reportKey` = controller name without
+`Controller`.
 
-1. **Simple `IQueryable`** (most reports) — use
-   `QueryableExcelReportJobHandler<TRequest, TResult>` with
-   `(TradeNetDbContext db, TRequest req) => IQueryable<TResult>`. The handler
-   pages it in chunks automatically (applies a deterministic `OrderBy` if the
-   query is unordered).
-2. **`_Fast` with per-chunk lookup resolution** — a small custom handler that
-   pages the raw row queryable, calls the report's `ToResult(countryNames)` per
-   chunk, and appends. Mirrors `*_Fast.CreateExcelWorkbookAsync` but chunked.
-3. **Aggregate** — custom handler that runs the SQL GROUP BY and appends the
-   (already small) grouped result.
+Per controller:
+- `[HttpPost("Excel")]` → validate via `TryCreateReportRequest` →
+  `_excelExportJobs.EnqueueAsync(ReportKey, request!, request!.ToDate, User.FindFirst(ClaimTypes.Name)?.Value)` → `Ok(result)`.
+  (Reports with no date range pass `DateTime.Today`.)
+- `ExcelWorksheetTitle`, `ExcelRequestType`, and
+  `[NonAction] WriteRowsAsync(object, IExcelRowSink, int, CancellationToken)`.
 
-`reportKey` convention = controller route name without `Controller`
-(e.g. `MemberRegistrationReport`).
+`WriteRowsAsync` streams rows into the sink, by report kind:
+1. **Simple `IQueryable`** — `Sp.Query(_context, procReq).AsAsyncEnumerable().ChunkAsync(chunkSize, ct)`.
+2. **Execute (stored-proc)** — `Sp.ExecuteQueryable(_context, procReq).AsAsyncEnumerable().ChunkAsync(...)`, mapping `row.ToResult()` per chunk. `ExecuteQueryable` is a streaming sibling added beside each `ExecuteAsync` (which now delegates to it).
+3. **`_Fast` detail (CSV lookup)** — `Sp.StreamResolvedChunksAsync(_context, cache, procReq, chunkSize, ct)` (resolves lookups per chunk).
+4. **Aggregate / Section** — `Sp.GetAggregateRowsAsync(_context, procReq, dimension, includeSakhan)` / `GetSectionRowsAsync` / `sp_HSCodeReport.GetAggregateRowsAsync(_context, procReq)`; append the grouped list (small).
 
----
-
-## Per-controller rollout (the remaining 155)
-
-For each existing `[HttpPost("Excel")]`:
-1. **Register a handler** for its `reportKey` (kind 1/2/3 above).
-2. **Replace the action body** with a call to `IExcelExportJobService.EnqueueAsync(reportKey, request, User)` and return its result DTO. (The old direct-`File()` body is removed.)
-3. No frontend change needed per-report — `GenericReportPage` handles the
-   enqueue/poll/download flow generically off `config.excelRoute`.
-
-Pilot (done): `MemberRegistrationReport` (simple) and
-`ImportLicenceDetailReport` (`_Fast` + CSV lookup).
+No per-report frontend change — `GenericReportPage` drives enqueue/poll/download
+generically off `config.excelRoute`. All 158 controllers are converted.
 
 ---
 

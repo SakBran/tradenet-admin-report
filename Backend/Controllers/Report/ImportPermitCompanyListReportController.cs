@@ -46,30 +46,38 @@ namespace Backend.Controllers.Report
         [HttpPost("Excel")]
         public async Task<IActionResult> Excel([FromBody] ImportPermitCompanyListReportRequest? request)
         {
-            if (!TryCreateReportRequest(request, out var procedureRequest, out var errorResult))
+            if (!TryCreateReportRequest(request, out _, out var errorResult))
             {
                 return errorResult!;
             }
 
-            byte[] fileBytes;
-            try
-            {
-                fileBytes = await sp_ImportPermitDetailReport_Fast.CreateAggregateExcelWorkbookAsync(
-                    _context,
-                    procedureRequest!,
-                    request!,
-                    ReportAggregateDimension.Company,
-                    includeSakhan: false, "Import Permit Company List Report");
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await _excelExportJobs.EnqueueAsync(
+                ReportKey,
+                request!,
+                request!.ToDate,
+                User.FindFirst(ClaimTypes.Name)?.Value);
 
-            return File(
-                fileBytes,
-                ExcelGenerator.ContentType,
-                "ImportPermitCompanyListReport.xlsx");
+            return Ok(result);
+        }
+
+        // --- Async Excel export streaming (used by the background queue worker) ---
+        public string ExcelWorksheetTitle => "Import Permit Company List Report";
+        public Type ExcelRequestType => typeof(ImportPermitCompanyListReportRequest);
+
+        [NonAction]
+        public Task WriteRowsAsync(object request, IExcelRowSink sink, int chunkSize, CancellationToken cancellationToken)
+            => WriteRowsAsync((ImportPermitCompanyListReportRequest)request, sink, chunkSize, cancellationToken);
+
+        private async Task WriteRowsAsync(
+            ImportPermitCompanyListReportRequest request,
+            IExcelRowSink sink,
+            int chunkSize,
+            CancellationToken cancellationToken)
+        {
+            TryCreateReportRequest(request, out var procedureRequest, out _);
+            var rows = await sp_ImportPermitDetailReport_Fast.GetAggregateRowsAsync(
+                _context, procedureRequest!, ReportAggregateDimension.Company, includeSakhan: false);
+            sink.Append(rows);
         }
 
         private bool TryCreateReportRequest(

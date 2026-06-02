@@ -49,30 +49,38 @@ namespace Backend.Controllers.Report
         [HttpPost("Excel")]
         public async Task<IActionResult> Excel([FromBody] BorderImportPermitBySectionReportRequest? request)
         {
-            if (!TryCreateReportRequest(request, out var procedureRequest, out var errorResult))
+            if (!TryCreateReportRequest(request, out _, out var errorResult))
             {
                 return errorResult!;
             }
 
-            byte[] fileBytes;
-            try
-            {
-                fileBytes = await sp_ImportPermitDetailReport_Fast.CreateAggregateExcelWorkbookAsync(
-                    _context,
-                    procedureRequest!,
-                    request!,
-                    ReportAggregateDimension.Section,
-                    includeSakhan: false, "Border Import Permit By Section Report");
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await _excelExportJobs.EnqueueAsync(
+                ReportKey,
+                request!,
+                request!.ToDate,
+                User.FindFirst(ClaimTypes.Name)?.Value);
 
-            return File(
-                fileBytes,
-                ExcelGenerator.ContentType,
-                "BorderImportPermitBySectionReport.xlsx");
+            return Ok(result);
+        }
+
+        // --- Async Excel export streaming (used by the background queue worker) ---
+        public string ExcelWorksheetTitle => "Border Import Permit By Section Report";
+        public Type ExcelRequestType => typeof(BorderImportPermitBySectionReportRequest);
+
+        [NonAction]
+        public Task WriteRowsAsync(object request, IExcelRowSink sink, int chunkSize, CancellationToken cancellationToken)
+            => WriteRowsAsync((BorderImportPermitBySectionReportRequest)request, sink, chunkSize, cancellationToken);
+
+        private async Task WriteRowsAsync(
+            BorderImportPermitBySectionReportRequest request,
+            IExcelRowSink sink,
+            int chunkSize,
+            CancellationToken cancellationToken)
+        {
+            TryCreateReportRequest(request, out var procedureRequest, out _);
+            var rows = await sp_ImportPermitDetailReport_Fast.GetAggregateRowsAsync(
+                _context, procedureRequest!, ReportAggregateDimension.Section, includeSakhan: false);
+            sink.Append(rows);
         }
 
         private bool TryCreateReportRequest(
