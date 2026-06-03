@@ -1,4 +1,4 @@
-CREATE OR ALTER PROCEDURE [dbo].[sp_NewReport_pagination]
+﻿CREATE OR ALTER PROCEDURE [dbo].[sp_NewReport_pagination]
     @FormType nvarchar(50) = N'',
     @FromDate datetime = NULL,
     @ToDate datetime = NULL,
@@ -287,6 +287,110 @@ BorderExportLicence.Id AS __k_Id
     ORDER BY ' + @ob + N'
     OPTION (RECOMPILE);';
     END
+    ELSE IF @FormType = N'Border Import Licence'
+    BEGIN
+        SET @cntpart = CASE WHEN @IncludeTotalCount = 1
+            THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM (
+		SELECT BorderImportLicence.Id FROM BorderImportLicence
+		INNER JOIN PaThaKa ON BorderImportLicence.PaThaKaId = PaThaKa.Id
+		INNER JOIN ExportImportSection section ON BorderImportLicence.ExportImportSectionId = section.Id
+		INNER JOIN Sakhan sakhan ON BorderImportLicence.SakhanId = sakhan.Id
+		WHERE ApplyType=''New'' AND BorderImportLicence.Status=''Approved'' AND CardType=''Pa Tha Ka''
+		AND (BorderImportLicence.CreatedDate>=@FromDate AND BorderImportLicence.CreatedDate<=@ToDate)
+		AND BorderImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+		AND BorderImportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportLicence.SakhanId ELSE @SakhanId END)
+		AND BorderImportLicence.auto=(CASE WHEN @auto='''' then BorderImportLicence.auto ELSE @auto END)
+		UNION ALL
+		SELECT BorderImportLicence.Id FROM BorderImportLicence
+		INNER JOIN IndividualTrading ON BorderImportLicence.IndividualTradingId = IndividualTrading.Id
+		INNER JOIN ExportImportSection section ON BorderImportLicence.ExportImportSectionId = section.Id
+		INNER JOIN Sakhan sakhan ON BorderImportLicence.SakhanId = sakhan.Id
+		WHERE ApplyType=''New'' AND BorderImportLicence.Status=''Approved'' AND CardType=''Individual Trading''
+		AND (BorderImportLicence.CreatedDate>=@FromDate AND BorderImportLicence.CreatedDate<=@ToDate)
+		AND BorderImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
+		AND BorderImportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportLicence.SakhanId ELSE @SakhanId END)
+		AND BorderImportLicence.auto=(CASE WHEN @auto='''' then BorderImportLicence.auto ELSE @auto END)
+	) tmp); '
+            ELSE N'DECLARE @__total int = NULL; ' END;
+
+        SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM BorderImportLicenceItem
+		INNER JOIN Currency currency ON BorderImportLicenceItem.CurrencyId = currency.Id
+		WHERE BorderImportLicenceItem.BorderImportLicenceId=pg.__k_Id) Currency,
+        (SELECT ISNULL(SUM(BorderImportLicenceItem.Amount),0) FROM BorderImportLicenceItem
+		WHERE BorderImportLicenceItem.BorderImportLicenceId=pg.__k_Id) Amount, @__total AS TotalCount
+    FROM (
+        SELECT * FROM (
+        SELECT BorderImportLicence.CreatedDate Date,
+section.Code SectionCode,
+section.Name SectionName,
+OldImportLicenceNo OldLicenceNo,
+ImportLicenceNo LicenceNo,
+CONVERT(varchar,BorderImportLicence.CreatedDate,103) sDate,
+PaThaKa.CompanyRegistrationNo,
+PaThaKa.CompanyName,
+UnitLevel,
+StreetNumberStreetName,
+QuarterCityTownship,
+State,
+Country,
+PostalCode,
+BorderImportLicence.auto,
+BorderImportLicence.quota,
+CAST(NULL AS nvarchar(max)) CommodityType,
+sakhan.Id SakhanId,
+sakhan.Code SakhanCode,
+sakhan.Name SakhanName,
+BorderImportLicence.Id AS __k_Id
+        FROM BorderImportLicence
+		INNER JOIN PaThaKa ON BorderImportLicence.PaThaKaId = PaThaKa.Id
+		INNER JOIN ExportImportSection section ON BorderImportLicence.ExportImportSectionId = section.Id
+		INNER JOIN Sakhan sakhan ON BorderImportLicence.SakhanId = sakhan.Id
+		WHERE ApplyType=''New'' AND BorderImportLicence.Status=''Approved'' AND CardType=''Pa Tha Ka''
+		AND (BorderImportLicence.CreatedDate>=@FromDate AND BorderImportLicence.CreatedDate<=@ToDate)
+		AND BorderImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+		AND BorderImportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportLicence.SakhanId ELSE @SakhanId END)
+		AND BorderImportLicence.auto=(CASE WHEN @auto='''' then BorderImportLicence.auto ELSE @auto END)
+		UNION ALL
+        SELECT BorderImportLicence.CreatedDate Date,
+section.Code SectionCode,
+section.Name SectionName,
+OldImportLicenceNo OldLicenceNo,
+ImportLicenceNo LicenceNo,
+CONVERT(varchar,BorderImportLicence.CreatedDate,103) sDate,
+IndividualTrading.TINNo CompanyRegistrationNo,
+IndividualTrading.Name CompanyName,
+UnitLevel,
+StreetNumberStreetName,
+QuarterCityTownship,
+State,
+Country,
+PostalCode,
+BorderImportLicence.auto,
+BorderImportLicence.quota,
+CAST(NULL AS nvarchar(max)) CommodityType,
+sakhan.Id SakhanId,
+sakhan.Code SakhanCode,
+sakhan.Name SakhanName,
+BorderImportLicence.Id AS __k_Id
+        FROM BorderImportLicence
+		INNER JOIN IndividualTrading ON BorderImportLicence.IndividualTradingId = IndividualTrading.Id
+		INNER JOIN ExportImportSection section ON BorderImportLicence.ExportImportSectionId = section.Id
+		INNER JOIN Sakhan sakhan ON BorderImportLicence.SakhanId = sakhan.Id
+		WHERE ApplyType=''New'' AND BorderImportLicence.Status=''Approved'' AND CardType=''Individual Trading''
+		AND (BorderImportLicence.CreatedDate>=@FromDate AND BorderImportLicence.CreatedDate<=@ToDate)
+		AND BorderImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
+		AND BorderImportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportLicence.SakhanId ELSE @SakhanId END)
+		AND BorderImportLicence.auto=(CASE WHEN @auto='''' then BorderImportLicence.auto ELSE @auto END)
+        ) u
+        ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
+    ) pg
+    ORDER BY ' + @ob + N'
+    OPTION (RECOMPILE);';
+    END
     ELSE IF @FormType = N'Border Export Permit'
     BEGIN
         SET @cntpart = CASE WHEN @IncludeTotalCount = 1
@@ -389,6 +493,114 @@ BorderExportPermit.Id AS __k_Id
 		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
 		AND BorderExportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderExportPermit.SakhanId ELSE @SakhanId END)
 		AND (@auto='' OR BorderExportPermit.auto = @auto)
+        ) u
+        ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
+    ) pg
+    ORDER BY ' + @ob + N'
+    OPTION (RECOMPILE);';
+    END
+    ELSE IF @FormType = N'Border Import Permit'
+    BEGIN
+        SET @cntpart = CASE WHEN @IncludeTotalCount = 1
+            THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM (
+		SELECT BorderImportPermit.Id FROM BorderImportPermit
+		INNER JOIN PaThaKa ON BorderImportPermit.PaThaKaId = PaThaKa.Id
+		INNER JOIN ExportImportSection section ON BorderImportPermit.ExportImportSectionId = section.Id
+		INNER JOIN Sakhan sakhan ON BorderImportPermit.SakhanId = sakhan.Id
+		WHERE ApplyType=''New'' AND BorderImportPermit.Status=''Approved'' AND CardType=''Pa Tha Ka''
+		AND ((@FromDate IS NULL) OR BorderImportPermit.CreatedDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR BorderImportPermit.CreatedDate < DATEADD(day,1,@ToDate))
+		AND BorderImportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+		AND BorderImportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportPermit.SakhanId ELSE @SakhanId END)
+		AND (@auto='' OR BorderImportPermit.auto = @auto)
+		UNION ALL
+		SELECT BorderImportPermit.Id FROM BorderImportPermit
+		INNER JOIN IndividualTrading ON BorderImportPermit.IndividualTradingId = IndividualTrading.Id
+		INNER JOIN ExportImportSection section ON BorderImportPermit.ExportImportSectionId = section.Id
+		INNER JOIN Sakhan sakhan ON BorderImportPermit.SakhanId = sakhan.Id
+		WHERE ApplyType=''New'' AND BorderImportPermit.Status=''Approved'' AND CardType=''Individual Trading''
+		AND ((@FromDate IS NULL) OR BorderImportPermit.CreatedDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR BorderImportPermit.CreatedDate < DATEADD(day,1,@ToDate))
+		AND BorderImportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
+		AND BorderImportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportPermit.SakhanId ELSE @SakhanId END)
+		AND (@auto='' OR BorderImportPermit.auto = @auto)
+	) tmp); '
+            ELSE N'DECLARE @__total int = NULL; ' END;
+
+        SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM BorderImportPermitItem
+		INNER JOIN Currency currency ON BorderImportPermitItem.CurrencyId = currency.Id
+		WHERE BorderImportPermitItem.BorderImportPermitId=pg.__k_Id) Currency,
+        (SELECT ISNULL(SUM(BorderImportPermitItem.Amount),0) FROM BorderImportPermitItem
+		WHERE BorderImportPermitItem.BorderImportPermitId=pg.__k_Id) Amount, @__total AS TotalCount
+    FROM (
+        SELECT * FROM (
+        SELECT BorderImportPermit.CreatedDate Date,
+section.Code SectionCode,
+section.Name SectionName,
+OldImportPermitNo OldLicenceNo,
+ImportPermitNo LicenceNo,
+CONVERT(varchar,BorderImportPermit.CreatedDate,103) sDate,
+PaThaKa.CompanyRegistrationNo,
+PaThaKa.CompanyName,
+UnitLevel,
+StreetNumberStreetName,
+QuarterCityTownship,
+State,
+Country,
+PostalCode,
+BorderImportPermit.auto,
+CAST(NULL AS nvarchar(50)) quota,
+CAST(NULL AS nvarchar(max)) CommodityType,
+sakhan.Id SakhanId,
+sakhan.Code SakhanCode,
+sakhan.Name SakhanName,
+BorderImportPermit.Id AS __k_Id
+        FROM BorderImportPermit
+		INNER JOIN PaThaKa ON BorderImportPermit.PaThaKaId = PaThaKa.Id
+		INNER JOIN ExportImportSection section ON BorderImportPermit.ExportImportSectionId = section.Id
+		INNER JOIN Sakhan sakhan ON BorderImportPermit.SakhanId = sakhan.Id
+		WHERE ApplyType=''New'' AND BorderImportPermit.Status=''Approved'' AND CardType=''Pa Tha Ka''
+		AND ((@FromDate IS NULL) OR BorderImportPermit.CreatedDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR BorderImportPermit.CreatedDate < DATEADD(day,1,@ToDate))
+		AND BorderImportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+		AND BorderImportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportPermit.SakhanId ELSE @SakhanId END)
+		AND (@auto='' OR BorderImportPermit.auto = @auto)
+		UNION ALL
+        SELECT BorderImportPermit.CreatedDate Date,
+section.Code SectionCode,
+section.Name SectionName,
+OldImportPermitNo OldLicenceNo,
+ImportPermitNo LicenceNo,
+CONVERT(varchar,BorderImportPermit.CreatedDate,103) sDate,
+IndividualTrading.TINNo CompanyRegistrationNo,
+IndividualTrading.Name CompanyName,
+UnitLevel,
+StreetNumberStreetName,
+QuarterCityTownship,
+State,
+Country,
+PostalCode,
+BorderImportPermit.auto,
+CAST(NULL AS nvarchar(50)) quota,
+CAST(NULL AS nvarchar(max)) CommodityType,
+sakhan.Id SakhanId,
+sakhan.Code SakhanCode,
+sakhan.Name SakhanName,
+BorderImportPermit.Id AS __k_Id
+        FROM BorderImportPermit
+		INNER JOIN IndividualTrading ON BorderImportPermit.IndividualTradingId = IndividualTrading.Id
+		INNER JOIN ExportImportSection section ON BorderImportPermit.ExportImportSectionId = section.Id
+		INNER JOIN Sakhan sakhan ON BorderImportPermit.SakhanId = sakhan.Id
+		WHERE ApplyType=''New'' AND BorderImportPermit.Status=''Approved'' AND CardType=''Individual Trading''
+		AND ((@FromDate IS NULL) OR BorderImportPermit.CreatedDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR BorderImportPermit.CreatedDate < DATEADD(day,1,@ToDate))
+		AND BorderImportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
+		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
+		AND BorderImportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportPermit.SakhanId ELSE @SakhanId END)
+		AND (@auto='' OR BorderImportPermit.auto = @auto)
         ) u
         ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
     ) pg
