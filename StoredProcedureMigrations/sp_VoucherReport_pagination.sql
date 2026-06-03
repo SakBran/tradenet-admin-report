@@ -680,7 +680,8 @@ BorderImportPermit.Id AS __k_Id
     ) pg
     ORDER BY ' + @ob + N'
     OPTION (RECOMPILE);';
-    END    ELSE
+    END
+    ELSE
     BEGIN
         -- TotalCount only when requested, computed over the UN-paged base (no subqueries) as a separate scalar.
         SET @cntpart = CASE WHEN @IncludeTotalCount = 1
