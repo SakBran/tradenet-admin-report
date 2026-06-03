@@ -12673,6 +12673,18 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ListOfTopCapitalCompany.xlsx',
     initialSortColumn: 'CompanyRegistrationNo',
     showRowNumber: true,
+    // Legacy RDLC report header: Ministry of Commerce / Directorate of Trade /
+    // "Top Capital Company Report ({FromDate}) To ({ToDate})".
+    reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
+    reportSubtitle: (filters) => {
+      const from = filters.FromDate
+        ? dayjs(String(filters.FromDate)).format('DD/MM/YYYY')
+        : '';
+      const to = filters.ToDate
+        ? dayjs(String(filters.ToDate)).format('DD/MM/YYYY')
+        : '';
+      return `Top Capital Company Report (${from}) To (${to})`;
+    },
     filters: [
       {
         name: 'dateRange',
