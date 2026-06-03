@@ -387,6 +387,9 @@ BorderImportLicence.Id AS __k_Id
         SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM BorderExportPermitItem
 		INNER JOIN Currency currency ON BorderExportPermitItem.CurrencyId = currency.Id
 		WHERE BorderExportPermitItem.BorderExportPermitId=pg.__k_Id) Currency,
+        (SELECT top 1 HSCode.Code FROM BorderExportPermitItem
+		INNER JOIN HSCode ON BorderExportPermitItem.HSCodeId = HSCode.Id
+		WHERE BorderExportPermitItem.BorderExportPermitId=pg.__k_Id) HSCode,
         (SELECT top 1 ISNULL(BorderExportPermitItem.Amount,0) FROM BorderExportPermitItem
 		WHERE BorderExportPermitItem.BorderExportPermitId=pg.__k_Id) Amount, @__total AS TotalCount
     FROM (
