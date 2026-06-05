@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,8 +38,24 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var result = await sp_ImportLicenceDetailReport_Fast.CreateAggregateResultAsync(
-                _context, procedureRequest!, request!, ReportAggregateDimension.Daily, includeSakhan: false);
+            // Aggregate every (Date, Currency) group once, then page in memory so the
+            // footer "Total" row sums across ALL groups, not just the current page.
+            var groups = await sp_ImportLicenceDetailReport_Fast.GetAggregateRowsAsync(
+                _context, procedureRequest!, ReportAggregateDimension.Daily, includeSakhan: false);
+
+            var result = ReportAggregationService.CreatePagedResultFromGroups(
+                groups, ReportAggregateDimension.Daily, includeSakhan: false, request!);
+
+            // Grand-total footer row (customer complaint #1). Keyed by the column
+            // dataIndex so BasicTable renders a bold "Total" row. Mirrors the old
+            // ImportLicenceByDailyReport.rdlc TOTAL row. Total USD Value is omitted while
+            // FX conversion is unavailable (TotalUSDValue is null), so that column stays
+            // blank in the footer just like its data cells.
+            result.ColumnTotals = new Dictionary<string, decimal>
+            {
+                ["noOfLicences"] = groups.Sum(group => group.NoOfLicences),
+                ["totalValue"] = groups.Sum(group => group.TotalValue ?? 0m),
+            };
 
             return Ok(result);
         }
