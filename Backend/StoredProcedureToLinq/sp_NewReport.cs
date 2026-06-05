@@ -63,6 +63,7 @@ public sealed class sp_NewReportRow
     public string? Country { get; set; }
     public string? PostalCode { get; set; }
     public string? Currency { get; set; }
+    public string? HSCode { get; set; }
     public decimal? Amount { get; set; }
     public string? Auto { get; set; }
     public string? Quota { get; set; }
@@ -89,6 +90,7 @@ public sealed class sp_NewReportRow
         Country = Country,
         PostalCode = PostalCode,
         Currency = Currency,
+        HSCode = HSCode,
         Amount = Amount,
         Auto = Auto,
         Quota = Quota,

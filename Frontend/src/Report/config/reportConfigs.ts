@@ -2890,8 +2890,16 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'ApplyType',
         label: 'Apply Type',
-        type: 'text',
-        defaultValue: '',
+        type: 'select',
+        defaultValue: 'New',
+        options: [
+          { label: 'New', value: 'New' },
+          { label: 'Amend', value: 'Amend' },
+          { label: 'Extension', value: 'Extension' },
+          { label: 'Cancel', value: 'Cancel' },
+          { label: 'Actual Amend', value: 'Actual Amend' },
+          { label: 'De-Cancel', value: 'De-Cancel' },
+        ],
       },
       {
         name: 'CompanyRegistrationNo',
