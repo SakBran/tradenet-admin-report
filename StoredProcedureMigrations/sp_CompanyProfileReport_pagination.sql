@@ -6,19 +6,29 @@
    Source procedure: dbo.sp_CompanyProfileReport (left untouched).
    Preserves dbo.fn_GetPermitBusiness and the Extension-count subquery.
 
-   - @PageSize NULL/<=0 -> all rows (Excel); >0 -> one OFFSET/FETCH page.
-   - Every row carries TotalCount (computed once via COUNT_BIG).
+   GRAIN: pages at the COMPANY grain (one page = N companies), then expands each
+     paged company to one row per director. The legacy Company Profile report
+     renders directors as a nested "ဒါရိုက်တာအဖွဲ့၀င်များ" sub-grid grouped under
+     each company, so the UI groups the flat rows back into one block per company.
+     Paging by company guarantees a company's full set of directors lands on a
+     single page (paging by director could split a company across page boundaries
+     and break the grouping). @PageSize therefore counts COMPANIES, not director
+     rows, and TotalCount is the distinct company count.
+
+   - @PageSize NULL/<=0 -> all rows (Excel); >0 -> one OFFSET/FETCH page of companies.
+   - Every row carries TotalCount (distinct company count, computed once).
    - @SortColumn whitelisted; default IssuedDate (source order).
 
    PERFORMANCE: two-phase pagination.
-     Phase 1 pages just the keys (PaThaKa.Id + Director Id) and computes the
-       total with a cheap COUNT_BIG over the same join/filter.
-     Phase 2 joins that single page back and only THEN evaluates the expensive
-       per-row work (scalar UDF dbo.fn_GetPermitBusiness + the Extension-count
-       correlated subquery). For a 10-row page those run 10 times instead of
-       once per matched row across the whole date range.
-     The @CompanyRegistrationNo predicate is added only when supplied, so an
-       index seek stays available instead of the non-sargable CASE wrapper.
+     Phase 1 pages just the company keys (PaThaKa.Id) and computes the total with a
+       cheap COUNT_BIG over the same company-grain filter. EXISTS keeps it one row
+       per company (mirrors the legacy INNER JOIN to PaThaKaDirectors without
+       fanning out).
+     Phase 2 joins that page of companies back to their directors and only THEN
+       evaluates the expensive per-company work (scalar UDF dbo.fn_GetPermitBusiness
+       + the Extension-count correlated subquery).
+     The @CompanyRegistrationNo predicate is added only when supplied, so an index
+       seek stays available instead of the non-sargable CASE wrapper.
 
    Idempotent: CREATE OR ALTER.
    ============================================= */
@@ -49,32 +59,38 @@ BEGIN
     DECLARE @Direction nvarchar(4) =
         CASE WHEN UPPER(ISNULL(@SortOrder, '')) = 'DESC' THEN 'DESC' ELSE 'ASC' END;
 
-    -- Shared join + filter. Add the registration-no predicate only when supplied
-    -- so the optimizer can seek instead of being forced through a CASE wrapper.
-    DECLARE @CoreFrom nvarchar(max) = N'
+    -- Company-grain core: one row per company that has at least one director.
+    -- EXISTS mirrors the legacy report's INNER JOIN to PaThaKaDirectors without
+    -- multiplying rows. Registration-no predicate added only when supplied so the
+    -- optimizer can seek instead of being forced through a CASE wrapper.
+    DECLARE @CompanyFrom nvarchar(max) = N'
         FROM PaThaKa
-        INNER JOIN PaThaKaDirectors ON PaThaKa.Id = PaThaKaDirectors.PaThaKaId
         INNER JOIN BusinessType businessType ON PaThaKa.BusinessTypeId = businessType.Id
         INNER JOIN LineofBusiness lineofBusiness ON PaThaKa.LineofBusinessId = lineofBusiness.Id
-        WHERE (PaThaKa.IssuedDate >= @FromDate AND PaThaKa.IssuedDate <= @ToDate)'
+        WHERE (PaThaKa.IssuedDate >= @FromDate AND PaThaKa.IssuedDate <= @ToDate)
+          AND EXISTS (SELECT 1 FROM PaThaKaDirectors WHERE PaThaKaDirectors.PaThaKaId = PaThaKa.Id)'
         + CASE WHEN @CompanyRegistrationNo = '' THEN N''
                ELSE N'
           AND PaThaKa.CompanyRegistrationNo = @CompanyRegistrationNo' END;
 
-    -- Phase 1: total count + the page of keys only (no UDF / subquery here).
+    -- Phase 1: distinct company count + the page of company keys only (no UDF /
+    -- subquery / director fan-out here).
     DECLARE @Sql nvarchar(max) = N'
         DECLARE @Total int;
-        SELECT @Total = COUNT_BIG(*)' + @CoreFrom + N';
+        SELECT @Total = COUNT_BIG(*)' + @CompanyFrom + N';
 
-        SELECT PaThaKa.Id AS PaThaKaId, PaThaKaDirectors.Id AS DirectorId, @Total AS TotalCount
-        INTO #page' + @CoreFrom + N'
-        ORDER BY ' + @OrderBy + N' ' + @Direction + N', PaThaKaDirectors.Id ' + @Direction;
+        SELECT PaThaKa.Id AS PaThaKaId, @Total AS TotalCount
+        INTO #page' + @CompanyFrom + N'
+        ORDER BY ' + @OrderBy + N' ' + @Direction + N', PaThaKa.Id ' + @Direction;
 
     IF (@PageSize IS NOT NULL AND @PageSize > 0)
         SET @Sql = @Sql + N'
         OFFSET (ISNULL(@PageIndex, 0) * @PageSize) ROWS FETCH NEXT @PageSize ROWS ONLY';
 
-    -- Phase 2: enrich ONLY the paged rows with the expensive per-row lookups.
+    -- Phase 2: expand the paged companies to one row per director and enrich ONLY
+    -- those rows with the expensive per-company lookups. Ordering keeps each
+    -- company's directors contiguous (sort key, then company id, then director id)
+    -- so the UI can group them into one nested block per company.
     SET @Sql = @Sql + N';
 
         SELECT PaThaKa.Id, PaThaKa.CompanyRegistrationNo, PaThaKa.EndDate, PaThaKa.CompanyName,
@@ -91,10 +107,10 @@ BEGIN
                #page.TotalCount
         FROM #page
         INNER JOIN PaThaKa ON PaThaKa.Id = #page.PaThaKaId
-        INNER JOIN PaThaKaDirectors ON PaThaKaDirectors.Id = #page.DirectorId
+        INNER JOIN PaThaKaDirectors ON PaThaKaDirectors.PaThaKaId = PaThaKa.Id
         INNER JOIN BusinessType businessType ON PaThaKa.BusinessTypeId = businessType.Id
         INNER JOIN LineofBusiness lineofBusiness ON PaThaKa.LineofBusinessId = lineofBusiness.Id
-        ORDER BY ' + @OrderBy + N' ' + @Direction + N', PaThaKaDirectors.Id ' + @Direction + N';
+        ORDER BY ' + @OrderBy + N' ' + @Direction + N', PaThaKa.Id ' + @Direction + N', PaThaKaDirectors.Id ' + @Direction + N';
 
         DROP TABLE #page;';
 

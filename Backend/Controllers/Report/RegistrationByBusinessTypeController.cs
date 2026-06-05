@@ -57,11 +57,19 @@ namespace Backend.Controllers.Report
                 _context, procedureRequest!, sortColumn, sortOrder, pageIndex, pageSize);
 
             var totalCount = rows.Count > 0 ? rows[0].TotalCount : 0;
+            var grandTotal = rows.Count > 0 ? rows[0].GrandTotal : 0;
             var data = rows.Select(row => row.ToResult()).ToList();
 
             var result = ApiResult<sp_PaThaKaByBusinessTypeReportResult>.CreatePageFromRows(
                 data, totalCount, pageIndex, pageSize,
                 request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
+
+            // Grand total of company counts across all business types, rendered as the
+            // report's "Total" footer row. Keyed by the column's serialized dataIndex.
+            result.ColumnTotals = new Dictionary<string, decimal>
+            {
+                ["companyCount"] = grandTotal,
+            };
 
             return Ok(result);
         }

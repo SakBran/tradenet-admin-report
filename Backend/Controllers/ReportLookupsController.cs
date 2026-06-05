@@ -102,6 +102,33 @@ namespace Backend.Controllers
             return Ok(new CompanyNameLookupResult(registrationNo, companyName ?? string.Empty));
         }
 
+        // Structured NRC prefix data for the cascading State/Region -> Township picker used by
+        // the List of Directors report. Deliberately SEPARATE from the flat "nrcprefixes" lookup:
+        // that one feeds a single-select whose submitted value is the township Id, so adding
+        // StatePrefix to it would change what those selects post. Here the frontend gets every
+        // township already tagged with its StatePrefix and builds the State dropdown + filters
+        // the township dropdown entirely client-side from a single fetch.
+        [HttpGet("nrc-prefixes")]
+        public async Task<ActionResult<List<NrcPrefixLookupOption>>> GetNrcPrefixOptions()
+        {
+            var options = await _cache.GetOrCreateAsync(
+                CacheKeyPrefix + "nrc-prefixes-structured",
+                async entry =>
+                {
+                    entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+                    return await _context.Nrcprefixes
+                        .AsNoTracking()
+                        .Where(item => item.IsActive && !item.IsDeleted)
+                        .OrderBy(item => item.StatePrefix)
+                        .ThenBy(item => item.TownshipPrefix)
+                        .Select(item => new NrcPrefixLookupOption(
+                            item.Id, item.StatePrefix, item.TownshipPrefix))
+                        .ToListAsync();
+                });
+
+            return Ok(options ?? new List<NrcPrefixLookupOption>());
+        }
+
         private Task<List<ReportLookupOption>> GetAmendRemarks() =>
             _context.LicencePermitAmendRemarks
                 .AsNoTracking()
@@ -294,4 +321,8 @@ namespace Backend.Controllers
     }
 
     public sealed record CompanyNameLookupResult(string CompanyRegistrationNo, string CompanyName);
+
+    // Township row tagged with its parent StatePrefix so the List of Directors report can build
+    // a State/Region -> Township cascade on the client from one fetch.
+    public sealed record NrcPrefixLookupOption(int Id, int StatePrefix, string TownshipPrefix);
 }

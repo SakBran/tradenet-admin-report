@@ -6515,6 +6515,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
     ],
   },
+  // NOTE: CompanyProfile is rendered by a bespoke page (Report/Page/CompanyProfile.tsx),
+  // NOT GenericReportPage, to reproduce the legacy Tradenet 2.0 layout (Myanmar
+  // headers, combined RegNo/date + address cells, and the nested
+  // "ဒါရိုက်တာအဖွဲ့၀င်များ" directors sub-grid). This config entry is kept only so the
+  // report still appears in the nav (reportNavItems uses controllerName + title);
+  // its columns/filters below are no longer the rendering source of truth.
   CompanyProfile: {
     controllerName: 'CompanyProfile',
     title: 'Company Profile',
@@ -6646,6 +6652,19 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'EIRCardBindReport.xlsx',
     initialSortColumn: 'ApplicationDate',
     showRowNumber: true,
+    // Legacy header from PathakaBindReport controller (header1):
+    // "Pa Tha Ka bind ({FromDate}) To ({ToDate})". Rendered here under the
+    // standard Ministry of Commerce / Directorate of Trade heading.
+    reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
+    reportSubtitle: (filters) => {
+      const from = filters.FromDate
+        ? dayjs(String(filters.FromDate)).format('DD/MM/YYYY')
+        : '';
+      const to = filters.ToDate
+        ? dayjs(String(filters.ToDate)).format('DD/MM/YYYY')
+        : '';
+      return `Pa Tha Ka bind (${from}) To (${to})`;
+    },
     filters: [
       {
         name: 'dateRange',
@@ -11899,6 +11918,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ListOfCompany.xlsx',
     initialSortColumn: 'CompanyRegistrationNo',
     showRowNumber: true,
+    // Legacy RDLC report header (PaThaKaAllReport): Ministry of Commerce /
+    // Directorate of Trade / "Company Business Organization" (static header1).
+    reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
+    reportSubtitle: () => 'Company Business Organization',
     filters: [
       {
         name: 'BusinessTypeId',
@@ -13005,6 +13028,18 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'RegistrationByBusinessType.xlsx',
     initialSortColumn: 'BusinessType',
     showRowNumber: true,
+    // Legacy RDLC report header (PaThaKaRegistrationByBusinessTypeReport): Ministry of
+    // Commerce / Directorate of Trade / "Registration List ({FromDate}) To ({ToDate})".
+    reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
+    reportSubtitle: (filters) => {
+      const from = filters.FromDate
+        ? dayjs(String(filters.FromDate)).format('DD/MM/YYYY')
+        : '';
+      const to = filters.ToDate
+        ? dayjs(String(filters.ToDate)).format('DD/MM/YYYY')
+        : '';
+      return `Registration List (${from}) To (${to})`;
+    },
     filters: [
       {
         name: 'dateRange',
@@ -13045,6 +13080,20 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'RegistrationByVoucher.xlsx',
     initialSortColumn: 'Date',
     showRowNumber: true,
+    // Legacy RDLC report header (PaThaKaRegistrationByVoucherReport): Ministry of
+    // Commerce / Directorate of Trade /
+    // "Pa Tha Ka {ApplyType} List ({FromDate}) To ({ToDate})".
+    reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
+    reportSubtitle: (filters) => {
+      const applyType = filters.ApplyType ? String(filters.ApplyType) : '';
+      const from = filters.FromDate
+        ? dayjs(String(filters.FromDate)).format('DD/MM/YYYY')
+        : '';
+      const to = filters.ToDate
+        ? dayjs(String(filters.ToDate)).format('DD/MM/YYYY')
+        : '';
+      return `Pa Tha Ka ${applyType} List (${from}) To (${to})`;
+    },
     filters: [
       {
         name: 'dateRange',

@@ -27,6 +27,10 @@ public sealed class sp_PaThaKaByBusinessTypeReportRow
     public int CompanyCount { get; set; }
     public int TotalCount { get; set; }
 
+    // Grand total of CompanyCount across all business types (SUM(...) OVER()), the
+    // same value on every paged row. Surfaced as the report's "Total" footer row.
+    public int GrandTotal { get; set; }
+
     public sp_PaThaKaByBusinessTypeReportResult ToResult() => new()
     {
         BusinessType = BusinessType,

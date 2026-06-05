@@ -6,7 +6,9 @@
    Source procedure: dbo.sp_PaThaKaByBusinessTypeReport (left untouched).
 
    This is a grouped/aggregate report (one row per business type). The window
-   COUNT(*) OVER() counts the grouped rows = total business-type rows.
+   COUNT(*) OVER() counts the grouped rows = total business-type rows, and
+   SUM(Count(PaThaKa.Id)) OVER() carries the grand total of company counts across
+   all business types (the report's "Total" row) on every paged row.
 
    - @PageSize NULL/<=0 -> all rows (Excel); >0 -> one OFFSET/FETCH page.
    - @SortColumn whitelisted; default business-type SortOrder (source order).
@@ -43,7 +45,8 @@ BEGIN
 
     DECLARE @Sql nvarchar(max) = N'
         SELECT businessType.Name AS BusinessType, Count(PaThaKa.Id) AS CompanyCount,
-               COUNT(*) OVER() AS TotalCount
+               COUNT(*) OVER() AS TotalCount,
+               SUM(Count(PaThaKa.Id)) OVER() AS GrandTotal
         FROM BusinessType businessType
         LEFT JOIN PaThaKa ON businessType.Id = PaThaKa.BusinessTypeId
         WHERE (PaThaKa.IssuedDate >= @FromDate AND PaThaKa.IssuedDate <= @ToDate)
