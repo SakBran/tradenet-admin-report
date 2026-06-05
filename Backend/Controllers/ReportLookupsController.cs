@@ -25,6 +25,8 @@ namespace Backend.Controllers
         // shows every form type's "Trading" et al., and selecting a non-PaThaKa id returns
         // no rows because PaThaKa records only reference Pa Tha Ka business type ids.
         private const string PaThaKaFormType = "Pa Tha Ka";
+        private const string ImportLicenceFormType = "Import Licence";
+        private const string ImportTradeType = "Import";
 
         private readonly TradeNetDbContext _context;
         private readonly IMemoryCache _cache;
@@ -49,12 +51,16 @@ namespace Backend.Controllers
                 "exportimportincoterms" => GetExportImportIncoterms,
                 "exportimportmethods" => GetExportImportMethods,
                 "exportimportsections" => GetExportImportSections,
+                "importlicenceincoterms" => GetImportLicenceIncoterms,
+                "importlicencemethods" => GetImportLicenceMethods,
+                "importlicencesections" => GetImportLicenceSections,
                 "lineofbusinesses" => GetLineofBusinesses,
                 "nrcprefixcodes" => GetNrcprefixCodes,
                 "nrcprefixes" => GetNrcprefixes,
                 "ogadepartments" => GetOgaDepartments,
                 "ogasections" => GetOgaSections,
                 "pathakatypes" => GetPaThaKaTypes,
+                "paymenttypes" => GetPaymentTypes,
                 "sakhans" => GetSakhans,
                 _ => null,
             };
@@ -137,6 +143,45 @@ namespace Backend.Controllers
                 .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
                 .ToListAsync();
 
+        private Task<List<ReportLookupOption>> GetImportLicenceIncoterms() =>
+            _context.ExportImportIncoterms
+                .AsNoTracking()
+                .Where(item =>
+                    item.IsActive &&
+                    !item.IsDeleted &&
+                    item.Type == ImportTradeType &&
+                    item.IsOversea)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
+                .ToListAsync();
+
+        private Task<List<ReportLookupOption>> GetImportLicenceMethods() =>
+            _context.ExportImportMethods
+                .AsNoTracking()
+                .Where(item =>
+                    item.IsActive &&
+                    !item.IsDeleted &&
+                    item.Type == ImportTradeType &&
+                    item.IsOversea)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
+                .ToListAsync();
+
+        private Task<List<ReportLookupOption>> GetImportLicenceSections() =>
+            _context.ExportImportSections
+                .AsNoTracking()
+                .Where(item =>
+                    item.IsActive &&
+                    !item.IsDeleted &&
+                    item.Type == ImportLicenceFormType &&
+                    item.IsOversea)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
+                .ToListAsync();
+
         private Task<List<ReportLookupOption>> GetLineofBusinesses() =>
             _context.LineofBusinesses
                 .AsNoTracking()
@@ -193,6 +238,19 @@ namespace Backend.Controllers
                 .Select(item => new ReportLookupOption(item.Id, item.Code, item.Description))
                 .ToListAsync();
 
+        private Task<List<ReportLookupOption>> GetPaymentTypes() =>
+            _context.PaymentTypes
+                .AsNoTracking()
+                .Where(item => item.IsActive && !item.IsDeleted)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(
+                    item.Id,
+                    string.Empty,
+                    item.Name,
+                    item.Id.ToString()))
+                .ToListAsync();
+
         private Task<List<ReportLookupOption>> GetSakhans() =>
             _context.Sakhans
                 .AsNoTracking()
@@ -203,5 +261,14 @@ namespace Backend.Controllers
                 .ToListAsync();
     }
 
-    public sealed record ReportLookupOption(int Id, string Code, string Label);
+    public sealed record ReportLookupOption(int Id, string Code, string Label)
+    {
+        public string? Value { get; init; }
+
+        public ReportLookupOption(int id, string code, string label, string? value)
+            : this(id, code, label)
+        {
+            Value = value;
+        }
+    }
 }

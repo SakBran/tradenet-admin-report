@@ -17,6 +17,7 @@ public sealed class sp_NewReportRequest
     public string CompanyRegistrationNo { get; set; } = string.Empty;
     public int SakhanId { get; set; }
     public string Auto { get; set; } = string.Empty;
+    public string Quota { get; set; } = string.Empty;
 }
 
 public sealed class sp_NewReportResult
@@ -302,6 +303,8 @@ public static class sp_NewReport
                 && licence.CreatedDate <= request.ToDate
                 && (request.ExportImportSectionId == 0 || licence.ExportImportSectionId == request.ExportImportSectionId)
                 && (request.CompanyRegistrationNo == string.Empty || paThaKa.CompanyRegistrationNo == request.CompanyRegistrationNo)
+                && (request.Auto == string.Empty || licence.Auto == request.Auto)
+                && (request.Quota == string.Empty || licence.Quota == request.Quota)
             select new sp_NewReportResult
             {
                 Date = licence.CreatedDate,

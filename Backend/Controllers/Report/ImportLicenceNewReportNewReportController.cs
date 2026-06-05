@@ -53,6 +53,22 @@ namespace Backend.Controllers.Report
             var sortColumn = string.IsNullOrWhiteSpace(request.SortColumn) ? null : request.SortColumn;
             var sortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? null : request.SortOrder;
 
+            if (RequiresQueryablePath(procedureRequest!))
+            {
+                var query = sp_NewReport.Query(_context, procedureRequest!);
+                var pagedResult = await ApiResult<sp_NewReportResult>.CreateFastPageAsync(
+                    query,
+                    pageIndex,
+                    pageSize,
+                    sortColumn,
+                    sortOrder,
+                    request.FilterColumn,
+                    request.FilterQuery,
+                    request.IncludeTotalCount);
+
+                return Ok(pagedResult);
+            }
+
             var rows = await sp_NewReport.ExecuteAsync(
                 _context, procedureRequest!, sortColumn, sortOrder, pageIndex, pageSize, request.IncludeTotalCount);
 
@@ -101,6 +117,17 @@ namespace Backend.Controllers.Report
             CancellationToken cancellationToken)
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
+            if (RequiresQueryablePath(procedureRequest!))
+            {
+                await foreach (var chunk in sp_NewReport.Query(_context, procedureRequest!)
+                    .AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
+                {
+                    sink.Append(chunk.ToList());
+                }
+
+                return;
+            }
+
             await foreach (var chunk in sp_NewReport.ExecuteQueryable(_context, procedureRequest!)
                 .AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
             {
@@ -145,13 +172,17 @@ namespace Backend.Controllers.Report
                 FromDate = request.FromDate,
                 ToDate = request.ToDate,
                 ExportImportSectionId = request.ExportImportSectionId,
-                CompanyRegistrationNo = request.CompanyRegistrationNo,
+                CompanyRegistrationNo = request.CompanyRegistrationNo?.Trim() ?? string.Empty,
                 SakhanId = request.SakhanId,
-                Auto = request.Auto,
+                Auto = request.Auto?.Trim() ?? string.Empty,
+                Quota = request.Quota?.Trim() ?? string.Empty,
             };
 
             return true;
         }
+
+        private static bool RequiresQueryablePath(sp_NewReportRequest request) =>
+            !string.IsNullOrWhiteSpace(request.Quota);
     }
 
     public sealed class ImportLicenceNewReportNewReportRequest : ReportQueryRequest
@@ -160,9 +191,10 @@ namespace Backend.Controllers.Report
         public DateTime FromDate { get; set; }
         public DateTime ToDate { get; set; }
         public int ExportImportSectionId { get; set; }
-        public string CompanyRegistrationNo { get; set; } = string.Empty;
+        public string? CompanyRegistrationNo { get; set; }
         public int SakhanId { get; set; }
-        public string Auto { get; set; } = string.Empty;
+        public string? Auto { get; set; }
+        public string? Quota { get; set; }
     }
 }
 

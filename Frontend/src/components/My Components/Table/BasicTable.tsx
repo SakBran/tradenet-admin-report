@@ -75,6 +75,8 @@ interface PropsType<T extends AnyObject = AnyObject> {
   excelEnabled?: boolean;
   idleText?: string;
   showRowNumber?: boolean;
+  rowNumberTitle?: string;
+  legacyReportViewer?: boolean;
   /**
    * Optional centered heading lines rendered inside the table, spanning all
    * columns above the column-header row (mirrors the legacy RDLC report header).
@@ -136,6 +138,8 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   excelEnabled = enabled,
   idleText = 'Set filters, then click Filter to load data',
   showRowNumber = true,
+  rowNumberTitle = 'No',
+  legacyReportViewer = false,
   reportHeaderLines,
 }: PropsType<T>) => {
   const normalizedColumns = useMemo<BasicTableColumn<T>[]>(() => {
@@ -284,11 +288,16 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
 
   return (
     <>
-      <div className="container">
+      <div
+        className={
+          legacyReportViewer ? 'container report-viewer-container' : 'container'
+        }
+      >
         <Flex
+          className={legacyReportViewer ? 'report-viewer-toolbar' : undefined}
           justify="space-between"
           align="center"
-          style={{ paddingBottom: 16 }}
+          style={legacyReportViewer ? undefined : { paddingBottom: 16 }}
           gap="small"
           wrap="wrap"
         >
@@ -350,7 +359,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
                   </tr>
                 ))}
               <tr>
-                {showRowNumber && <th>No</th>}
+                {showRowNumber && <th>{rowNumberTitle}</th>}
                 {normalizedColumns.map((column) => {
                   const key = column.key.toString();
 

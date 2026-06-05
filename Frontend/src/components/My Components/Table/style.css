@@ -143,6 +143,55 @@ tbody tr:hover {
     background-color: #f2f2f2;
 }
 
+.report-viewer-container {
+    border: 1px solid #c8c8c8;
+    border-radius: 0;
+    padding: 0;
+    min-height: 800px;
+    display: flex;
+    flex-direction: column;
+}
+
+.report-viewer-toolbar {
+    background: #f3f3f3;
+    border-bottom: 1px solid #c8c8c8;
+    min-height: 38px;
+    padding: 6px 8px;
+}
+
+.report-viewer-container .table-container {
+    flex: 1 1 auto;
+    padding: 12px;
+}
+
+.report-viewer-container .pagination {
+    border-top: 1px solid #c8c8c8;
+    background: #fafafa;
+    margin-top: 0;
+}
+
+.report-viewer-container .table-container table {
+    border-color: #000000;
+}
+
+.report-viewer-container .table-container th,
+.report-viewer-container .table-container td {
+    border-color: #000000;
+    padding: 2pt;
+}
+
+.report-viewer-container .table-container thead th {
+    background-color: #ffffff;
+    border-color: #000000;
+    text-align: center;
+    white-space: normal;
+}
+
+.report-viewer-container .report-header-row th {
+    font-size: 13px;
+    padding: 6px 8px;
+}
+
 /* Custom Text Colors */
 .red-text {
     color: #d9534f;
