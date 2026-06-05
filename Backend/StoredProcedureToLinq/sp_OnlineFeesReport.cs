@@ -1,7 +1,10 @@
 using API.DBContext;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
 
@@ -24,9 +27,77 @@ public sealed class sp_OnlineFeesReportResult
     public string Remark { get; set; } = null!;
 }
 
+public sealed class sp_OnlineFeesReportRow
+{
+    public int SakhanId { get; set; }
+    public DateTime? VoucherDate { get; set; }
+    public string CompanyRegistrationNo { get; set; } = null!;
+    public string CompanyName { get; set; } = null!;
+    public string FormType { get; set; } = null!;
+    public double Amount { get; set; }
+    public string Remark { get; set; } = null!;
+    public int? TotalCount { get; set; }
+
+    public sp_OnlineFeesReportResult ToResult() => new()
+    {
+        SakhanId = SakhanId,
+        VoucherDate = VoucherDate,
+        CompanyRegistrationNo = CompanyRegistrationNo,
+        CompanyName = CompanyName,
+        FormType = FormType,
+        Amount = Amount,
+        Remark = Remark,
+    };
+}
+
 public static class sp_OnlineFeesReport
 {
     private const string OnlineFees = "Online Fees";
+
+    public static async Task<List<sp_OnlineFeesReportRow>> ExecuteAsync(
+        TradeNetDbContext db,
+        sp_OnlineFeesReportRequest request,
+        string? sortColumn = null,
+        string? sortOrder = null,
+        int? pageIndex = null,
+        int? pageSize = null,
+        bool includeTotalCount = true)
+    {
+        return await ExecuteQueryable(db, request, sortColumn, sortOrder, pageIndex, pageSize, includeTotalCount)
+            .ToListAsync();
+    }
+
+    public static IQueryable<sp_OnlineFeesReportRow> ExecuteQueryable(
+        TradeNetDbContext db,
+        sp_OnlineFeesReportRequest request,
+        string? sortColumn = null,
+        string? sortOrder = null,
+        int? pageIndex = null,
+        int? pageSize = null,
+        bool includeTotalCount = true)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var parameters = new[]
+        {
+            new SqlParameter("@FromDate", request.FromDate),
+            new SqlParameter("@ToDate", request.ToDate),
+            new SqlParameter("@FormType", request.FormType ?? string.Empty),
+            new SqlParameter("@SakhanId", request.SakhanId),
+            new SqlParameter("@SortColumn", (object?)sortColumn ?? DBNull.Value),
+            new SqlParameter("@SortOrder", (object?)sortOrder ?? DBNull.Value),
+            new SqlParameter("@PageIndex", (object?)pageIndex ?? DBNull.Value),
+            new SqlParameter("@PageSize", (object?)pageSize ?? DBNull.Value),
+            new SqlParameter("@IncludeTotalCount", includeTotalCount),
+        };
+
+        const string sql =
+            "EXEC dbo.sp_OnlineFeesReport_pagination @FromDate, @ToDate, @FormType, @SakhanId, " +
+            "@SortColumn, @SortOrder, @PageIndex, @PageSize, @IncludeTotalCount";
+
+        return db.Database.SqlQueryRaw<sp_OnlineFeesReportRow>(sql, parameters);
+    }
 
     public static IQueryable<sp_OnlineFeesReportResult> Query(
         TradeNetDbContext db,
