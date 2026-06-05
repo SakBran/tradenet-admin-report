@@ -1,5 +1,10 @@
 import dayjs from 'dayjs';
-import { ReportFilterOption, ReportPageConfig } from './reportTypes';
+import {
+  ReportColumnConfig,
+  ReportFilterConfig,
+  ReportFilterOption,
+  ReportPageConfig,
+} from './reportTypes';
 import { newReportConfigs } from './newReportConfigs';
 
 // Shared PaThaKa State/Status filter options. '--- All ---' = no filter ('').
@@ -59,6 +64,301 @@ const voucherPaymentTypeOptions: ReportFilterOption[] = [
   { label: 'MPU', value: 'MPU' },
   { label: 'Citizen Pay', value: 'Citizen Pay' },
 ];
+
+const importLicenceDateRangeFilter: ReportFilterConfig = {
+  name: 'dateRange',
+  label: 'From Date / To Date',
+  type: 'dateRange',
+  fromName: 'FromDate',
+  toName: 'ToDate',
+  fromLabel: 'From Date',
+  toLabel: 'To Date',
+  required: true,
+};
+
+const importLicenceOverseaTypeFilter: ReportFilterConfig = {
+  name: 'Type',
+  label: 'Type',
+  type: 'text',
+  defaultValue: '',
+};
+
+const importLicenceFormTypeFilter: ReportFilterConfig = {
+  name: 'FormType',
+  label: 'Form Type',
+  type: 'text',
+  defaultValue: '',
+};
+
+const importLicencePaThaKaTypeFilter: ReportFilterConfig = {
+  name: 'PaThaKaTypeId',
+  label: 'PaThaKa Type',
+  type: 'number',
+  defaultValue: 0,
+};
+
+const importLicenceSectionFilter: ReportFilterConfig = {
+  name: 'ExportImportSectionId',
+  label: 'Import Section',
+  type: 'number',
+  defaultValue: 0,
+  lookupName: 'importLicenceSections',
+};
+
+const importLicenceMethodFilter: ReportFilterConfig = {
+  name: 'ExportImportMethodId',
+  label: 'Import Method',
+  type: 'number',
+  defaultValue: 0,
+  lookupName: 'importLicenceMethods',
+};
+
+const importLicenceCompanyMethodFilter: ReportFilterConfig = {
+  ...importLicenceMethodFilter,
+  label: 'Export Method',
+};
+
+const importLicenceIncotermFilter: ReportFilterConfig = {
+  name: 'ExportImportIncotermId',
+  label: 'Import Incoterms',
+  type: 'number',
+  defaultValue: 0,
+  lookupName: 'importLicenceIncoterms',
+};
+
+const importLicenceSellerCountryFilter: ReportFilterConfig = {
+  name: 'SellerCountryId',
+  label: 'Seller Country',
+  type: 'number',
+  defaultValue: 0,
+};
+
+const importLicenceCompanyRegistrationNoFilter: ReportFilterConfig = {
+  name: 'CompanyRegistrationNo',
+  label: 'Company Registration No',
+  type: 'text',
+  defaultValue: '',
+};
+
+const importLicenceCompanyNameFilter: ReportFilterConfig = {
+  name: 'CompanyName',
+  label: 'Company Name',
+  type: 'readonlyText',
+  defaultValue: '',
+  excludeFromRequest: true,
+  populateFromCompanyRegistrationNo: true,
+};
+
+const importLicenceAmendRemarkFilter: ReportFilterConfig = {
+  name: 'AmendRemarkId',
+  label: 'Remark',
+  type: 'number',
+  defaultValue: 0,
+};
+
+const importLicenceFilterTypeFilter: ReportFilterConfig = {
+  name: 'FilterType',
+  label: 'Filter By',
+  type: 'select',
+  defaultValue: 'Start',
+  options: [
+    { label: 'Start', value: 'Start' },
+    { label: 'End', value: 'End' },
+  ],
+};
+
+const importLicenceHSCodeFilter: ReportFilterConfig = {
+  name: 'HSCode',
+  label: 'HS Code',
+  type: 'text',
+  defaultValue: '',
+};
+
+const importLicenceAutoFilter: ReportFilterConfig = {
+  name: 'Auto',
+  label: 'Auto / None Auto',
+  type: 'select',
+  defaultValue: '',
+  options: [
+    { label: '--- All ---', value: '' },
+    { label: 'auto', value: 'auto' },
+    { label: 'none-auto', value: 'none-auto' },
+  ],
+};
+
+const importLicenceQuotaFilter: ReportFilterConfig = {
+  name: 'Quota',
+  label: 'Quota',
+  type: 'select',
+  defaultValue: '',
+  options: [
+    { label: '--- All ---', value: '' },
+    { label: 'quota', value: 'quota' },
+    { label: 'no-quota', value: 'no-quota' },
+  ],
+};
+
+const importLicenceVoucherApplyTypeFilter: ReportFilterConfig = {
+  name: 'ApplyType',
+  label: 'Apply Type',
+  type: 'select',
+  defaultValue: 'New',
+  options: registrationApplyTypeOptions,
+};
+
+const importLicenceVoucherPaymentTypeFilter: ReportFilterConfig = {
+  name: 'PaymentType',
+  label: 'Payment Type',
+  type: 'select',
+  defaultValue: '',
+  lookupName: 'paymentTypes',
+};
+
+const importLicenceAmendFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceFormTypeFilter,
+  importLicenceSectionFilter,
+  importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
+  importLicenceAmendRemarkFilter,
+];
+
+const importLicenceExtensionFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceFormTypeFilter,
+  importLicenceSectionFilter,
+  importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
+];
+
+const importLicenceSummaryDetailFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceOverseaTypeFilter,
+  importLicencePaThaKaTypeFilter,
+  importLicenceSectionFilter,
+  importLicenceMethodFilter,
+  importLicenceIncotermFilter,
+];
+
+const importLicenceSectionMethodFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceOverseaTypeFilter,
+  importLicencePaThaKaTypeFilter,
+  importLicenceSectionFilter,
+  importLicenceMethodFilter,
+];
+
+const importLicenceSellerCountryFilters: ReportFilterConfig[] = [
+  ...importLicenceSectionMethodFilters,
+  importLicenceSellerCountryFilter,
+];
+
+const importLicenceCompanyListFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceOverseaTypeFilter,
+  importLicencePaThaKaTypeFilter,
+  importLicenceSectionFilter,
+  importLicenceCompanyMethodFilter,
+  importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
+];
+
+const importLicenceDailyFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceOverseaTypeFilter,
+  importLicenceSectionFilter,
+  importLicencePaThaKaTypeFilter,
+  importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
+];
+
+const importLicenceTotalValueFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceOverseaTypeFilter,
+  importLicencePaThaKaTypeFilter,
+  importLicenceSectionFilter,
+];
+
+const importLicenceHSCodeFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceFormTypeFilter,
+  importLicenceSectionFilter,
+  importLicenceFilterTypeFilter,
+  importLicenceHSCodeFilter,
+];
+
+const importLicenceNewFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceFormTypeFilter,
+  importLicenceSectionFilter,
+  importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
+  importLicenceAutoFilter,
+  importLicenceQuotaFilter,
+];
+
+const importLicencePendingFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceFormTypeFilter,
+  importLicenceSectionFilter,
+];
+
+const importLicenceVoucherFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceFormTypeFilter,
+  importLicenceSectionFilter,
+  importLicenceVoucherApplyTypeFilter,
+  importLicenceVoucherPaymentTypeFilter,
+  importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
+];
+
+const importLicenceVoucherHeaders: Record<string, [string, string]> = {
+  New: ['Licence No', 'Licence Date'],
+  Amend: ['Licence Amendment No', 'Amendment Date'],
+  Extension: ['Licence Extension No', 'Extension Date'],
+  Cancel: ['Licence Cancel No', 'Cancellation Date'],
+  'Actual Amend': [
+    'Licence Actual Amendment No',
+    'Actual Amendment Date',
+  ],
+};
+
+const formatLegacyReportDate = (value: unknown) => {
+  const parsed = dayjs(String(value ?? ''));
+  return parsed.isValid() ? parsed.format('DD/MM/YYYY') : String(value ?? '');
+};
+
+const importLicenceRangeSubtitle =
+  (label: string, includeFrom = false) =>
+  (filters: Record<string, unknown>) => {
+    const fromDate = formatLegacyReportDate(filters.FromDate);
+    const toDate = formatLegacyReportDate(filters.ToDate);
+    const fromText = includeFrom ? ' From' : '';
+
+    return `${label}${fromText} (${fromDate}) To (${toDate})`;
+  };
+
+const resolveImportLicenceVoucherColumns = (
+  filters: Record<string, unknown>,
+  columns: ReportColumnConfig[]
+): ReportColumnConfig[] => {
+  const [licenceNoTitle, licenceDateTitle] =
+    importLicenceVoucherHeaders[String(filters.ApplyType ?? 'New')] ??
+    importLicenceVoucherHeaders.New;
+
+  return columns.map((column) => {
+    if (column.key === 'LicenceNo') {
+      return { ...column, title: licenceNoTitle };
+    }
+
+    if (column.key === 'LicenceDate') {
+      return { ...column, title: licenceDateTitle };
+    }
+
+    return column;
+  });
+};
 
 export const reportConfigs: Record<string, ReportPageConfig> = {
   AccountSummaryReport: {
@@ -6223,6 +6523,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
     ],
   },
+  // NOTE: CompanyProfile is rendered by a bespoke page (Report/Page/CompanyProfile.tsx),
+  // NOT GenericReportPage, to reproduce the legacy Tradenet 2.0 layout (Myanmar
+  // headers, combined RegNo/date + address cells, and the nested
+  // "ဒါရိုက်တာအဖွဲ့၀င်များ" directors sub-grid). This config entry is kept only so the
+  // report still appears in the nav (reportNavItems uses controllerName + title);
+  // its columns/filters below are no longer the rendering source of truth.
   CompanyProfile: {
     controllerName: 'CompanyProfile',
     title: 'Company Profile',
@@ -6354,6 +6660,19 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'EIRCardBindReport.xlsx',
     initialSortColumn: 'ApplicationDate',
     showRowNumber: true,
+    // Legacy header from PathakaBindReport controller (header1):
+    // "Pa Tha Ka bind ({FromDate}) To ({ToDate})". Rendered here under the
+    // standard Ministry of Commerce / Directorate of Trade heading.
+    reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
+    reportSubtitle: (filters) => {
+      const from = filters.FromDate
+        ? dayjs(String(filters.FromDate)).format('DD/MM/YYYY')
+        : '';
+      const to = filters.ToDate
+        ? dayjs(String(filters.ToDate)).format('DD/MM/YYYY')
+        : '';
+      return `Pa Tha Ka bind (${from}) To (${to})`;
+    },
     filters: [
       {
         name: 'dateRange',
@@ -9230,48 +9549,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportLicenceActualAmendmentReport.xlsx',
     initialSortColumn: 'Date',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'AmendRemarkId',
-        label: 'Amend Remark',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: importLicenceAmendFilters,
+    reportSubtitle: importLicenceRangeSubtitle('List of Import Licence Report'),
     columns: [
       {
         key: 'Section',
@@ -9342,48 +9621,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportLicenceAmendmentReport.xlsx',
     initialSortColumn: 'Date',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'AmendRemarkId',
-        label: 'Amend Remark',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: importLicenceAmendFilters,
+    reportSubtitle: importLicenceRangeSubtitle('List of Import Licence Report'),
     columns: [
       {
         key: 'Section',
@@ -9452,48 +9691,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'ImportLicenceByHSCodeReport',
     excelRoute: 'ImportLicenceByHSCodeReport/Excel',
     excelFileName: 'ImportLicenceByHSCodeReport.xlsx',
-    initialSortColumn: 'SakhanId',
+    initialSortColumn: 'HSCode',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'FilterType',
-        label: 'Filter Type',
-        type: 'select',
-        defaultValue: 'Start',
-        options: [
-          { label: 'Start', value: 'Start' },
-          { label: 'End', value: 'End' },
-        ],
-      },
-      {
-        name: 'HSCode',
-        label: 'HS Code',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: importLicenceHSCodeFilters,
+    reportSubtitle: importLicenceRangeSubtitle(
+      'List of Import Licences By HS Code',
+      true
+    ),
     columns: [
       {
         key: 'HSCode',
@@ -9535,66 +9739,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportLicenceByMethodReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportMethodId',
-        label: 'Import Method',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Import Incoterms',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'SellerCountryId',
-        label: 'Seller Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: importLicenceSectionMethodFilters,
+    reportSubtitle: importLicenceRangeSubtitle(
+      'List of Import Licences By Method',
+      true
+    ),
     columns: [
       {
         key: 'Method',
@@ -9626,66 +9775,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportLicenceBySectionReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportMethodId',
-        label: 'Import Method',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Import Incoterms',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'SellerCountryId',
-        label: 'Seller Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: importLicenceSectionMethodFilters,
+    reportSubtitle: importLicenceRangeSubtitle(
+      'List of Import Licences By Section',
+      true
+    ),
     columns: [
       {
         key: 'Section',
@@ -9717,66 +9811,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportLicenceBySellerCountryReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportMethodId',
-        label: 'Import Method',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Import Incoterms',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'SellerCountryId',
-        label: 'Seller Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: importLicenceSellerCountryFilters,
+    reportSubtitle: importLicenceRangeSubtitle(
+      'List of Import Licences By Seller Country',
+      true
+    ),
     columns: [
       {
         key: 'Country',
@@ -9808,42 +9847,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportLicenceCancellationReport.xlsx',
     initialSortColumn: 'Date',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: importLicenceExtensionFilters,
+    reportSubtitle: importLicenceRangeSubtitle('List of Import Licence Report'),
     columns: [
       {
         key: 'HSCode',
@@ -9919,66 +9924,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportLicenceCompanyListReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportMethodId',
-        label: 'Import Method',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Import Incoterms',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'SellerCountryId',
-        label: 'Seller Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: importLicenceCompanyListFilters,
+    reportSubtitle: importLicenceRangeSubtitle(
+      'List of Import Licences By Company'
+    ),
     columns: [
       {
         key: 'CompanyName',
@@ -10010,66 +9959,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportLicenceDailyReportNewLicenceReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: false,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportMethodId',
-        label: 'Import Method',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Import Incoterms',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'SellerCountryId',
-        label: 'Seller Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: importLicenceDailyFilters,
+    reportSubtitle: importLicenceRangeSubtitle(
+      'List of Import Licences By Daily',
+      true
+    ),
     columns: [
       {
         key: 'Date',
@@ -10108,66 +10002,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportLicenceDetailReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportMethodId',
-        label: 'Import Method',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Import Incoterms',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'SellerCountryId',
-        label: 'Seller Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: importLicenceSummaryDetailFilters,
+    reportSubtitle: importLicenceRangeSubtitle(
+      'List of Import Licences By Detail',
+      true
+    ),
     columns: [
       {
         key: 'Section',
@@ -10318,66 +10157,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportLicenceDetailReportPending.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportMethodId',
-        label: 'Import Method',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Import Incoterms',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'SellerCountryId',
-        label: 'Seller Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: importLicenceSummaryDetailFilters,
+    reportSubtitle: importLicenceRangeSubtitle(
+      'List of Import Licences By Detail',
+      true
+    ),
     columns: [
       {
         key: 'Section',
@@ -10528,42 +10312,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportLicenceExtensionReport.xlsx',
     initialSortColumn: 'Date',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: importLicenceExtensionFilters,
+    reportSubtitle: importLicenceRangeSubtitle('List of Import Licence Report'),
     columns: [
       {
         key: 'Section',
@@ -10629,48 +10379,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportLicenceNewReportNewReport.xlsx',
     initialSortColumn: 'Date',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'Auto',
-        label: 'Auto',
-        type: 'text',
-        defaultValue: '',
-      },
-    ],
+    filters: importLicenceNewFilters,
+    reportSubtitle: importLicenceRangeSubtitle('List of Import Licence Report'),
     columns: [
       {
         key: 'Section',
@@ -10746,30 +10456,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportLicencePendingReport.xlsx',
     initialSortColumn: 'Status',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: importLicencePendingFilters,
+    reportSubtitle: importLicenceRangeSubtitle('List of Import Licence Report'),
     columns: [
       {
         key: 'Section',
@@ -10843,66 +10531,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportLicenceTotalValueLicencesReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportMethodId',
-        label: 'Import Method',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Import Incoterms',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'SellerCountryId',
-        label: 'Seller Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: importLicenceTotalValueFilters,
+    reportSubtitle: importLicenceRangeSubtitle(
+      'Import Licences Total Value & Licences'
+    ),
     columns: [
       {
         key: 'TotalValue',
@@ -10924,61 +10556,26 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportLicenceVoucherReport.xlsx',
     initialSortColumn: 'ApplicationNo',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ApplyType',
-        label: 'Apply Type',
-        type: 'select',
-        defaultValue: 'New',
-        options: [
-          { label: 'New', value: 'New' },
-          { label: 'Amend', value: 'Amend' },
-          { label: 'Extension', value: 'Extension' },
-          { label: 'Cancel', value: 'Cancel' },
-          { label: 'Actual Amend', value: 'Actual Amend' },
-          { label: 'De-Cancel', value: 'De-Cancel' },
-        ],
-      },
-      {
-        name: 'PaymentType',
-        label: 'Payment Type',
-        type: 'select',
-        defaultValue: '',
-        options: [
-          { label: '--- All ---', value: '' },
-          { label: 'Cash', value: 'Cash' },
-          { label: 'MPU', value: 'MPU' },
-          { label: 'Citizen Pay', value: 'Citizen Pay' },
-        ],
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-    ],
+    filters: importLicenceVoucherFilters,
+    reportSubtitle: importLicenceRangeSubtitle('Import Licence Voucher List'),
+    resolveColumns: resolveImportLicenceVoucherColumns,
     columns: [
+      {
+        key: 'OriginalLicenceNo',
+        dataIndex: 'oldLicenceNo',
+        title: 'Licence No',
+        fallbackDataIndexes: ['licenceNo'],
+      },
+      {
+        key: 'ApplicationDate',
+        dataIndex: 'applicationDate',
+        title: 'Application Date',
+        dataType: 'date',
+      },
       {
         key: 'LicenceNo',
         dataIndex: 'licenceNo',
-        title: 'Licence No',
+        title: '=Parameters!header2.Value',
       },
       {
         key: 'ApplicationNo',
@@ -10988,7 +10585,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'LicenceDate',
         dataIndex: 'sLicenceDate',
-        title: 'Licence Date',
+        title: '=Parameters!header3.Value',
       },
       {
         key: 'CompanyRegistrationNo',
@@ -11025,6 +10622,23 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'ApprovedUser',
         dataIndex: 'approvedUser',
         title: 'Approved User',
+      },
+      {
+        key: 'CommodityType',
+        dataIndex: 'commodityType',
+        title: 'Commodity Type',
+      },
+      {
+        key: 'TotalCIF',
+        dataIndex: 'totalCIF',
+        title: 'Total CIF',
+        dataType: 'number',
+      },
+      {
+        key: 'ExchangeRate',
+        dataIndex: 'exchangeRate',
+        title: 'Exchange Rate',
+        dataType: 'number',
       },
       {
         key: 'Amount',
@@ -12312,6 +11926,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ListOfCompany.xlsx',
     initialSortColumn: 'CompanyRegistrationNo',
     showRowNumber: true,
+    // Legacy RDLC report header (PaThaKaAllReport): Ministry of Commerce /
+    // Directorate of Trade / "Company Business Organization" (static header1).
+    reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
+    reportSubtitle: () => 'Company Business Organization',
     filters: [
       {
         name: 'BusinessTypeId',
@@ -13418,6 +13036,18 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'RegistrationByBusinessType.xlsx',
     initialSortColumn: 'BusinessType',
     showRowNumber: true,
+    // Legacy RDLC report header (PaThaKaRegistrationByBusinessTypeReport): Ministry of
+    // Commerce / Directorate of Trade / "Registration List ({FromDate}) To ({ToDate})".
+    reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
+    reportSubtitle: (filters) => {
+      const from = filters.FromDate
+        ? dayjs(String(filters.FromDate)).format('DD/MM/YYYY')
+        : '';
+      const to = filters.ToDate
+        ? dayjs(String(filters.ToDate)).format('DD/MM/YYYY')
+        : '';
+      return `Registration List (${from}) To (${to})`;
+    },
     filters: [
       {
         name: 'dateRange',
@@ -13458,6 +13088,20 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'RegistrationByVoucher.xlsx',
     initialSortColumn: 'Date',
     showRowNumber: true,
+    // Legacy RDLC report header (PaThaKaRegistrationByVoucherReport): Ministry of
+    // Commerce / Directorate of Trade /
+    // "Pa Tha Ka {ApplyType} List ({FromDate}) To ({ToDate})".
+    reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
+    reportSubtitle: (filters) => {
+      const applyType = filters.ApplyType ? String(filters.ApplyType) : '';
+      const from = filters.FromDate
+        ? dayjs(String(filters.FromDate)).format('DD/MM/YYYY')
+        : '';
+      const to = filters.ToDate
+        ? dayjs(String(filters.ToDate)).format('DD/MM/YYYY')
+        : '';
+      return `Pa Tha Ka ${applyType} List (${from}) To (${to})`;
+    },
     filters: [
       {
         name: 'dateRange',

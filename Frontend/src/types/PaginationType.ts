@@ -13,6 +13,11 @@ export interface PaginationType<T extends AnyObject = AnyObject> {
   sortOrder: string;
   filterColumn: string;
   filterQuery: string;
+  /**
+   * Optional per-column grand totals, keyed by column dataIndex (e.g.
+   * "companyCount"). When present, BasicTable renders a footer "Total" row.
+   */
+  columnTotals?: Record<string, number>;
 }
 
 

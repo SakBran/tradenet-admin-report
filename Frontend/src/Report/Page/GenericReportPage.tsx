@@ -61,11 +61,17 @@ interface LookupOption {
   id: number;
   code: string;
   label: string;
+  value?: string | number;
 }
 
 interface LookupFilterConfig {
   lookupName: string;
   label: string;
+}
+
+interface CompanyNameLookupResult {
+  companyRegistrationNo: string;
+  companyName: string;
 }
 
 const idFilterLookups: Record<string, LookupFilterConfig> = {
@@ -259,6 +265,10 @@ const normalizeFilters = (
   values: FilterFormValues
 ) =>
   filters.reduce<Record<string, unknown>>((request, filter) => {
+    if (filter.excludeFromRequest) {
+      return request;
+    }
+
     const value = values[filter.name];
 
     if (filter.type === 'dateRange') {
@@ -369,14 +379,25 @@ const toTableColumn = (
   return column;
 };
 
-const getLookupFilter = (filter: ReportFilterConfig) =>
-  filter.name.endsWith('Id') ? idFilterLookups[filter.name] : undefined;
+const getLookupFilter = (filter: ReportFilterConfig) => {
+  if (filter.lookupName) {
+    return {
+      lookupName: filter.lookupName,
+      label: filter.lookupLabel ?? filter.label,
+    };
+  }
 
-const toLookupSelectOptions = (options: LookupOption[] = []) => [
-  { label: 'All', value: 0 },
+  return filter.name.endsWith('Id') ? idFilterLookups[filter.name] : undefined;
+};
+
+const toLookupSelectOptions = (
+  options: LookupOption[] = [],
+  allValue: string | number = 0
+) => [
+  { label: 'All', value: allValue },
   ...options.map((option) => ({
     label: option.code ? `${option.label} (${option.code})` : option.label,
-    value: option.id,
+    value: option.value ?? option.id,
   })),
 ];
 
@@ -393,7 +414,10 @@ const renderFilter = (
         showSearch
         loading={loadingLookupNames.has(lookup.lookupName)}
         optionFilterProp="label"
-        options={toLookupSelectOptions(lookupOptions[lookup.lookupName])}
+        options={toLookupSelectOptions(
+          lookupOptions[lookup.lookupName],
+          typeof filter.defaultValue === 'string' ? filter.defaultValue : 0
+        )}
       />
     );
   }
@@ -440,6 +464,10 @@ const renderFilter = (
     );
   }
 
+  if (filter.type === 'readonlyText') {
+    return <Input readOnly />;
+  }
+
   return <Input />;
 };
 
@@ -449,10 +477,6 @@ interface GenericReportPageProps {
 
 const GenericReportPage = ({ config }: GenericReportPageProps) => {
   const [form] = Form.useForm<FilterFormValues>();
-  const tableColumns = useMemo(
-    () => config.columns.map(toTableColumn),
-    [config.columns]
-  );
   const derivedFilterValues = useMemo(
     () => getDerivedFilterValues(config.controllerName, config.filters),
     [config.controllerName, config.filters]
@@ -490,6 +514,30 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
   const [loadingLookupNames, setLoadingLookupNames] = useState<Set<string>>(
     () => new Set()
   );
+  const companyNameFilter = useMemo(
+    () =>
+      config.filters.find(
+        (filter) => filter.populateFromCompanyRegistrationNo
+      ),
+    [config.filters]
+  );
+  const watchedCompanyRegistrationNo = Form.useWatch(
+    'CompanyRegistrationNo',
+    form
+  );
+  const resolvedColumns = useMemo(
+    () =>
+      config.resolveColumns
+        ? config.resolveColumns(filters, config.columns)
+        : config.columns,
+    [config, filters]
+  );
+  const tableColumns = useMemo(
+    () => resolvedColumns.map(toTableColumn),
+    [resolvedColumns]
+  );
+  const legacyReportViewer =
+    config.legacyReportViewer ?? config.controllerName.startsWith('ImportLicence');
 
   const reportLookupFilters = useMemo(() => {
     const lookups = config.filters
@@ -559,6 +607,47 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
       isMounted = false;
     };
   }, [lookupOptions, reportLookupFilters]);
+
+  useEffect(() => {
+    if (!companyNameFilter) {
+      return;
+    }
+
+    const registrationNo = String(watchedCompanyRegistrationNo ?? '').trim();
+
+    if (registrationNo === '') {
+      form.setFieldValue(companyNameFilter.name, '');
+      return;
+    }
+
+    let isCancelled = false;
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        const response = await axiosInstance.get<CompanyNameLookupResult>(
+          'ReportLookups/company-name',
+          {
+            params: { companyRegistrationNo: registrationNo },
+          }
+        );
+
+        if (!isCancelled) {
+          form.setFieldValue(
+            companyNameFilter.name,
+            response.data.companyName ?? ''
+          );
+        }
+      } catch {
+        if (!isCancelled) {
+          form.setFieldValue(companyNameFilter.name, '');
+        }
+      }
+    }, 300);
+
+    return () => {
+      isCancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [companyNameFilter, form, watchedCompanyRegistrationNo]);
 
   const fetchRows = useCallback(
     async (query: BasicTableQuery): Promise<PaginationType<AnyObject>> => {
@@ -712,6 +801,8 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
         initialSortOrder="desc"
         excelFileName={config.excelFileName}
         showRowNumber={config.showRowNumber ?? true}
+        rowNumberTitle={legacyReportViewer ? 'No.' : 'No'}
+        legacyReportViewer={legacyReportViewer}
       />
     </>
   );

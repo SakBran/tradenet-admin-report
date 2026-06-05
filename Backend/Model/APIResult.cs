@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Reflection;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace API.Model
@@ -384,10 +385,19 @@ namespace API.Model
         public string FilterColumn { get; set; }
 
         /// <summary>
-        /// Filter Query string 
+        /// Filter Query string
         /// (to be used within the given FilterColumn)
         /// </summary>
         public string FilterQuery { get; set; }
+
+        /// <summary>
+        /// Optional per-column grand totals, keyed by the column's serialized name
+        /// (the frontend column dataIndex, e.g. "companyCount"). When set, the grid
+        /// renders a footer "Total" row. Null for reports without a totals row, so
+        /// existing reports are unaffected (omitted from the response when null).
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public IReadOnlyDictionary<string, decimal>? ColumnTotals { get; set; }
         #endregion
     }
 }

@@ -75,6 +75,8 @@ interface PropsType<T extends AnyObject = AnyObject> {
   excelEnabled?: boolean;
   idleText?: string;
   showRowNumber?: boolean;
+  rowNumberTitle?: string;
+  legacyReportViewer?: boolean;
   /**
    * Optional centered heading lines rendered inside the table, spanning all
    * columns above the column-header row (mirrors the legacy RDLC report header).
@@ -136,6 +138,8 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   excelEnabled = enabled,
   idleText = 'Set filters, then click Filter to load data',
   showRowNumber = true,
+  rowNumberTitle = 'No',
+  legacyReportViewer = false,
   reportHeaderLines,
 }: PropsType<T>) => {
   const normalizedColumns = useMemo<BasicTableColumn<T>[]>(() => {
@@ -282,13 +286,33 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
     (shouldShowActions ? 1 : 0);
   const skeletonRowCount = Math.min(Math.max(pageSize, 5), 12);
 
+  // Optional footer "Total" row, driven entirely by the per-column grand totals
+  // the backend supplies (keyed by column dataIndex). Reports that don't send
+  // columnTotals get no footer, so this is opt-in and backward compatible.
+  const columnTotals = data.columnTotals ?? {};
+  const hasColumnTotals = normalizedColumns.some(
+    (column) => (column.dataIndex ?? column.key).toString() in columnTotals
+  );
+  const showTotalRow =
+    !loading && (data.data?.length ?? 0) > 0 && hasColumnTotals;
+  // Put the "Total" label in the first column that has no numeric total.
+  const totalLabelIndex = normalizedColumns.findIndex(
+    (column) =>
+      !((column.dataIndex ?? column.key).toString() in columnTotals)
+  );
+
   return (
     <>
-      <div className="container">
+      <div
+        className={
+          legacyReportViewer ? 'container report-viewer-container' : 'container'
+        }
+      >
         <Flex
+          className={legacyReportViewer ? 'report-viewer-toolbar' : undefined}
           justify="space-between"
           align="center"
-          style={{ paddingBottom: 16 }}
+          style={legacyReportViewer ? undefined : { paddingBottom: 16 }}
           gap="small"
           wrap="wrap"
         >
@@ -350,7 +374,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
                   </tr>
                 ))}
               <tr>
-                {showRowNumber && <th>No</th>}
+                {showRowNumber && <th>{rowNumberTitle}</th>}
                 {normalizedColumns.map((column) => {
                   const key = column.key.toString();
 
@@ -427,6 +451,40 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
                   </tr>
                 ))}
               </tbody>
+            )}
+
+            {showTotalRow && (
+              <tfoot>
+                <tr className="report-total-row">
+                  {showRowNumber && <td />}
+                  {normalizedColumns.map((column, index) => {
+                    const dataIndex = (
+                      column.dataIndex ?? column.key
+                    ).toString();
+                    const key = column.key.toString();
+                    const total = columnTotals[dataIndex];
+
+                    if (total !== undefined) {
+                      return (
+                        <td key={key} style={{ fontWeight: 700 }}>
+                          {String(total)}
+                        </td>
+                      );
+                    }
+
+                    if (index === totalLabelIndex) {
+                      return (
+                        <td key={key} style={{ fontWeight: 700 }}>
+                          Total
+                        </td>
+                      );
+                    }
+
+                    return <td key={key} />;
+                  })}
+                  {shouldShowActions && <td />}
+                </tr>
+              </tfoot>
             )}
           </table>
         </div>

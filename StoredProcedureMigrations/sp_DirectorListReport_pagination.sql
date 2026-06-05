@@ -123,10 +123,17 @@ BEGIN
              INNER JOIN BusinessType businessType ON PaThaKa.BusinessTypeId = businessType.Id
              INNER JOIN LineofBusiness lineofBusiness ON PaThaKa.LineofBusinessId = lineofBusiness.Id
              WHERE (IssuedDate >= @FromDate AND IssuedDate <= @ToDate)) tmp
-            WHERE tmp.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '''' THEN CompanyRegistrationNo END)
-              AND tmp.DirectorName = (CASE WHEN @Name = '''' THEN tmp.DirectorName ELSE @Name END)
-              AND tmp.DirectorNationality = (CASE WHEN @Nationality = '''' THEN tmp.DirectorNationality ELSE @Nationality END)
-              AND tmp.DirectorNRC = (CASE WHEN @FilterNRCNo = '''' THEN tmp.DirectorNRC ELSE @FilterNRCNo END)
+            -- Empty filter -> match all rows; non-empty -> exact match (NULL-safe short-circuit).
+            -- BUGFIX: the source sp_DirectorListReport wrote the company filter as
+            --   tmp.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '''' THEN CompanyRegistrationNo END)
+            -- whose CASE has no ELSE, so a supplied registration number compared every row
+            -- against NULL and returned ZERO rows. The parameter short-circuit below fixes that
+            -- and also stops the no-op self-comparisons from silently dropping rows whose
+            -- DirectorName / DirectorNationality / DirectorNRC is NULL.
+            WHERE (@CompanyRegistrationNo = '''' OR tmp.CompanyRegistrationNo = @CompanyRegistrationNo)
+              AND (@Name = '''' OR tmp.DirectorName = @Name)
+              AND (@Nationality = '''' OR tmp.DirectorNationality = @Nationality)
+              AND (@FilterNRCNo = '''' OR tmp.DirectorNRC = @FilterNRCNo)
             ORDER BY ' + @OrderBy2 + N' ' + @Direction + N', tmp.DirectorSortOrder ' + @Direction + @Paging + N';';
 
         EXEC sp_executesql @Sql,

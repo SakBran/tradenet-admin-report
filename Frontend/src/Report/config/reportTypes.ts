@@ -7,6 +7,7 @@ export type ReportColumnDataType =
 
 export type ReportFilterType =
   | 'text'
+  | 'readonlyText'
   | 'number'
   | 'date'
   | 'dateRange'
@@ -30,12 +31,16 @@ export interface ReportFilterConfig {
   name: string;
   label: string;
   type: ReportFilterType;
+  lookupName?: string;
+  lookupLabel?: string;
   fromName?: string;
   toName?: string;
   fromLabel?: string;
   toLabel?: string;
   defaultValue?: string | number | boolean;
   required?: boolean;
+  excludeFromRequest?: boolean;
+  populateFromCompanyRegistrationNo?: boolean;
   options?: ReportFilterOption[];
 }
 
@@ -46,9 +51,18 @@ export interface ReportPageConfig {
   excelRoute: string;
   excelFileName: string;
   columns: ReportColumnConfig[];
+  resolveColumns?: (
+    filters: Record<string, unknown>,
+    columns: ReportColumnConfig[]
+  ) => ReportColumnConfig[];
   filters: ReportFilterConfig[];
   initialSortColumn?: string;
   showRowNumber?: boolean;
+  /**
+   * Renders the result grid in a legacy RDLC ReportViewer-like shell.
+   * Used only where we are intentionally matching the old admin report UI.
+   */
+  legacyReportViewer?: boolean;
   /**
    * Optional centered heading lines shown above the report grid once filters
    * are applied (e.g. ['Ministry of Commerce', 'Directorate of Trade']),

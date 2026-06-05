@@ -25,6 +25,8 @@ namespace Backend.Controllers
         // shows every form type's "Trading" et al., and selecting a non-PaThaKa id returns
         // no rows because PaThaKa records only reference Pa Tha Ka business type ids.
         private const string PaThaKaFormType = "Pa Tha Ka";
+        private const string ImportLicenceFormType = "Import Licence";
+        private const string ImportTradeType = "Import";
 
         private readonly TradeNetDbContext _context;
         private readonly IMemoryCache _cache;
@@ -49,12 +51,16 @@ namespace Backend.Controllers
                 "exportimportincoterms" => GetExportImportIncoterms,
                 "exportimportmethods" => GetExportImportMethods,
                 "exportimportsections" => GetExportImportSections,
+                "importlicenceincoterms" => GetImportLicenceIncoterms,
+                "importlicencemethods" => GetImportLicenceMethods,
+                "importlicencesections" => GetImportLicenceSections,
                 "lineofbusinesses" => GetLineofBusinesses,
                 "nrcprefixcodes" => GetNrcprefixCodes,
                 "nrcprefixes" => GetNrcprefixes,
                 "ogadepartments" => GetOgaDepartments,
                 "ogasections" => GetOgaSections,
                 "pathakatypes" => GetPaThaKaTypes,
+                "paymenttypes" => GetPaymentTypes,
                 "sakhans" => GetSakhans,
                 _ => null,
             };
@@ -73,6 +79,54 @@ namespace Backend.Controllers
                 });
 
             return Ok(options ?? new List<ReportLookupOption>());
+        }
+
+        [HttpGet("company-name")]
+        public async Task<ActionResult<CompanyNameLookupResult>> GetCompanyName(
+            [FromQuery] string companyRegistrationNo)
+        {
+            var registrationNo = companyRegistrationNo?.Trim() ?? string.Empty;
+
+            if (registrationNo == string.Empty)
+            {
+                return Ok(new CompanyNameLookupResult(string.Empty, string.Empty));
+            }
+
+            var companyName = await _context.PaThaKas
+                .AsNoTracking()
+                .Where(item => item.CompanyRegistrationNo == registrationNo)
+                .OrderByDescending(item => item.CreatedDate)
+                .Select(item => item.CompanyName)
+                .FirstOrDefaultAsync();
+
+            return Ok(new CompanyNameLookupResult(registrationNo, companyName ?? string.Empty));
+        }
+
+        // Structured NRC prefix data for the cascading State/Region -> Township picker used by
+        // the List of Directors report. Deliberately SEPARATE from the flat "nrcprefixes" lookup:
+        // that one feeds a single-select whose submitted value is the township Id, so adding
+        // StatePrefix to it would change what those selects post. Here the frontend gets every
+        // township already tagged with its StatePrefix and builds the State dropdown + filters
+        // the township dropdown entirely client-side from a single fetch.
+        [HttpGet("nrc-prefixes")]
+        public async Task<ActionResult<List<NrcPrefixLookupOption>>> GetNrcPrefixOptions()
+        {
+            var options = await _cache.GetOrCreateAsync(
+                CacheKeyPrefix + "nrc-prefixes-structured",
+                async entry =>
+                {
+                    entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+                    return await _context.Nrcprefixes
+                        .AsNoTracking()
+                        .Where(item => item.IsActive && !item.IsDeleted)
+                        .OrderBy(item => item.StatePrefix)
+                        .ThenBy(item => item.TownshipPrefix)
+                        .Select(item => new NrcPrefixLookupOption(
+                            item.Id, item.StatePrefix, item.TownshipPrefix))
+                        .ToListAsync();
+                });
+
+            return Ok(options ?? new List<NrcPrefixLookupOption>());
         }
 
         private Task<List<ReportLookupOption>> GetAmendRemarks() =>
@@ -137,6 +191,45 @@ namespace Backend.Controllers
                 .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
                 .ToListAsync();
 
+        private Task<List<ReportLookupOption>> GetImportLicenceIncoterms() =>
+            _context.ExportImportIncoterms
+                .AsNoTracking()
+                .Where(item =>
+                    item.IsActive &&
+                    !item.IsDeleted &&
+                    item.Type == ImportTradeType &&
+                    item.IsOversea)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
+                .ToListAsync();
+
+        private Task<List<ReportLookupOption>> GetImportLicenceMethods() =>
+            _context.ExportImportMethods
+                .AsNoTracking()
+                .Where(item =>
+                    item.IsActive &&
+                    !item.IsDeleted &&
+                    item.Type == ImportTradeType &&
+                    item.IsOversea)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
+                .ToListAsync();
+
+        private Task<List<ReportLookupOption>> GetImportLicenceSections() =>
+            _context.ExportImportSections
+                .AsNoTracking()
+                .Where(item =>
+                    item.IsActive &&
+                    !item.IsDeleted &&
+                    item.Type == ImportLicenceFormType &&
+                    item.IsOversea)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
+                .ToListAsync();
+
         private Task<List<ReportLookupOption>> GetLineofBusinesses() =>
             _context.LineofBusinesses
                 .AsNoTracking()
@@ -193,6 +286,19 @@ namespace Backend.Controllers
                 .Select(item => new ReportLookupOption(item.Id, item.Code, item.Description))
                 .ToListAsync();
 
+        private Task<List<ReportLookupOption>> GetPaymentTypes() =>
+            _context.PaymentTypes
+                .AsNoTracking()
+                .Where(item => item.IsActive && !item.IsDeleted)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(
+                    item.Id,
+                    string.Empty,
+                    item.Name,
+                    item.Id.ToString()))
+                .ToListAsync();
+
         private Task<List<ReportLookupOption>> GetSakhans() =>
             _context.Sakhans
                 .AsNoTracking()
@@ -203,5 +309,20 @@ namespace Backend.Controllers
                 .ToListAsync();
     }
 
-    public sealed record ReportLookupOption(int Id, string Code, string Label);
+    public sealed record ReportLookupOption(int Id, string Code, string Label)
+    {
+        public string? Value { get; init; }
+
+        public ReportLookupOption(int id, string code, string label, string? value)
+            : this(id, code, label)
+        {
+            Value = value;
+        }
+    }
+
+    public sealed record CompanyNameLookupResult(string CompanyRegistrationNo, string CompanyName);
+
+    // Township row tagged with its parent StatePrefix so the List of Directors report can build
+    // a State/Region -> Township cascade on the client from one fetch.
+    public sealed record NrcPrefixLookupOption(int Id, int StatePrefix, string TownshipPrefix);
 }

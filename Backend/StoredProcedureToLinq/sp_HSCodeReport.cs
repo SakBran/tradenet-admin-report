@@ -17,6 +17,7 @@ public sealed class sp_HSCodeReportRequest
     public string FormType { get; set; } = string.Empty;
     public string FilterType { get; set; } = string.Empty;
     public string HSCode { get; set; } = string.Empty;
+    public int ExportImportSectionId { get; set; }
     public int SakhanId { get; set; }
 }
 
@@ -71,7 +72,7 @@ public static partial class sp_HSCodeReport
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
-        if (UsesAggregateStoredProcedure(request.FormType))
+        if (UsesAggregateStoredProcedure(request))
         {
             var pageIndex = Math.Max(0, pagingRequest.PageIndex);
             var pageSize = pagingRequest.PageSize <= 0 ? 10 : Math.Min(pagingRequest.PageSize, 1000);
@@ -111,16 +112,17 @@ public static partial class sp_HSCodeReport
             pagingRequest.IncludeTotalCount);
     }
 
-    private static bool UsesAggregateStoredProcedure(string formType)
+    private static bool UsesAggregateStoredProcedure(sp_HSCodeReportRequest request)
     {
-        return formType is "Export Licence"
+        return request.ExportImportSectionId == 0
+            && request.FormType is ("Export Licence"
             or "Import Licence"
             or "Export Permit"
             or "Import Permit"
             or "Border Export Licence"
             or "Border Import Licence"
             or "Border Export Permit"
-            or "Border Import Permit";
+            or "Border Import Permit");
     }
 
     public static async Task<byte[]> CreateAggregateExcelWorkbookAsync(
@@ -194,6 +196,7 @@ public static partial class sp_HSCodeReport
                 && licence.Status == Approved
                 && licence.LicenceDate >= request.FromDate
                 && licence.LicenceDate <= request.ToDate
+                && (request.ExportImportSectionId == 0 || licence.ExportImportSectionId == request.ExportImportSectionId)
                 && (request.HSCode == string.Empty
                     || (request.FilterType == "Start"
                         ? EF.Functions.Like(hsCode.Code, request.HSCode + "%")
@@ -228,6 +231,7 @@ public static partial class sp_HSCodeReport
                 && licence.Status == Approved
                 && licence.LicenceDate >= request.FromDate
                 && licence.LicenceDate <= request.ToDate
+                && (request.ExportImportSectionId == 0 || licence.ExportImportSectionId == request.ExportImportSectionId)
                 && (request.HSCode == string.Empty
                     || (request.FilterType == "Start"
                         ? EF.Functions.Like(hsCode.Code, request.HSCode + "%")
@@ -262,6 +266,7 @@ public static partial class sp_HSCodeReport
                 && permit.Status == Approved
                 && permit.LicenceDate >= request.FromDate
                 && permit.LicenceDate <= request.ToDate
+                && (request.ExportImportSectionId == 0 || permit.ExportImportSectionId == request.ExportImportSectionId)
                 && (request.HSCode == string.Empty
                     || (request.FilterType == "Start"
                         ? EF.Functions.Like(hsCode.Code, request.HSCode + "%")
@@ -296,6 +301,7 @@ public static partial class sp_HSCodeReport
                 && permit.Status == Approved
                 && permit.LicenceDate >= request.FromDate
                 && permit.LicenceDate <= request.ToDate
+                && (request.ExportImportSectionId == 0 || permit.ExportImportSectionId == request.ExportImportSectionId)
                 && (request.HSCode == string.Empty
                     || (request.FilterType == "Start"
                         ? EF.Functions.Like(hsCode.Code, request.HSCode + "%")
@@ -331,6 +337,7 @@ public static partial class sp_HSCodeReport
                 && licence.CardType == PaThaKaCardType
                 && licence.LicenceDate >= request.FromDate
                 && licence.LicenceDate <= request.ToDate
+                && (request.ExportImportSectionId == 0 || licence.ExportImportSectionId == request.ExportImportSectionId)
                 && (request.SakhanId == 0 || licence.SakhanId == request.SakhanId)
                 && (request.HSCode == string.Empty
                     || (request.FilterType == "Start"
@@ -362,6 +369,7 @@ public static partial class sp_HSCodeReport
                 && licence.CardType == IndividualTradingCardType
                 && licence.LicenceDate >= request.FromDate
                 && licence.LicenceDate <= request.ToDate
+                && (request.ExportImportSectionId == 0 || licence.ExportImportSectionId == request.ExportImportSectionId)
                 && (request.SakhanId == 0 || licence.SakhanId == request.SakhanId)
                 && (request.HSCode == string.Empty
                     || (request.FilterType == "Start"
@@ -400,6 +408,7 @@ public static partial class sp_HSCodeReport
                 && licence.CardType == PaThaKaCardType
                 && licence.LicenceDate >= request.FromDate
                 && licence.LicenceDate <= request.ToDate
+                && (request.ExportImportSectionId == 0 || licence.ExportImportSectionId == request.ExportImportSectionId)
                 && (request.SakhanId == 0 || licence.SakhanId == request.SakhanId)
                 && (request.HSCode == string.Empty
                     || (request.FilterType == "Start"
@@ -431,6 +440,7 @@ public static partial class sp_HSCodeReport
                 && licence.CardType == IndividualTradingCardType
                 && licence.LicenceDate >= request.FromDate
                 && licence.LicenceDate <= request.ToDate
+                && (request.ExportImportSectionId == 0 || licence.ExportImportSectionId == request.ExportImportSectionId)
                 && (request.SakhanId == 0 || licence.SakhanId == request.SakhanId)
                 && (request.HSCode == string.Empty
                     || (request.FilterType == "Start"
@@ -468,6 +478,7 @@ public static partial class sp_HSCodeReport
                 && permit.Status == Approved
                 && permit.LicenceDate >= request.FromDate
                 && permit.LicenceDate <= request.ToDate
+                && (request.ExportImportSectionId == 0 || permit.ExportImportSectionId == request.ExportImportSectionId)
                 && (request.SakhanId == 0 || permit.SakhanId == request.SakhanId)
                 && (request.HSCode == string.Empty
                     || (request.FilterType == "Start"
@@ -504,6 +515,7 @@ public static partial class sp_HSCodeReport
                 && permit.Status == Approved
                 && permit.LicenceDate >= request.FromDate
                 && permit.LicenceDate <= request.ToDate
+                && (request.ExportImportSectionId == 0 || permit.ExportImportSectionId == request.ExportImportSectionId)
                 && (request.SakhanId == 0 || permit.SakhanId == request.SakhanId)
                 && (request.HSCode == string.Empty
                     || (request.FilterType == "Start"

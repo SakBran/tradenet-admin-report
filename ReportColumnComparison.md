@@ -1,6 +1,6 @@
 # Report Column Comparison
 
-Generated: 2026-05-29T07:22:20.196Z
+Generated: 2026-06-05T13:08:19.721Z
 
 Old source: `C:\Code\Ministry of Commerce\Tradenet\tradenet-2.0-admin\TradenetAdmin\ReportControl\*.rdlc` from the old Tradenet 2.0 Admin project.
 New source: `Frontend\src\Report\config\reportConfigs.ts` plus the conditional `No` column rendered by `BasicTable`.
@@ -9,12 +9,20 @@ Comparison uses visible RDLC table headers from the old report viewer and visibl
 
 ## Summary
 
-- New frontend report configs checked: 125
-- New reports matched to an old RDLC source: 125
-- New reports without an old RDLC match: 0
-- Reports with old columns missing in new: 0
-- Reports with extra new columns: 0
-- Old RDLC files not mapped to current frontend reports: 42
+- New frontend report configs checked: 134
+- New reports matched to an old RDLC source: 129
+- New reports without an old RDLC match: 5
+- Reports with old columns missing in new: 9
+- Reports with extra new columns: 15
+- Old RDLC files not mapped to current frontend reports: 38
+
+## New Reports Without Old Match
+
+- `WholeSaleRegistrationByVoucher`
+- `RetailRegistrationByVoucher`
+- `WholeSaleAndRetailSummaryReport`
+- `WholeSaleAndRetailDetailReport`
+- `WholeSaleAndRetailRegistrationByVoucher`
 
 ## Per-Report Comparison
 
@@ -149,9 +157,9 @@ Extra in new (0): _None_
 Title: Border Export Licence Voucher Report
 Old source: `BorderVoucherReport.rdlc`
 Old columns (13): `No.`, `Sakhan`, `Licence No`, `Application Date`, `Application No`, `=Parameters!header2.Value`, `=Parameters!header3.Value`, `Company Registration No`, `Company Name`, `Voucher No`, `Voucher Date`, `Commodity Type`, `Total Amount`
-New columns (13): `No`, `Sakhan`, `Licence No`, `Application Date`, `Application No`, `=Parameters!header2.Value`, `=Parameters!header3.Value`, `Company Registration No`, `Company Name`, `Voucher No`, `Voucher Date`, `Commodity Type`, `Total Amount`
-Need in new (0): _None_
-Extra in new (0): _None_
+New columns (13): `No`, `Sakhan`, `Licence No`, `Application No`, `Licence Date`, `Company Registration No`, `Company Name`, `Lic Value`, `Currency`, `Voucher No`, `Voucher Date`, `Approved User`, `Total Amount`
+Need in new (4): `Application Date`, `=Parameters!header2.Value`, `=Parameters!header3.Value`, `Commodity Type`
+Extra in new (4): `Licence Date`, `Lic Value`, `Currency`, `Approved User`
 
 ### BorderExportPermitActualAmendmentReport
 
@@ -515,7 +523,7 @@ Extra in new (0): _None_
 
 ### CardListsByCompanyRegistrationNumber
 
-Title: CardListsByCompanyRegistrationNumber
+Title: Card Lists By Company Registration Number
 Old source: `CardListsByPaThaKa.rdlc`
 Old columns (8): `Company Registration No`, `Company Name`, `Company Address`, `Start Date`, `Valid Date`, `Business Type`, `Line Of Business`, `MIC Permit Number`
 New columns (8): `Company Registration No`, `Company Name`, `Company Address`, `Start Date`, `Valid Date`, `Business Type`, `Line Of Business`, `MIC Permit Number`
@@ -536,9 +544,9 @@ Extra in new (0): _None_
 Title: Company Profile
 Old source: `CompanyProfileReport.rdlc`
 Old columns (0): _None_
-New columns (0): _None_
+New columns (18): `Company Registration No`, `Company Name`, `Company Registration Date`, `End Date`, `Business Type`, `Line of Business`, `Unit Level`, `Street Number / Street Name`, `Quarter / City / Township`, `State`, `Country`, `Postal Code`, `Capital`, `Director Name`, `Director NRC`, `Director Position`, `Permit Business`, `Extension Count`
 Need in new (0): _None_
-Extra in new (0): _None_
+Extra in new (18): `Company Registration No`, `Company Name`, `Company Registration Date`, `End Date`, `Business Type`, `Line of Business`, `Unit Level`, `Street Number / Street Name`, `Quarter / City / Township`, `State`, `Country`, `Postal Code`, `Capital`, `Director Name`, `Director NRC`, `Director Position`, `Permit Business`, `Extension Count`
 
 ### EIRCardBindReport
 
@@ -779,9 +787,9 @@ Extra in new (0): _None_
 Title: Export Permit Voucher Report
 Old source: `VoucherReport.rdlc`
 Old columns (17): `No.`, `Licence No`, `Application Date`, `=Parameters!header2.Value`, `Application No`, `=Parameters!header3.Value`, `Company Registration No`, `Company Name`, `Lic Value`, `Currency`, `Voucher No`, `Voucher Date`, `Approved User`, `Commodity Type`, `Total CIF`, `Exchange Rate`, `Total Amount`
-New columns (17): `No`, `Licence No`, `Application Date`, `=Parameters!header2.Value`, `Application No`, `=Parameters!header3.Value`, `Company Registration No`, `Company Name`, `Lic Value`, `Currency`, `Voucher No`, `Voucher Date`, `Approved User`, `Commodity Type`, `Total CIF`, `Exchange Rate`, `Total Amount`
-Need in new (0): _None_
-Extra in new (0): _None_
+New columns (12): `No`, `Licence No`, `Application No`, `Licence Date`, `Company Registration No`, `Company Name`, `Lic Value`, `Currency`, `Voucher No`, `Voucher Date`, `Approved User`, `Total Amount`
+Need in new (6): `Application Date`, `=Parameters!header2.Value`, `=Parameters!header3.Value`, `Commodity Type`, `Total CIF`, `Exchange Rate`
+Extra in new (1): `Licence Date`
 
 ### ImportLicenceActualAmendmentReport
 
@@ -1031,9 +1039,9 @@ Extra in new (0): _None_
 Title: Import Permit Voucher Report
 Old source: `VoucherReport.rdlc`
 Old columns (17): `No.`, `Licence No`, `Application Date`, `=Parameters!header2.Value`, `Application No`, `=Parameters!header3.Value`, `Company Registration No`, `Company Name`, `Lic Value`, `Currency`, `Voucher No`, `Voucher Date`, `Approved User`, `Commodity Type`, `Total CIF`, `Exchange Rate`, `Total Amount`
-New columns (17): `No`, `Licence No`, `Application Date`, `=Parameters!header2.Value`, `Application No`, `=Parameters!header3.Value`, `Company Registration No`, `Company Name`, `Lic Value`, `Currency`, `Voucher No`, `Voucher Date`, `Approved User`, `Commodity Type`, `Total CIF`, `Exchange Rate`, `Total Amount`
-Need in new (0): _None_
-Extra in new (0): _None_
+New columns (12): `No`, `Licence No`, `Application No`, `Licence Date`, `Company Registration No`, `Company Name`, `Lic Value`, `Currency`, `Voucher No`, `Voucher Date`, `Approved User`, `Total Amount`
+Need in new (6): `Application Date`, `=Parameters!header2.Value`, `=Parameters!header3.Value`, `Commodity Type`, `Total CIF`, `Exchange Rate`
+Extra in new (1): `Licence Date`
 
 ### ListOfCompany
 
@@ -1094,18 +1102,18 @@ Extra in new (0): _None_
 Title: MPU Report
 Old source: `MPUReport.rdlc`
 Old columns (19): `No.`, `Sakhan`, `Company Name`, `Company Registration No`, `Application No`, `Trxn Date`, `Form Type`, `Application Type`, `MID`, `Card No`, `Invoice No`, `APP Code`, `Trxn Ref No.`, `Trxn Amount`, `MOC`, `IM`, `MPU`, `Voucher No`, `Amount Diff`
-New columns (19): `No`, `Sakhan`, `Company Name`, `Company Registration No`, `Application No`, `Trxn Date`, `Form Type`, `Application Type`, `MID`, `Card No`, `Invoice No`, `APP Code`, `Trxn Ref No.`, `Trxn Amount`, `MOC`, `IM`, `MPU`, `Voucher No`, `Amount Diff`
-Need in new (0): _None_
-Extra in new (0): _None_
+New columns (19): `No`, `Sakhan`, `Company Name`, `Company Registration No`, `Application No`, `Trxn Date`, `Form Type`, `Application Type`, `MID`, `Card No`, `Invoice No`, `APP Code`, `Trxn Ref No.`, `Trxn Amount`, `MOC`, `IM`, `MPU Amount`, `Voucher No`, `Amount Diff`
+Need in new (1): `MPU`
+Extra in new (1): `MPU Amount`
 
 ### MPUReportV3
 
 Title: MPU Report V3
 Old source: `MPUReport.rdlc`
 Old columns (19): `No.`, `Sakhan`, `Company Name`, `Company Registration No`, `Application No`, `Trxn Date`, `Form Type`, `Application Type`, `MID`, `Card No`, `Invoice No`, `APP Code`, `Trxn Ref No.`, `Trxn Amount`, `MOC`, `IM`, `MPU`, `Voucher No`, `Amount Diff`
-New columns (19): `No`, `Sakhan`, `Company Name`, `Company Registration No`, `Application No`, `Trxn Date`, `Form Type`, `Application Type`, `MID`, `Card No`, `Invoice No`, `APP Code`, `Trxn Ref No.`, `Trxn Amount`, `MOC`, `IM`, `MPU`, `Voucher No`, `Amount Diff`
-Need in new (0): _None_
-Extra in new (0): _None_
+New columns (19): `No`, `Sakhan`, `Company Name`, `Company Registration No`, `Application No`, `Trxn Date`, `Form Type`, `Application Type`, `MID`, `Card No`, `Invoice No`, `APP Code`, `Trxn Ref No.`, `Trxn Amount`, `MOC`, `IM`, `MPU Amount`, `Voucher No`, `Amount Diff`
+Need in new (1): `MPU`
+Extra in new (1): `MPU Amount`
 
 ### OnlineFeesReport
 
@@ -1118,7 +1126,7 @@ Extra in new (0): _None_
 
 ### PaThaKaRegisteredBusinessOrganizationReport
 
-Title: PaThaKaRegisteredBusinessOrganizationReport
+Title: PaThaKa Registered Business Organization Report
 Old source: `RegisteredBusinessOrganizationReport.rdlc`
 Old columns (9): `No.`, `Company Registration No`, `Company Name`, `Company Registration Date`, `Valid Date`, `Business Type`, `Line of Business`, `MICPermit No`, `Company Address`
 New columns (9): `No`, `Company Registration No`, `Company Name`, `Company Registration Date`, `Valid Date`, `Business Type`, `Line of Business`, `MICPermit No`, `Company Address`
@@ -1143,6 +1151,87 @@ New columns (9): `No`, `Date`, `Company Registration No`, `Company Name`, `Compa
 Need in new (0): _None_
 Extra in new (0): _None_
 
+### WholeSaleSummaryReport
+
+Title: Whole Sale Summary Report
+Old source: `WholeSaleSummaryReport.rdlc`
+Old columns (1): `Total Number`
+New columns (3): `No`, `Apply Type`, `Application Count`
+Need in new (1): `Total Number`
+Extra in new (3): `No`, `Apply Type`, `Application Count`
+
+### WholeSaleDetailReport
+
+Title: Whole Sale Detail Report
+Old source: `WholeSaleDetailReport.rdlc`
+Old columns (8): `No.`, `Company Registration No`, `Whole Sale No`, `Company Name`, `Company Address`, `Whole Sale Address`, `Issued Date`, `Valid Date`
+New columns (8): `No`, `Company Registration No`, `Whole Sale Retail No`, `Company Name`, `Company Address`, `Whole Sale Retail Address`, `Issued Date`, `End Date`
+Need in new (2): `Whole Sale No`, `Whole Sale Address`
+Extra in new (2): `Whole Sale Retail No`, `Whole Sale Retail Address`
+
+### WholeSaleRegistrationByVoucher
+
+Title: WholeSale Registration By Voucher
+Old source: _No match found_
+Old columns (0): _None_
+New columns (12): `No`, `Date`, `Company Registration No`, `Company Name`, `Company Address`, `Whole Sale Retail No`, `Whole Sale Retail Name`, `Whole Sale Retail Address`, `Payment Type`, `Voucher No`, `Voucher Date`, `Total Amount`
+Need in new (0): _None_
+Extra in new (12): `No`, `Date`, `Company Registration No`, `Company Name`, `Company Address`, `Whole Sale Retail No`, `Whole Sale Retail Name`, `Whole Sale Retail Address`, `Payment Type`, `Voucher No`, `Voucher Date`, `Total Amount`
+
+### RetailSummaryReport
+
+Title: Retail Summary Report
+Old source: `RetailSummaryReport.rdlc`
+Old columns (1): `Total Number`
+New columns (3): `No`, `Apply Type`, `Application Count`
+Need in new (1): `Total Number`
+Extra in new (3): `No`, `Apply Type`, `Application Count`
+
+### RetailDetailReport
+
+Title: Retail Detail Report
+Old source: `RetailDetailReport.rdlc`
+Old columns (8): `No.`, `Company Registration No`, `Retail No`, `Company Name`, `Company Address`, `Retail Address`, `Issued Date`, `Valid Date`
+New columns (8): `No`, `Company Registration No`, `Whole Sale Retail No`, `Company Name`, `Company Address`, `Whole Sale Retail Address`, `Issued Date`, `End Date`
+Need in new (2): `Retail No`, `Retail Address`
+Extra in new (2): `Whole Sale Retail No`, `Whole Sale Retail Address`
+
+### RetailRegistrationByVoucher
+
+Title: Retail Registration By Voucher
+Old source: _No match found_
+Old columns (0): _None_
+New columns (12): `No`, `Date`, `Company Registration No`, `Company Name`, `Company Address`, `Whole Sale Retail No`, `Whole Sale Retail Name`, `Whole Sale Retail Address`, `Payment Type`, `Voucher No`, `Voucher Date`, `Total Amount`
+Need in new (0): _None_
+Extra in new (12): `No`, `Date`, `Company Registration No`, `Company Name`, `Company Address`, `Whole Sale Retail No`, `Whole Sale Retail Name`, `Whole Sale Retail Address`, `Payment Type`, `Voucher No`, `Voucher Date`, `Total Amount`
+
+### WholeSaleAndRetailSummaryReport
+
+Title: Whole Sale and Retail Summary Report
+Old source: _No match found_
+Old columns (0): _None_
+New columns (3): `No`, `Apply Type`, `Application Count`
+Need in new (0): _None_
+Extra in new (3): `No`, `Apply Type`, `Application Count`
+
+### WholeSaleAndRetailDetailReport
+
+Title: Whole Sale and Retail Detail Report
+Old source: _No match found_
+Old columns (0): _None_
+New columns (8): `No`, `Company Registration No`, `Whole Sale Retail No`, `Company Name`, `Company Address`, `Whole Sale Retail Address`, `Issued Date`, `End Date`
+Need in new (0): _None_
+Extra in new (8): `No`, `Company Registration No`, `Whole Sale Retail No`, `Company Name`, `Company Address`, `Whole Sale Retail Address`, `Issued Date`, `End Date`
+
+### WholeSaleAndRetailRegistrationByVoucher
+
+Title: WS and R Registration By Voucher
+Old source: _No match found_
+Old columns (0): _None_
+New columns (12): `No`, `Date`, `Company Registration No`, `Company Name`, `Company Address`, `Whole Sale Retail No`, `Whole Sale Retail Name`, `Whole Sale Retail Address`, `Payment Type`, `Voucher No`, `Voucher Date`, `Total Amount`
+Need in new (0): _None_
+Extra in new (12): `No`, `Date`, `Company Registration No`, `Company Name`, `Company Address`, `Whole Sale Retail No`, `Whole Sale Retail Name`, `Whole Sale Retail Address`, `Payment Type`, `Voucher No`, `Voucher Date`, `Total Amount`
+
 ## Old RDLC Files Not Mapped To New Frontend
 
 - `BordeExtensionReport.rdlc`
@@ -1165,9 +1254,7 @@ Extra in new (0): _None_
 - `OGARecommendationReport.rdlc`
 - `ReExportDetailReport.rdlc`
 - `ReExportSummaryReport.rdlc`
-- `RetailDetailReport.rdlc`
 - `RetailRegistrationByVoucherReport.rdlc`
-- `RetailSummaryReport.rdlc`
 - `SaleCenterCommercialVehiclesDetailReport.rdlc`
 - `SaleCenterCommercialVehiclesSummaryReport.rdlc`
 - `SaleCenterMotorVehiclesDetailReport.rdlc`
@@ -1178,12 +1265,10 @@ Extra in new (0): _None_
 - `ShowRoomMachineryDetailReport.rdlc`
 - `ShowRoomMachinerySummaryReport.rdlc`
 - `ShowRoomRegistrationByVoucherReport.rdlc`
-- `WholeSaleDetailReport.rdlc`
 - `WholeSaleRegistrationByVoucherReport.rdlc`
 - `WholeSaleRetailDetailReport.rdlc`
 - `WholeSaleRetailRegistrationByVoucherReport.rdlc`
 - `WholeSaleRetailSummaryReport.rdlc`
-- `WholeSaleSummaryReport.rdlc`
 - `WineImportationDetailReport.rdlc`
 - `WineImportationRegistrationByVoucherReport.rdlc`
 - `WineImportationSummaryReport.rdlc`
