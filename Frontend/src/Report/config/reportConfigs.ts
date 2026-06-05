@@ -140,6 +140,15 @@ const importLicenceCompanyRegistrationNoFilter: ReportFilterConfig = {
   defaultValue: '',
 };
 
+const importLicenceCompanyNameFilter: ReportFilterConfig = {
+  name: 'CompanyName',
+  label: 'Company Name',
+  type: 'readonlyText',
+  defaultValue: '',
+  excludeFromRequest: true,
+  populateFromCompanyRegistrationNo: true,
+};
+
 const importLicenceAmendRemarkFilter: ReportFilterConfig = {
   name: 'AmendRemarkId',
   label: 'Remark',
@@ -210,6 +219,7 @@ const importLicenceAmendFilters: ReportFilterConfig[] = [
   importLicenceFormTypeFilter,
   importLicenceSectionFilter,
   importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
   importLicenceAmendRemarkFilter,
 ];
 
@@ -218,6 +228,7 @@ const importLicenceExtensionFilters: ReportFilterConfig[] = [
   importLicenceFormTypeFilter,
   importLicenceSectionFilter,
   importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
 ];
 
 const importLicenceSummaryDetailFilters: ReportFilterConfig[] = [
@@ -249,6 +260,7 @@ const importLicenceCompanyListFilters: ReportFilterConfig[] = [
   importLicenceSectionFilter,
   importLicenceCompanyMethodFilter,
   importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
 ];
 
 const importLicenceDailyFilters: ReportFilterConfig[] = [
@@ -257,6 +269,7 @@ const importLicenceDailyFilters: ReportFilterConfig[] = [
   importLicenceSectionFilter,
   importLicencePaThaKaTypeFilter,
   importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
 ];
 
 const importLicenceTotalValueFilters: ReportFilterConfig[] = [
@@ -279,6 +292,7 @@ const importLicenceNewFilters: ReportFilterConfig[] = [
   importLicenceFormTypeFilter,
   importLicenceSectionFilter,
   importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
   importLicenceAutoFilter,
   importLicenceQuotaFilter,
 ];
@@ -296,6 +310,7 @@ const importLicenceVoucherFilters: ReportFilterConfig[] = [
   importLicenceVoucherApplyTypeFilter,
   importLicenceVoucherPaymentTypeFilter,
   importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
 ];
 
 const importLicenceVoucherHeaders: Record<string, [string, string]> = {

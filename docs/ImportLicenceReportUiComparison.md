@@ -35,17 +35,17 @@ All current routes stay the same: `/Report/<ReportName>`. API route stays `<Repo
 | `ImportLicenceBySectionReport` | `ImportLicenceBySectionReport.cshtml` | From Date, To Date, PaThaKa Type, Import Section, Import Method | Same | Fixed |
 | `ImportLicenceByMethodReport` | `ImportLicenceByMethodReport.cshtml` | From Date, To Date, PaThaKa Type, Import Section, Import Method | Same | Fixed |
 | `ImportLicenceBySellerCountryReport` | `ImportLicenceBySellerCountryReport.cshtml` | From Date, To Date, PaThaKa Type, Import Section, Import Method, Seller Country | Same | Fixed |
-| `ImportLicenceCompanyListReport` | old `ImportLicenceByCompanyReport` | From Date, To Date, PaThaKa Type, Import Section, Export Method, Company Registration No, readonly Company Name | Same except readonly Company Name | Mostly fixed |
-| `ImportLicenceDailyReportNewLicenceReport` | old `ImportLicenceByDailyReport` | From Date, To Date, Import Section, PaThaKa Type, Company Registration No, readonly Company Name | Same except readonly Company Name | Mostly fixed |
+| `ImportLicenceCompanyListReport` | old `ImportLicenceByCompanyReport` | From Date, To Date, PaThaKa Type, Import Section, Export Method, Company Registration No, readonly Company Name | Same | Fixed |
+| `ImportLicenceDailyReportNewLicenceReport` | old `ImportLicenceByDailyReport` | From Date, To Date, Import Section, PaThaKa Type, Company Registration No, readonly Company Name | Same | Fixed |
 | `ImportLicenceTotalValueLicencesReport` | old total value/licences report | From Date, To Date, PaThaKa Type, Import Section | Same | Fixed |
 | `ImportLicenceByHSCodeReport` | `ImportLicenceByHSCodeReport.cshtml` | From Date, To Date, Import Section, Filter By, HS Code | Same | Fixed |
-| `ImportLicenceAmendmentReport` | `ImportLicenceAmendReport.cshtml` | From Date, To Date, Import Section, Company Registration No, readonly Company Name, Remark | Same except readonly Company Name | Mostly fixed |
-| `ImportLicenceActualAmendmentReport` | old actual amendment action/view family | From Date, To Date, Import Section, Company Registration No, readonly Company Name, Remark | Same except readonly Company Name | Mostly fixed |
-| `ImportLicenceExtensionReport` | `ImportLicenceExtensionReport.cshtml` | From Date, To Date, Import Section, Company Registration No, readonly Company Name | Same except readonly Company Name | Mostly fixed |
-| `ImportLicenceCancellationReport` | `ImportLicenceCancelReport.cshtml` | From Date, To Date, Import Section, Company Registration No, readonly Company Name | Same except readonly Company Name | Mostly fixed |
-| `ImportLicenceNewReportNewReport` | `ImportLicenceNewReport.cshtml` | From Date, To Date, Import Section, Company Registration No, readonly Company Name, Auto / None Auto, Quota | Same except readonly Company Name | Mostly fixed |
+| `ImportLicenceAmendmentReport` | `ImportLicenceAmendReport.cshtml` | From Date, To Date, Import Section, Company Registration No, readonly Company Name, Remark | Same | Fixed |
+| `ImportLicenceActualAmendmentReport` | old actual amendment action/view family | From Date, To Date, Import Section, Company Registration No, readonly Company Name, Remark | Same | Fixed |
+| `ImportLicenceExtensionReport` | `ImportLicenceExtensionReport.cshtml` | From Date, To Date, Import Section, Company Registration No, readonly Company Name | Same | Fixed |
+| `ImportLicenceCancellationReport` | `ImportLicenceCancelReport.cshtml` | From Date, To Date, Import Section, Company Registration No, readonly Company Name | Same | Fixed |
+| `ImportLicenceNewReportNewReport` | `ImportLicenceNewReport.cshtml` | From Date, To Date, Import Section, Company Registration No, readonly Company Name, Auto / None Auto, Quota | Same | Fixed |
 | `ImportLicencePendingReport` | `ImportLicencePendingReport.cshtml` | From Date, To Date, Import Section | Same | Fixed |
-| `ImportLicenceVoucherReport` | `ImportLicenceVoucherReport.cshtml` | From Date, To Date, Import Section, Apply Type, Payment Type, Company Registration No, readonly Company Name | Same except readonly Company Name | Mostly fixed |
+| `ImportLicenceVoucherReport` | `ImportLicenceVoucherReport.cshtml` | From Date, To Date, Import Section, Apply Type, Payment Type, Company Registration No, readonly Company Name | Same | Fixed |
 
 ## Implemented Lookup/Option Data Parity
 
@@ -59,9 +59,9 @@ All current routes stay the same: `/Report/<ReportName>`. API route stays `<Repo
 | Auto / None Auto | Old option values `auto`, `none-auto` | New select uses All, auto, none-auto |
 | Quota | Old visible option values `quota`, `no-quota`; old stored-procedure parameter was commented out | New select uses All, quota, no-quota; when selected, new API filters by `ImportLicence.Quota` through the LINQ path |
 
-Current-user section restriction note: old screens further restricted sections for Check/Approve users through `GetSections(AppConfig.ImportLicence, AppConfig.Oversea)`. I did not recreate that because the current API/user model mapping was not found in this repo during this pass.
+Current-user section restriction note: old screens further restricted sections for Check/Approve users through `GetSections(AppConfig.ImportLicence, AppConfig.Oversea)`. Old code reads `UserDetail.Section` as comma-separated section codes for the current MOC session user. The new backend has `UserDetails`, but this pass did not change section dropdowns by current user because the current JWT/user-role contract and code-to-id mapping need confirmation before filtering lookup results.
 
-Readonly `CompanyName` note: old screens showed a readonly field populated by old `reports.js` typeahead/company lookup. I did not add a dummy field because the current report API searches by `CompanyRegistrationNo`, and I did not find an existing report-local company lookup flow to wire safely.
+Readonly `CompanyName` note: old screens showed a readonly field populated by old `reports.js` typeahead/company lookup. The new React filter panel now reproduces that display-only field for Import Licence reports that had it. It is populated from `ReportLookups/company-name?companyRegistrationNo=...` and is excluded from report request payloads, so stored-procedure behavior remains keyed by `CompanyRegistrationNo`.
 
 ## Table Header / Result UI Comparison
 
@@ -101,6 +101,7 @@ Intentional result UI differences for this pass:
 - `ImportLicenceByHSCodeReport` now accepts `ExportImportSectionId`, matching the old HS Code screen. If Section is `All`, the existing aggregate stored procedure path is preserved. If a specific Section is selected, the existing LINQ aggregate path is used so the filter actually applies.
 - `ImportLicenceNewReportNewReport` now accepts `Quota`. If Quota is not selected, the existing paged stored procedure path is preserved. If Quota is selected, the existing LINQ query path is used and filters `ImportLicence.Quota`.
 - `sp_NewReport.ImportLicenceQuery` now also honors `Auto` and `Quota` when the LINQ path is used.
+- `ReportLookups/company-name` returns the current PaThaKa company name for the entered `CompanyRegistrationNo`, allowing the frontend to match the old readonly Company Name filter field without changing report request models.
 
 ## Generated Column Comparison
 
@@ -130,13 +131,12 @@ Remaining `ReportColumnComparison.md` mismatches are outside the current Import 
 ## Verification
 
 - `node tools\compare-report-columns.mjs`: passed for scoped Import Licence reports. The generated file still reports unrelated non-Import-Licence mismatches.
-- `dotnet build Backend\API.csproj --no-restore`: passed with 0 warnings and 0 errors.
+- `dotnet build Backend\API.csproj --no-restore`: passed with 0 errors. Current full output reports existing nullable/migration warnings.
 - `npm run build` in `Frontend`: passed. Vite reported the existing large chunk warning.
 - `dotnet test Backend.Tests\Backend.Tests.csproj --no-restore`: failed because the local test environment/suite is not ready for a full run. Key failures were missing `TRADENET_REPORT_TEST_CONNECTION_STRING`, missing stored procedures such as `dbo.sp_VoucherReport_pagination`, and an unrelated fixture failure for `CardListsByCompanyRegistrationNumberController` missing `TryCreateReportRequest`.
 
 ## Final Gaps / User Confirmation Needed
 
-- Whether to reproduce readonly `Company Name` fields and old typeahead behavior in the new React filter panel.
-- Whether current-user section restriction must be implemented for MOC Check/Approve users, and where that user-section data lives in the new backend.
+- Whether current-user section restriction must be implemented for MOC Check/Approve users in the new app. If yes, confirm that `ClaimTypes.Name` maps to `TradeNet.User.Id`, `ClaimTypes.Role` can identify old Check/Approve users, and `UserDetail.Section` stores ExportImportSection codes that should filter the Import Licence section dropdown.
 - Whether the old `Export Method` label on the Import Licence Company List screen is a typo. It is currently preserved for visual parity.
 - Whether to preserve the old seller country report title typo (`Export Licences`) exactly.

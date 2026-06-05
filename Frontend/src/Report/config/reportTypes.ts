@@ -7,6 +7,7 @@ export type ReportColumnDataType =
 
 export type ReportFilterType =
   | 'text'
+  | 'readonlyText'
   | 'number'
   | 'date'
   | 'dateRange'
@@ -38,6 +39,8 @@ export interface ReportFilterConfig {
   toLabel?: string;
   defaultValue?: string | number | boolean;
   required?: boolean;
+  excludeFromRequest?: boolean;
+  populateFromCompanyRegistrationNo?: boolean;
   options?: ReportFilterOption[];
 }
 

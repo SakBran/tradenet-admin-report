@@ -81,6 +81,27 @@ namespace Backend.Controllers
             return Ok(options ?? new List<ReportLookupOption>());
         }
 
+        [HttpGet("company-name")]
+        public async Task<ActionResult<CompanyNameLookupResult>> GetCompanyName(
+            [FromQuery] string companyRegistrationNo)
+        {
+            var registrationNo = companyRegistrationNo?.Trim() ?? string.Empty;
+
+            if (registrationNo == string.Empty)
+            {
+                return Ok(new CompanyNameLookupResult(string.Empty, string.Empty));
+            }
+
+            var companyName = await _context.PaThaKas
+                .AsNoTracking()
+                .Where(item => item.CompanyRegistrationNo == registrationNo)
+                .OrderByDescending(item => item.CreatedDate)
+                .Select(item => item.CompanyName)
+                .FirstOrDefaultAsync();
+
+            return Ok(new CompanyNameLookupResult(registrationNo, companyName ?? string.Empty));
+        }
+
         private Task<List<ReportLookupOption>> GetAmendRemarks() =>
             _context.LicencePermitAmendRemarks
                 .AsNoTracking()
@@ -271,4 +292,6 @@ namespace Backend.Controllers
             Value = value;
         }
     }
+
+    public sealed record CompanyNameLookupResult(string CompanyRegistrationNo, string CompanyName);
 }

@@ -1,6 +1,6 @@
 # Report Column Comparison
 
-Generated: 2026-06-05T03:25:30.769Z
+Generated: 2026-06-05T13:08:19.721Z
 
 Old source: `C:\Code\Ministry of Commerce\Tradenet\tradenet-2.0-admin\TradenetAdmin\ReportControl\*.rdlc` from the old Tradenet 2.0 Admin project.
 New source: `Frontend\src\Report\config\reportConfigs.ts` plus the conditional `No` column rendered by `BasicTable`.

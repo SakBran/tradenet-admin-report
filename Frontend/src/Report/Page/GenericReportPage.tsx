@@ -69,6 +69,11 @@ interface LookupFilterConfig {
   label: string;
 }
 
+interface CompanyNameLookupResult {
+  companyRegistrationNo: string;
+  companyName: string;
+}
+
 const idFilterLookups: Record<string, LookupFilterConfig> = {
   AmendRemarkId: { lookupName: 'amendRemarks', label: 'Amend Remark' },
   BusinessTypeId: { lookupName: 'businessTypes', label: 'Business Type' },
@@ -260,6 +265,10 @@ const normalizeFilters = (
   values: FilterFormValues
 ) =>
   filters.reduce<Record<string, unknown>>((request, filter) => {
+    if (filter.excludeFromRequest) {
+      return request;
+    }
+
     const value = values[filter.name];
 
     if (filter.type === 'dateRange') {
@@ -455,6 +464,10 @@ const renderFilter = (
     );
   }
 
+  if (filter.type === 'readonlyText') {
+    return <Input readOnly />;
+  }
+
   return <Input />;
 };
 
@@ -500,6 +513,17 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
   >({});
   const [loadingLookupNames, setLoadingLookupNames] = useState<Set<string>>(
     () => new Set()
+  );
+  const companyNameFilter = useMemo(
+    () =>
+      config.filters.find(
+        (filter) => filter.populateFromCompanyRegistrationNo
+      ),
+    [config.filters]
+  );
+  const watchedCompanyRegistrationNo = Form.useWatch(
+    'CompanyRegistrationNo',
+    form
   );
   const resolvedColumns = useMemo(
     () =>
@@ -583,6 +607,47 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
       isMounted = false;
     };
   }, [lookupOptions, reportLookupFilters]);
+
+  useEffect(() => {
+    if (!companyNameFilter) {
+      return;
+    }
+
+    const registrationNo = String(watchedCompanyRegistrationNo ?? '').trim();
+
+    if (registrationNo === '') {
+      form.setFieldValue(companyNameFilter.name, '');
+      return;
+    }
+
+    let isCancelled = false;
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        const response = await axiosInstance.get<CompanyNameLookupResult>(
+          'ReportLookups/company-name',
+          {
+            params: { companyRegistrationNo: registrationNo },
+          }
+        );
+
+        if (!isCancelled) {
+          form.setFieldValue(
+            companyNameFilter.name,
+            response.data.companyName ?? ''
+          );
+        }
+      } catch {
+        if (!isCancelled) {
+          form.setFieldValue(companyNameFilter.name, '');
+        }
+      }
+    }, 300);
+
+    return () => {
+      isCancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [companyNameFilter, form, watchedCompanyRegistrationNo]);
 
   const fetchRows = useCallback(
     async (query: BasicTableQuery): Promise<PaginationType<AnyObject>> => {

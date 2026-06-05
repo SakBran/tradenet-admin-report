@@ -54,6 +54,7 @@
 - Voucher `ApplyType` values now match the old voucher list: `New`, `Amend`, `Extension`, `Cancel`, `Actual Amend`.
 - `ImportLicenceByHSCodeReport` now sends and applies `ExportImportSectionId`.
 - `ImportLicenceNewReportNewReport` now sends and applies `Quota` when selected, and continues to support `Auto`.
+- Old readonly `Company Name` filter boxes are now reproduced for Import Licence reports that had them in old MVC. They populate from `CompanyRegistrationNo` through `ReportLookups/company-name` and are excluded from report request payloads.
 - Import Licence report grids now render through a scoped RDLC-like table shell:
   - 800px minimum report area.
   - Gray toolbar strip.
@@ -75,22 +76,21 @@
 | `ImportLicenceBySectionReport` | Fixed |
 | `ImportLicenceByMethodReport` | Fixed |
 | `ImportLicenceBySellerCountryReport` | Fixed |
-| `ImportLicenceCompanyListReport` | Mostly fixed, old readonly Company Name not reproduced |
-| `ImportLicenceDailyReportNewLicenceReport` | Mostly fixed, old readonly Company Name not reproduced |
+| `ImportLicenceCompanyListReport` | Fixed |
+| `ImportLicenceDailyReportNewLicenceReport` | Fixed |
 | `ImportLicenceTotalValueLicencesReport` | Fixed |
 | `ImportLicenceByHSCodeReport` | Fixed |
-| `ImportLicenceAmendmentReport` | Mostly fixed, old readonly Company Name not reproduced |
-| `ImportLicenceActualAmendmentReport` | Mostly fixed, old readonly Company Name not reproduced |
-| `ImportLicenceExtensionReport` | Mostly fixed, old readonly Company Name not reproduced |
-| `ImportLicenceCancellationReport` | Mostly fixed, old readonly Company Name not reproduced |
-| `ImportLicenceNewReportNewReport` | Mostly fixed, old readonly Company Name not reproduced |
+| `ImportLicenceAmendmentReport` | Fixed |
+| `ImportLicenceActualAmendmentReport` | Fixed |
+| `ImportLicenceExtensionReport` | Fixed |
+| `ImportLicenceCancellationReport` | Fixed |
+| `ImportLicenceNewReportNewReport` | Fixed |
 | `ImportLicencePendingReport` | Fixed |
-| `ImportLicenceVoucherReport` | Mostly fixed, old readonly Company Name not reproduced |
+| `ImportLicenceVoucherReport` | Fixed |
 
 ## Remaining Gaps To Confirm Before Further Changes
 
-- Old `Company Name` filter fields are readonly display fields populated by old JavaScript/typeahead behavior. Current report APIs filter by `CompanyRegistrationNo`; a safe equivalent company lookup flow was not found in the current report UI.
-- Old section lists may be further restricted for MOC Check/Approve users via `GetSections(AppConfig.ImportLicence, AppConfig.Oversea)`. A current backend equivalent for that user-section mapping was not found yet.
+- Old section lists may be further restricted for MOC Check/Approve users via `GetSections(AppConfig.ImportLicence, AppConfig.Oversea)`. Old code reads `UserDetail.Section` as comma-separated section codes for the current MOC session user. The new backend has `UserDetails`, but this pass did not change section dropdowns by current user because the current JWT/user-role contract and code-to-id mapping need confirmation before filtering lookup results.
 - Old `ImportLicenceByCompanyReport` labels the method filter as `Export Method` even though this is an Import Licence screen. Current code preserves that label for visual parity.
 - Old Import Licence seller country report header text says `List of Export Licences By Seller Country...`. Current code uses `List of Import Licences By Seller Country...`; ask before preserving that old typo exactly.
 - Current result UI is RDLC-like but not a full Microsoft ReportViewer toolbar. Recreating a full RDLC/WebForms toolbar in React is outside this pass.
@@ -98,7 +98,7 @@
 ## Verification Results
 
 - `node tools\compare-report-columns.mjs`: completed. All non-border Import Licence reports have 0 missing and 0 extra columns; remaining generated mismatches are outside scope.
-- `dotnet build Backend\API.csproj --no-restore`: passed with 0 warnings and 0 errors.
+- `dotnet build Backend\API.csproj --no-restore`: passed with 0 errors. Current full output reports existing nullable/migration warnings.
 - `npm run build` in `Frontend`: passed. Vite reported the existing large chunk warning.
 - `dotnet test Backend.Tests\Backend.Tests.csproj --no-restore`: failed due existing test environment/suite prerequisites:
   - `TRADENET_REPORT_TEST_CONNECTION_STRING` is not set for shared-database validation.
@@ -107,7 +107,7 @@
 
 ## Definition Of Done For This Pass
 
-- Import Licence visible filters match old report-specific screens, except documented readonly display fields.
+- Import Licence visible filters match old report-specific screens.
 - Import Licence lookup option values are scoped like old Tradenet Admin.
 - Import Licence table headers and order match old RDLC visible columns.
 - Import Licence result grid is visually closer to the old RDLC ReportViewer output.
