@@ -84,6 +84,15 @@ namespace Backend.Controllers.Report
                 request.FilterColumn,
                 request.FilterQuery);
 
+            // Grand-total footer row matching the legacy ImportLicenceBySectionReport.rdlc
+            // "TOTAL" row: CountDistinct(LicenceNo) + Sum(Amount) across ALL section groups
+            // (not just the current page).
+            result.ColumnTotals = new Dictionary<string, decimal>
+            {
+                ["noOfLicences"] = rows.Sum(row => row.NoOfLicences),
+                ["totalValue"] = rows.Sum(row => row.TotalValue ?? 0m),
+            };
+
             return Ok(result);
         }
 

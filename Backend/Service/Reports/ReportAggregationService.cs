@@ -127,7 +127,8 @@ namespace API.Service.Reports
             IEnumerable<AggregateSourceRow> rows,
             ReportAggregateDimension dimension,
             bool includeSakhan,
-            ReportQueryRequest pagingRequest)
+            ReportQueryRequest pagingRequest,
+            bool includeColumnTotals = false)
         {
             ArgumentNullException.ThrowIfNull(pagingRequest);
 
@@ -143,7 +144,7 @@ namespace API.Service.Reports
                 .Take(pageSize)
                 .ToList();
 
-            return ApiResult<ReportAggregateResult>.CreatePageFromRows(
+            var result = ApiResult<ReportAggregateResult>.CreatePageFromRows(
                 pageRows,
                 aggregated.Count,
                 pageIndex,
@@ -152,6 +153,19 @@ namespace API.Service.Reports
                 null,
                 pagingRequest.FilterColumn,
                 pagingRequest.FilterQuery);
+
+            if (includeColumnTotals)
+            {
+                // Grand-total footer row matching the legacy RDLC "TOTAL" row:
+                // CountDistinct(LicenceNo) + Sum(Amount) over ALL groups (not just the page).
+                result.ColumnTotals = new Dictionary<string, decimal>
+                {
+                    ["noOfLicences"] = aggregated.Sum(group => group.NoOfLicences),
+                    ["totalValue"] = aggregated.Sum(group => group.TotalValue ?? 0m),
+                };
+            }
+
+            return result;
         }
 
         public static Task<byte[]> CreateExcelWorkbookAsync(

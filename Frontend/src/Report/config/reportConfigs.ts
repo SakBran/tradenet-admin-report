@@ -92,7 +92,7 @@ const importLicenceFormTypeFilter: ReportFilterConfig = {
 
 const importLicencePaThaKaTypeFilter: ReportFilterConfig = {
   name: 'PaThaKaTypeId',
-  label: 'PaThaKa Type',
+  label: 'EIR Card Type',
   type: 'number',
   defaultValue: 0,
 };
@@ -107,7 +107,7 @@ const importLicenceSectionFilter: ReportFilterConfig = {
 
 const importLicenceMethodFilter: ReportFilterConfig = {
   name: 'ExportImportMethodId',
-  label: 'Import Method',
+  label: 'Method of Import',
   type: 'number',
   defaultValue: 0,
   lookupName: 'importLicenceMethods',
@@ -115,12 +115,12 @@ const importLicenceMethodFilter: ReportFilterConfig = {
 
 const importLicenceCompanyMethodFilter: ReportFilterConfig = {
   ...importLicenceMethodFilter,
-  label: 'Export Method',
+  label: 'Method of export',
 };
 
 const importLicenceIncotermFilter: ReportFilterConfig = {
   name: 'ExportImportIncotermId',
-  label: 'Import Incoterms',
+  label: 'Method of Import According to Incoterms',
   type: 'number',
   defaultValue: 0,
   lookupName: 'importLicenceIncoterms',
@@ -463,10 +463,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportLicenceSections',
       },
       {
         name: 'AmendRemarkId',
-        label: 'Amend Remark',
+        label: 'Remark',
         type: 'number',
         defaultValue: 0,
       },
@@ -580,10 +581,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportLicenceSections',
       },
       {
         name: 'AmendRemarkId',
-        label: 'Amend Remark',
+        label: 'Remark',
         type: 'number',
         defaultValue: 0,
       },
@@ -694,7 +696,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'FilterType',
-        label: 'Filter Type',
+        label: 'Filter By',
         type: 'text',
         defaultValue: '',
       },
@@ -771,7 +773,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -780,16 +782,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportLicenceSections',
       },
       {
         name: 'ExportImportMethodId',
-        label: 'Export Method',
+        label: 'Method of export',
         type: 'number',
         defaultValue: 0,
       },
       {
         name: 'ExportImportIncotermId',
-        label: 'Export Incoterms',
+        label: 'Method of export According to Incoterms',
         type: 'number',
         defaultValue: 0,
       },
@@ -867,7 +870,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -876,16 +879,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportLicenceSections',
       },
       {
         name: 'ExportImportMethodId',
-        label: 'Export Method',
+        label: 'Method of export',
         type: 'number',
         defaultValue: 0,
       },
       {
         name: 'ExportImportIncotermId',
-        label: 'Export Incoterms',
+        label: 'Method of export According to Incoterms',
         type: 'number',
         defaultValue: 0,
       },
@@ -958,7 +962,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -967,16 +971,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportLicenceSections',
       },
       {
         name: 'ExportImportMethodId',
-        label: 'Export Method',
+        label: 'Method of export',
         type: 'number',
         defaultValue: 0,
       },
       {
         name: 'ExportImportIncotermId',
-        label: 'Export Incoterms',
+        label: 'Method of export According to Incoterms',
         type: 'number',
         defaultValue: 0,
       },
@@ -1052,6 +1057,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportLicenceSections',
       },
       {
         name: 'CompanyRegistrationNo',
@@ -1165,7 +1171,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -1174,16 +1180,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportLicenceSections',
       },
       {
         name: 'ExportImportMethodId',
-        label: 'Export Method',
+        label: 'Method of export',
         type: 'number',
         defaultValue: 0,
       },
       {
         name: 'ExportImportIncotermId',
-        label: 'Export Incoterms',
+        label: 'Method of export According to Incoterms',
         type: 'number',
         defaultValue: 0,
       },
@@ -1256,7 +1263,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -1265,16 +1272,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportLicenceSections',
       },
       {
         name: 'ExportImportMethodId',
-        label: 'Export Method',
+        label: 'Method of export',
         type: 'number',
         defaultValue: 0,
       },
       {
         name: 'ExportImportIncotermId',
-        label: 'Export Incoterms',
+        label: 'Method of export According to Incoterms',
         type: 'number',
         defaultValue: 0,
       },
@@ -1359,7 +1367,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -1368,16 +1376,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportLicenceSections',
       },
       {
         name: 'ExportImportMethodId',
-        label: 'Export Method',
+        label: 'Method of export',
         type: 'number',
         defaultValue: 0,
       },
       {
         name: 'ExportImportIncotermId',
-        label: 'Export Incoterms',
+        label: 'Method of export According to Incoterms',
         type: 'number',
         defaultValue: 0,
       },
@@ -1587,6 +1596,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportLicenceSections',
       },
       {
         name: 'CompanyRegistrationNo',
@@ -1693,6 +1703,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportLicenceSections',
       },
       {
         name: 'CompanyRegistrationNo',
@@ -1797,7 +1808,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -1806,16 +1817,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportLicenceSections',
       },
       {
         name: 'ExportImportMethodId',
-        label: 'Export Method',
+        label: 'Method of export',
         type: 'number',
         defaultValue: 0,
       },
       {
         name: 'ExportImportIncotermId',
-        label: 'Export Incoterms',
+        label: 'Method of export According to Incoterms',
         type: 'number',
         defaultValue: 0,
       },
@@ -1881,6 +1893,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportLicenceSections',
       },
       {
         name: 'PaymentType',
@@ -2018,7 +2031,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'AmendRemarkId',
-        label: 'Amend Remark',
+        label: 'Remark',
         type: 'number',
         defaultValue: 0,
       },
@@ -2135,7 +2148,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'AmendRemarkId',
-        label: 'Amend Remark',
+        label: 'Remark',
         type: 'number',
         defaultValue: 0,
       },
@@ -2246,7 +2259,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'FilterType',
-        label: 'Filter Type',
+        label: 'Filter By',
         type: 'text',
         defaultValue: '',
       },
@@ -2323,7 +2336,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -2402,7 +2415,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -2597,7 +2610,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -2676,7 +2689,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -2762,7 +2775,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -3313,7 +3326,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'AmendRemarkId',
-        label: 'Amend Remark',
+        label: 'Remark',
         type: 'number',
         defaultValue: 0,
       },
@@ -3430,7 +3443,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'AmendRemarkId',
-        label: 'Amend Remark',
+        label: 'Remark',
         type: 'number',
         defaultValue: 0,
       },
@@ -3541,7 +3554,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'FilterType',
-        label: 'Filter Type',
+        label: 'Filter By',
         type: 'text',
         defaultValue: '',
       },
@@ -3618,7 +3631,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -3709,7 +3722,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -3800,7 +3813,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -4007,7 +4020,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -4098,7 +4111,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -4196,7 +4209,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -4406,7 +4419,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -4926,7 +4939,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -5163,7 +5176,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'AmendRemarkId',
-        label: 'Amend Remark',
+        label: 'Remark',
         type: 'number',
         defaultValue: 0,
       },
@@ -5280,7 +5293,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'AmendRemarkId',
-        label: 'Amend Remark',
+        label: 'Remark',
         type: 'number',
         defaultValue: 0,
       },
@@ -5391,7 +5404,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'FilterType',
-        label: 'Filter Type',
+        label: 'Filter By',
         type: 'text',
         defaultValue: '',
       },
@@ -5468,7 +5481,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -5547,7 +5560,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -5742,7 +5755,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -5821,7 +5834,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -5907,7 +5920,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -6768,7 +6781,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'AmendRemarkId',
-        label: 'Amend Remark',
+        label: 'Remark',
         type: 'number',
         defaultValue: 0,
       },
@@ -6880,7 +6893,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'AmendRemarkId',
-        label: 'Amend Remark',
+        label: 'Remark',
         type: 'number',
         defaultValue: 0,
       },
@@ -6986,7 +6999,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'FilterType',
-        label: 'Filter Type',
+        label: 'Filter By',
         type: 'text',
         defaultValue: '',
       },
@@ -7063,7 +7076,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -7075,13 +7088,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'ExportImportMethodId',
-        label: 'Export Method',
+        label: 'Method of export',
         type: 'number',
         defaultValue: 0,
       },
       {
         name: 'ExportImportIncotermId',
-        label: 'Export Incoterms',
+        label: 'Method of export According to Incoterms',
         type: 'number',
         defaultValue: 0,
       },
@@ -7154,7 +7167,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -7166,13 +7179,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'ExportImportMethodId',
-        label: 'Export Method',
+        label: 'Method of export',
         type: 'number',
         defaultValue: 0,
       },
       {
         name: 'ExportImportIncotermId',
-        label: 'Export Incoterms',
+        label: 'Method of export According to Incoterms',
         type: 'number',
         defaultValue: 0,
       },
@@ -7245,7 +7258,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -7257,13 +7270,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'ExportImportMethodId',
-        label: 'Export Method',
+        label: 'Method of export',
         type: 'number',
         defaultValue: 0,
       },
       {
         name: 'ExportImportIncotermId',
-        label: 'Export Incoterms',
+        label: 'Method of export According to Incoterms',
         type: 'number',
         defaultValue: 0,
       },
@@ -7447,7 +7460,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -7459,13 +7472,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'ExportImportMethodId',
-        label: 'Export Method',
+        label: 'Method of export',
         type: 'number',
         defaultValue: 0,
       },
       {
         name: 'ExportImportIncotermId',
-        label: 'Export Incoterms',
+        label: 'Method of export According to Incoterms',
         type: 'number',
         defaultValue: 0,
       },
@@ -7538,7 +7551,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -7550,13 +7563,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'ExportImportMethodId',
-        label: 'Export Method',
+        label: 'Method of export',
         type: 'number',
         defaultValue: 0,
       },
       {
         name: 'ExportImportIncotermId',
-        label: 'Export Incoterms',
+        label: 'Method of export According to Incoterms',
         type: 'number',
         defaultValue: 0,
       },
@@ -7636,7 +7649,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -7648,13 +7661,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'ExportImportMethodId',
-        label: 'Export Method',
+        label: 'Method of export',
         type: 'number',
         defaultValue: 0,
       },
       {
         name: 'ExportImportIncotermId',
-        label: 'Export Incoterms',
+        label: 'Method of export According to Incoterms',
         type: 'number',
         defaultValue: 0,
       },
@@ -8074,7 +8087,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -8086,13 +8099,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'ExportImportMethodId',
-        label: 'Export Method',
+        label: 'Method of export',
         type: 'number',
         defaultValue: 0,
       },
       {
         name: 'ExportImportIncotermId',
-        label: 'Export Incoterms',
+        label: 'Method of export According to Incoterms',
         type: 'number',
         defaultValue: 0,
       },
@@ -8294,7 +8307,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'AmendRemarkId',
-        label: 'Amend Remark',
+        label: 'Remark',
         type: 'number',
         defaultValue: 0,
       },
@@ -8406,7 +8419,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'AmendRemarkId',
-        label: 'Amend Remark',
+        label: 'Remark',
         type: 'number',
         defaultValue: 0,
       },
@@ -8512,7 +8525,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'FilterType',
-        label: 'Filter Type',
+        label: 'Filter By',
         type: 'text',
         defaultValue: '',
       },
@@ -8589,7 +8602,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -8668,7 +8681,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -8858,7 +8871,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -8937,7 +8950,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -9023,7 +9036,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -10678,10 +10691,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'importPermitSections',
       },
       {
         name: 'AmendRemarkId',
-        label: 'Amend Remark',
+        label: 'Remark',
         type: 'number',
         defaultValue: 0,
       },
@@ -10690,12 +10704,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Company Registration No',
         type: 'text',
         defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
       },
     ],
     columns: [
@@ -10790,10 +10798,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'importPermitSections',
       },
       {
         name: 'AmendRemarkId',
-        label: 'Amend Remark',
+        label: 'Remark',
         type: 'number',
         defaultValue: 0,
       },
@@ -10802,12 +10811,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Company Registration No',
         type: 'text',
         defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
       },
     ],
     columns: [
@@ -10899,7 +10902,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'FilterType',
-        label: 'Filter Type',
+        label: 'Filter By',
         type: 'text',
         defaultValue: '',
       },
@@ -10908,12 +10911,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'HS Code',
         type: 'text',
         defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
       },
     ],
     columns: [
@@ -10976,7 +10973,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -10985,6 +10982,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'importPermitSections',
       },
       {
         name: 'SellerCountryId',
@@ -10997,12 +10995,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Company Registration No',
         type: 'text',
         defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
       },
     ],
     columns: [
@@ -11055,7 +11047,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -11064,6 +11056,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'importPermitSections',
       },
       {
         name: 'SellerCountryId',
@@ -11076,12 +11069,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Company Registration No',
         type: 'text',
         defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
       },
     ],
     columns: [
@@ -11137,18 +11124,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'importPermitSections',
       },
       {
         name: 'CompanyRegistrationNo',
         label: 'Company Registration No',
         type: 'text',
         defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
       },
     ],
     columns: [
@@ -11245,7 +11227,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -11254,6 +11236,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'importPermitSections',
       },
       {
         name: 'SellerCountryId',
@@ -11266,12 +11249,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Company Registration No',
         type: 'text',
         defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
       },
     ],
     columns: [
@@ -11324,7 +11301,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -11333,6 +11310,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'importPermitSections',
       },
       {
         name: 'SellerCountryId',
@@ -11345,12 +11323,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Company Registration No',
         type: 'text',
         defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
       },
     ],
     columns: [
@@ -11410,7 +11382,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'PaThaKaTypeId',
-        label: 'PaThaKa Type',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -11419,6 +11391,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'importPermitSections',
       },
       {
         name: 'SellerCountryId',
@@ -11431,12 +11404,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Company Registration No',
         type: 'text',
         defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
       },
     ],
     columns: [
@@ -11600,18 +11567,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'importPermitSections',
       },
       {
         name: 'CompanyRegistrationNo',
         label: 'Company Registration No',
         type: 'text',
         defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
       },
     ],
     columns: [
@@ -11701,18 +11663,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'importPermitSections',
       },
       {
         name: 'CompanyRegistrationNo',
         label: 'Company Registration No',
         type: 'text',
         defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
       },
       {
         name: 'Auto',
@@ -11818,6 +11775,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'importPermitSections',
       },
       {
         name: 'ApplyType',
@@ -11850,12 +11808,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Company Registration No',
         type: 'text',
         defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
       },
     ],
     columns: [

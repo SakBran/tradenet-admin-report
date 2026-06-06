@@ -130,14 +130,30 @@ public static class sp_ImportLicenceDetailReport_Fast
         sp_ImportLicenceDetailReportRequest request,
         ReportQueryRequest pagingRequest,
         ReportAggregateDimension dimension,
-        bool includeSakhan)
+        bool includeSakhan,
+        bool includeColumnTotals = false)
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
         var groups = await AggregateInSqlAsync(db, request, dimension, includeSakhan);
-        return ReportAggregationService.CreatePagedResultFromGroups(groups, dimension, includeSakhan, pagingRequest);
+        var result = ReportAggregationService.CreatePagedResultFromGroups(groups, dimension, includeSakhan, pagingRequest);
+
+        if (includeColumnTotals)
+        {
+            // Grand-total footer row matching the legacy RDLC "TOTAL" row:
+            // CountDistinct(LicenceNo) + Sum(Amount) summed across ALL groups
+            // (not just the current page). Keyed by the column dataIndex so
+            // BasicTable renders a bold "Total" row.
+            result.ColumnTotals = new Dictionary<string, decimal>
+            {
+                ["noOfLicences"] = groups.Sum(group => group.NoOfLicences),
+                ["totalValue"] = groups.Sum(group => group.TotalValue ?? 0m),
+            };
+        }
+
+        return result;
     }
 
     public static async Task<byte[]> CreateAggregateExcelWorkbookAsync(

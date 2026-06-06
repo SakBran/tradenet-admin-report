@@ -26,6 +26,8 @@ namespace Backend.Controllers
         // no rows because PaThaKa records only reference Pa Tha Ka business type ids.
         private const string PaThaKaFormType = "Pa Tha Ka";
         private const string ImportLicenceFormType = "Import Licence";
+        private const string ImportPermitFormType = "Import Permit";
+        private const string ExportLicenceFormType = "Export Licence";
         private const string ImportTradeType = "Import";
 
         private readonly TradeNetDbContext _context;
@@ -54,6 +56,8 @@ namespace Backend.Controllers
                 "importlicenceincoterms" => GetImportLicenceIncoterms,
                 "importlicencemethods" => GetImportLicenceMethods,
                 "importlicencesections" => GetImportLicenceSections,
+                "importpermitsections" => GetImportPermitSections,
+                "borderexportlicencesections" => GetBorderExportLicenceSections,
                 "lineofbusinesses" => GetLineofBusinesses,
                 "nrcprefixcodes" => GetNrcprefixCodes,
                 "nrcprefixes" => GetNrcprefixes,
@@ -225,6 +229,36 @@ namespace Backend.Controllers
                     !item.IsDeleted &&
                     item.Type == ImportLicenceFormType &&
                     item.IsOversea)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
+                .ToListAsync();
+
+        // Import-only Oversea Permit sections (legacy: GetAll(AppConfig.ImportPermit) where IsOversea).
+        // Pinned by the ImportPermit report Section filters so the dropdown does not leak the
+        // generic exportImportSections list (Import + Export + Permit) — customer complaint.
+        private Task<List<ReportLookupOption>> GetImportPermitSections() =>
+            _context.ExportImportSections
+                .AsNoTracking()
+                .Where(item =>
+                    item.IsActive &&
+                    !item.IsDeleted &&
+                    item.Type == ImportPermitFormType &&
+                    item.IsOversea)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
+                .ToListAsync();
+
+        // Border Export Licence sections (legacy: GetAll(AppConfig.ExportLicence) where IsBorder).
+        private Task<List<ReportLookupOption>> GetBorderExportLicenceSections() =>
+            _context.ExportImportSections
+                .AsNoTracking()
+                .Where(item =>
+                    item.IsActive &&
+                    !item.IsDeleted &&
+                    item.Type == ExportLicenceFormType &&
+                    item.IsBorder)
                 .OrderBy(item => item.SortOrder)
                 .ThenBy(item => item.Name)
                 .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))

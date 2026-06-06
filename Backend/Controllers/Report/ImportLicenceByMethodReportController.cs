@@ -38,7 +38,8 @@ namespace Backend.Controllers.Report
             }
 
             var result = await sp_ImportLicenceDetailReport_Fast.CreateAggregateResultAsync(
-                _context, procedureRequest!, request!, ReportAggregateDimension.Method, includeSakhan: false);
+                _context, procedureRequest!, request!, ReportAggregateDimension.Method, includeSakhan: false,
+                includeColumnTotals: true);
 
             return Ok(result);
         }

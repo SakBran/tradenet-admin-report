@@ -126,14 +126,15 @@ public static class sp_ImportPermitDetailReport_Fast
         sp_ImportPermitDetailReportRequest request,
         ReportQueryRequest pagingRequest,
         ReportAggregateDimension dimension,
-        bool includeSakhan)
+        bool includeSakhan,
+        bool includeColumnTotals = false)
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
         var source = await AggregateSourceRowsAsync(db, request);
-        return ReportAggregationService.CreatePagedResult(source, dimension, includeSakhan, pagingRequest);
+        return ReportAggregationService.CreatePagedResult(source, dimension, includeSakhan, pagingRequest, includeColumnTotals);
     }
 
     public static async Task<byte[]> CreateAggregateExcelWorkbookAsync(
