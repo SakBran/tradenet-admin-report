@@ -484,6 +484,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licence Report'),
     columns: [
       {
         key: 'Sakhan',
@@ -602,6 +603,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licence Report'),
     columns: [
       {
         key: 'Sakhan',
@@ -713,6 +715,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licence By HS Code', true),
     columns: [
       {
         key: 'HSCode',
@@ -815,6 +818,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licences By Method', true),
     columns: [
       {
         key: 'SaKhan',
@@ -912,6 +916,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licences By Section', true),
     columns: [
       {
         key: 'Section',
@@ -1004,6 +1009,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Licences By Buyer Country', true),
     columns: [
       {
         key: 'Country',
@@ -1072,6 +1078,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licence Report'),
     columns: [
       {
         key: 'Sakhan',
@@ -1213,6 +1220,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licences By Company'),
     columns: [
       {
         key: 'CompanyName',
@@ -1305,6 +1313,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licences By Daily', true),
     columns: [
       {
         key: 'Date',
@@ -1409,6 +1418,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licence By Detail', true),
     columns: [
       {
         key: 'Sakhan',
@@ -1611,6 +1621,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licence Report'),
     columns: [
       {
         key: 'Sakhan',
@@ -1724,6 +1735,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licence Report'),
     columns: [
       {
         key: 'Sakhan',
@@ -1850,6 +1862,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('Border Export Licences Total Value & Licences'),
     columns: [
       {
         key: 'TotalValue',
@@ -1933,6 +1946,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('Border Export Licence Voucher List'),
     columns: [
       {
         key: 'Sakhan',
@@ -10706,6 +10720,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Import Permit Report'),
     columns: [
       {
         key: 'Section',
@@ -10813,6 +10828,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Import Permit Report'),
     columns: [
       {
         key: 'Section',
@@ -10913,6 +10929,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Import Permit By HS Code', true),
     columns: [
       {
         key: 'HSCode',
@@ -10997,6 +11014,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Import Permit By Section', true),
     columns: [
       {
         key: 'Section',
@@ -11071,6 +11089,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Import Permit By Buyer Country', true),
     columns: [
       {
         key: 'Country',
@@ -11133,6 +11152,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Import Permit Report'),
     columns: [
       {
         key: 'HSCode',
@@ -11251,6 +11271,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Import Permit By Company'),
     columns: [
       {
         key: 'CompanyName',
@@ -11325,6 +11346,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Import Permit By Daily', true),
     columns: [
       {
         key: 'Date',
@@ -11406,6 +11428,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Import Permit By Detail', true),
     columns: [
       {
         key: 'Section',
@@ -11576,6 +11599,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Import Permit Report'),
     columns: [
       {
         key: 'Section',
@@ -11678,6 +11702,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Import Permit Report'),
     columns: [
       {
         key: 'Section',
@@ -11810,6 +11835,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('Import Permit Voucher List'),
     columns: [
       {
         key: 'LicenceNo',

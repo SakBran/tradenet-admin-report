@@ -118,6 +118,16 @@ and `sp_ExportLicenceDetailReport_Fast` `CreateAggregateResultAsync` forward it.
 - Border Export: BySection, ByMethod, BySellerCountry, CompanyList, Daily.
 - (Permit/Border-Export Detail has no old TOTAL → left off.)
 
+## Report title added (frontend) — was missing on Permit + Border Export
+Every Import Licence report already had a `reportSubtitle` (the in-grid report title, e.g.
+"List of Import Licences By Daily From (date) To (date)"), but **all 12 Import Permit and all 14
+Border Export Licence reports had none** — so they showed no title. Added `reportSubtitle:
+importLicenceRangeSubtitle('<label>', <includeFrom>)` to all 26, using each report's **old
+Tradenet 2.0 `header1` text** (e.g. "List of Import Permit By Daily", "List of Border Export Licences
+By Section", "Import Permit Voucher List", "Border Export Licences Total Value & Licences"). The
+title renders once filters are applied, matching the old ReportViewer. (Vite HMR picks this up — just
+refresh; no backend restart needed.)
+
 ## Deferred (NOT changed — out of "complaint-scoped"; documented for a later pass)
 - Extra filters the new app added that the old forms lack (Seller/Buyer Country, Incoterms,
   Company Reg No on some summary reports; a stray `Auto` filter+column on the New reports).
