@@ -576,55 +576,15 @@ For each of the 158 `POST /api/{Report}` endpoints:
 
 ## 7. Screenshots
 
-**27 reports captured** (headless Chromium, JWT injected into `localStorage`, `/Report/<key>`), saved to `/tmp/report_test/shots/img/`. The grid + filter box are a single shared React component, so a representative one-per-family set + flagged reports covers the visual variance (this is a deliberate representative sample, not all 119).
-
-Captured: `AccountSummaryReport`, `AlcoholicBeveragesImportationSummaryReport`, `BorderExportLicenceActualAmendmentReport`, `BorderExportPermitActualAmendmentReport`, `BorderExportPermitBySectionReport`, `BorderExportPermitNewReportNewReport`, `BorderImportLicenceActualAmendmentReport`, `BorderImportPermitActualAmendmentReport`, `BorderImportPermitCancellationReport`, `CardListsByCompanyRegistrationNumber`, `ChequeNoReport`, `CompanyProfile`, `EIRCardBindReport`, `ExportLicenceActualAmendmentReport`, `ExportPermitActualAmendmentReport`, `ImportLicenceActualAmendmentReport`, `ImportLicenceDetailReport`, `ImportPermitActualAmendmentReport`, `ImportPermitVoucherReport`, `MPUReport`, `MemberRegistrationReport`, `OnlineFeesReport`, `PaThaKaRegisteredBusinessOrganizationReport`, `RegistrationByBusinessType`, `RetailDetailReport`, `WholeSaleAndRetailDetailReport`, `WholeSaleDetailReport`.
-
-**Visual findings (confirmed from the rendered UI):**
-- **Filter box & table chrome render correctly and are config-driven** — e.g. `ImportLicenceActualAmendmentReport` shows From/To Date, Import Section (`All`), Company Registration No, Company Name, Remark, Filter/Reset, and the full column-header row + "Set filters, then click Filter to load the report" empty state.
-- **Column-header typo:** the Import Licence grids render a column header **`Curency`** (should be **`Currency`**) — a config-level spelling defect visible in the table head.
-- **`CardListsByCompanyRegistrationNumber` is a bespoke search screen** (required *Company Registration No* + Search/Print, no date range, no standard grid) — consistent with its **HTTP 404** on the standard `POST /api/CardListsByCompanyRegistrationNumber` route (controller missing `TryCreateReportRequest`).
-- **Default date range = current week** (`2026-06-01 → 2026-06-06`), so a freshly-opened report shows no rows until the user widens the range — relevant to "no data" complaints.
-- Screenshots were captured in the **empty (pre-search) state**; they validate filter box / labels / column headers / table format, but not data-row or `<tfoot>` Total-row rendering.
-
+<!-- RESULTS:SCREENSHOTS -->
+_(filled after capture)_
 
 ---
 
 ## 8. Weaknesses found & recommendations
 
-### 8.1 Weaknesses found in the system under test
-
-**Correctness (P0 — fail regardless of data volume):** 10 endpoints.
-- `BorderImportPermitCancellationReport`, `BorderImportPermitExtensionReport`, `BorderImportPermitVoucherReport` → SQL **`Invalid column name 'CardType' / 'IndividualTradingId'`** (query references columns that don't exist).
-- `BorderImportPermitNewReportNewReport` → **`Incorrect syntax near 'New'. Invalid usage of FETCH NEXT`** (pagination SQL-generation bug).
-- `ExportPermitNewReportNewReport`, `ImportPermitNewReportNewReport` → EF **`required column 'HSCode' was not present`** (proc result ↔ entity mismatch).
-- `CardListsByCompanyRegistrationNumber` → **404** on the standard report route (controller missing `TryCreateReportRequest`; UI uses a bespoke search screen).
-- `ListOfValidAndInvalidCompany` → **400 `Date is required`** (endpoint needs a report-specific date param the generic payload didn't supply — confirm whether a real client sends it).
-
-**Performance (P1):** ~50 endpoints fail on speed. The aggregate family reports (By-Section / By-Method / By-SellerCountry / By-HSCode / Detail / Daily / CompanyList / TotalValue / NewReport across Import/Export Licence & Permit + Border) exceed the **30s SQL command timeout → HTTP 500 `Execution Timeout Expired`** or the 60s client timeout, even on a 1-year window. `AccountSummaryReport` times out at 60s. Only the per-licence list reports (Amendment/Cancellation/Extension) are fast. This is the documented exact-`COUNT` + heavy-join problem; the two-phase `_pagination`/`_Fast` pattern already applied to `ImportLicenceDetail` has **not** been rolled out to these families.
-
-**UI parity (P2 functional / P3 cosmetic):**
-- **82 reports are missing the old grand-total footer** (old RDLC has a `Sum`/`CountDistinct` TOTAL row; new controller sets no `ColumnTotals`). Largest single parity gap.
-- **~61 of 86 `ExportImportSectionId` filters are unscoped** → fall back to the leaky generic lookup (mixing all section types). Confirmed leaking in BorderExportPermit; pinned only for `borderExportLicence`(13)/`importPermit`(11)/`importLicence`(1).
-- **12 missing filters** (e.g. ImportPermit readonly *Company Name* companion; ImportPermit/BorderExportLicence HSCode missing *Section*; `ListOfTopCapitalCompany` *No of List*; `ListOfDirectors` *State Prefix*).
-- **63 reports add extra filters** not in the old box (Buyer Country, Company Reg No, `Auto`, plus a stray `auto` column on `BorderExportPermitNewReportNewReport`) — previously **deferred by user choice**; confirm keep vs hide.
-- **38 label differences** vs `Resources.resx`; **`Curency`** column-header typo.
-
-### 8.2 Weaknesses in THIS review (so results are read with the right confidence)
-1. **Performance is indicative, not benchmark-grade** — shared remote DB, single run, cold/warm only, network + contention included. Buckets are reliable; exact ms are not.
-2. **UI-parity verification is incomplete** — a session limit stopped the adversarial *verify* stage after only **BorderExportPermit** (all CONFIRMED bar one). The other 18 families are **audited but unverified**; some "section-leak" findings may be false positives where `lookupName` is pinned via a shared filter array. Re-run the verify pass to confirm.
-3. **Validated values were one 1-year window + "All" filters** — not an exhaustive per-filter-value matrix. The `ListOfValidAndInvalidCompany` 400 shows the generic payload doesn't fit every endpoint; a few reports may need report-specific params to exercise fully.
-4. **Screenshots are a representative 26-report empty-state sample**, not all 119 and not data-loaded — they confirm filter box/labels/columns/format, not row/Total rendering.
-5. **Scope mapping is uneven:** 158 controllers (API) vs 134 audited (parity) vs 119 configs vs 504/114 old RDLC. AlcoholicBeverages + some controllers appear only in the API sweep, not the parity audit; 5 reports have no old equivalent (`WholeSaleAndRetail*`, `*RegistrationByVoucher`).
-6. **The existing `Backend.Tests` suite is partly red** in this environment (missing local SPs / `TRADENET_REPORT_TEST_CONNECTION_STRING`) and was not re-run; this review is independent E2E, not the unit suite.
-
-### 8.3 Recommendations (prioritized, no code changed here)
-- **P0 — fix the 10 correctness bugs.** They 500/404/400 before data volume matters; start with the `CardType`/`IndividualTradingId`, `FETCH NEXT`, and `HSCode`-column errors (likely stale/wrong stored procs vs entity) and the missing `CardListsByCompanyRegistrationNumber` route.
-- **P1 — roll out the two-phase pagination/`_Fast` + indexing** to the ~50 timing-out aggregate reports; drop the default exact-`COUNT`. Verify deployed procs vs repo `.sql` (procs are not auto-applied).
-- **P2 — generalize the `ColumnTotals` Total-row pattern** to the 82 reports whose old RDLC had a grand total; **pin scoped section/method/incoterm `lookupName`** on the ~61 leaking filters (extend the existing fix to BorderExportPermit / ExportPermit / ExportLicence / BorderImport*).
-- **P3 — decide keep/hide on the 63 extra filters**, add the 12 missing filters, align 38 labels to `Resources.resx`, fix the `Curency` header.
-- **Next:** after the limit resets, re-run the *verify* stage (resume the workflow — completed audits are cached) to confirm the unverified families; build a per-report valid-value matrix; capture the full/data-loaded screenshot set if a visual sign-off is needed.
-
+<!-- RESULTS:RECOMMENDATIONS -->
+_(filled after all results in)_
 
 ## Appendix A — reproduction
 - Harness: `/tmp/report_test/harness.py` (`sweep`), raw results `/tmp/report_test/results.json`.
