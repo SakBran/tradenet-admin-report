@@ -5421,8 +5421,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'FilterType',
         label: 'Filter By',
-        type: 'text',
-        defaultValue: '',
+        type: 'select',
+        defaultValue: 'Start',
+        options: [
+          { label: 'Start', value: 'Start' },
+          { label: 'End', value: 'End' },
+        ],
       },
       {
         name: 'hsCode',
@@ -6341,14 +6345,21 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'PaymentType',
         label: 'Payment Type',
-        type: 'text',
+        type: 'select',
+        lookupName: 'paymentTypes',
         defaultValue: '',
       },
       {
         name: 'ApplyType',
         label: 'Apply Type',
-        type: 'text',
-        defaultValue: '',
+        type: 'select',
+        defaultValue: 'New',
+        options: [
+          { label: 'New', value: 'New' },
+          { label: 'Amend', value: 'Amend' },
+          { label: 'Extension', value: 'Extension' },
+          { label: 'Cancel', value: 'Cancel' },
+        ],
       },
       {
         name: 'CompanyRegistrationNo',
@@ -6388,12 +6399,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'ParametersHeader2Value',
         dataIndex: 'licenceNo',
-        title: '=Parameters!header2.Value',
+        title: 'Licence No',
       },
       {
         key: 'ParametersHeader3Value',
         dataIndex: 'sLicenceDate',
-        title: '=Parameters!header3.Value',
+        title: 'Licence Date',
       },
       {
         key: 'CompanyRegistrationNo',

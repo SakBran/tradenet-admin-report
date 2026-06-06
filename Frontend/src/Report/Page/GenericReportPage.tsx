@@ -537,7 +537,9 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
     [resolvedColumns]
   );
   const legacyReportViewer =
-    config.legacyReportViewer ?? config.controllerName.startsWith('ImportLicence');
+    config.legacyReportViewer ??
+    (config.controllerName.startsWith('ImportLicence') ||
+      config.controllerName.startsWith('BorderImportPermit'));
 
   const reportLookupFilters = useMemo(() => {
     const lookups = config.filters

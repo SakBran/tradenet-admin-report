@@ -40,8 +40,12 @@ export interface BasicTableColumn<T extends AnyObject = AnyObject> {
   searchable?: boolean;
   hidden?: boolean;
   width?: number | string;
+  dataType?: 'string' | 'number' | 'date' | 'boolean' | 'money';
   render?: (value: unknown, row: T, rowIndex: number) => React.ReactNode;
 }
+
+const isNumericColumn = (dataType?: string) =>
+  dataType === 'number' || dataType === 'money';
 
 export type TableFunctionType = (api: string) => Promise<PaginationType>;
 
@@ -381,6 +385,9 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
                   return (
                     <th
                       key={key}
+                      className={
+                        isNumericColumn(column.dataType) ? 'col-numeric' : undefined
+                      }
                       style={{
                         width: column.width,
                       }}
@@ -404,7 +411,12 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
                         <td>{index + 1 + query.pageIndex * pageSize}</td>
                       )}
                       {normalizedColumns.map((column) => (
-                        <td key={column.key.toString()}>
+                        <td
+                          key={column.key.toString()}
+                          className={
+                            isNumericColumn(column.dataType) ? 'col-numeric' : undefined
+                          }
+                        >
                           {renderCell(column, row, index)}
                         </td>
                       ))}
@@ -466,7 +478,13 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
 
                     if (total !== undefined) {
                       return (
-                        <td key={key} style={{ fontWeight: 700 }}>
+                        <td
+                          key={key}
+                          className={
+                            isNumericColumn(column.dataType) ? 'col-numeric' : undefined
+                          }
+                          style={{ fontWeight: 700 }}
+                        >
                           {String(total)}
                         </td>
                       );

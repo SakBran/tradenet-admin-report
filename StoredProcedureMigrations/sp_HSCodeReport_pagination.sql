@@ -42,7 +42,8 @@ BEGIN
 			)result
 			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
-			FETCH NEXT @PageSize ROWS ONLY;
+			FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 		END
 		ELSE
 		BEGIN
@@ -70,7 +71,8 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY;
+				FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 			END
 			ELSE
 			BEGIN
@@ -96,7 +98,8 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY;
+				FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 			END
 		END
 	END
@@ -125,7 +128,8 @@ BEGIN
 			)result
 			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
-			FETCH NEXT @PageSize ROWS ONLY;
+			FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 		END
 		ELSE
 		BEGIN
@@ -153,7 +157,8 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY;
+				FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 			END
 			ELSE
 			BEGIN
@@ -179,7 +184,8 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY;
+				FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 			END
 		END
 	END
@@ -208,7 +214,8 @@ BEGIN
 			)result
 			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
-			FETCH NEXT @PageSize ROWS ONLY;
+			FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 		END
 		ELSE
 		BEGIN
@@ -236,7 +243,8 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY;
+				FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 			END
 			ELSE
 			BEGIN
@@ -262,7 +270,8 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY;
+				FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 			END
 		END
 	END
@@ -291,7 +300,8 @@ BEGIN
 			)result
 			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
-			FETCH NEXT @PageSize ROWS ONLY;
+			FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 		END
 		ELSE
 		BEGIN
@@ -319,7 +329,8 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY;
+				FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 			END
 			ELSE
 			BEGIN
@@ -345,7 +356,8 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY;
+				FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 			END
 		END
 	END
@@ -387,7 +399,8 @@ BEGIN
 			)result
 			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
-			FETCH NEXT @PageSize ROWS ONLY;
+			FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 		END
 		ELSE
 		BEGIN
@@ -429,7 +442,8 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY;
+				FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 			END
 			ELSE
 			BEGIN
@@ -469,7 +483,8 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY;
+				FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 			END
 		END
 	END
@@ -511,7 +526,8 @@ BEGIN
 			)result
 			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
-			FETCH NEXT @PageSize ROWS ONLY;
+			FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 		END
 		ELSE
 		BEGIN
@@ -554,7 +570,8 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY;
+				FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 			END
 			ELSE
 			BEGIN
@@ -595,7 +612,8 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY;
+				FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 			END
 		END
 	END
@@ -625,7 +643,8 @@ BEGIN
 			)result
 			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
-			FETCH NEXT @PageSize ROWS ONLY;
+			FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 		END
 		ELSE
 		BEGIN
@@ -654,7 +673,8 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY;
+				FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 			END
 			ELSE
 			BEGIN
@@ -681,7 +701,8 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY;
+				FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 			END
 		END
 	END
@@ -711,7 +732,8 @@ BEGIN
 			)result
 			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
-			FETCH NEXT @PageSize ROWS ONLY;
+			FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 		END
 		ELSE
 		BEGIN
@@ -740,7 +762,8 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY;
+				FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 			END
 			ELSE
 			BEGIN
@@ -767,7 +790,8 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY;
+				FETCH NEXT @PageSize ROWS ONLY
+		OPTION (RECOMPILE);
 			END
 		END
 	END
