@@ -440,20 +440,10 @@ BorderExportPermit.Id AS __k_Id
 		INNER JOIN PaThaKa ON BorderImportPermit.PaThaKaId = PaThaKa.Id
 		INNER JOIN ExportImportSection section ON BorderImportPermit.ExportImportSectionId = section.Id
 		INNER JOIN Sakhan sakhan ON BorderImportPermit.SakhanId = sakhan.Id
-		WHERE ApplyType=''Cancel'' AND BorderImportPermit.Status=''Approved'' AND CardType=''Pa Tha Ka''
+		WHERE ApplyType=''Cancel'' AND BorderImportPermit.Status=''Approved''
 		AND (BorderImportPermit.CreatedDate>=@FromDate AND BorderImportPermit.CreatedDate<=@ToDate)
 		AND BorderImportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
-		AND BorderImportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportPermit.SakhanId ELSE @SakhanId END)
-		UNION ALL
-		SELECT BorderImportPermit.Id FROM BorderImportPermit
-		INNER JOIN IndividualTrading ON BorderImportPermit.IndividualTradingId = IndividualTrading.Id
-		INNER JOIN ExportImportSection section ON BorderImportPermit.ExportImportSectionId = section.Id
-		INNER JOIN Sakhan sakhan ON BorderImportPermit.SakhanId = sakhan.Id
-		WHERE ApplyType=''Cancel'' AND BorderImportPermit.Status=''Approved'' AND CardType=''Individual Trading''
-		AND (BorderImportPermit.CreatedDate>=@FromDate AND BorderImportPermit.CreatedDate<=@ToDate)
-		AND BorderImportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
-		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
 		AND BorderImportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportPermit.SakhanId ELSE @SakhanId END)
 	) tmp OPTION (RECOMPILE); '
             ELSE N'DECLARE @__total int = NULL; ' END;
@@ -491,39 +481,10 @@ BorderImportPermit.Id AS __k_Id
 		INNER JOIN PaThaKa ON BorderImportPermit.PaThaKaId = PaThaKa.Id
 		INNER JOIN ExportImportSection section ON BorderImportPermit.ExportImportSectionId = section.Id
 		INNER JOIN Sakhan sakhan ON BorderImportPermit.SakhanId = sakhan.Id
-		WHERE ApplyType=''Cancel'' AND BorderImportPermit.Status=''Approved'' AND CardType=''Pa Tha Ka''
+		WHERE ApplyType=''Cancel'' AND BorderImportPermit.Status=''Approved''
 		AND (BorderImportPermit.CreatedDate>=@FromDate AND BorderImportPermit.CreatedDate<=@ToDate)
 		AND BorderImportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
-		AND BorderImportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportPermit.SakhanId ELSE @SakhanId END)
-		UNION ALL
-        SELECT BorderImportPermit.CreatedDate Date,
-section.Code SectionCode,
-section.Name SectionName,
-OldImportPermitNo OldLicenceNo,
-ImportPermitNo LicenceNo,
-CONVERT(varchar,BorderImportPermit.CreatedDate,103) sDate,
-IndividualTrading.TINNo CompanyRegistrationNo,
-IndividualTrading.Name CompanyName,
-UnitLevel,
-StreetNumberStreetName,
-QuarterCityTownship,
-State,
-Country,
-PostalCode,
-BorderImportPermit.Remark,
-sakhan.Id SakhanId,
-sakhan.Code SakhanCode,
-sakhan.Name SakhanName,
-BorderImportPermit.Id AS __k_Id
-        FROM BorderImportPermit
-		INNER JOIN IndividualTrading ON BorderImportPermit.IndividualTradingId = IndividualTrading.Id
-		INNER JOIN ExportImportSection section ON BorderImportPermit.ExportImportSectionId = section.Id
-		INNER JOIN Sakhan sakhan ON BorderImportPermit.SakhanId = sakhan.Id
-		WHERE ApplyType=''Cancel'' AND BorderImportPermit.Status=''Approved'' AND CardType=''Individual Trading''
-		AND (BorderImportPermit.CreatedDate>=@FromDate AND BorderImportPermit.CreatedDate<=@ToDate)
-		AND BorderImportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
-		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
 		AND BorderImportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportPermit.SakhanId ELSE @SakhanId END)
         ) u
         ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY

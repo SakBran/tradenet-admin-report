@@ -576,22 +576,8 @@ BorderExportPermit.Id AS __k_Id
 		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
 		AND BorderImportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
-		AND ApplyType=@ApplyType AND BorderImportPermit.Status=''Approved'' AND BorderImportPermit.CardType=''Pa Tha Ka''
+		AND ApplyType=@ApplyType AND BorderImportPermit.Status=''Approved''
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
-		AND BorderImportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportPermit.SakhanId ELSE @SakhanId END)
-		UNION ALL
-		SELECT BorderImportPermit.Id FROM BorderImportPermit
-		INNER JOIN AccountTransaction ON BorderImportPermit.Id=AccountTransaction.TransactionId
-		INNER JOIN IndividualTrading ON BorderImportPermit.IndividualTradingId=IndividualTrading.Id
-		INNER JOIN ExportImportSection section ON BorderImportPermit.ExportImportSectionId = section.Id
-		INNER JOIN Sakhan sakhan ON BorderImportPermit.SakhanId = sakhan.Id
-		INNER JOIN Users ON Users.Id = BorderImportPermit.ApproveUserId
-		WHERE IsPayment=1
-		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
-		AND BorderImportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
-		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
-		AND ApplyType=@ApplyType AND BorderImportPermit.Status=''Approved'' AND BorderImportPermit.CardType=''Individual Trading''
-		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
 		AND BorderImportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportPermit.SakhanId ELSE @SakhanId END)
 	) tmp OPTION (RECOMPILE); '
             ELSE N'DECLARE @__total int = NULL; ' END;
@@ -639,47 +625,8 @@ BorderImportPermit.Id AS __k_Id
 		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
 		AND BorderImportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
-		AND ApplyType=@ApplyType AND BorderImportPermit.Status=''Approved'' AND BorderImportPermit.CardType=''Pa Tha Ka''
+		AND ApplyType=@ApplyType AND BorderImportPermit.Status=''Approved''
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
-		AND BorderImportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportPermit.SakhanId ELSE @SakhanId END)
-		UNION ALL
-        SELECT BorderImportPermit.ApplicationNo,
-BorderImportPermit.ApplicationDate,
-Users.FullName as ApprovedUser,
-AccountTransaction.PaymentDate Date,
-CONVERT(varchar,AccountTransaction.PaymentDate,103) sDate,
-section.Code SectionCode,
-ApplyType,
-OldImportPermitNo OldLicenceNo,
-ImportPermitNo LicenceNo,
-BorderImportPermit.CreatedDate LicenceDate,
-CONVERT(varchar,BorderImportPermit.CreatedDate,103) sLicenceDate,
-IndividualTrading.TINNo CompanyRegistrationNo,
-IndividualTrading.Name CompanyName,
-VoucherNo,
-VoucherDate,
-CONVERT(varchar,AccountTransaction.VoucherDate,103) sVoucherDate,
-CAST(AccountTransaction.TotalAmount AS decimal(38,6)) Amount,
-PaymentType,
-BorderImportPermit.CommodityType,
-BorderImportPermit.ExchangeRate,
-CAST(BorderImportPermit.TotalCIF AS decimal(38,6)) TotalCIF,
-sakhan.Id SakhanId,
-sakhan.Code SakhanCode,
-sakhan.Name SakhanName,
-BorderImportPermit.Id AS __k_Id
-        FROM BorderImportPermit
-		INNER JOIN AccountTransaction ON BorderImportPermit.Id=AccountTransaction.TransactionId
-		INNER JOIN IndividualTrading ON BorderImportPermit.IndividualTradingId=IndividualTrading.Id
-		INNER JOIN ExportImportSection section ON BorderImportPermit.ExportImportSectionId = section.Id
-		INNER JOIN Sakhan sakhan ON BorderImportPermit.SakhanId = sakhan.Id
-		INNER JOIN Users ON Users.Id = BorderImportPermit.ApproveUserId
-		WHERE IsPayment=1
-		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
-		AND BorderImportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
-		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
-		AND ApplyType=@ApplyType AND BorderImportPermit.Status=''Approved'' AND BorderImportPermit.CardType=''Individual Trading''
-		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
 		AND BorderImportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportPermit.SakhanId ELSE @SakhanId END)
         ) u
         ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
