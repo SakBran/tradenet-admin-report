@@ -75,4 +75,15 @@ export interface ReportPageConfig {
    * e.g. `${Type} Company Business Organization (${Date})`.
    */
   reportSubtitle?: (filters: Record<string, unknown>) => string;
+  /**
+   * Placement for the currency-grouped summary footer (when the backend sends
+   * `currencyTotals`). `labelColumnKey` is the column.key under which the
+   * `<CUR>: N licence(s)` text and the grand `Total: N licence(s)` go; the
+   * summed value goes under `valueColumnKey`. Mirrors the legacy
+   * ExtensionReport.rdlc currency footer.
+   */
+  currencyTotalsColumns?: {
+    labelColumnKey: string;
+    valueColumnKey: string;
+  };
 }

@@ -86,6 +86,17 @@ interface PropsType<T extends AnyObject = AnyObject> {
    * columns above the column-header row (mirrors the legacy RDLC report header).
    */
   reportHeaderLines?: string[];
+  /**
+   * Placement for the currency-grouped summary footer when the response carries
+   * `currencyTotals`. `labelColumnKey` is the column.key under which the
+   * `<CUR>: N licence(s)` text (and grand `Total: N licence(s)`) renders;
+   * the summed value renders under `valueColumnKey`. Falls back to the first
+   * text / first numeric column when omitted.
+   */
+  currencyTotalsColumns?: {
+    labelColumnKey: string;
+    valueColumnKey: string;
+  };
 }
 
 const emptyPage = <T extends AnyObject>(): PaginationType<T> => ({
@@ -145,6 +156,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   rowNumberTitle = 'No',
   legacyReportViewer = false,
   reportHeaderLines,
+  currencyTotalsColumns,
 }: PropsType<T>) => {
   const normalizedColumns = useMemo<BasicTableColumn<T>[]>(() => {
     if (columns?.length) {
@@ -304,6 +316,29 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
     (column) =>
       !((column.dataIndex ?? column.key).toString() in columnTotals)
   );
+
+  // Optional currency-grouped summary footer (legacy ExtensionReport.rdlc):
+  // one "<CUR>: N licence(s)" + summed-value row per currency, then a grand
+  // "Total: N licence(s)" row. Placement is config-driven (currencyTotalsColumns)
+  // and falls back to the first text / first numeric column.
+  const currencyTotals = data.currencyTotals;
+  const showCurrencyTotals =
+    !loading &&
+    (data.data?.length ?? 0) > 0 &&
+    (currencyTotals?.currencies?.length ?? 0) > 0;
+  const currencyLabelColumnKey =
+    currencyTotalsColumns?.labelColumnKey ??
+    normalizedColumns
+      .find((column) => !isNumericColumn(column.dataType))
+      ?.key.toString();
+  const currencyValueColumnKey =
+    currencyTotalsColumns?.valueColumnKey ??
+    normalizedColumns.find((column) => isNumericColumn(column.dataType))?.key.toString();
+  const formatCurrencyTotalValue = (value: number) =>
+    Number(value).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 4,
+    });
 
   return (
     <>
@@ -465,43 +500,115 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
               </tbody>
             )}
 
-            {showTotalRow && (
+            {(showTotalRow || showCurrencyTotals) && (
               <tfoot>
-                <tr className="report-total-row">
-                  {showRowNumber && <td />}
-                  {normalizedColumns.map((column, index) => {
-                    const dataIndex = (
-                      column.dataIndex ?? column.key
-                    ).toString();
-                    const key = column.key.toString();
-                    const total = columnTotals[dataIndex];
+                {showTotalRow && (
+                  <tr className="report-total-row">
+                    {showRowNumber && <td />}
+                    {normalizedColumns.map((column, index) => {
+                      const dataIndex = (
+                        column.dataIndex ?? column.key
+                      ).toString();
+                      const key = column.key.toString();
+                      const total = columnTotals[dataIndex];
 
-                    if (total !== undefined) {
-                      return (
-                        <td
-                          key={key}
-                          className={
-                            isNumericColumn(column.dataType) ? 'col-numeric' : undefined
-                          }
-                          style={{ fontWeight: 700 }}
-                        >
-                          {String(total)}
-                        </td>
-                      );
-                    }
+                      if (total !== undefined) {
+                        return (
+                          <td
+                            key={key}
+                            className={
+                              isNumericColumn(column.dataType) ? 'col-numeric' : undefined
+                            }
+                            style={{ fontWeight: 700 }}
+                          >
+                            {String(total)}
+                          </td>
+                        );
+                      }
 
-                    if (index === totalLabelIndex) {
-                      return (
-                        <td key={key} style={{ fontWeight: 700 }}>
-                          Total
-                        </td>
-                      );
-                    }
+                      if (index === totalLabelIndex) {
+                        return (
+                          <td key={key} style={{ fontWeight: 700 }}>
+                            Total
+                          </td>
+                        );
+                      }
 
-                    return <td key={key} />;
-                  })}
-                  {shouldShowActions && <td />}
-                </tr>
+                      return <td key={key} />;
+                    })}
+                    {shouldShowActions && <td />}
+                  </tr>
+                )}
+
+                {showCurrencyTotals &&
+                  currencyTotals!.currencies.map((entry) => (
+                    <tr
+                      key={`currency-${entry.currency}`}
+                      className="report-total-row"
+                    >
+                      {showRowNumber && <td />}
+                      {normalizedColumns.map((column) => {
+                        const key = column.key.toString();
+
+                        if (key === currencyLabelColumnKey) {
+                          return (
+                            <td key={key} style={{ fontWeight: 700 }}>
+                              {`${entry.currency}: ${entry.noOfLicences} licence(s)`}
+                            </td>
+                          );
+                        }
+
+                        if (key === currencyValueColumnKey) {
+                          return (
+                            <td
+                              key={key}
+                              className="col-numeric"
+                              style={{ fontWeight: 700 }}
+                            >
+                              {formatCurrencyTotalValue(entry.totalValue)}
+                            </td>
+                          );
+                        }
+
+                        return <td key={key} />;
+                      })}
+                      {shouldShowActions && <td />}
+                    </tr>
+                  ))}
+
+                {showCurrencyTotals && (
+                  <tr className="report-total-row">
+                    {showRowNumber && (
+                      <td style={{ fontWeight: 700 }}>TOTAL</td>
+                    )}
+                    {normalizedColumns.map((column, index) => {
+                      const key = column.key.toString();
+
+                      if (key === currencyLabelColumnKey) {
+                        return (
+                          <td key={key} style={{ fontWeight: 700 }}>
+                            {`Total: ${currencyTotals!.grandTotalLicences} licence(s)`}
+                          </td>
+                        );
+                      }
+
+                      if (
+                        !showRowNumber &&
+                        index === 0 &&
+                        key !== currencyLabelColumnKey
+                      ) {
+                        return (
+                          <td key={key} style={{ fontWeight: 700 }}>
+                            TOTAL
+                          </td>
+                        );
+                      }
+
+                      return <td key={key} />;
+                    })}
+                    {shouldShowActions && <td />}
+                  </tr>
+                )}
               </tfoot>
             )}
           </table>

@@ -66,6 +66,11 @@ namespace Backend.Controllers.Report
                     data, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
 
+            if (data.Count > 0)
+            {
+                result.CurrencyTotals = await sp_ExtensionReport.ExecuteCurrencyTotalsAsync(_context, procedureRequest!);
+            }
+
             return Ok(result);
         }
 

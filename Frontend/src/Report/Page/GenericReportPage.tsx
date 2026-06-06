@@ -790,6 +790,7 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
       <BasicTable<AnyObject>
         title={config.title}
         reportHeaderLines={reportHeaderLines}
+        currencyTotalsColumns={config.currencyTotalsColumns}
         tableId={`${config.controllerName}Table`}
         columns={tableColumns}
         fetchData={fetchRows}
