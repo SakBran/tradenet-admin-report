@@ -1,4 +1,9 @@
+using API.DBContext;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
 
@@ -14,7 +19,7 @@ public sealed class sp_ExportPermitDetailReportRequest
     public int SakhanId { get; set; }
 }
 
-public sealed class sp_ExportPermitDetailReportResult
+public class sp_ExportPermitDetailReportResult
 {
     public int PaThaKaTypeId { get; set; }
     public string PaThaKaTypeCode { get; set; } = null!;
@@ -56,4 +61,44 @@ public sealed class sp_ExportPermitDetailReportResult
     public string PermitType { get; set; } = null!;
     public string? Conditions { get; set; }
     public DateTime? ApproveDate { get; set; }
+}
+
+public sealed class sp_ExportPermitDetailReportRow : sp_ExportPermitDetailReportResult
+{
+    public int TotalCount { get; set; }
+}
+
+public static class sp_ExportPermitDetailReport
+{
+    public static async Task<List<sp_ExportPermitDetailReportRow>> ExecuteAsync(
+        TradeNetDbContext db,
+        sp_ExportPermitDetailReportRequest request,
+        int pageIndex,
+        int pageSize,
+        bool includeTotalCount)
+    {
+        var sql = "EXEC dbo.sp_ExportPermitDetailReport_Fast_pagination "
+            + "@Type, @FromDate, @ToDate, @PaThaKaTypeId, @ExportImportSectionId, @BuyerCountryId, @CompanyRegistrationNo, @SakhanId, "
+            + "@SortColumn, @SortOrder, @PageIndex, @PageSize, @IncludeTotalCount";
+
+        var parameters = new[]
+        {
+            new SqlParameter("@Type", request.Type),
+            new SqlParameter("@FromDate", request.FromDate),
+            new SqlParameter("@ToDate", request.ToDate),
+            new SqlParameter("@PaThaKaTypeId", request.PaThaKaTypeId),
+            new SqlParameter("@ExportImportSectionId", request.ExportImportSectionId),
+            new SqlParameter("@BuyerCountryId", request.BuyerCountryId),
+            new SqlParameter("@CompanyRegistrationNo", request.CompanyRegistrationNo),
+            new SqlParameter("@SakhanId", request.SakhanId),
+            new SqlParameter("@SortColumn", DBNull.Value),
+            new SqlParameter("@SortOrder", DBNull.Value),
+            new SqlParameter("@PageIndex", pageIndex),
+            new SqlParameter("@PageSize", pageSize),
+            new SqlParameter("@IncludeTotalCount", includeTotalCount),
+        };
+
+        return await db.Database.SqlQueryRaw<sp_ExportPermitDetailReportRow>(sql, parameters)
+            .ToListAsync();
+    }
 }

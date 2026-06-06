@@ -46,7 +46,7 @@ public static partial class sp_HSCodeReport
 
         return db.Database
             .SqlQueryRaw<sp_HSCodeAggregateReportResult>(
-                "EXEC dbo.sp_HSCodeReport @FromDate, @ToDate, @FormType, @FilterType, @HSCode, @SakhanId, @PageIndex, @PageSize",
+                "EXEC dbo.sp_HSCodeReport_pagination @FromDate, @ToDate, @FormType, @FilterType, @HSCode, @SakhanId, @PageIndex, @PageSize",
                 parameters)
             .ToListAsync();
     }

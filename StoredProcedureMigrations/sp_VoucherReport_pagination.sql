@@ -192,13 +192,8 @@ ExportPermit.Id AS __k_Id
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END) OPTION (RECOMPILE); '
             ELSE N'DECLARE @__total int = NULL; ' END;
 
-        -- The original sp_VoucherReport selects only CommodityType for Export Licence;
-        -- emit ExchangeRate/TotalCIF as NULL so the result set still matches sp_VoucherReportRow.
-        SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM ExportLicenceItem
-		INNER JOIN Currency currency ON ExportLicenceItem.CurrencyId = currency.Id
-		WHERE ExportLicenceItem.ExportLicenceId=pg.__k_Id) Currency,
-        (SELECT SUM(ExportLicenceItem.Amount) FROM ExportLicenceItem
-		WHERE ExportLicenceItem.ExportLicenceId=pg.__k_Id) TotalAmount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
+        -- Resolve Currency/TotalAmount from the indexed aggregate view after paging.
+        SET @sql = @cntpart + N'SELECT pg.*, cur.Code AS Currency, amt.TotalAmount AS TotalAmount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
     FROM (
         SELECT ExportLicence.ApplicationNo,
 ExportLicence.ApplicationDate,
@@ -235,6 +230,17 @@ ExportLicence.Id AS __k_Id
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
         ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
     ) pg
+    OUTER APPLY (
+        SELECT SUM(v.TotalAmount) AS TotalAmount
+        FROM dbo.vw_ExportLicenceItemTotalByCurrency AS v WITH (NOEXPAND)
+        WHERE v.ExportLicenceId = pg.__k_Id
+    ) amt
+    OUTER APPLY (
+        SELECT TOP 1 currency.Code
+        FROM dbo.vw_ExportLicenceItemTotalByCurrency AS v WITH (NOEXPAND)
+        INNER JOIN Currency currency ON v.CurrencyId = currency.Id
+        WHERE v.ExportLicenceId = pg.__k_Id
+    ) cur
     ORDER BY ' + @ob + N'
     OPTION (RECOMPILE);';
     END

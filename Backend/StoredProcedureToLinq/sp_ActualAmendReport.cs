@@ -60,6 +60,7 @@ public sealed class sp_ActualAmendReportRow
     public string? Country { get; set; }
     public string? PostalCode { get; set; }
     public string? Currency { get; set; }
+    public string? HSCode { get; set; }
     public decimal? Amount { get; set; }
     public int? SakhanId { get; set; }
     public string? SakhanCode { get; set; }
@@ -83,6 +84,7 @@ public sealed class sp_ActualAmendReportRow
         Country = Country,
         PostalCode = PostalCode,
         Currency = Currency,
+        HSCode = HSCode,
         Amount = Amount,
         SakhanId = SakhanId,
         SakhanCode = SakhanCode,

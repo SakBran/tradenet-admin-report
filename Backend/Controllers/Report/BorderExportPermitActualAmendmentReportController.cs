@@ -124,10 +124,10 @@ namespace Backend.Controllers.Report
             CancellationToken cancellationToken)
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
-            var query = sp_ActualAmendReport.Query(_context, procedureRequest!);
-            await foreach (var chunk in query.AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
+            await foreach (var chunk in sp_ActualAmendReport.ExecuteQueryable(_context, procedureRequest!)
+                .AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
             {
-                sink.Append(chunk);
+                sink.Append(chunk.Select(row => row.ToResult()).ToList());
             }
         }
 

@@ -78,6 +78,7 @@ BEGIN
             FROM (
                 SELECT
                     paThaKaType.Id PaThaKaTypeId, paThaKaType.Code PaThaKaTypeCode, paThaKaType.Description PaThaKaTypeName,
+                    CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName,
                     ExportImportSectionId, ExportImportMethodId, ExportImportIncotermId, BuyerCountryId,
                     section.Code SectionCode, section.Name SectionName,
                     ExportLicenceNo LicenceNo, ExportLicence.IssuedDate LicenceDate,
@@ -97,7 +98,9 @@ BEGIN
                     consignedCountry.Name ConsignedCountry, countryofOrigin.Name CountryofOrigin,
                     HSCode.Code HSCode, HSCode.Description+'' ''+ExportLicenceItem.Description HSDescription,
                     unit.Code Unit, Price, Quantity, Amount, currency.Code Currency,
-                    ExportLicence.Remark Conditions, ExportLicence.ApproveDate
+                    ExportLicence.Remark Conditions,
+                    ExportLicence.ApplicationNo, ExportLicence.ApplicationDate, ExportLicence.CommodityType,
+                    ExportLicence.ApproveDate
                 FROM ExportLicence
                 INNER JOIN PaThaKa ON PaThaKa.Id = ExportLicence.PaThaKaId
                 INNER JOIN PaThaKaType paThaKaType ON PaThaKa.PaThaKaTypeId = paThaKaType.Id
@@ -213,7 +216,9 @@ BEGIN
                         consignedCountry.Name ConsignedCountry, countryofOrigin.Name CountryofOrigin,
                         HSCode.Code HSCode, HSCode.Description+'' ''+ISNULL(BorderExportLicenceItem.Description,'''') HSDescription,
                         unit.Code Unit, Price, Quantity, Amount, currency.Code Currency,
-                        BorderExportLicence.Remark Conditions, BorderExportLicence.ApproveDate
+                        BorderExportLicence.Remark Conditions,
+                        BorderExportLicence.ApplicationNo, BorderExportLicence.ApplicationDate, BorderExportLicence.CommodityType,
+                        BorderExportLicence.ApproveDate
                     FROM BorderExportLicence
                     INNER JOIN PaThaKa ON PaThaKa.Id = BorderExportLicence.PaThaKaId
                     INNER JOIN PaThaKaType paThaKaType ON PaThaKa.PaThaKaTypeId = paThaKaType.Id
@@ -263,7 +268,9 @@ BEGIN
                         consignedCountry.Name ConsignedCountry, countryofOrigin.Name CountryofOrigin,
                         HSCode.Code HSCode, HSCode.Description+'' ''+ISNULL(BorderExportLicenceItem.Description,'''') HSDescription,
                         unit.Code Unit, Price, Quantity, Amount, currency.Code Currency,
-                        BorderExportLicence.Remark Conditions, BorderExportLicence.ApproveDate
+                        BorderExportLicence.Remark Conditions,
+                        BorderExportLicence.ApplicationNo, BorderExportLicence.ApplicationDate, BorderExportLicence.CommodityType,
+                        BorderExportLicence.ApproveDate
                     FROM BorderExportLicence
                     INNER JOIN IndividualTrading ON IndividualTrading.Id = BorderExportLicence.IndividualTradingId
                     INNER JOIN PaThaKaType paThaKaType ON IndividualTrading.PaThaKaTypeId = paThaKaType.Id

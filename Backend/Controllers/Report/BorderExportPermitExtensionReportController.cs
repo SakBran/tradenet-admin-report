@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +21,8 @@ namespace Backend.Controllers.Report
     public class BorderExportPermitExtensionReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "BorderExportPermitExtensionReport";
+        private const int DefaultPageSize = 10;
+        private const int MaxPageSize = 1000;
 
         private readonly TradeNetDbContext _context;
         private readonly IExcelExportJobService _excelExportJobs;
@@ -38,8 +41,22 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var query = sp_ExtensionReport.Query(_context, procedureRequest!);
-            var result = await ReportQueryService.CreatePagedResultAsync(query, request!);
+            var pageIndex = Math.Max(0, request!.PageIndex);
+            var pageSize = request.PageSize <= 0 ? DefaultPageSize : Math.Min(request.PageSize, MaxPageSize);
+            var sortColumn = string.IsNullOrWhiteSpace(request.SortColumn) ? null : request.SortColumn;
+            var sortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? null : request.SortOrder;
+
+            var rows = await sp_ExtensionReport.ExecuteAsync(
+                _context, procedureRequest!, sortColumn, sortOrder, pageIndex, pageSize, request.IncludeTotalCount);
+            var data = rows.Select(row => row.ToResult()).ToList();
+
+            var result = request.IncludeTotalCount
+                ? ApiResult<sp_ExtensionReportResult>.CreatePageFromRows(
+                    data, rows.Count > 0 ? (rows[0].TotalCount ?? 0) : 0, pageIndex, pageSize,
+                    request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery)
+                : ApiResult<sp_ExtensionReportResult>.CreateFastPageFromRows(
+                    data, pageIndex, pageSize,
+                    request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
 
             return Ok(result);
         }
@@ -76,10 +93,10 @@ namespace Backend.Controllers.Report
             CancellationToken cancellationToken)
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
-            var query = sp_ExtensionReport.Query(_context, procedureRequest!);
-            await foreach (var chunk in query.AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
+            await foreach (var chunk in sp_ExtensionReport.ExecuteQueryable(_context, procedureRequest!)
+                .AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
             {
-                sink.Append(chunk);
+                sink.Append(chunk.Select(row => row.ToResult()).ToList());
             }
         }
 

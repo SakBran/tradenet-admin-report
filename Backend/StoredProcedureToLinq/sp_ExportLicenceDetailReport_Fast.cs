@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
 
-public static class sp_ExportLicenceDetailReport_Fast
+public static partial class sp_ExportLicenceDetailReport_Fast
 {
     private const string New = "New";
     private const string Approved = "Approved";
@@ -33,33 +33,30 @@ public static class sp_ExportLicenceDetailReport_Fast
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
-        var ports = await ReportLookupCache.GetPortNamesAsync(db, cache);
-        var countries = await ReportLookupCache.GetCountryNamesAsync(db, cache);
-
         var pageIndex = Math.Max(0, pagingRequest.PageIndex);
         var pageSize = pagingRequest.PageSize <= 0
             ? DefaultPageSize
             : Math.Min(pagingRequest.PageSize, MaxPageSize);
 
-        var rows = Rows(db, request);
-        var totalCount = pagingRequest.IncludeTotalCount
-            ? await rows.CountAsync()
-            : (int?)null;
-
-        var pageRows = await rows
-            .Skip(pageIndex * pageSize)
-            .Take(pageSize + (totalCount.HasValue ? 0 : 1))
-            .ToListAsync();
+        var pageRows = await ExecuteAsync(
+            db,
+            request,
+            pagingRequest.SortColumn,
+            pagingRequest.SortOrder,
+            pageIndex,
+            pagingRequest.IncludeTotalCount ? pageSize : pageSize + 1,
+            pagingRequest.IncludeTotalCount);
 
         var results = pageRows
-            .Select(row => row.ToResult(ports, countries))
+            .Select(row => row.ToResult())
             .ToList();
 
-        if (totalCount.HasValue)
+        if (pagingRequest.IncludeTotalCount)
         {
+            var totalCount = pageRows.Count == 0 ? 0 : pageRows[0].TotalCount;
             return ApiResult<sp_ExportLicenceDetailReportResult>.CreatePageFromRows(
                 results,
-                totalCount.Value,
+                totalCount,
                 pageIndex,
                 pageSize,
                 null,
@@ -90,14 +87,8 @@ public static class sp_ExportLicenceDetailReport_Fast
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
-        var ports = await ReportLookupCache.GetPortNamesAsync(db, cache);
-        var countries = await ReportLookupCache.GetCountryNamesAsync(db, cache);
-
-        var rows = await Rows(db, request).ToListAsync();
-
-        var resolved = rows
-            .Select(row => row.ToResult(ports, countries))
-            .ToList();
+        var rows = await ExecuteAsync(db, request, null, null, 0, 0, includeTotalCount: false);
+        var resolved = rows.Select(row => row.ToResult()).ToList();
 
         return await ExcelGenerator.CreateWorkbookAsync(resolved.AsQueryable(), pagingRequest, worksheetName);
     }
@@ -112,12 +103,11 @@ public static class sp_ExportLicenceDetailReport_Fast
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
-        var ports = await ReportLookupCache.GetPortNamesAsync(db, cache);
-        var countries = await ReportLookupCache.GetCountryNamesAsync(db, cache);
+        var query = ExecuteQueryable(db, request, null, null, 0, 0, includeTotalCount: false);
 
-        await foreach (var rawChunk in Rows(db, request).AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
+        await foreach (var rawChunk in query.AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
         {
-            yield return rawChunk.Select(row => row.ToResult(ports, countries)).ToList();
+            yield return rawChunk.Select(row => row.ToResult()).ToList();
         }
     }
 
@@ -189,7 +179,14 @@ public static class sp_ExportLicenceDetailReport_Fast
         TradeNetDbContext db,
         sp_ExportLicenceDetailReportRequest request)
     {
-        var rows = await Rows(db, request).ToListAsync();
+        var rows = await ExecuteAsync(
+            db,
+            request,
+            sortColumn: null,
+            sortOrder: null,
+            pageIndex: 0,
+            pageSize: 0,
+            includeTotalCount: false);
 
         return rows
             .Select(row => new AggregateSourceRow

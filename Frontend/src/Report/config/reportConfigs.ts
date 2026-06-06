@@ -168,7 +168,7 @@ const importLicenceFilterTypeFilter: ReportFilterConfig = {
 };
 
 const importLicenceHSCodeFilter: ReportFilterConfig = {
-  name: 'HSCode',
+  name: 'hsCode',
   label: 'HS Code',
   type: 'text',
   defaultValue: '',
@@ -540,9 +540,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Curency',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'TotalValue',
@@ -659,9 +659,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Curency',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'TotalValue',
@@ -703,7 +703,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
-        name: 'HSCode',
+        name: 'hsCode',
         label: 'HS Code',
         type: 'text',
         defaultValue: '',
@@ -718,7 +718,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licence By HS Code', true),
     columns: [
       {
-        key: 'HSCode',
+        key: 'hsCode',
         dataIndex: 'hsCode',
         title: 'HS Code',
       },
@@ -1140,9 +1140,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataType: 'number',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Remark',
@@ -1527,13 +1527,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Country of Destination',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Decription',
-        dataIndex: 'hSDescription',
+        dataIndex: 'hsDescription',
         title: 'Decription',
       },
       {
@@ -2117,9 +2117,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Curency',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'TotalValue',
@@ -2234,9 +2234,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Curency',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'TotalValue',
@@ -2278,7 +2278,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
-        name: 'HSCode',
+        name: 'hsCode',
         label: 'HS Code',
         type: 'text',
         defaultValue: '',
@@ -2292,7 +2292,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     ],
     columns: [
       {
-        key: 'HSCode',
+        key: 'hsCode',
         dataIndex: 'hsCode',
         title: 'HS Code',
       },
@@ -2586,9 +2586,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataType: 'number',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Remark',
@@ -2860,7 +2860,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'UnionCitizenshipNo',
-        dataIndex: 'nRCNo',
+        dataIndex: 'nrcNo',
         title: 'Union Citizenship No',
       },
       {
@@ -2915,13 +2915,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Type of Permit',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Decription',
-        dataIndex: 'hSDescription',
+        dataIndex: 'hsDescription',
         title: 'Decription',
       },
       {
@@ -3412,9 +3412,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Curency',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'TotalValue',
@@ -3529,9 +3529,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Curency',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'TotalValue',
@@ -3573,7 +3573,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
-        name: 'HSCode',
+        name: 'hsCode',
         label: 'HS Code',
         type: 'text',
         defaultValue: '',
@@ -3587,7 +3587,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     ],
     columns: [
       {
-        key: 'HSCode',
+        key: 'hsCode',
         dataIndex: 'hsCode',
         title: 'HS Code',
       },
@@ -3996,9 +3996,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataType: 'number',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Remark',
@@ -4357,13 +4357,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Country of Orign',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Decription',
-        dataIndex: 'hSDescription',
+        dataIndex: 'hsDescription',
         title: 'Decription',
       },
       {
@@ -4567,13 +4567,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Country of Orign',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Decription',
-        dataIndex: 'hSDescription',
+        dataIndex: 'hsDescription',
         title: 'Decription',
       },
       {
@@ -4904,9 +4904,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Commodity Type',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'AdditionalDescription',
@@ -5257,9 +5257,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Curency',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'TotalValue',
@@ -5374,9 +5374,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Curency',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'TotalValue',
@@ -5423,7 +5423,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
-        name: 'HSCode',
+        name: 'hsCode',
         label: 'HS Code',
         type: 'text',
         defaultValue: '',
@@ -5437,7 +5437,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     ],
     columns: [
       {
-        key: 'HSCode',
+        key: 'hsCode',
         dataIndex: 'hsCode',
         title: 'HS Code',
       },
@@ -5731,9 +5731,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataType: 'number',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Remark',
@@ -6005,7 +6005,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'UnionCitizenshipNo',
-        dataIndex: 'nRCNo',
+        dataIndex: 'nrcNo',
         title: 'Union Citizenship No',
       },
       {
@@ -6050,13 +6050,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Type of Permit',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Decription',
-        dataIndex: 'hSDescription',
+        dataIndex: 'hsDescription',
         title: 'Decription',
       },
       {
@@ -6862,9 +6862,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Curency',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'TotalValue',
@@ -6974,9 +6974,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Curency',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'TotalValue',
@@ -7018,7 +7018,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
-        name: 'HSCode',
+        name: 'hsCode',
         label: 'HS Code',
         type: 'text',
         defaultValue: '',
@@ -7032,7 +7032,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     ],
     columns: [
       {
-        key: 'HSCode',
+        key: 'hsCode',
         dataIndex: 'hsCode',
         title: 'HS Code',
       },
@@ -7382,9 +7382,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     ],
     columns: [
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Section',
@@ -7807,13 +7807,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Country of Destination',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Decription',
-        dataIndex: 'hSDescription',
+        dataIndex: 'hsDescription',
         title: 'Decription',
       },
       {
@@ -8058,9 +8058,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Commodity Type',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Quota',
@@ -8388,9 +8388,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Curency',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'TotalValue',
@@ -8500,9 +8500,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Curency',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'TotalValue',
@@ -8544,7 +8544,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
-        name: 'HSCode',
+        name: 'hsCode',
         label: 'HS Code',
         type: 'text',
         defaultValue: '',
@@ -8558,7 +8558,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     ],
     columns: [
       {
-        key: 'HSCode',
+        key: 'hsCode',
         dataIndex: 'hsCode',
         title: 'HS Code',
       },
@@ -8793,9 +8793,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     ],
     columns: [
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Section',
@@ -9121,7 +9121,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'UnionCitizenshipNo',
-        dataIndex: 'nRCNo',
+        dataIndex: 'nrcNo',
         title: 'Union Citizenship No',
       },
       {
@@ -9176,13 +9176,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Type of Permit',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Decription',
-        dataIndex: 'hSDescription',
+        dataIndex: 'hsDescription',
         title: 'Decription',
       },
       {
@@ -9422,9 +9422,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Commodity Type',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Quota',
@@ -9628,9 +9628,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Curency',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'TotalValue',
@@ -9700,9 +9700,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Curency',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'TotalValue',
@@ -9718,7 +9718,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'ImportLicenceByHSCodeReport',
     excelRoute: 'ImportLicenceByHSCodeReport/Excel',
     excelFileName: 'ImportLicenceByHSCodeReport.xlsx',
-    initialSortColumn: 'HSCode',
+    initialSortColumn: 'hsCode',
     showRowNumber: true,
     filters: importLicenceHSCodeFilters,
     reportSubtitle: importLicenceRangeSubtitle(
@@ -9727,7 +9727,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     ),
     columns: [
       {
-        key: 'HSCode',
+        key: 'hsCode',
         dataIndex: 'hsCode',
         title: 'HS Code',
       },
@@ -9878,9 +9878,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     reportSubtitle: importLicenceRangeSubtitle('List of Import Licence Report'),
     columns: [
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Section',
@@ -10127,13 +10127,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Country of Orign',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Decription',
-        dataIndex: 'hSDescription',
+        dataIndex: 'hsDescription',
         title: 'Decription',
       },
       {
@@ -10282,13 +10282,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Country of Orign',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Decription',
-        dataIndex: 'hSDescription',
+        dataIndex: 'hsDescription',
         title: 'Decription',
       },
       {
@@ -10459,9 +10459,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Commodity Type',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Quota',
@@ -10528,9 +10528,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Commodity Type',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'AdditionalDescription',
@@ -10771,9 +10771,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Curency',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'TotalValue',
@@ -10879,9 +10879,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Curency',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'TotalValue',
@@ -10923,7 +10923,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
-        name: 'HSCode',
+        name: 'hsCode',
         label: 'HS Code',
         type: 'text',
         defaultValue: '',
@@ -10932,7 +10932,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     reportSubtitle: importLicenceRangeSubtitle('List of Import Permit By HS Code', true),
     columns: [
       {
-        key: 'HSCode',
+        key: 'hsCode',
         dataIndex: 'hsCode',
         title: 'HS Code',
       },
@@ -11155,9 +11155,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     reportSubtitle: importLicenceRangeSubtitle('List of Import Permit Report'),
     columns: [
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Section',
@@ -11471,7 +11471,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'UnionCitizenshipNo',
-        dataIndex: 'nRCNo',
+        dataIndex: 'nrcNo',
         title: 'Union Citizenship No',
       },
       {
@@ -11516,13 +11516,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Type of Permit',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Decription',
-        dataIndex: 'hSDescription',
+        dataIndex: 'hsDescription',
         title: 'Decription',
       },
       {
@@ -11754,9 +11754,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Commodity Type',
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hSCode',
-        title: 'HSCode',
+        key: 'hsCode',
+        dataIndex: 'hsCode',
+        title: 'hsCode',
       },
       {
         key: 'Quota',
@@ -12103,7 +12103,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
       },
       {
-        name: 'NRCNo',
+        name: 'nrcNo',
         label: 'NRC No',
         type: 'text',
         defaultValue: '',
@@ -12219,7 +12219,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
       },
       {
-        name: 'NRCNo',
+        name: 'nrcNo',
         label: 'NRC No',
         type: 'text',
         defaultValue: '',
@@ -12253,7 +12253,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Position',
       },
       {
-        key: 'NRCNo',
+        key: 'nrcNo',
         dataIndex: 'directorNRC',
         title: 'NRC No.',
       },
@@ -12550,8 +12550,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Mobile',
       },
       {
-        key: 'NRCNo',
-        dataIndex: 'nRCNo',
+        key: 'nrcNo',
+        dataIndex: 'nrcNo',
         title: 'NRC No.',
       },
       {
