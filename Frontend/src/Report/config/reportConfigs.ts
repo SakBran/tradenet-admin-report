@@ -5187,6 +5187,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderImportPermitSections',
       },
       {
         name: 'AmendRemarkId',
@@ -5304,6 +5305,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderImportPermitSections',
       },
       {
         name: 'AmendRemarkId',
@@ -5504,6 +5506,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderImportPermitSections',
       },
       {
         name: 'SellerCountryId',
@@ -5583,6 +5586,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderImportPermitSections',
       },
       {
         name: 'SellerCountryId',
@@ -5656,6 +5660,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderImportPermitSections',
       },
       {
         name: 'CompanyRegistrationNo',
@@ -5778,6 +5783,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderImportPermitSections',
       },
       {
         name: 'SellerCountryId',
@@ -5857,6 +5863,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderImportPermitSections',
       },
       {
         name: 'SellerCountryId',
@@ -5943,6 +5950,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderImportPermitSections',
       },
       {
         name: 'SellerCountryId',
@@ -6124,6 +6132,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderImportPermitSections',
       },
       {
         name: 'CompanyRegistrationNo',
@@ -6230,6 +6239,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderImportPermitSections',
       },
       {
         name: 'CompanyRegistrationNo',
@@ -6242,12 +6252,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
-      },
-      {
-        name: 'Auto',
-        label: 'Auto',
-        type: 'text',
-        defaultValue: '',
       },
     ],
     columns: [
@@ -6300,11 +6304,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Total Value',
         dataType: 'number',
       },
-      {
-        key: 'Auto',
-        dataIndex: 'auto',
-        title: 'auto',
-      },
     ],
   },
   BorderImportPermitVoucherReport: {
@@ -6337,6 +6336,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Import Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderImportPermitSections',
       },
       {
         name: 'PaymentType',

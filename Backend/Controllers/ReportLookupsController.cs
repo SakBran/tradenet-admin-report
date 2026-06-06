@@ -57,6 +57,7 @@ namespace Backend.Controllers
                 "importlicencemethods" => GetImportLicenceMethods,
                 "importlicencesections" => GetImportLicenceSections,
                 "importpermitsections" => GetImportPermitSections,
+                "borderimportpermitsections" => GetBorderImportPermitSections,
                 "borderexportlicencesections" => GetBorderExportLicenceSections,
                 "lineofbusinesses" => GetLineofBusinesses,
                 "nrcprefixcodes" => GetNrcprefixCodes,
@@ -245,6 +246,22 @@ namespace Backend.Controllers
                     !item.IsDeleted &&
                     item.Type == ImportPermitFormType &&
                     item.IsOversea)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
+                .ToListAsync();
+
+        // Border Import Permit sections (legacy: GetAll(AppConfig.ImportPermit) where IsActive && IsBorder).
+        // Pinned by the BorderImportPermit report Section filters so the dropdown does not leak the
+        // generic exportImportSections list (Import + Export + Permit) — customer complaint.
+        private Task<List<ReportLookupOption>> GetBorderImportPermitSections() =>
+            _context.ExportImportSections
+                .AsNoTracking()
+                .Where(item =>
+                    item.IsActive &&
+                    !item.IsDeleted &&
+                    item.Type == ImportPermitFormType &&
+                    item.IsBorder)
                 .OrderBy(item => item.SortOrder)
                 .ThenBy(item => item.Name)
                 .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
