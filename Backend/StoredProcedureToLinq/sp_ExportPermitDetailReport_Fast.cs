@@ -133,6 +133,17 @@ public static class sp_ExportPermitDetailReport_Fast
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
         var source = await AggregateSourceRowsAsync(db, request);
+
+        if (dimension == ReportAggregateDimension.Daily)
+        {
+            // Daily reports carry a "Total USD Value" column. Group, fill the FX conversion
+            // (which needs DB access, unlike the in-memory CreatePagedResult), then page.
+            var groups = ReportAggregationService.Aggregate(source, dimension, includeSakhan);
+            await ReportUsdConversionService.FillDailyUsdValuesAsync(db, groups);
+            return ReportAggregationService.CreatePagedResultFromGroups(
+                groups, dimension, includeSakhan, pagingRequest);
+        }
+
         return ReportAggregationService.CreatePagedResult(source, dimension, includeSakhan, pagingRequest);
     }
 
@@ -163,7 +174,14 @@ public static class sp_ExportPermitDetailReport_Fast
         ArgumentNullException.ThrowIfNull(request);
 
         var source = await AggregateSourceRowsAsync(db, request);
-        return ReportAggregationService.Aggregate(source, dimension, includeSakhan);
+        var groups = ReportAggregationService.Aggregate(source, dimension, includeSakhan);
+
+        if (dimension == ReportAggregateDimension.Daily)
+        {
+            await ReportUsdConversionService.FillDailyUsdValuesAsync(db, groups);
+        }
+
+        return groups;
     }
 
     private static async Task<List<AggregateSourceRow>> AggregateSourceRowsAsync(

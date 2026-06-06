@@ -48,13 +48,13 @@ namespace Backend.Controllers.Report
 
             // Grand-total footer row (customer complaint #1). Keyed by the column
             // dataIndex so BasicTable renders a bold "Total" row. Mirrors the old
-            // ImportLicenceByDailyReport.rdlc TOTAL row. Total USD Value is omitted while
-            // FX conversion is unavailable (TotalUSDValue is null), so that column stays
-            // blank in the footer just like its data cells.
+            // ImportLicenceByDailyReport.rdlc TOTAL row, including the USD-normalised
+            // grand total (the FX conversion is filled by GetAggregateRowsAsync).
             result.ColumnTotals = new Dictionary<string, decimal>
             {
                 ["noOfLicences"] = groups.Sum(group => group.NoOfLicences),
                 ["totalValue"] = groups.Sum(group => group.TotalValue ?? 0m),
+                ["totalUSDValue"] = decimal.Round(groups.Sum(group => group.TotalUSDValue ?? 0m), 4),
             };
 
             return Ok(result);

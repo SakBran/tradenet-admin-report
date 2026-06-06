@@ -137,23 +137,12 @@ public static class sp_ImportLicenceDetailReport_Fast
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
+        // AggregateInSqlAsync already fills TotalUSDValue for the Daily dimension; the
+        // grand-total footer row (legacy RDLC "TOTAL") is produced by CreatePagedResultFromGroups
+        // when includeColumnTotals is set, and includes the USD roll-up for Daily.
         var groups = await AggregateInSqlAsync(db, request, dimension, includeSakhan);
-        var result = ReportAggregationService.CreatePagedResultFromGroups(groups, dimension, includeSakhan, pagingRequest);
-
-        if (includeColumnTotals)
-        {
-            // Grand-total footer row matching the legacy RDLC "TOTAL" row:
-            // CountDistinct(LicenceNo) + Sum(Amount) summed across ALL groups
-            // (not just the current page). Keyed by the column dataIndex so
-            // BasicTable renders a bold "Total" row.
-            result.ColumnTotals = new Dictionary<string, decimal>
-            {
-                ["noOfLicences"] = groups.Sum(group => group.NoOfLicences),
-                ["totalValue"] = groups.Sum(group => group.TotalValue ?? 0m),
-            };
-        }
-
-        return result;
+        return ReportAggregationService.CreatePagedResultFromGroups(
+            groups, dimension, includeSakhan, pagingRequest, includeColumnTotals);
     }
 
     public static async Task<byte[]> CreateAggregateExcelWorkbookAsync(
@@ -406,7 +395,16 @@ public static class sp_ImportLicenceDetailReport_Fast
                 .ToListAsync(),
         };
 
-        return groups.Select(group => MapGroup(group, dimension, includeSakhan)).ToList();
+        var mapped = groups.Select(group => MapGroup(group, dimension, includeSakhan)).ToList();
+
+        // Daily reports show a "Total USD Value" column; fill it via the shared FX
+        // conversion (other dimensions don't render that column, so skip the work).
+        if (dimension == ReportAggregateDimension.Daily)
+        {
+            await ReportUsdConversionService.FillDailyUsdValuesAsync(db, mapped);
+        }
+
+        return mapped;
     }
 
     private static ReportAggregateResult MapGroup(
@@ -432,7 +430,7 @@ public static class sp_ImportLicenceDetailReport_Fast
             Currency = group.Currency,
             NoOfLicences = group.NoOfLicences,
             TotalValue = group.TotalValue,
-            TotalUSDValue = null,
+            TotalUSDValue = null, // Daily: filled by ReportUsdConversionService in AggregateInSqlAsync.
         };
     }
 

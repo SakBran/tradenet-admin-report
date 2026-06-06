@@ -67,11 +67,10 @@ namespace API.Service.Reports
         public decimal? TotalValue { get; set; }
         public string? Currency { get; set; }
 
-        // NOTE: The old RDLC "Total USD Value" column converted each currency amount
-        // to USD. The FX formula (rate direction / which ExchangeRate row to pick) is
-        // not derivable from this repository, so it is intentionally left null for now.
-        // The remaining Daily columns (Date / No of Licences / Total Value / Currency)
-        // are fully populated.
+        // The old RDLC "Total USD Value" column. Left null by Aggregate itself; for the
+        // Daily reports it is filled afterwards by ReportUsdConversionService (the FX
+        // conversion needs the ExchangeRate table). Non-Daily dimensions don't render
+        // this column, so it stays null for them.
         public decimal? TotalUSDValue { get; set; }
     }
 
@@ -116,7 +115,7 @@ namespace API.Service.Reports
                         .Distinct(StringComparer.OrdinalIgnoreCase)
                         .Count(),
                     TotalValue = group.Sum(row => row.Amount),
-                    TotalUSDValue = null,
+                    TotalUSDValue = null, // Daily: filled later by ReportUsdConversionService.
                 })
                 .ToList();
 
@@ -156,13 +155,7 @@ namespace API.Service.Reports
 
             if (includeColumnTotals)
             {
-                // Grand-total footer row matching the legacy RDLC "TOTAL" row:
-                // CountDistinct(LicenceNo) + Sum(Amount) over ALL groups (not just the page).
-                result.ColumnTotals = new Dictionary<string, decimal>
-                {
-                    ["noOfLicences"] = aggregated.Sum(group => group.NoOfLicences),
-                    ["totalValue"] = aggregated.Sum(group => group.TotalValue ?? 0m),
-                };
+                result.ColumnTotals = BuildColumnTotals(aggregated, dimension);
             }
 
             return result;
@@ -190,7 +183,8 @@ namespace API.Service.Reports
             IReadOnlyList<ReportAggregateResult> grouped,
             ReportAggregateDimension dimension,
             bool includeSakhan,
-            ReportQueryRequest pagingRequest)
+            ReportQueryRequest pagingRequest,
+            bool includeColumnTotals = false)
         {
             ArgumentNullException.ThrowIfNull(grouped);
             ArgumentNullException.ThrowIfNull(pagingRequest);
@@ -207,7 +201,7 @@ namespace API.Service.Reports
                 .Take(pageSize)
                 .ToList();
 
-            return ApiResult<ReportAggregateResult>.CreatePageFromRows(
+            var result = ApiResult<ReportAggregateResult>.CreatePageFromRows(
                 pageRows,
                 ordered.Count,
                 pageIndex,
@@ -216,6 +210,36 @@ namespace API.Service.Reports
                 null,
                 pagingRequest.FilterColumn,
                 pagingRequest.FilterQuery);
+
+            if (includeColumnTotals)
+            {
+                result.ColumnTotals = BuildColumnTotals(ordered, dimension);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Grand-total footer row matching the legacy RDLC "TOTAL" row: CountDistinct(LicenceNo)
+        /// + Sum(Amount) over ALL groups (not just the page). Daily reports additionally roll up
+        /// the USD-normalised value, which is meaningful to sum across currencies.
+        /// </summary>
+        private static Dictionary<string, decimal> BuildColumnTotals(
+            IReadOnlyList<ReportAggregateResult> groups,
+            ReportAggregateDimension dimension)
+        {
+            var totals = new Dictionary<string, decimal>
+            {
+                ["noOfLicences"] = groups.Sum(group => group.NoOfLicences),
+                ["totalValue"] = groups.Sum(group => group.TotalValue ?? 0m),
+            };
+
+            if (dimension == ReportAggregateDimension.Daily)
+            {
+                totals["totalUSDValue"] = decimal.Round(groups.Sum(group => group.TotalUSDValue ?? 0m), 4);
+            }
+
+            return totals;
         }
 
         /// <summary>
