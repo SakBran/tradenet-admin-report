@@ -9996,7 +9996,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelRoute: 'ImportLicenceDailyReportNewLicenceReport/Excel',
     excelFileName: 'ImportLicenceDailyReportNewLicenceReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
-    showRowNumber: false,
+    showRowNumber: true,
     filters: importLicenceDailyFilters,
     reportSubtitle: importLicenceRangeSubtitle(
       'List of Import Licences By Daily',
