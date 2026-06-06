@@ -27,12 +27,12 @@ BEGIN
 
     -- TotalCount only when requested, computed over the UN-paged base (no subqueries) as a separate scalar.
     DECLARE @cntpart nvarchar(max) = CASE WHEN @IncludeTotalCount = 1
-        THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM ImportLicence
+        THEN N'DECLARE @__total int; SELECT @__total = COUNT(*) FROM ImportLicence
 		INNER JOIN PaThaKa ON ImportLicence.PaThaKaId = PaThaKa.Id
 		INNER JOIN ExportImportSection section ON ImportLicence.ExportImportSectionId = section.Id
 		WHERE (ImportLicence.Status=''Pending'' or ImportLicence.Status=''Reject'')
 		AND (ImportLicence.ApplicationDate>=@FromDate AND ImportLicence.ApplicationDate<=@ToDate)
-		AND ImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)); '
+		AND ImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END) OPTION (RECOMPILE); '
         ELSE N'DECLARE @__total int = NULL; ' END;
 
     DECLARE @sql nvarchar(max) = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM ImportLicenceItem

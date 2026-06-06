@@ -38,7 +38,7 @@ BEGIN
         SET @ob = N'[TransactionDateTime] ASC, [Id] ASC';
 
     DECLARE @cntpart nvarchar(max) = CASE WHEN @IncludeTotalCount = 1
-        THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM (
+        THEN N'DECLARE @__total int; SELECT @__total = COUNT(*) FROM (
             SELECT MPUPaymentTransaction.Id
             FROM dbo.MPUPaymentTransaction
             WHERE dbo.MPUPaymentTransaction.ResponseCode = ''00''
@@ -66,7 +66,7 @@ BEGIN
                     AND REPLACE(REPLACE(REPLACE(LOWER(ISNULL(dbo.MPUPaymentTransaction.PaymentType, '''')), '' '', ''''), ''-'', ''''), ''_'', '''')
                         IN (''citizenpay'', ''citizen'', ''cp'')))
             AND dbo.MPUPaymentTransaction.MOCAmount = @OnlineFeeAmount
-        ) c); '
+        ) c OPTION (RECOMPILE); '
         ELSE N'DECLARE @__total int = NULL; ' END;
 
     DECLARE @sql nvarchar(max) = @cntpart + N'

@@ -34,13 +34,13 @@ BEGIN
     IF @FormType = N'Import Permit'
     BEGIN
         SET @cntpart = CASE WHEN @IncludeTotalCount = 1
-            THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM ImportPermit
+            THEN N'DECLARE @__total int; SELECT @__total = COUNT(*) FROM ImportPermit
 		INNER JOIN PaThaKa ON ImportPermit.PaThaKaId = PaThaKa.Id
 		INNER JOIN ExportImportSection section ON ImportPermit.ExportImportSectionId = section.Id
 		WHERE ApplyType=''Extension'' AND ImportPermit.Status=''Approved''
 		AND (ImportPermit.CreatedDate>=@FromDate AND ImportPermit.CreatedDate<=@ToDate)
 		AND ImportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
-		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)); '
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END) OPTION (RECOMPILE); '
             ELSE N'DECLARE @__total int = NULL; ' END;
 
         SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM ImportPermitItem
@@ -79,13 +79,13 @@ ImportPermit.Id AS __k_Id
     ELSE IF @FormType = N'Export Permit'
     BEGIN
         SET @cntpart = CASE WHEN @IncludeTotalCount = 1
-            THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM ExportPermit
+            THEN N'DECLARE @__total int; SELECT @__total = COUNT(*) FROM ExportPermit
 		INNER JOIN PaThaKa ON ExportPermit.PaThaKaId = PaThaKa.Id
 		INNER JOIN ExportImportSection section ON ExportPermit.ExportImportSectionId = section.Id
 		WHERE ApplyType=''Extension'' AND ExportPermit.Status=''Approved''
 		AND (ExportPermit.CreatedDate>=@FromDate AND ExportPermit.CreatedDate<=@ToDate)
 		AND ExportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
-		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)); '
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END) OPTION (RECOMPILE); '
             ELSE N'DECLARE @__total int = NULL; ' END;
 
         SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM ExportPermitItem
@@ -124,13 +124,13 @@ ExportPermit.Id AS __k_Id
     ELSE IF @FormType = N'Export Licence'
     BEGIN
         SET @cntpart = CASE WHEN @IncludeTotalCount = 1
-            THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM ExportLicence
+            THEN N'DECLARE @__total int; SELECT @__total = COUNT(*) FROM ExportLicence
 		INNER JOIN PaThaKa ON ExportLicence.PaThaKaId = PaThaKa.Id
 		INNER JOIN ExportImportSection section ON ExportLicence.ExportImportSectionId = section.Id
 		WHERE ApplyType=''Extension'' AND ExportLicence.Status=''Approved''
 		AND (ExportLicence.CreatedDate>=@FromDate AND ExportLicence.CreatedDate<=@ToDate)
 		AND ExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
-		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)); '
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END) OPTION (RECOMPILE); '
             ELSE N'DECLARE @__total int = NULL; ' END;
 
         SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM ExportLicenceItem
@@ -169,7 +169,7 @@ ExportLicence.Id AS __k_Id
     ELSE IF @FormType = N'Border Export Licence'
     BEGIN
         SET @cntpart = CASE WHEN @IncludeTotalCount = 1
-            THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM (
+            THEN N'DECLARE @__total int; SELECT @__total = COUNT(*) FROM (
 		SELECT BorderExportLicence.Id FROM BorderExportLicence
 		INNER JOIN PaThaKa ON BorderExportLicence.PaThaKaId = PaThaKa.Id
 		INNER JOIN ExportImportSection section ON BorderExportLicence.ExportImportSectionId = section.Id
@@ -189,7 +189,7 @@ ExportLicence.Id AS __k_Id
 		AND BorderExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
 		AND BorderExportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderExportLicence.SakhanId ELSE @SakhanId END)
-	) tmp); '
+	) tmp OPTION (RECOMPILE); '
             ELSE N'DECLARE @__total int = NULL; ' END;
 
         SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM BorderExportLicenceItem
@@ -263,7 +263,7 @@ BorderExportLicence.Id AS __k_Id
     ELSE IF @FormType = N'Border Import Licence'
     BEGIN
         SET @cntpart = CASE WHEN @IncludeTotalCount = 1
-            THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM (
+            THEN N'DECLARE @__total int; SELECT @__total = COUNT(*) FROM (
 		SELECT BorderImportLicence.Id FROM BorderImportLicence
 		INNER JOIN PaThaKa ON BorderImportLicence.PaThaKaId = PaThaKa.Id
 		INNER JOIN ExportImportSection section ON BorderImportLicence.ExportImportSectionId = section.Id
@@ -283,7 +283,7 @@ BorderExportLicence.Id AS __k_Id
 		AND BorderImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
 		AND BorderImportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportLicence.SakhanId ELSE @SakhanId END)
-	) tmp); '
+	) tmp OPTION (RECOMPILE); '
             ELSE N'DECLARE @__total int = NULL; ' END;
 
         SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM BorderImportLicenceItem
@@ -357,7 +357,7 @@ BorderImportLicence.Id AS __k_Id
     ELSE IF @FormType = N'Border Export Permit'
     BEGIN
         SET @cntpart = CASE WHEN @IncludeTotalCount = 1
-            THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM (
+            THEN N'DECLARE @__total int; SELECT @__total = COUNT(*) FROM (
 		SELECT BorderExportPermit.Id FROM BorderExportPermit
 		INNER JOIN PaThaKa ON BorderExportPermit.PaThaKaId = PaThaKa.Id
 		INNER JOIN ExportImportSection section ON BorderExportPermit.ExportImportSectionId = section.Id
@@ -377,7 +377,7 @@ BorderImportLicence.Id AS __k_Id
 		AND BorderExportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
 		AND BorderExportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderExportPermit.SakhanId ELSE @SakhanId END)
-	) tmp); '
+	) tmp OPTION (RECOMPILE); '
             ELSE N'DECLARE @__total int = NULL; ' END;
 
         SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM BorderExportPermitItem
@@ -451,7 +451,7 @@ BorderExportPermit.Id AS __k_Id
     ELSE IF @FormType = N'Border Import Permit'
     BEGIN
         SET @cntpart = CASE WHEN @IncludeTotalCount = 1
-            THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM (
+            THEN N'DECLARE @__total int; SELECT @__total = COUNT(*) FROM (
 		SELECT BorderImportPermit.Id FROM BorderImportPermit
 		INNER JOIN PaThaKa ON BorderImportPermit.PaThaKaId = PaThaKa.Id
 		INNER JOIN ExportImportSection section ON BorderImportPermit.ExportImportSectionId = section.Id
@@ -471,7 +471,7 @@ BorderExportPermit.Id AS __k_Id
 		AND BorderImportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
 		AND BorderImportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportPermit.SakhanId ELSE @SakhanId END)
-	) tmp); '
+	) tmp OPTION (RECOMPILE); '
             ELSE N'DECLARE @__total int = NULL; ' END;
 
         SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM BorderImportPermitItem
@@ -545,13 +545,13 @@ BorderImportPermit.Id AS __k_Id
     ELSE
     BEGIN
         SET @cntpart = CASE WHEN @IncludeTotalCount = 1
-            THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM ImportLicence
+            THEN N'DECLARE @__total int; SELECT @__total = COUNT(*) FROM ImportLicence
 		INNER JOIN PaThaKa ON ImportLicence.PaThaKaId = PaThaKa.Id
 		INNER JOIN ExportImportSection section ON ImportLicence.ExportImportSectionId = section.Id
 		WHERE ApplyType=''Extension'' AND ImportLicence.Status=''Approved''
 		AND (ImportLicence.CreatedDate>=@FromDate AND ImportLicence.CreatedDate<=@ToDate)
 		AND ImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
-		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)); '
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END) OPTION (RECOMPILE); '
             ELSE N'DECLARE @__total int = NULL; ' END;
 
         SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM ImportLicenceItem

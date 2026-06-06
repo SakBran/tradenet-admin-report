@@ -37,7 +37,7 @@ BEGIN
     -- columns, so they are 1:1 and do not affect the count -- dropping them avoids materializing the
     -- full join just to count rows. PaThaKaTypeId is filtered directly on PaThaKa.
     DECLARE @cntpart nvarchar(max) = CASE WHEN @IncludeTotalCount = 1
-        THEN N'DECLARE @__total int = (SELECT COUNT(*) FROM ImportLicence
+        THEN N'DECLARE @__total int; SELECT @__total = COUNT(*) FROM ImportLicence
   INNER JOIN PaThaKa ON PaThaKa.Id = ImportLicence.PaThaKaId
   INNER JOIN ImportLicenceItem ON ImportLicence.Id = ImportLicenceItem.ImportLicenceId
   WHERE ImportLicence.ApplyType=''New''
@@ -48,7 +48,7 @@ BEGIN
   AND (@ExportImportSectionId=0 OR ImportLicence.ExportImportSectionId=@ExportImportSectionId)
   AND (@ExportImportMethodId=0 OR ImportLicence.ExportImportMethodId=@ExportImportMethodId)
   AND (@ExportImportIncotermId=0 OR ImportLicence.ExportImportIncotermId=@ExportImportIncotermId)
-  AND (@SellerCountryId=0 OR ImportLicence.SellerCountryId=@SellerCountryId)); '
+  AND (@SellerCountryId=0 OR ImportLicence.SellerCountryId=@SellerCountryId) OPTION (RECOMPILE); '
         ELSE N'DECLARE @__total int = NULL; ' END;
 
     DECLARE @sql nvarchar(max) = @cntpart + N'SELECT pg.*,(  
