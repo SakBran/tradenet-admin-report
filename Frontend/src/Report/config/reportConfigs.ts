@@ -2963,6 +2963,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   BorderExportPermitExtensionReport: {
     controllerName: 'BorderExportPermitExtensionReport',
     currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permit Report'),
     title: 'Border Export Permit Extension Report',
     apiRoute: 'BorderExportPermitExtensionReport',
     excelRoute: 'BorderExportPermitExtensionReport/Excel',
@@ -4621,6 +4622,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   BorderImportLicenceExtensionReport: {
     controllerName: 'BorderImportLicenceExtensionReport',
     currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Licence Report'),
     title: 'Border Import Licence Extension Report',
     apiRoute: 'BorderImportLicenceExtensionReport',
     excelRoute: 'BorderImportLicenceExtensionReport/Excel',
@@ -6112,6 +6114,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   BorderImportPermitExtensionReport: {
     controllerName: 'BorderImportPermitExtensionReport',
     currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Permit Report'),
     title: 'Border Import Permit Extension Report',
     apiRoute: 'BorderImportPermitExtensionReport',
     excelRoute: 'BorderImportPermitExtensionReport/Excel',
@@ -7874,6 +7877,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   ExportLicenceExtensionReport: {
     controllerName: 'ExportLicenceExtensionReport',
     currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Licence Report'),
     title: 'Export Licence Extension Report',
     apiRoute: 'ExportLicenceExtensionReport',
     excelRoute: 'ExportLicenceExtensionReport/Excel',
@@ -9239,6 +9243,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   ExportPermitExtensionReport: {
     controllerName: 'ExportPermitExtensionReport',
     currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Permit Report'),
     title: 'Export Permit Extension Report',
     apiRoute: 'ExportPermitExtensionReport',
     excelRoute: 'ExportPermitExtensionReport/Excel',
