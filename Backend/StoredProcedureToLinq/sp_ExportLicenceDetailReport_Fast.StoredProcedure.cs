@@ -1,4 +1,6 @@
 using API.DBContext;
+using API.Model;
+using API.Service.Reports;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -108,8 +110,30 @@ public sealed class sp_ExportLicenceDetailReportRow
     }
 }
 
+public sealed class sp_ExportLicenceTotalValueReportRow
+{
+    public string? Currency { get; set; }
+    public int NoOfLicences { get; set; }
+    public decimal TotalValue { get; set; }
+    public int? TotalCount { get; set; }
+
+    public ReportAggregateResult ToResult()
+    {
+        return new ReportAggregateResult
+        {
+            Currency = Currency,
+            NoOfLicences = NoOfLicences,
+            TotalValue = TotalValue,
+            TotalUSDValue = null,
+        };
+    }
+}
+
 public static partial class sp_ExportLicenceDetailReport_Fast
 {
+    private const int StoredProcedureDefaultPageSize = 10;
+    private const int StoredProcedureMaxPageSize = 1000;
+
     public static async Task<List<sp_ExportLicenceDetailReportRow>> ExecuteAsync(
         TradeNetDbContext db,
         sp_ExportLicenceDetailReportRequest request,
@@ -188,5 +212,110 @@ public static partial class sp_ExportLicenceDetailReport_Fast
             + "@SortColumn, @SortOrder, @PageIndex, @PageSize, @IncludeTotalCount";
 
         return db.Database.SqlQueryRaw<sp_ExportLicenceDetailReportRow>(sql, parameters);
+    }
+
+    public static async Task<ApiResult<ReportAggregateResult>> CreateTotalValueAggregateResultAsync(
+        TradeNetDbContext db,
+        sp_ExportLicenceDetailReportRequest request,
+        ReportQueryRequest pagingRequest)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(pagingRequest);
+
+        var pageIndex = Math.Max(0, pagingRequest.PageIndex);
+        var pageSize = pagingRequest.PageSize <= 0
+            ? StoredProcedureDefaultPageSize
+            : Math.Min(pagingRequest.PageSize, StoredProcedureMaxPageSize);
+
+        var rows = await ExecuteTotalValueAggregateAsync(
+            db,
+            request,
+            pagingRequest.SortColumn,
+            pagingRequest.SortOrder,
+            pageIndex,
+            pagingRequest.IncludeTotalCount ? pageSize : pageSize + 1,
+            pagingRequest.IncludeTotalCount);
+
+        var results = rows.Select(row => row.ToResult()).ToList();
+
+        if (pagingRequest.IncludeTotalCount)
+        {
+            var totalCount = rows.Count == 0 ? 0 : rows[0].TotalCount ?? 0;
+            return ApiResult<ReportAggregateResult>.CreatePageFromRows(
+                results,
+                totalCount,
+                pageIndex,
+                pageSize,
+                null,
+                null,
+                pagingRequest.FilterColumn,
+                pagingRequest.FilterQuery);
+        }
+
+        return ApiResult<ReportAggregateResult>.CreateFastPageFromRows(
+            results,
+            pageIndex,
+            pageSize,
+            null,
+            null,
+            pagingRequest.FilterColumn,
+            pagingRequest.FilterQuery);
+    }
+
+    public static async Task<List<ReportAggregateResult>> GetTotalValueAggregateRowsAsync(
+        TradeNetDbContext db,
+        sp_ExportLicenceDetailReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var rows = await ExecuteTotalValueAggregateAsync(
+            db,
+            request,
+            sortColumn: null,
+            sortOrder: null,
+            pageIndex: null,
+            pageSize: null,
+            includeTotalCount: false);
+
+        return rows.Select(row => row.ToResult()).ToList();
+    }
+
+    private static async Task<List<sp_ExportLicenceTotalValueReportRow>> ExecuteTotalValueAggregateAsync(
+        TradeNetDbContext db,
+        sp_ExportLicenceDetailReportRequest request,
+        string? sortColumn = null,
+        string? sortOrder = null,
+        int? pageIndex = null,
+        int? pageSize = null,
+        bool includeTotalCount = true)
+    {
+        var parameters = new[]
+        {
+            new SqlParameter("@Type", request.Type ?? string.Empty),
+            new SqlParameter("@FromDate", request.FromDate),
+            new SqlParameter("@ToDate", request.ToDate),
+            new SqlParameter("@PaThaKaTypeId", request.PaThaKaTypeId),
+            new SqlParameter("@ExportImportSectionId", request.ExportImportSectionId),
+            new SqlParameter("@ExportImportMethodId", request.ExportImportMethodId),
+            new SqlParameter("@ExportImportIncotermId", request.ExportImportIncotermId),
+            new SqlParameter("@BuyerCountryId", request.BuyerCountryId),
+            new SqlParameter("@CompanyRegistrationNo", request.CompanyRegistrationNo ?? string.Empty),
+            new SqlParameter("@SakhanId", request.SakhanId),
+            new SqlParameter("@SortColumn", (object?)sortColumn ?? DBNull.Value),
+            new SqlParameter("@SortOrder", (object?)sortOrder ?? DBNull.Value),
+            new SqlParameter("@PageIndex", (object?)pageIndex ?? DBNull.Value),
+            new SqlParameter("@PageSize", (object?)pageSize ?? DBNull.Value),
+            new SqlParameter("@IncludeTotalCount", includeTotalCount),
+        };
+
+        const string sql =
+            "EXEC dbo.sp_ExportLicenceTotalValueReport_Fast_pagination "
+            + "@Type, @FromDate, @ToDate, @PaThaKaTypeId, @ExportImportSectionId, @ExportImportMethodId, "
+            + "@ExportImportIncotermId, @BuyerCountryId, @CompanyRegistrationNo, @SakhanId, "
+            + "@SortColumn, @SortOrder, @PageIndex, @PageSize, @IncludeTotalCount";
+
+        return await db.Database.SqlQueryRaw<sp_ExportLicenceTotalValueReportRow>(sql, parameters).ToListAsync();
     }
 }

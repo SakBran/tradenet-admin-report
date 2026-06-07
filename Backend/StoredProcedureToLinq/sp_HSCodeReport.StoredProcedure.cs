@@ -18,14 +18,15 @@ public static partial class sp_HSCodeReport
         public string? Currency { get; set; }
         public int NoOfLicences { get; set; }
         public decimal TotalValue { get; set; }
-        public int TotalCount { get; set; }
+        public int? TotalCount { get; set; }
     }
 
     private static Task<List<sp_HSCodeAggregateReportResult>> ExecuteAggregateStoredProcedureAsync(
         TradeNetDbContext db,
         sp_HSCodeReportRequest request,
         int pageIndex,
-        int pageSize)
+        int pageSize,
+        bool includeTotalCount)
     {
         pageIndex = Math.Max(0, pageIndex);
         pageSize = pageSize <= 0 ? 10 : Math.Min(pageSize, 1000);
@@ -40,13 +41,14 @@ public static partial class sp_HSCodeReport
             new SqlParameter("@SakhanId", request.SakhanId),
             new SqlParameter("@PageIndex", pageIndex),
             new SqlParameter("@PageSize", pageSize),
+            new SqlParameter("@IncludeTotalCount", includeTotalCount),
         };
 
         db.Database.SetCommandTimeout(120);
 
         return db.Database
             .SqlQueryRaw<sp_HSCodeAggregateReportResult>(
-                "EXEC dbo.sp_HSCodeReport_pagination @FromDate, @ToDate, @FormType, @FilterType, @HSCode, @SakhanId, @PageIndex, @PageSize",
+                "EXEC dbo.sp_HSCodeReport_pagination @FromDate, @ToDate, @FormType, @FilterType, @HSCode, @SakhanId, @PageIndex, @PageSize, @IncludeTotalCount",
                 parameters)
             .ToListAsync();
     }

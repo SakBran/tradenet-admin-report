@@ -76,22 +76,42 @@ public static partial class sp_HSCodeReport
         {
             var pageIndex = Math.Max(0, pagingRequest.PageIndex);
             var pageSize = pagingRequest.PageSize <= 0 ? 10 : Math.Min(pagingRequest.PageSize, 1000);
-            var rows = await ExecuteAggregateStoredProcedureAsync(db, request, pageIndex, pageSize);
-            var totalCount = rows.FirstOrDefault()?.TotalCount ?? 0;
+            var rows = await ExecuteAggregateStoredProcedureAsync(
+                db,
+                request,
+                pageIndex,
+                pagingRequest.IncludeTotalCount ? pageSize : pageSize + 1,
+                pagingRequest.IncludeTotalCount);
 
-            return ApiResult<ReportAggregateResult>.CreatePageFromRows(
-                rows.Select(row => new ReportAggregateResult
-                {
-                    HSCode = row.HSCode,
-                    HSDescription = row.HSDescription,
-                    CompanyName = row.CompanyName,
-                    CompanyRegistrationNo = row.CompanyRegistrationNo,
-                    Currency = row.Currency,
-                    NoOfLicences = row.NoOfLicences,
-                    TotalValue = row.TotalValue,
-                    TotalUSDValue = null,
-                }).ToList(),
-                totalCount,
+            var data = rows.Select(row => new ReportAggregateResult
+            {
+                HSCode = row.HSCode,
+                HSDescription = row.HSDescription,
+                CompanyName = row.CompanyName,
+                CompanyRegistrationNo = row.CompanyRegistrationNo,
+                Currency = row.Currency,
+                NoOfLicences = row.NoOfLicences,
+                TotalValue = row.TotalValue,
+                TotalUSDValue = null,
+            }).ToList();
+
+            if (pagingRequest.IncludeTotalCount)
+            {
+                var totalCount = rows.FirstOrDefault()?.TotalCount ?? 0;
+
+                return ApiResult<ReportAggregateResult>.CreatePageFromRows(
+                    data,
+                    totalCount,
+                    pageIndex,
+                    pageSize,
+                    null,
+                    null,
+                    pagingRequest.FilterColumn,
+                    pagingRequest.FilterQuery);
+            }
+
+            return ApiResult<ReportAggregateResult>.CreateFastPageFromRows(
+                data,
                 pageIndex,
                 pageSize,
                 null,

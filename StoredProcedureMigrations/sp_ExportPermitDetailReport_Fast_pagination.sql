@@ -1,3 +1,8 @@
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
 CREATE OR ALTER PROCEDURE [dbo].[sp_ExportPermitDetailReport_Fast_pagination]
     @Type nvarchar(20) = N'',
     @FromDate datetime = NULL,
@@ -44,7 +49,8 @@ BEGIN
   INNER JOIN ExportPermitItem ON ExportPermit.Id = ExportPermitItem.ExportPermitId
   WHERE ApplyType=''New''
   AND ExportPermit.Status=''Approved''
-  AND (ExportPermit.CreatedDate>=@FromDate AND ExportPermit.CreatedDate<=@ToDate)
+  AND ((@FromDate IS NULL) OR ExportPermit.CreatedDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR ExportPermit.CreatedDate < DATEADD(day, 1, @ToDate))
   AND (@CompanyRegistrationNo='''' OR PaThaKa.CompanyRegistrationNo=@CompanyRegistrationNo)
   AND (@PaThaKaTypeId=0 OR PaThaKa.PaThaKaTypeId=@PaThaKaTypeId)
   AND (@ExportImportSectionId=0 OR ExportPermit.ExportImportSectionId=@ExportImportSectionId)
@@ -94,7 +100,8 @@ PermitType,ExportPermit.Remark Conditions,ExportPermit.ApproveDate
   INNER JOIN Countries consignedCountry ON consignedCountry.Id  = ExportPermit.ConsignedCountryId
         WHERE ApplyType=''New''
   AND ExportPermit.Status=''Approved''
-  AND (ExportPermit.CreatedDate>=@FromDate AND ExportPermit.CreatedDate<=@ToDate)
+  AND ((@FromDate IS NULL) OR ExportPermit.CreatedDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR ExportPermit.CreatedDate < DATEADD(day, 1, @ToDate))
   AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
   AND paThaKaType.Id=(CASE WHEN @PaThaKaTypeId=0 then paThaKaType.Id ELSE @PaThaKaTypeId END)
   AND ExportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
@@ -112,7 +119,8 @@ PermitType,ExportPermit.Remark Conditions,ExportPermit.ApproveDate
   INNER JOIN BorderExportPermitItem ON BorderExportPermit.Id = BorderExportPermitItem.BorderExportPermitId
   WHERE ApplyType=''New''
   AND BorderExportPermit.Status=''Approved''
-  AND (BorderExportPermit.CreatedDate>=@FromDate AND BorderExportPermit.CreatedDate<=@ToDate)
+  AND ((@FromDate IS NULL) OR BorderExportPermit.CreatedDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR BorderExportPermit.CreatedDate < DATEADD(day, 1, @ToDate))
   AND (@CompanyRegistrationNo='''' OR PaThaKa.CompanyRegistrationNo=@CompanyRegistrationNo)
   AND (@PaThaKaTypeId=0 OR PaThaKa.PaThaKaTypeId=@PaThaKaTypeId)
   AND (@ExportImportSectionId=0 OR BorderExportPermit.ExportImportSectionId=@ExportImportSectionId)
@@ -164,7 +172,8 @@ PermitType,BorderExportPermit.Remark Conditions,BorderExportPermit.ApproveDate
   INNER JOIN Sakhan sakhan ON sakhan.Id = BorderExportPermit.SakhanId
         WHERE ApplyType=''New''
   AND BorderExportPermit.Status=''Approved''
-  AND (BorderExportPermit.CreatedDate>=@FromDate AND BorderExportPermit.CreatedDate<=@ToDate)
+  AND ((@FromDate IS NULL) OR BorderExportPermit.CreatedDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR BorderExportPermit.CreatedDate < DATEADD(day, 1, @ToDate))
   AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
   AND paThaKaType.Id=(CASE WHEN @PaThaKaTypeId=0 then paThaKaType.Id ELSE @PaThaKaTypeId END)
   AND BorderExportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)

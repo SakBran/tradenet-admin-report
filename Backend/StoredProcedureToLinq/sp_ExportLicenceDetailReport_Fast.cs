@@ -123,6 +123,13 @@ public static partial class sp_ExportLicenceDetailReport_Fast
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
+        if (dimension == ReportAggregateDimension.TotalValue
+            && !includeSakhan
+            && request.Type == "Oversea")
+        {
+            return await CreateTotalValueAggregateResultAsync(db, request, pagingRequest);
+        }
+
         var source = await AggregateSourceRowsAsync(db, request);
 
         if (dimension == ReportAggregateDimension.Daily)
@@ -150,6 +157,15 @@ public static partial class sp_ExportLicenceDetailReport_Fast
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
+        if (dimension == ReportAggregateDimension.TotalValue
+            && !includeSakhan
+            && request.Type == "Oversea")
+        {
+            var groups = await GetTotalValueAggregateRowsAsync(db, request);
+            return await ReportAggregationService.CreateExcelWorkbookFromGroupsAsync(
+                groups, dimension, includeSakhan, pagingRequest, worksheetName);
+        }
+
         var source = await AggregateSourceRowsAsync(db, request);
         return await ReportAggregationService.CreateExcelWorkbookAsync(
             source, dimension, includeSakhan, pagingRequest, worksheetName);
@@ -163,6 +179,13 @@ public static partial class sp_ExportLicenceDetailReport_Fast
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
+
+        if (dimension == ReportAggregateDimension.TotalValue
+            && !includeSakhan
+            && request.Type == "Oversea")
+        {
+            return await GetTotalValueAggregateRowsAsync(db, request);
+        }
 
         var source = await AggregateSourceRowsAsync(db, request);
         var groups = ReportAggregationService.Aggregate(source, dimension, includeSakhan);

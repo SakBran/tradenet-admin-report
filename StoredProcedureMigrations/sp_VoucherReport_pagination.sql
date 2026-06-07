@@ -45,6 +45,7 @@ BEGIN
 
     DECLARE @cntpart nvarchar(max);
     DECLARE @sql nvarchar(max);
+    DECLARE @ComputedTotal int = NULL;
 
     -- Page-first: page the base query, then resolve Currency/TotalAmount on the ~PageSize rows only
     -- via a lateral join to the materialized per-currency totals view (index seek, no re-aggregation).
@@ -199,14 +200,17 @@ ExportPermit.Id AS __k_Id
 		INNER JOIN ExportImportSection section ON ExportLicence.ExportImportSectionId = section.Id
 		INNER JOIN Users ON Users.Id = ExportLicence.ApproveUserId
 		WHERE IsPayment=1
-		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
+		AND AccountTransaction.TransactionFormType=''Export Licence''
+		AND ((@FromDate IS NULL) OR AccountTransaction.PaymentDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate < DATEADD(day, 1, @ToDate))
 		AND ExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
 		AND ApplyType=@ApplyType AND ExportLicence.Status=''Approved''
-		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END) OPTION (RECOMPILE); '
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END) OPTION (RECOMPILE, MAXDOP 1); '
             ELSE N'DECLARE @__total int = NULL; ' END;
 
-        -- Resolve Currency/TotalAmount from the indexed aggregate view after paging.
+        -- Resolve Currency/TotalAmount after paging. Keep this branch self-contained so
+        -- it does not depend on an indexed view existing in every target DB.
         SET @sql = @cntpart + N'SELECT pg.*, cur.Code AS Currency, amt.TotalAmount AS TotalAmount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
     FROM (
         SELECT ExportLicence.ApplicationNo,
@@ -237,7 +241,9 @@ ExportLicence.Id AS __k_Id
 		INNER JOIN ExportImportSection section ON ExportLicence.ExportImportSectionId = section.Id
 		INNER JOIN Users ON Users.Id = ExportLicence.ApproveUserId
 		WHERE IsPayment=1
-		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
+		AND AccountTransaction.TransactionFormType=''Export Licence''
+		AND ((@FromDate IS NULL) OR AccountTransaction.PaymentDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate < DATEADD(day, 1, @ToDate))
 		AND ExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
 		AND ApplyType=@ApplyType AND ExportLicence.Status=''Approved''
@@ -245,18 +251,18 @@ ExportLicence.Id AS __k_Id
         ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
     ) pg
     OUTER APPLY (
-        SELECT SUM(v.TotalAmount) AS TotalAmount
-        FROM dbo.vw_ExportLicenceItemTotalByCurrency AS v WITH (NOEXPAND)
-        WHERE v.ExportLicenceId = pg.__k_Id
+        SELECT SUM(ISNULL(item.Amount, 0)) AS TotalAmount
+        FROM ExportLicenceItem item
+        WHERE item.ExportLicenceId = pg.__k_Id
     ) amt
     OUTER APPLY (
         SELECT TOP 1 currency.Code
-        FROM dbo.vw_ExportLicenceItemTotalByCurrency AS v WITH (NOEXPAND)
-        INNER JOIN Currency currency ON v.CurrencyId = currency.Id
-        WHERE v.ExportLicenceId = pg.__k_Id
+        FROM ExportLicenceItem item
+        INNER JOIN Currency currency ON item.CurrencyId = currency.Id
+        WHERE item.ExportLicenceId = pg.__k_Id
     ) cur
     ORDER BY ' + @ob + N'
-    OPTION (RECOMPILE);';
+    OPTION (RECOMPILE, MAXDOP 1);';
     END
     ELSE IF @FormType = N'Border Export Licence'
     BEGIN
@@ -383,39 +389,40 @@ BorderExportLicence.Id AS __k_Id
     ORDER BY ' + @ob + N'
     OPTION (RECOMPILE);';
     END
-    ELSE IF @FormType = N'Border Import Licence'
+	ELSE IF @FormType = N'Border Import Licence'
     BEGIN
-        SET @cntpart = CASE WHEN @IncludeTotalCount = 1
-            THEN N'DECLARE @__total int; SELECT @__total = COUNT(*) FROM (
-		SELECT BorderImportLicence.Id FROM BorderImportLicence
-		INNER JOIN AccountTransaction ON BorderImportLicence.Id=AccountTransaction.TransactionId
-		INNER JOIN PaThaKa ON BorderImportLicence.PaThaKaId=PaThaKa.Id
-		INNER JOIN ExportImportSection section ON BorderImportLicence.ExportImportSectionId = section.Id
-		INNER JOIN Sakhan sakhan ON BorderImportLicence.SakhanId = sakhan.Id
-		INNER JOIN Users ON Users.Id = BorderImportLicence.ApproveUserId
-		WHERE IsPayment=1
-		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
-		AND BorderImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
-		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
-		AND ApplyType=@ApplyType AND BorderImportLicence.Status=''Approved'' AND BorderImportLicence.CardType=''Pa Tha Ka''
-		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
-		AND BorderImportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportLicence.SakhanId ELSE @SakhanId END)
-		UNION ALL
-		SELECT BorderImportLicence.Id FROM BorderImportLicence
-		INNER JOIN AccountTransaction ON BorderImportLicence.Id=AccountTransaction.TransactionId
-		INNER JOIN IndividualTrading ON BorderImportLicence.IndividualTradingId=IndividualTrading.Id
-		INNER JOIN ExportImportSection section ON BorderImportLicence.ExportImportSectionId = section.Id
-		INNER JOIN Sakhan sakhan ON BorderImportLicence.SakhanId = sakhan.Id
-		INNER JOIN Users ON Users.Id = BorderImportLicence.ApproveUserId
-		WHERE IsPayment=1
-		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
-		AND BorderImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
-		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
-		AND ApplyType=@ApplyType AND BorderImportLicence.Status=''Approved'' AND BorderImportLicence.CardType=''Individual Trading''
-		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
-		AND BorderImportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportLicence.SakhanId ELSE @SakhanId END)
-	) tmp OPTION (RECOMPILE); '
-            ELSE N'DECLARE @__total int = NULL; ' END;
+        IF @IncludeTotalCount = 1
+        BEGIN
+            SELECT @ComputedTotal = COUNT(*) FROM (
+                SELECT BorderImportLicence.Id FROM AccountTransaction WITH (INDEX([NonClusteredIndex-AccountTransaction-125044]))
+                INNER JOIN BorderImportLicence ON BorderImportLicence.Id=AccountTransaction.TransactionId
+                INNER JOIN PaThaKa ON BorderImportLicence.PaThaKaId=PaThaKa.Id
+                WHERE AccountTransaction.IsPayment=1
+                AND AccountTransaction.TransactionFormType='Border Import Licence'
+                AND ((@FromDate IS NULL) OR AccountTransaction.PaymentDate >= @FromDate)
+                AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate < DATEADD(day, 1, @ToDate))
+                AND BorderImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
+                AND (@PaymentType='' OR AccountTransaction.PaymentType=@PaymentType)
+                AND (@ApplyType='' OR BorderImportLicence.ApplyType=@ApplyType) AND BorderImportLicence.Status='Approved' AND BorderImportLicence.CardType='Pa Tha Ka'
+                AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+                AND BorderImportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportLicence.SakhanId ELSE @SakhanId END)
+                UNION ALL
+                SELECT BorderImportLicence.Id FROM AccountTransaction WITH (INDEX([NonClusteredIndex-AccountTransaction-125044]))
+                INNER JOIN BorderImportLicence ON BorderImportLicence.Id=AccountTransaction.TransactionId
+                INNER JOIN IndividualTrading ON BorderImportLicence.IndividualTradingId=IndividualTrading.Id
+                WHERE AccountTransaction.IsPayment=1
+                AND AccountTransaction.TransactionFormType='Border Import Licence'
+                AND ((@FromDate IS NULL) OR AccountTransaction.PaymentDate >= @FromDate)
+                AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate < DATEADD(day, 1, @ToDate))
+                AND BorderImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
+                AND (@PaymentType='' OR AccountTransaction.PaymentType=@PaymentType)
+                AND (@ApplyType='' OR BorderImportLicence.ApplyType=@ApplyType) AND BorderImportLicence.Status='Approved' AND BorderImportLicence.CardType='Individual Trading'
+                AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
+                AND BorderImportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportLicence.SakhanId ELSE @SakhanId END)
+            ) tmp OPTION (RECOMPILE, MAXDOP 1);
+        END
+
+        SET @cntpart = N'DECLARE @__total int = @ComputedTotal; ';
 
         SET @sql = @cntpart + N'SELECT pg.*,
         (SELECT top 1 currency.Code FROM BorderImportLicenceItem
@@ -451,16 +458,18 @@ sakhan.Code SakhanCode,
 sakhan.Name SakhanName,
 BorderImportLicence.Id AS __k_Id
         FROM BorderImportLicence
-		INNER JOIN AccountTransaction ON BorderImportLicence.Id=AccountTransaction.TransactionId
+		INNER JOIN AccountTransaction WITH (INDEX([NonClusteredIndex-AccountTransaction-125044])) ON BorderImportLicence.Id=AccountTransaction.TransactionId
 		INNER JOIN PaThaKa ON BorderImportLicence.PaThaKaId=PaThaKa.Id
 		INNER JOIN ExportImportSection section ON BorderImportLicence.ExportImportSectionId = section.Id
 		INNER JOIN Sakhan sakhan ON BorderImportLicence.SakhanId = sakhan.Id
 		INNER JOIN Users ON Users.Id = BorderImportLicence.ApproveUserId
 		WHERE IsPayment=1
-		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
+		AND AccountTransaction.TransactionFormType=''Border Import Licence''
+		AND ((@FromDate IS NULL) OR AccountTransaction.PaymentDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate < DATEADD(day, 1, @ToDate))
 		AND BorderImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
-		AND ApplyType=@ApplyType AND BorderImportLicence.Status=''Approved'' AND BorderImportLicence.CardType=''Pa Tha Ka''
+		AND (@ApplyType='''' OR BorderImportLicence.ApplyType=@ApplyType) AND BorderImportLicence.Status=''Approved'' AND BorderImportLicence.CardType=''Pa Tha Ka''
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
 		AND BorderImportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportLicence.SakhanId ELSE @SakhanId END)
 		UNION ALL
@@ -490,23 +499,25 @@ sakhan.Code SakhanCode,
 sakhan.Name SakhanName,
 BorderImportLicence.Id AS __k_Id
         FROM BorderImportLicence
-		INNER JOIN AccountTransaction ON BorderImportLicence.Id=AccountTransaction.TransactionId
+		INNER JOIN AccountTransaction WITH (INDEX([NonClusteredIndex-AccountTransaction-125044])) ON BorderImportLicence.Id=AccountTransaction.TransactionId
 		INNER JOIN IndividualTrading ON BorderImportLicence.IndividualTradingId=IndividualTrading.Id
 		INNER JOIN ExportImportSection section ON BorderImportLicence.ExportImportSectionId = section.Id
 		INNER JOIN Sakhan sakhan ON BorderImportLicence.SakhanId = sakhan.Id
 		INNER JOIN Users ON Users.Id = BorderImportLicence.ApproveUserId
 		WHERE IsPayment=1
-		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
+		AND AccountTransaction.TransactionFormType=''Border Import Licence''
+		AND ((@FromDate IS NULL) OR AccountTransaction.PaymentDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate < DATEADD(day, 1, @ToDate))
 		AND BorderImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
-		AND ApplyType=@ApplyType AND BorderImportLicence.Status=''Approved'' AND BorderImportLicence.CardType=''Individual Trading''
+		AND (@ApplyType='''' OR BorderImportLicence.ApplyType=@ApplyType) AND BorderImportLicence.Status=''Approved'' AND BorderImportLicence.CardType=''Individual Trading''
 		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
 		AND BorderImportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportLicence.SakhanId ELSE @SakhanId END)
         ) u
         ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
     ) pg
     ORDER BY ' + @ob + N'
-    OPTION (RECOMPILE);';
+    OPTION (RECOMPILE, MAXDOP 1);';
     END
     ELSE IF @FormType = N'Border Export Permit'
     BEGIN
@@ -717,6 +728,6 @@ ImportLicence.Id AS __k_Id
     OPTION (RECOMPILE);';
     END
 
-    EXEC sp_executesql @sql, N'@FormType nvarchar(50), @FromDate datetime, @ToDate datetime, @ExportImportSectionId int, @PaymentType nvarchar(50), @ApplyType nvarchar(20), @CompanyRegistrationNo nvarchar(50), @SakhanId int, @off bigint, @ps bigint', @FormType=@FormType, @FromDate=@FromDate, @ToDate=@ToDate, @ExportImportSectionId=@ExportImportSectionId, @PaymentType=@PaymentType, @ApplyType=@ApplyType, @CompanyRegistrationNo=@CompanyRegistrationNo, @SakhanId=@SakhanId, @off=@off, @ps=@ps;
+    EXEC sp_executesql @sql, N'@FormType nvarchar(50), @FromDate datetime, @ToDate datetime, @ExportImportSectionId int, @PaymentType nvarchar(50), @ApplyType nvarchar(20), @CompanyRegistrationNo nvarchar(50), @SakhanId int, @off bigint, @ps bigint, @ComputedTotal int', @FormType=@FormType, @FromDate=@FromDate, @ToDate=@ToDate, @ExportImportSectionId=@ExportImportSectionId, @PaymentType=@PaymentType, @ApplyType=@ApplyType, @CompanyRegistrationNo=@CompanyRegistrationNo, @SakhanId=@SakhanId, @off=@off, @ps=@ps, @ComputedTotal=@ComputedTotal;
 END
 
