@@ -179,4 +179,27 @@ public sealed class ReportQueryTranslationTests
             "SakhanId"
         ];
     }
+
+    [Fact]
+    public void New_report_paged_stored_procedure_passes_quota_parameter()
+    {
+        using var db = ReportTestHelper.CreateSqlServerDbContext();
+
+        var sql = sp_NewReport.ExecuteQueryable(
+                db,
+                new sp_NewReportRequest
+                {
+                    FormType = "Import Licence",
+                    FromDate = ReportTestHelper.FromDate,
+                    ToDate = ReportTestHelper.ToDate,
+                    Quota = "Quota"
+                },
+                pageIndex: 0,
+                pageSize: 10,
+                includeTotalCount: false)
+            .ToQueryString();
+
+        Assert.Contains("sp_NewReport_pagination", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("@quota", sql, StringComparison.OrdinalIgnoreCase);
+    }
 }

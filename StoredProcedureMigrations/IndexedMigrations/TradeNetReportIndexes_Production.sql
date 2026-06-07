@@ -56,6 +56,7 @@ VALUES
     (N'dbo.BorderImportPermitItem', N'U'),
     (N'dbo.BorderExportPermitItem', N'U'),
     (N'dbo.ImportLicence', N'U'),
+    (N'dbo.ImportLicenceItem', N'U'),
     (N'dbo.BorderImportLicence', N'U'),
     (N'dbo.AccountTransaction', N'U'),
     (N'dbo.MPUPaymentTransaction', N'U'),
@@ -165,8 +166,19 @@ VALUES
     (N'dbo.ImportLicence', N'ApplicationNo'),
     (N'dbo.ImportLicence', N'ApplyType'),
     (N'dbo.ImportLicence', N'CommodityType'),
+    (N'dbo.ImportLicence', N'CreatedDate'),
+    (N'dbo.ImportLicence', N'ImportLicenceNo'),
+    (N'dbo.ImportLicence', N'Id'),
+    (N'dbo.ImportLicence', N'OldImportLicenceNo'),
+    (N'dbo.ImportLicence', N'LastDate'),
     (N'dbo.ImportLicence', N'PaThaKaId'),
     (N'dbo.ImportLicence', N'ExportImportSectionId'),
+    (N'dbo.ImportLicence', N'auto'),
+    (N'dbo.ImportLicence', N'quota'),
+    (N'dbo.ImportLicenceItem', N'ImportLicenceId'),
+    (N'dbo.ImportLicenceItem', N'CurrencyId'),
+    (N'dbo.ImportLicenceItem', N'HSCodeId'),
+    (N'dbo.ImportLicenceItem', N'Amount'),
     (N'dbo.BorderImportLicence', N'Status'),
     (N'dbo.BorderImportLicence', N'ApplicationDate'),
     (N'dbo.BorderImportLicence', N'ApplicationNo'),
@@ -319,7 +331,13 @@ VALUES
         N'[ApplicationNo], [CompanyName], [ApproveDate]'),
     (10, 4, N'dbo', N'AccountTransaction', N'IX_AccountTransaction_OnlineFees',
         N'[IsPayment], [VoucherDate]',
-        N'[TransactionId], [TransactionFormType], [PaymentDate], [PaymentType], [VoucherNo]');
+        N'[TransactionId], [TransactionFormType], [PaymentDate], [PaymentType], [VoucherNo]'),
+    (11, 3, N'dbo', N'ImportLicence', N'IX_ImportLicence_NewReport',
+        N'[Status], [ApplyType], [CreatedDate], [ImportLicenceNo]',
+        N'[Id], [ExportImportSectionId], [PaThaKaId], [OldImportLicenceNo], [LastDate], [auto], [quota], [CommodityType]'),
+    (12, 3, N'dbo', N'ImportLicenceItem', N'IX_ImportLicenceItem_NewReport_Licence',
+        N'[ImportLicenceId]',
+        N'[CurrencyId], [HSCodeId], [Amount]');
 
 INSERT INTO #IndexCandidateKeys (CandidateId, KeyOrdinal, ColumnName)
 VALUES
@@ -347,7 +365,12 @@ VALUES
     (9, 2, N'ApplyType'),
     (9, 3, N'Status'),
     (10, 1, N'IsPayment'),
-    (10, 2, N'VoucherDate');
+    (10, 2, N'VoucherDate'),
+    (11, 1, N'Status'),
+    (11, 2, N'ApplyType'),
+    (11, 3, N'CreatedDate'),
+    (11, 4, N'ImportLicenceNo'),
+    (12, 1, N'ImportLicenceId');
 
 INSERT INTO #IndexCandidateCoverage (CandidateId, ColumnName)
 VALUES
@@ -414,7 +437,18 @@ VALUES
     (10, N'TransactionFormType'),
     (10, N'PaymentDate'),
     (10, N'PaymentType'),
-    (10, N'VoucherNo');
+    (10, N'VoucherNo'),
+    (11, N'Id'),
+    (11, N'ExportImportSectionId'),
+    (11, N'PaThaKaId'),
+    (11, N'OldImportLicenceNo'),
+    (11, N'LastDate'),
+    (11, N'auto'),
+    (11, N'quota'),
+    (11, N'CommodityType'),
+    (12, N'CurrencyId'),
+    (12, N'HSCodeId'),
+    (12, N'Amount');
 GO
 
 /*
@@ -685,6 +719,8 @@ GO
     Manual rollback reference only.
     Never run rollback statements without DBA review and an approved change.
 
+    DROP INDEX IF EXISTS [IX_ImportLicenceItem_NewReport_Licence] ON [dbo].[ImportLicenceItem];
+    DROP INDEX IF EXISTS [IX_ImportLicence_NewReport] ON [dbo].[ImportLicence];
     DROP INDEX IF EXISTS [IX_AccountTransaction_OnlineFees] ON [dbo].[AccountTransaction];
     DROP INDEX IF EXISTS [IX_PaThaKaRegistration_CompanyProfile] ON [dbo].[PaThaKaRegistration];
     DROP INDEX IF EXISTS [IX_MPUPaymentTransaction_TransactionRefNo] ON [dbo].[MPUPaymentTransaction];

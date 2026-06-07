@@ -10,7 +10,8 @@
     @SortOrder nvarchar(4) = NULL,
     @PageIndex int = NULL,
     @PageSize int = NULL,
-    @IncludeTotalCount bit = 1
+    @IncludeTotalCount bit = 1,
+    @quota nvarchar(50) = N''
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -24,7 +25,11 @@ BEGIN
 
     DECLARE @ob nvarchar(400);
     IF @SortColumn IS NOT NULL AND @SortColumn IN (N'Date', N'SectionCode', N'SectionName', N'OldLicenceNo', N'LicenceNo', N'sDate', N'CompanyRegistrationNo', N'CompanyName', N'UnitLevel', N'StreetNumberStreetName', N'QuarterCityTownship', N'State', N'Country', N'PostalCode', N'auto', N'quota', N'CommodityType')
-        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir + N', [Date] ASC, [LicenceNo] ASC';
+    BEGIN
+        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir;
+        IF @SortColumn <> N'Date' SET @ob += N', [Date] ASC';
+        IF @SortColumn <> N'LicenceNo' SET @ob += N', [LicenceNo] ASC';
+    END
     ELSE
         SET @ob = N'[Date] ASC, [LicenceNo] ASC';
 
@@ -539,7 +544,9 @@ BorderImportPermit.Id AS __k_Id
 		WHERE ApplyType=''New'' AND ImportLicence.Status=''Approved''
 		AND (ImportLicence.CreatedDate>=@FromDate AND ImportLicence.CreatedDate<=@ToDate)
 		AND ImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
-		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END) OPTION (RECOMPILE); '
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+		AND (@auto='''' OR ImportLicence.auto=@auto)
+		AND (@quota='''' OR ImportLicence.quota=@quota) OPTION (RECOMPILE); '
             ELSE N'DECLARE @__total int = NULL; ' END;
 
         SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM ImportLicenceItem
@@ -576,13 +583,13 @@ ImportLicence.Id AS __k_Id
 		AND (ImportLicence.CreatedDate>=@FromDate AND ImportLicence.CreatedDate<=@ToDate)
 		AND ImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
-		--AND ImportLicence.auto=(CASE WHEN @auto='''' then ImportLicence.auto ELSE @auto END)
-		--AND ImportLicence.quota=(CASE WHEN quota='''' then ImportLicence.quota ELSE @quota END)
+		AND (@auto='''' OR ImportLicence.auto=@auto)
+		AND (@quota='''' OR ImportLicence.quota=@quota)
         ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
     ) pg
     ORDER BY ' + @ob + N'
     OPTION (RECOMPILE);';
     END
 
-    EXEC sp_executesql @sql, N'@FormType nvarchar(50), @FromDate datetime, @ToDate datetime, @ExportImportSectionId int, @CompanyRegistrationNo nvarchar(50), @SakhanId int, @auto nvarchar(50), @off bigint, @ps bigint', @FormType=@FormType, @FromDate=@FromDate, @ToDate=@ToDate, @ExportImportSectionId=@ExportImportSectionId, @CompanyRegistrationNo=@CompanyRegistrationNo, @SakhanId=@SakhanId, @auto=@auto, @off=@off, @ps=@ps;
+    EXEC sp_executesql @sql, N'@FormType nvarchar(50), @FromDate datetime, @ToDate datetime, @ExportImportSectionId int, @CompanyRegistrationNo nvarchar(50), @SakhanId int, @auto nvarchar(50), @quota nvarchar(50), @off bigint, @ps bigint', @FormType=@FormType, @FromDate=@FromDate, @ToDate=@ToDate, @ExportImportSectionId=@ExportImportSectionId, @CompanyRegistrationNo=@CompanyRegistrationNo, @SakhanId=@SakhanId, @auto=@auto, @quota=@quota, @off=@off, @ps=@ps;
 END

@@ -181,15 +181,7 @@ public static class sp_ImportLicenceDetailReport_Fast
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
-        return await SectionGroups(db, request)
-            .Select(group => new ReportAggregateResult
-            {
-                SectionName = group.SectionName,
-                NoOfLicences = group.NoOfLicences,
-                TotalValue = group.TotalValue,
-                Currency = group.Currency,
-            })
-            .ToListAsync();
+        return await AggregateInSqlAsync(db, request, ReportAggregateDimension.Section, includeSakhan: false);
     }
 
     /// <summary>
@@ -316,6 +308,11 @@ public static class sp_ImportLicenceDetailReport_Fast
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
+        // Oversea: the indexed-view SP handles paging + COUNT with NOEXPAND.
+        if (request.Type == "Oversea")
+            return await sp_ImportLicenceDetailByLicenceReport_Indexed.ExecutePagedAsync(
+                db, request, currency, pagingRequest);
+
         var groups = LicenceGroups(db, request, currency);
 
         var pageIndex = Math.Max(0, pagingRequest.PageIndex);
@@ -357,43 +354,41 @@ public static class sp_ImportLicenceDetailReport_Fast
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
-        var source = request.Type == "Oversea"
-            ? OverseaViewRows(db, request)
-            : RowsUnordered(db, request);
+        // Oversea: reuse the indexed-view SP (TotalValue dimension = per-currency totals).
+        if (request.Type == "Oversea")
+            return await sp_ImportLicenceDetailByLicenceReport_Indexed.ExecuteCurrencyTotalsAsync(
+                db, request, currency);
+
+        var source = RowsUnordered(db, request);
         if (!string.IsNullOrEmpty(currency))
-        {
             source = source.Where(row => row.Currency == currency);
-        }
 
         var rows = await source
             .GroupBy(row => row.Currency)
             .Select(g => new
             {
-                Currency = g.Key,
+                Currency     = g.Key,
                 NoOfLicences = g.Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo).Distinct().Count(),
-                TotalValue = g.Sum(x => x.Amount),
+                TotalValue   = g.Sum(x => x.Amount),
             })
             .ToListAsync();
 
-        if (rows.Count == 0)
-        {
-            return null;
-        }
+        if (rows.Count == 0) return null;
 
         var currencies = rows
             .OrderByDescending(r => r.NoOfLicences)
             .ThenBy(r => r.Currency, StringComparer.OrdinalIgnoreCase)
             .Select(r => new ReportCurrencyTotal
             {
-                Currency = r.Currency ?? string.Empty,
+                Currency     = r.Currency ?? string.Empty,
                 NoOfLicences = r.NoOfLicences,
-                TotalValue = r.TotalValue,
+                TotalValue   = r.TotalValue,
             })
             .ToList();
 
         return new ReportCurrencyTotalsSummary
         {
-            Currencies = currencies,
+            Currencies         = currencies,
             GrandTotalLicences = currencies.Sum(c => c.NoOfLicences),
         };
     }
@@ -406,6 +401,10 @@ public static class sp_ImportLicenceDetailReport_Fast
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
+
+        // Oversea: SP with NOEXPAND (pageSize=0 = all rows).
+        if (request.Type == "Oversea")
+            return await sp_ImportLicenceDetailByLicenceReport_Indexed.ExecuteAllAsync(db, request, currency);
 
         var rows = await LicenceGroups(db, request, currency).ToListAsync();
         return rows.Select(MapLicenceRow).ToList();
@@ -490,35 +489,71 @@ public static class sp_ImportLicenceDetailReport_Fast
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
-        // Oversea: read the pre-aggregated view (no 6.4M-row item join). Border falls
-        // back to the full detail rows.
-        var source = request.Type == "Oversea"
-            ? OverseaViewRows(db, request)
-            : RowsUnordered(db, request);
+        List<TotalValueByCurrencyRow> byCurrency;
+        List<TotalLicencesByPaThaKaTypeRow> byPaThaKaType;
 
-        // Section 1: Total Value per Currency (Sum of item amounts).
-        var byCurrency = await source
-            .GroupBy(row => row.Currency)
-            .Select(g => new TotalValueByCurrencyRow
-            {
-                Currency = g.Key ?? string.Empty,
-                TotalValue = g.Sum(x => x.Amount),
-            })
-            .ToListAsync();
+        if (request.Type == "Oversea")
+        {
+            // Section 1: SP handles the per-currency sum via the indexed view (NOEXPAND).
+            var tvRows = await sp_ImportLicenceSummaryReport_Indexed.ExecuteAsync(db, request, "TotalValue");
+            byCurrency = tvRows
+                .Select(r => new TotalValueByCurrencyRow
+                {
+                    Currency  = r.Currency ?? string.Empty,
+                    TotalValue = r.TotalValue,
+                })
+                .ToList();
 
-        // Section 2: Total Licences per Pa Tha Ka Type (distinct non-empty licence count).
-        var byPaThaKaType = await source
-            .GroupBy(row => new { row.PaThaKaTypeCode, row.PaThaKaTypeName })
-            .Select(g => new TotalLicencesByPaThaKaTypeRow
-            {
-                PaThaKaType = g.Key.PaThaKaTypeName,
-                NoOfLicences = g.Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo).Distinct().Count(),
-            })
-            .ToListAsync();
+            // Section 2: Count distinct licences per Pa Tha Ka Type. No item join needed —
+            // the count is on ImportLicence + PaThaKa + PaThaKaType only.
+            byPaThaKaType = await (
+                from licence in db.ImportLicences.AsNoTracking()
+                join paThaKa     in db.PaThaKas.AsNoTracking()    on licence.PaThaKaId        equals paThaKa.Id
+                join paThaKaType in db.PaThaKaTypes.AsNoTracking() on paThaKa.PaThaKaTypeId    equals paThaKaType.Id
+                where licence.ApplyType == New
+                    && licence.Status == Approved
+                    && licence.ImportLicenceNo != string.Empty
+                    && licence.CreatedDate >= request.FromDate
+                    && licence.CreatedDate <= request.ToDate
+                    && (request.CompanyRegistrationNo == string.Empty || paThaKa.CompanyRegistrationNo == request.CompanyRegistrationNo)
+                    && (request.PaThaKaTypeId == 0 || paThaKa.PaThaKaTypeId == request.PaThaKaTypeId)
+                    && (request.ExportImportSectionId == 0 || licence.ExportImportSectionId == request.ExportImportSectionId)
+                    && (request.ExportImportMethodId == 0 || licence.ExportImportMethodId == request.ExportImportMethodId)
+                    && (request.ExportImportIncotermId == 0 || licence.ExportImportIncotermId == request.ExportImportIncotermId)
+                    && (request.SellerCountryId == 0 || licence.SellerCountryId == request.SellerCountryId)
+                group licence by paThaKaType.Description into g
+                select new TotalLicencesByPaThaKaTypeRow
+                {
+                    PaThaKaType  = g.Key,
+                    NoOfLicences = g.Select(l => l.ImportLicenceNo).Distinct().Count(),
+                }).ToListAsync();
+        }
+        else
+        {
+            // Border: use the full detail rows.
+            var source = RowsUnordered(db, request);
+
+            byCurrency = await source
+                .GroupBy(row => row.Currency)
+                .Select(g => new TotalValueByCurrencyRow
+                {
+                    Currency  = g.Key ?? string.Empty,
+                    TotalValue = g.Sum(x => x.Amount),
+                })
+                .ToListAsync();
+
+            byPaThaKaType = await source
+                .GroupBy(row => new { row.PaThaKaTypeCode, row.PaThaKaTypeName })
+                .Select(g => new TotalLicencesByPaThaKaTypeRow
+                {
+                    PaThaKaType  = g.Key.PaThaKaTypeName,
+                    NoOfLicences = g.Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo).Distinct().Count(),
+                })
+                .ToListAsync();
+        }
 
         // Section 3: Total USD Value — convert each (Date, Currency) group's summed value
-        // via the CBM FX service and roll up. Because the FX factor is constant within a
-        // (Date, Currency) group, this equals the legacy per-row USD sum exactly.
+        // via the CBM FX service. AggregateInSqlAsync routes Oversea through the SP.
         var dailyGroups = await AggregateInSqlAsync(db, request, ReportAggregateDimension.Daily, includeSakhan: false);
         var totalUsdValue = decimal.Round(dailyGroups.Sum(g => g.TotalUSDValue ?? 0m), 4);
 
@@ -547,12 +582,30 @@ public static class sp_ImportLicenceDetailReport_Fast
         ReportAggregateDimension dimension,
         bool includeSakhan)
     {
-        // Oversea summaries (except HS Code) group over the pre-aggregated indexed view
-        // — joining the 6.4M-row item table here made them time out. HS Code and Border
-        // still need the full detail rows.
-        var source = UseOverseaViewSource(request, dimension)
-            ? OverseaViewRows(db, request)
-            : RowsUnordered(db, request);
+        // Oversea (except HS Code): use the indexed-view SP which emits WITH (NOEXPAND).
+        // EF LINQ cannot emit this hint even when joining the view directly, so any EF
+        // path through OverseaViewRows still expands to the 6.4M-row item table join
+        // (confirmed: 185s+). The SP completes in < 4s for all dimensions on Jan 2025 data.
+        if (UseOverseaViewSource(request, dimension))
+        {
+            var dimStr = dimension switch
+            {
+                ReportAggregateDimension.Section => "Section",
+                ReportAggregateDimension.Method  => "Method",
+                ReportAggregateDimension.Country => "Country",
+                ReportAggregateDimension.Company => "Company",
+                ReportAggregateDimension.Daily   => "Daily",
+                _                                => "TotalValue",
+            };
+            var spRows = await sp_ImportLicenceSummaryReport_Indexed.ExecuteAsync(db, request, dimStr);
+            var spMapped = spRows.Select(r => r.ToAggregateResult(dimension)).ToList();
+            if (dimension == ReportAggregateDimension.Daily)
+                await ReportUsdConversionService.FillDailyUsdValuesAsync(db, spMapped);
+            return spMapped;
+        }
+
+        // HS Code and Border: still need the full detail rows.
+        var source = RowsUnordered(db, request);
 
         List<AggregateGroupRow> groups = dimension switch
         {

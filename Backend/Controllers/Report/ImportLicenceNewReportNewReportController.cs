@@ -53,22 +53,6 @@ namespace Backend.Controllers.Report
             var sortColumn = string.IsNullOrWhiteSpace(request.SortColumn) ? null : request.SortColumn;
             var sortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? null : request.SortOrder;
 
-            if (RequiresQueryablePath(procedureRequest!))
-            {
-                var query = sp_NewReport.Query(_context, procedureRequest!);
-                var pagedResult = await ApiResult<sp_NewReportResult>.CreateFastPageAsync(
-                    query,
-                    pageIndex,
-                    pageSize,
-                    sortColumn,
-                    sortOrder,
-                    request.FilterColumn,
-                    request.FilterQuery,
-                    request.IncludeTotalCount);
-
-                return Ok(pagedResult);
-            }
-
             var rows = await sp_NewReport.ExecuteAsync(
                 _context, procedureRequest!, sortColumn, sortOrder, pageIndex, pageSize, request.IncludeTotalCount);
 
@@ -117,18 +101,10 @@ namespace Backend.Controllers.Report
             CancellationToken cancellationToken)
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
-            if (RequiresQueryablePath(procedureRequest!))
-            {
-                await foreach (var chunk in sp_NewReport.Query(_context, procedureRequest!)
-                    .AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
-                {
-                    sink.Append(chunk.ToList());
-                }
-
-                return;
-            }
-
-            await foreach (var chunk in sp_NewReport.ExecuteQueryable(_context, procedureRequest!)
+            await foreach (var chunk in sp_NewReport.ExecuteQueryable(
+                    _context,
+                    procedureRequest!,
+                    includeTotalCount: false)
                 .AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
             {
                 sink.Append(chunk.Select(row => row.ToResult()).ToList());
@@ -180,9 +156,6 @@ namespace Backend.Controllers.Report
 
             return true;
         }
-
-        private static bool RequiresQueryablePath(sp_NewReportRequest request) =>
-            !string.IsNullOrWhiteSpace(request.Quota);
     }
 
     public sealed class ImportLicenceNewReportNewReportRequest : ReportQueryRequest
@@ -197,4 +170,3 @@ namespace Backend.Controllers.Report
         public string? Quota { get; set; }
     }
 }
-

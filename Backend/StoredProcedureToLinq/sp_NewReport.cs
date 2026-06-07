@@ -148,6 +148,7 @@ public static class sp_NewReport
             new SqlParameter("@CompanyRegistrationNo", request.CompanyRegistrationNo ?? string.Empty),
             new SqlParameter("@SakhanId", request.SakhanId),
             new SqlParameter("@auto", request.Auto ?? string.Empty),
+            new SqlParameter("@quota", request.Quota ?? string.Empty),
             new SqlParameter("@SortColumn", (object?)sortColumn ?? DBNull.Value),
             new SqlParameter("@SortOrder", (object?)sortOrder ?? DBNull.Value),
             new SqlParameter("@PageIndex", (object?)pageIndex ?? DBNull.Value),
@@ -157,7 +158,7 @@ public static class sp_NewReport
 
         const string sql =
             "EXEC dbo.sp_NewReport_pagination @FormType, @FromDate, @ToDate, @ExportImportSectionId, " +
-            "@CompanyRegistrationNo, @SakhanId, @auto, @SortColumn, @SortOrder, @PageIndex, @PageSize, @IncludeTotalCount";
+            "@CompanyRegistrationNo, @SakhanId, @auto, @SortColumn, @SortOrder, @PageIndex, @PageSize, @IncludeTotalCount, @quota";
 
         return db.Database.SqlQueryRaw<sp_NewReportRow>(sql, parameters);
     }
