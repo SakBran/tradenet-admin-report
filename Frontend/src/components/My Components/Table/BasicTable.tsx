@@ -334,9 +334,11 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   const currencyValueColumnKey =
     currencyTotalsColumns?.valueColumnKey ??
     normalizedColumns.find((column) => isNumericColumn(column.dataType))?.key.toString();
+  // Matches the legacy RDLC FORMAT(Sum(Amount), "N4"): thousands separators and
+  // exactly 4 decimal places.
   const formatCurrencyTotalValue = (value: number) =>
     Number(value).toLocaleString('en-US', {
-      minimumFractionDigits: 2,
+      minimumFractionDigits: 4,
       maximumFractionDigits: 4,
     });
 
@@ -553,7 +555,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
                         if (key === currencyLabelColumnKey) {
                           return (
                             <td key={key} style={{ fontWeight: 700 }}>
-                              {`${entry.currency}: ${entry.noOfLicences} licence(s)`}
+                              {`${entry.currency}:${entry.noOfLicences} licence(s)`}
                             </td>
                           );
                         }
@@ -565,7 +567,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
                               className="col-numeric"
                               style={{ fontWeight: 700 }}
                             >
-                              {formatCurrencyTotalValue(entry.totalValue)}
+                              {`${entry.currency}:${formatCurrencyTotalValue(entry.totalValue)}`}
                             </td>
                           );
                         }
@@ -587,7 +589,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
                       if (key === currencyLabelColumnKey) {
                         return (
                           <td key={key} style={{ fontWeight: 700 }}>
-                            {`Total: ${currencyTotals!.grandTotalLicences} licence(s)`}
+                            {`Total:${currencyTotals!.grandTotalLicences} licence(s)`}
                           </td>
                         );
                       }
