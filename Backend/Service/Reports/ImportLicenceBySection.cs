@@ -10,6 +10,7 @@ namespace API.Service.Reports
     public class ImportLicenceBySection
     {
         public string Section { get; set; } = "";
+        public int ExportImportSectionId { get; set; }
         public string Currency { get; set; } = "";
         public decimal NoOfLicences { get; set; }
         public decimal? TotalValue { get; set; }

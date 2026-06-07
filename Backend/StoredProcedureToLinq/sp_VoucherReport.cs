@@ -171,6 +171,30 @@ public static class sp_VoucherReport
         return db.Database.SqlQueryRaw<sp_VoucherReportRow>(sql, parameters);
     }
 
+    /// <summary>
+    /// Grand total of the voucher Amount column (legacy VoucherReport.rdlc "TOTAL" footer =
+    /// FORMAT(SUM(Amount),"N0")) over the FULL filtered set, via the retained LINQ <see cref="Query"/>
+    /// (same filter the page proc uses). Returns null — so the footer is simply omitted — if the
+    /// query cannot be translated/run, rather than failing the whole report.
+    /// </summary>
+    public static async Task<decimal?> ExecuteAmountTotalAsync(
+        TradeNetDbContext db,
+        sp_VoucherReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        try
+        {
+            var total = await Query(db, request).SumAsync(row => (double?)row.Amount);
+            return total.HasValue ? (decimal)total.Value : 0m;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or SqlException)
+        {
+            return null;
+        }
+    }
+
     public static IQueryable<sp_VoucherReportResult> Query(
         TradeNetDbContext db,
         sp_VoucherReportRequest request)

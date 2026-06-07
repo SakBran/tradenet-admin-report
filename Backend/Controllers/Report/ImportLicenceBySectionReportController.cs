@@ -138,7 +138,8 @@ namespace Backend.Controllers.Report
 
                     cell.Currency = currency.Code != null ? currency.Code : "";
                     cell.Section = section.Code;
-                    cell.NoOfLicences = LicenceListQry.Where(x => x.Currency == currency.Id && x.SectionCode == section.Code).Count();
+                    cell.ExportImportSectionId = section.Id;
+                    cell.NoOfLicences = LicenceListQry.Where(x => x.Currency == currency.Id && x.SectionCode == section.Code).Select(x => x.id).Distinct().Count();
                     cell.TotalValue = LicenceListQry.Where(x => x.Currency == currency.Id && x.SectionCode == section.Code).Sum(x => x.Amount);
 
 
@@ -155,6 +156,7 @@ namespace Backend.Controllers.Report
                 .Select(cell => new ReportAggregateResult
                 {
                     SectionName = cell.Section,
+                    SectionId = cell.ExportImportSectionId,
                     Currency = cell.Currency,
                     NoOfLicences = (int)cell.NoOfLicences,
                     TotalValue = cell.TotalValue,

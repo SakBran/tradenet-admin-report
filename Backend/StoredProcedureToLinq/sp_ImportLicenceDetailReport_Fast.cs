@@ -307,10 +307,11 @@ public static class sp_ImportLicenceDetailReport_Fast
         List<AggregateGroupRow> groups = dimension switch
         {
             ReportAggregateDimension.Section => await source
-                .GroupBy(row => new { Label = row.SectionName, Sakhan = includeSakhan ? row.SakhanCode : null, row.Currency })
+                .GroupBy(row => new { Label = row.SectionName, LabelId = row.ExportImportSectionId, Sakhan = includeSakhan ? row.SakhanCode : null, row.Currency })
                 .Select(g => new AggregateGroupRow
                 {
                     Label = g.Key.Label,
+                    LabelId = g.Key.LabelId,
                     SakhanCode = g.Key.Sakhan,
                     Currency = g.Key.Currency,
                     NoOfLicences = g.Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo).Distinct().Count(),
@@ -319,10 +320,11 @@ public static class sp_ImportLicenceDetailReport_Fast
                 .ToListAsync(),
 
             ReportAggregateDimension.Method => await source
-                .GroupBy(row => new { Label = row.MethodName, Sakhan = includeSakhan ? row.SakhanCode : null, row.Currency })
+                .GroupBy(row => new { Label = row.MethodName, LabelId = row.ExportImportMethodId, Sakhan = includeSakhan ? row.SakhanCode : null, row.Currency })
                 .Select(g => new AggregateGroupRow
                 {
                     Label = g.Key.Label,
+                    LabelId = g.Key.LabelId,
                     SakhanCode = g.Key.Sakhan,
                     Currency = g.Key.Currency,
                     NoOfLicences = g.Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo).Distinct().Count(),
@@ -331,10 +333,11 @@ public static class sp_ImportLicenceDetailReport_Fast
                 .ToListAsync(),
 
             ReportAggregateDimension.Country => await source
-                .GroupBy(row => new { Label = row.SellerCountry, Sakhan = includeSakhan ? row.SakhanCode : null, row.Currency })
+                .GroupBy(row => new { Label = row.SellerCountry, LabelId = row.SellerCountryId, Sakhan = includeSakhan ? row.SakhanCode : null, row.Currency })
                 .Select(g => new AggregateGroupRow
                 {
                     Label = g.Key.Label,
+                    LabelId = g.Key.LabelId,
                     SakhanCode = g.Key.Sakhan,
                     Currency = g.Key.Currency,
                     NoOfLicences = g.Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo).Distinct().Count(),
@@ -420,6 +423,9 @@ public static class sp_ImportLicenceDetailReport_Fast
             SectionName = dimension == ReportAggregateDimension.Section ? group.Label : null,
             MethodName = dimension == ReportAggregateDimension.Method ? group.Label : null,
             Country = dimension == ReportAggregateDimension.Country ? group.Label : null,
+            SectionId = dimension == ReportAggregateDimension.Section ? group.LabelId : null,
+            MethodId = dimension == ReportAggregateDimension.Method ? group.LabelId : null,
+            CountryId = dimension == ReportAggregateDimension.Country ? group.LabelId : null,
             CompanyName = isCompanyOrHsCode ? group.CompanyName : null,
             CompanyRegistrationNo = isCompanyOrHsCode ? group.CompanyRegistrationNo : null,
             HSCode = dimension == ReportAggregateDimension.HSCode ? group.Label : null,
@@ -789,6 +795,7 @@ public static class sp_ImportLicenceDetailReport_Fast
     private sealed class AggregateGroupRow
     {
         public string? Label { get; init; }
+        public int LabelId { get; init; }
         public string? CompanyName { get; init; }
         public string? CompanyRegistrationNo { get; init; }
         public string? HSDescription { get; init; }

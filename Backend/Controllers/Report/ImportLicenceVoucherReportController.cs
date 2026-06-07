@@ -66,6 +66,21 @@ namespace Backend.Controllers.Report
                     data, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
 
+            // Legacy VoucherReport.rdlc "TOTAL" footer = FORMAT(SUM(Amount),"N0").
+            // Computed over the full filtered set (not just the page); keyed by the
+            // "amount" column dataIndex so BasicTable renders the footer total row.
+            if (data.Count > 0)
+            {
+                var amountTotal = await sp_VoucherReport.ExecuteAmountTotalAsync(_context, procedureRequest!);
+                if (amountTotal.HasValue)
+                {
+                    result.ColumnTotals = new Dictionary<string, decimal>
+                    {
+                        ["amount"] = decimal.Round(amountTotal.Value, 0),
+                    };
+                }
+            }
+
             return Ok(result);
         }
 

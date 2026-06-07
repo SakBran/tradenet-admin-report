@@ -15,6 +15,7 @@ import {
 import NameConvert from '../../../services/NameConvert';
 import { AnyObject } from '../../../types/AnyObject';
 import { PaginationType } from '../../../types/PaginationType';
+import { ReportColumnDrilldown } from '../../../Report/config/reportTypes';
 import { FileExcelOutlined } from '@ant-design/icons';
 import * as XLSX from 'xlsx';
 
@@ -42,6 +43,8 @@ export interface BasicTableColumn<T extends AnyObject = AnyObject> {
   width?: number | string;
   dataType?: 'string' | 'number' | 'date' | 'boolean' | 'money';
   render?: (value: unknown, row: T, rowIndex: number) => React.ReactNode;
+  /** When set, the cell renders as a clickable link that drills into another report. */
+  drilldown?: ReportColumnDrilldown;
 }
 
 const isNumericColumn = (dataType?: string) =>
@@ -86,6 +89,12 @@ interface PropsType<T extends AnyObject = AnyObject> {
    * columns above the column-header row (mirrors the legacy RDLC report header).
    */
   reportHeaderLines?: string[];
+  /**
+   * Invoked when a drill-down cell is clicked, with the column's drilldown
+   * descriptor and the clicked row. The host (GenericReportPage) navigates to
+   * the target report with the mapped filters seeded.
+   */
+  onDrill?: (drilldown: ReportColumnDrilldown, row: AnyObject) => void;
   /**
    * Placement for the currency-grouped summary footer when the response carries
    * `currencyTotals`. `labelColumnKey` is the column.key under which the
@@ -156,6 +165,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   rowNumberTitle = 'No',
   legacyReportViewer = false,
   reportHeaderLines,
+  onDrill,
   currencyTotalsColumns,
 }: PropsType<T>) => {
   const normalizedColumns = useMemo<BasicTableColumn<T>[]>(() => {
@@ -289,11 +299,34 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
     const key = (column.dataIndex ?? column.key).toString();
     const value = row[key];
 
-    if (column.render) {
-      return column.render(value, row, index);
+    const content = column.render
+      ? column.render(value, row, index)
+      : value?.toString() ?? 'N/A';
+
+    // Drill-down cells (legacy RDLC blue hyperlinks) navigate to another report.
+    // Only linkify when the cell has a real value and a handler is wired.
+    const hasContent = value !== undefined && value !== null && value.toString().trim() !== '';
+    if (column.drilldown && onDrill && hasContent) {
+      return (
+        <a
+          className="report-drill-link"
+          role="button"
+          tabIndex={0}
+          style={{ color: '#1677ff', cursor: 'pointer', textDecoration: 'underline' }}
+          onClick={() => onDrill(column.drilldown!, row)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              onDrill(column.drilldown!, row);
+            }
+          }}
+        >
+          {content}
+        </a>
+      );
     }
 
-    return value?.toString() ?? 'N/A';
+    return content;
   };
 
   const columnCount =

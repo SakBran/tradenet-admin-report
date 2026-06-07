@@ -67,6 +67,13 @@ namespace API.Service.Reports
         public decimal? TotalValue { get; set; }
         public string? Currency { get; set; }
 
+        // Group ids carried alongside the display name so the frontend can drill
+        // into a pre-filtered Detail report by id (only set for the matching
+        // dimension; null otherwise so other reports/columns are unaffected).
+        public int? SectionId { get; set; }
+        public int? MethodId { get; set; }
+        public int? CountryId { get; set; }
+
         // The old RDLC "Total USD Value" column. Left null by Aggregate itself; for the
         // Daily reports it is filled afterwards by ReportUsdConversionService (the FX
         // conversion needs the ExchangeRate table). Non-Daily dimensions don't render
