@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import './style.css';
 
 import TableAction from '../TableAction/TableAction';
@@ -203,6 +203,9 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(initialPageSize);
   const [data, setData] = useState<PaginationType<T>>(emptyPage<T>());
+  // Lazy/partial delivery: rows render from a fast page that skips the expensive
+  // COUNT(*); the exact total loads separately and patches the pager when ready.
+  const [exactTotalCount, setExactTotalCount] = useState<number | null>(null);
 
   const shouldShowActions =
     showActions ??
@@ -244,8 +247,11 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
       setError(null);
 
       try {
+        // Report (fetchData) path: request a "fast page" that skips the
+        // expensive COUNT(*) so the grid paints immediately; the exact total is
+        // fetched lazily below. The legacy fetch/api path keeps the exact count.
         const result = fetchData
-          ? await fetchData(query)
+          ? await fetchData({ ...query, includeTotalCount: false })
           : await fetch!(buildLegacyUrl(api!, query));
 
         setData(result ?? emptyPage<T>());
@@ -258,6 +264,62 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
 
     load();
   }, [api, enabled, fetch, fetchData, query, refreshKey]);
+
+  // Reset the lazily-fetched total whenever the filter set changes, so a stale
+  // count never shows against new results.
+  const countedFilterSig = useRef<string | null>(null);
+  const filterSig = `${filterColumn}|${filterQuery}|${refreshKey}`;
+  useEffect(() => {
+    setExactTotalCount(null);
+    countedFilterSig.current = null;
+  }, [filterSig]);
+
+  // Lazy total count (partial delivery). Only fires when the rows came back as an
+  // ESTIMATED fast page (isTotalCountExact === false) — i.e. the heavy detail /
+  // pagination reports. Aggregate reports already return an exact total, so they
+  // are skipped (no double work). Fetched once per filter set, off the critical
+  // path, via the fetchData (report) path only; the legacy fetch/api path is untouched.
+  useEffect(() => {
+    if (!enabled || !fetchData) {
+      return;
+    }
+    if (data.isTotalCountExact !== false) {
+      return;
+    }
+    if (countedFilterSig.current === filterSig) {
+      return;
+    }
+    countedFilterSig.current = filterSig;
+
+    let cancelled = false;
+    const countQuery: BasicTableQuery = {
+      pageIndex: 0,
+      pageSize: 1,
+      sortColumn: '',
+      sortOrder: '',
+      filterColumn,
+      filterQuery,
+      includeTotalCount: true,
+    };
+
+    fetchData(countQuery)
+      .then((result) => {
+        if (!cancelled && result) {
+          setExactTotalCount(result.totalCount ?? null);
+        }
+      })
+      .catch(() => {
+        // Leave the estimated total from the fast page in place on failure.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, fetchData, data.isTotalCountExact, filterSig]);
+
+  // Pager shows the exact total once it arrives, otherwise the fast page's estimate.
+  const displayTotalCount = exactTotalCount ?? data.totalCount;
 
   const exportClientTableToExcel = () => {
     const table = document.getElementById(tableId);
@@ -662,7 +724,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
             }}
             current={query.pageIndex + 1}
             pageSize={pageSize}
-            total={data.totalCount}
+            total={displayTotalCount}
             onChange={(page, size) => {
               setPageIndex(page - 1);
               setPageSize(size);
