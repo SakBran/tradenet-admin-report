@@ -253,6 +253,19 @@ const importLicenceSellerCountryFilters: ReportFilterConfig[] = [
   importLicenceSellerCountryFilter,
 ];
 
+// Drill target reached from By Section / Method / Seller Country / Company. Carries
+// every dimension filter so the seeded request reproduces the clicked cell exactly.
+const importLicenceDetailByLicenceFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceOverseaTypeFilter,
+  importLicencePaThaKaTypeFilter,
+  importLicenceSectionFilter,
+  importLicenceMethodFilter,
+  importLicenceSellerCountryFilter,
+  importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
+];
+
 const importLicenceCompanyListFilters: ReportFilterConfig[] = [
   importLicenceDateRangeFilter,
   importLicenceOverseaTypeFilter,
@@ -1578,6 +1591,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderExportLicenceExtensionReport: {
     controllerName: 'BorderExportLicenceExtensionReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
     title: 'Border Export Licence Extension Report',
     apiRoute: 'BorderExportLicenceExtensionReport',
     excelRoute: 'BorderExportLicenceExtensionReport/Excel',
@@ -2961,6 +2975,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderExportPermitExtensionReport: {
     controllerName: 'BorderExportPermitExtensionReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permit Report'),
     title: 'Border Export Permit Extension Report',
     apiRoute: 'BorderExportPermitExtensionReport',
     excelRoute: 'BorderExportPermitExtensionReport/Excel',
@@ -4618,6 +4634,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderImportLicenceExtensionReport: {
     controllerName: 'BorderImportLicenceExtensionReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Licence Report'),
     title: 'Border Import Licence Extension Report',
     apiRoute: 'BorderImportLicenceExtensionReport',
     excelRoute: 'BorderImportLicenceExtensionReport/Excel',
@@ -6108,6 +6126,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderImportPermitExtensionReport: {
     controllerName: 'BorderImportPermitExtensionReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Permit Report'),
     title: 'Border Import Permit Extension Report',
     apiRoute: 'BorderImportPermitExtensionReport',
     excelRoute: 'BorderImportPermitExtensionReport/Excel',
@@ -7869,6 +7889,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ExportLicenceExtensionReport: {
     controllerName: 'ExportLicenceExtensionReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Licence Report'),
     title: 'Export Licence Extension Report',
     apiRoute: 'ExportLicenceExtensionReport',
     excelRoute: 'ExportLicenceExtensionReport/Excel',
@@ -9233,6 +9255,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ExportPermitExtensionReport: {
     controllerName: 'ExportPermitExtensionReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Permit Report'),
     title: 'Export Permit Extension Report',
     apiRoute: 'ExportPermitExtensionReport',
     excelRoute: 'ExportPermitExtensionReport/Excel',
@@ -9741,6 +9765,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'hsCode',
         dataIndex: 'hsCode',
         title: 'HS Code',
+        drilldown: {
+          targetReportKey: 'ImportLicenceByHSCodeReport',
+          carryFilters: ['FromDate', 'ToDate', 'ExportImportSectionId', 'FilterType'],
+          rowParams: { hsCode: 'hsCode' },
+        },
       },
       {
         key: 'Description',
@@ -9787,6 +9816,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'Method',
         dataIndex: 'methodName',
         title: 'Method',
+        drilldown: {
+          targetReportKey: 'ImportLicenceDetailByLicenceReport',
+          carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId'],
+          rowParams: { ExportImportMethodId: 'methodId', Currency: 'currency' },
+        },
       },
       {
         key: 'NoOfLicences',
@@ -9823,6 +9857,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'Section',
         dataIndex: 'sectionName',
         title: 'Section',
+        drilldown: {
+          targetReportKey: 'ImportLicenceDetailByLicenceReport',
+          carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportMethodId'],
+          rowParams: { ExportImportSectionId: 'sectionId', Currency: 'currency' },
+        },
       },
       {
         key: 'NoOfLicences',
@@ -9859,6 +9898,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'Country',
         dataIndex: 'country',
         title: 'Country',
+        drilldown: {
+          targetReportKey: 'ImportLicenceDetailByLicenceReport',
+          carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId', 'ExportImportMethodId'],
+          rowParams: { SellerCountryId: 'countryId', Currency: 'currency' },
+        },
       },
       {
         key: 'NoOfLicences',
@@ -9971,6 +10015,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyName',
         dataIndex: 'companyName',
         title: 'Company Name',
+        drilldown: {
+          targetReportKey: 'ImportLicenceDetailByLicenceReport',
+          carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId', 'ExportImportMethodId'],
+          rowParams: { CompanyRegistrationNo: 'companyRegistrationNo', Currency: 'currency' },
+        },
       },
       {
         key: 'NoOfLicences',
@@ -9996,7 +10045,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelRoute: 'ImportLicenceDailyReportNewLicenceReport/Excel',
     excelFileName: 'ImportLicenceDailyReportNewLicenceReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
-    showRowNumber: false,
+    showRowNumber: true,
     filters: importLicenceDailyFilters,
     reportSubtitle: importLicenceRangeSubtitle(
       'List of Import Licences By Daily',
@@ -10029,6 +10078,77 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'totalUSDValue',
         title: 'Total USD Value',
         dataType: 'number',
+      },
+    ],
+  },
+  // Licence-level drill target (one row per licence + currency) reached from the
+  // By Section / Method / Seller Country / Company summaries. Its record count
+  // equals the "No of Licences" of the clicked cell (the per-item Detail report
+  // fans out per HS line, so its count never matched).
+  ImportLicenceDetailByLicenceReport: {
+    controllerName: 'ImportLicenceDetailByLicenceReport',
+    title: 'Import Licence Detail Report',
+    apiRoute: 'ImportLicenceDetailByLicenceReport',
+    excelRoute: 'ImportLicenceDetailByLicenceReport/Excel',
+    excelFileName: 'ImportLicenceDetailByLicenceReport.xlsx',
+    initialSortColumn: 'licenceNo',
+    showRowNumber: true,
+    filters: importLicenceDetailByLicenceFilters,
+    reportSubtitle: importLicenceRangeSubtitle(
+      'List of Import Licences By Detail',
+      true
+    ),
+    currencyTotalsColumns: {
+      labelColumnKey: 'LicenceNo',
+      valueColumnKey: 'TotalValue',
+    },
+    columns: [
+      {
+        key: 'Section',
+        dataIndex: 'sectionName',
+        title: 'Section',
+      },
+      {
+        key: 'LicenceNo',
+        dataIndex: 'licenceNo',
+        title: 'Licence No',
+      },
+      {
+        key: 'LicenceDate',
+        dataIndex: 'licenceDate',
+        title: 'Licence Date',
+        dataType: 'date',
+      },
+      {
+        key: 'CompanyRegistrationNo',
+        dataIndex: 'companyRegistrationNo',
+        title: 'Company Registration No',
+      },
+      {
+        key: 'CompanyName',
+        dataIndex: 'companyName',
+        title: 'Company Name',
+      },
+      {
+        key: 'Method',
+        dataIndex: 'methodName',
+        title: 'Method',
+      },
+      {
+        key: 'SellerCountry',
+        dataIndex: 'sellerCountry',
+        title: 'Seller Country',
+      },
+      {
+        key: 'TotalValue',
+        dataIndex: 'totalValue',
+        title: 'Total Value',
+        dataType: 'number',
+      },
+      {
+        key: 'Currency',
+        dataIndex: 'currency',
+        title: 'Currency',
       },
     ],
   },
@@ -10344,6 +10464,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ImportLicenceExtensionReport: {
     controllerName: 'ImportLicenceExtensionReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
     title: 'Import Licence Extension Report',
     apiRoute: 'ImportLicenceExtensionReport',
     excelRoute: 'ImportLicenceExtensionReport/Excel',
@@ -11573,6 +11694,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ImportPermitExtensionReport: {
     controllerName: 'ImportPermitExtensionReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
     title: 'Import Permit Extension Report',
     apiRoute: 'ImportPermitExtensionReport',
     excelRoute: 'ImportPermitExtensionReport/Excel',

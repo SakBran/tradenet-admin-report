@@ -181,15 +181,7 @@ public static class sp_ImportLicenceDetailReport_Fast
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
-        return await SectionGroups(db, request)
-            .Select(group => new ReportAggregateResult
-            {
-                SectionName = group.SectionName,
-                NoOfLicences = group.NoOfLicences,
-                TotalValue = group.TotalValue,
-                Currency = group.Currency,
-            })
-            .ToListAsync();
+        return await AggregateInSqlAsync(db, request, ReportAggregateDimension.Section, includeSakhan: false);
     }
 
     /// <summary>
@@ -289,6 +281,294 @@ public static class sp_ImportLicenceDetailReport_Fast
             .ThenBy(row => row.Currency);
     }
 
+    // -----------------------------------------------------------------------------
+    // Licence-level drill report (one row per licence + currency).
+    //
+    // Used as the drill target from By Section / Method / Seller Country / Company:
+    // the per-item Detail report has many rows per licence (one per HS line), so its
+    // record count never matches the summary's "No of Licences". This view groups the
+    // SAME filtered detail rows by (licence, currency) and sums the item amounts, so
+    // the row count equals the distinct-licence-per-currency count shown in those
+    // summaries — that is exactly what the legacy "click the count → detail" drill did.
+    // -----------------------------------------------------------------------------
+
+    /// <summary>
+    /// One page of the licence-level list: distinct (licence, currency) rows with the
+    /// licence's section/method/seller-country/company and the summed item amount.
+    /// Honours every standard filter plus an optional currency filter (the drill carries
+    /// the clicked row's currency so the count reconciles cell-for-cell).
+    /// </summary>
+    public static async Task<ApiResult<ReportLicenceListResult>> CreateLicenceListPagedResultAsync(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request,
+        string? currency,
+        ReportQueryRequest pagingRequest)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(pagingRequest);
+
+        // Oversea: the indexed-view SP handles paging + COUNT with NOEXPAND.
+        if (request.Type == "Oversea")
+            return await sp_ImportLicenceDetailByLicenceReport_Indexed.ExecutePagedAsync(
+                db, request, currency, pagingRequest);
+
+        var groups = LicenceGroups(db, request, currency);
+
+        var pageIndex = Math.Max(0, pagingRequest.PageIndex);
+        var pageSize = pagingRequest.PageSize <= 0
+            ? DefaultPageSize
+            : Math.Min(pagingRequest.PageSize, MaxPageSize);
+
+        var totalCount = pagingRequest.IncludeTotalCount
+            ? await groups.CountAsync()
+            : (int?)null;
+
+        var pageRowsRaw = await groups
+            .Skip(pageIndex * pageSize)
+            .Take(pageSize + (totalCount.HasValue ? 0 : 1))
+            .ToListAsync();
+
+        var pageRows = pageRowsRaw.Select(MapLicenceRow).ToList();
+
+        return totalCount.HasValue
+            ? ApiResult<ReportLicenceListResult>.CreatePageFromRows(
+                pageRows, totalCount.Value, pageIndex, pageSize, null, null,
+                pagingRequest.FilterColumn, pagingRequest.FilterQuery)
+            : ApiResult<ReportLicenceListResult>.CreateFastPageFromRows(
+                pageRows, pageIndex, pageSize, null, null,
+                pagingRequest.FilterColumn, pagingRequest.FilterQuery);
+    }
+
+    /// <summary>
+    /// Currency-grouped footer for the licence-level list: distinct non-empty licence
+    /// count and summed amount per currency, plus the grand total licence count. Matches
+    /// the per-currency "No of Licences" shown in the By-X summaries, so the drilled list
+    /// footer reconciles with the row the user clicked. Returns null when empty.
+    /// </summary>
+    public static async Task<ReportCurrencyTotalsSummary?> CreateLicenceCurrencyTotalsAsync(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request,
+        string? currency)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        // Oversea: reuse the indexed-view SP (TotalValue dimension = per-currency totals).
+        if (request.Type == "Oversea")
+            return await sp_ImportLicenceDetailByLicenceReport_Indexed.ExecuteCurrencyTotalsAsync(
+                db, request, currency);
+
+        var source = RowsUnordered(db, request);
+        if (!string.IsNullOrEmpty(currency))
+            source = source.Where(row => row.Currency == currency);
+
+        var rows = await source
+            .GroupBy(row => row.Currency)
+            .Select(g => new
+            {
+                Currency     = g.Key,
+                NoOfLicences = g.Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo).Distinct().Count(),
+                TotalValue   = g.Sum(x => x.Amount),
+            })
+            .ToListAsync();
+
+        if (rows.Count == 0) return null;
+
+        var currencies = rows
+            .OrderByDescending(r => r.NoOfLicences)
+            .ThenBy(r => r.Currency, StringComparer.OrdinalIgnoreCase)
+            .Select(r => new ReportCurrencyTotal
+            {
+                Currency     = r.Currency ?? string.Empty,
+                NoOfLicences = r.NoOfLicences,
+                TotalValue   = r.TotalValue,
+            })
+            .ToList();
+
+        return new ReportCurrencyTotalsSummary
+        {
+            Currencies         = currencies,
+            GrandTotalLicences = currencies.Sum(c => c.NoOfLicences),
+        };
+    }
+
+    /// <summary>All licence-level rows (no paging) for the Excel export.</summary>
+    public static async Task<List<ReportLicenceListResult>> GetLicenceListRowsAsync(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request,
+        string? currency)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        // Oversea: SP with NOEXPAND (pageSize=0 = all rows).
+        if (request.Type == "Oversea")
+            return await sp_ImportLicenceDetailByLicenceReport_Indexed.ExecuteAllAsync(db, request, currency);
+
+        var rows = await LicenceGroups(db, request, currency).ToListAsync();
+        return rows.Select(MapLicenceRow).ToList();
+    }
+
+    private static ReportLicenceListResult MapLicenceRow(LicenceAggregateRow row) => new()
+    {
+        SectionName = row.SectionName,
+        LicenceNo = row.LicenceNo,
+        LicenceDate = row.LicenceDate,
+        CompanyRegistrationNo = row.CompanyRegistrationNo,
+        CompanyName = row.CompanyName,
+        MethodName = row.MethodName,
+        SellerCountry = row.SellerCountry,
+        Currency = row.Currency,
+        TotalValue = row.TotalValue,
+    };
+
+    /// <summary>
+    /// Groups the filtered detail rows by (licence, currency) — one row per licence per
+    /// currency, with the summed item amount. Ordered by licence then currency. Fully SQL.
+    /// </summary>
+    private static IQueryable<LicenceAggregateRow> LicenceGroups(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request,
+        string? currency)
+    {
+        // Licence-level drill list is Oversea-only; read the pre-aggregated view so it
+        // doesn't fan out over the 6.4M-row item table (which timed out).
+        var source = request.Type == "Oversea"
+            ? OverseaViewRows(db, request)
+            : RowsUnordered(db, request);
+        if (!string.IsNullOrEmpty(currency))
+        {
+            source = source.Where(row => row.Currency == currency);
+        }
+
+        return source
+            .GroupBy(row => new
+            {
+                row.SectionName,
+                row.LicenceNo,
+                row.LicenceDate,
+                row.CompanyRegistrationNo,
+                row.CompanyName,
+                row.MethodName,
+                row.SellerCountry,
+                row.Currency,
+            })
+            .Select(g => new LicenceAggregateRow
+            {
+                SectionName = g.Key.SectionName,
+                LicenceNo = g.Key.LicenceNo,
+                LicenceDate = g.Key.LicenceDate,
+                CompanyRegistrationNo = g.Key.CompanyRegistrationNo,
+                CompanyName = g.Key.CompanyName,
+                MethodName = g.Key.MethodName,
+                SellerCountry = g.Key.SellerCountry,
+                Currency = g.Key.Currency,
+                TotalValue = g.Sum(x => x.Amount),
+            })
+            .OrderBy(r => r.LicenceNo)
+            .ThenBy(r => r.Currency);
+    }
+
+    // -----------------------------------------------------------------------------
+    // Total Value & Licences report (two summary sections + a USD grand total).
+    // Mirrors the legacy ImportLicenceByTotalValueLicenceReport.rdlc:
+    //   Section 1: Total Value summed per Currency.
+    //   Section 2: Total Licences = CountDistinct(LicenceNo) per Pa Tha Ka Type.
+    //   Section 3: "Total USD Value" = the FX-converted grand total (CBM rates).
+    // -----------------------------------------------------------------------------
+
+    /// <summary>
+    /// Builds the Total Value &amp; Licences summary: per-currency value totals, per-Pa-Tha-Ka-Type
+    /// distinct licence counts, and the USD-normalised grand total. Honours the report filters.
+    /// </summary>
+    public static async Task<ImportLicenceTotalValueLicencesSummary> GetTotalValueLicencesSummaryAsync(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        List<TotalValueByCurrencyRow> byCurrency;
+        List<TotalLicencesByPaThaKaTypeRow> byPaThaKaType;
+
+        if (request.Type == "Oversea")
+        {
+            // Section 1: SP handles the per-currency sum via the indexed view (NOEXPAND).
+            var tvRows = await sp_ImportLicenceSummaryReport_Indexed.ExecuteAsync(db, request, "TotalValue");
+            byCurrency = tvRows
+                .Select(r => new TotalValueByCurrencyRow
+                {
+                    Currency  = r.Currency ?? string.Empty,
+                    TotalValue = r.TotalValue,
+                })
+                .ToList();
+
+            // Section 2: Count distinct licences per Pa Tha Ka Type. No item join needed —
+            // the count is on ImportLicence + PaThaKa + PaThaKaType only.
+            byPaThaKaType = await (
+                from licence in db.ImportLicences.AsNoTracking()
+                join paThaKa     in db.PaThaKas.AsNoTracking()    on licence.PaThaKaId        equals paThaKa.Id
+                join paThaKaType in db.PaThaKaTypes.AsNoTracking() on paThaKa.PaThaKaTypeId    equals paThaKaType.Id
+                where licence.ApplyType == New
+                    && licence.Status == Approved
+                    && licence.ImportLicenceNo != string.Empty
+                    && licence.CreatedDate >= request.FromDate
+                    && licence.CreatedDate <= request.ToDate
+                    && (request.CompanyRegistrationNo == string.Empty || paThaKa.CompanyRegistrationNo == request.CompanyRegistrationNo)
+                    && (request.PaThaKaTypeId == 0 || paThaKa.PaThaKaTypeId == request.PaThaKaTypeId)
+                    && (request.ExportImportSectionId == 0 || licence.ExportImportSectionId == request.ExportImportSectionId)
+                    && (request.ExportImportMethodId == 0 || licence.ExportImportMethodId == request.ExportImportMethodId)
+                    && (request.ExportImportIncotermId == 0 || licence.ExportImportIncotermId == request.ExportImportIncotermId)
+                    && (request.SellerCountryId == 0 || licence.SellerCountryId == request.SellerCountryId)
+                group licence by paThaKaType.Description into g
+                select new TotalLicencesByPaThaKaTypeRow
+                {
+                    PaThaKaType  = g.Key,
+                    NoOfLicences = g.Select(l => l.ImportLicenceNo).Distinct().Count(),
+                }).ToListAsync();
+        }
+        else
+        {
+            // Border: use the full detail rows.
+            var source = RowsUnordered(db, request);
+
+            byCurrency = await source
+                .GroupBy(row => row.Currency)
+                .Select(g => new TotalValueByCurrencyRow
+                {
+                    Currency  = g.Key ?? string.Empty,
+                    TotalValue = g.Sum(x => x.Amount),
+                })
+                .ToListAsync();
+
+            byPaThaKaType = await source
+                .GroupBy(row => new { row.PaThaKaTypeCode, row.PaThaKaTypeName })
+                .Select(g => new TotalLicencesByPaThaKaTypeRow
+                {
+                    PaThaKaType  = g.Key.PaThaKaTypeName,
+                    NoOfLicences = g.Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo).Distinct().Count(),
+                })
+                .ToListAsync();
+        }
+
+        // Section 3: Total USD Value — convert each (Date, Currency) group's summed value
+        // via the CBM FX service. AggregateInSqlAsync routes Oversea through the SP.
+        var dailyGroups = await AggregateInSqlAsync(db, request, ReportAggregateDimension.Daily, includeSakhan: false);
+        var totalUsdValue = decimal.Round(dailyGroups.Sum(g => g.TotalUSDValue ?? 0m), 4);
+
+        return new ImportLicenceTotalValueLicencesSummary
+        {
+            TotalValueByCurrency = byCurrency
+                .OrderBy(r => r.Currency, StringComparer.OrdinalIgnoreCase)
+                .ToList(),
+            TotalLicencesByPaThaKaType = byPaThaKaType
+                .OrderBy(r => r.PaThaKaType, StringComparer.OrdinalIgnoreCase)
+                .ToList(),
+            TotalUsdValue = totalUsdValue,
+        };
+    }
+
     /// <summary>
     /// Groups the detail rows in SQL (GROUP BY) so only the grouped rows are returned, instead of
     /// materializing the entire un-paged detail set in memory and grouping in C#. Counts and sums
@@ -302,15 +582,39 @@ public static class sp_ImportLicenceDetailReport_Fast
         ReportAggregateDimension dimension,
         bool includeSakhan)
     {
+        // Oversea (except HS Code): use the indexed-view SP which emits WITH (NOEXPAND).
+        // EF LINQ cannot emit this hint even when joining the view directly, so any EF
+        // path through OverseaViewRows still expands to the 6.4M-row item table join
+        // (confirmed: 185s+). The SP completes in < 4s for all dimensions on Jan 2025 data.
+        if (UseOverseaViewSource(request, dimension))
+        {
+            var dimStr = dimension switch
+            {
+                ReportAggregateDimension.Section => "Section",
+                ReportAggregateDimension.Method  => "Method",
+                ReportAggregateDimension.Country => "Country",
+                ReportAggregateDimension.Company => "Company",
+                ReportAggregateDimension.Daily   => "Daily",
+                _                                => "TotalValue",
+            };
+            var spRows = await sp_ImportLicenceSummaryReport_Indexed.ExecuteAsync(db, request, dimStr);
+            var spMapped = spRows.Select(r => r.ToAggregateResult(dimension)).ToList();
+            if (dimension == ReportAggregateDimension.Daily)
+                await ReportUsdConversionService.FillDailyUsdValuesAsync(db, spMapped);
+            return spMapped;
+        }
+
+        // HS Code and Border: still need the full detail rows.
         var source = RowsUnordered(db, request);
 
         List<AggregateGroupRow> groups = dimension switch
         {
             ReportAggregateDimension.Section => await source
-                .GroupBy(row => new { Label = row.SectionName, Sakhan = includeSakhan ? row.SakhanCode : null, row.Currency })
+                .GroupBy(row => new { Label = row.SectionName, LabelId = row.ExportImportSectionId, Sakhan = includeSakhan ? row.SakhanCode : null, row.Currency })
                 .Select(g => new AggregateGroupRow
                 {
                     Label = g.Key.Label,
+                    LabelId = g.Key.LabelId,
                     SakhanCode = g.Key.Sakhan,
                     Currency = g.Key.Currency,
                     NoOfLicences = g.Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo).Distinct().Count(),
@@ -319,10 +623,11 @@ public static class sp_ImportLicenceDetailReport_Fast
                 .ToListAsync(),
 
             ReportAggregateDimension.Method => await source
-                .GroupBy(row => new { Label = row.MethodName, Sakhan = includeSakhan ? row.SakhanCode : null, row.Currency })
+                .GroupBy(row => new { Label = row.MethodName, LabelId = row.ExportImportMethodId, Sakhan = includeSakhan ? row.SakhanCode : null, row.Currency })
                 .Select(g => new AggregateGroupRow
                 {
                     Label = g.Key.Label,
+                    LabelId = g.Key.LabelId,
                     SakhanCode = g.Key.Sakhan,
                     Currency = g.Key.Currency,
                     NoOfLicences = g.Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo).Distinct().Count(),
@@ -331,10 +636,11 @@ public static class sp_ImportLicenceDetailReport_Fast
                 .ToListAsync(),
 
             ReportAggregateDimension.Country => await source
-                .GroupBy(row => new { Label = row.SellerCountry, Sakhan = includeSakhan ? row.SakhanCode : null, row.Currency })
+                .GroupBy(row => new { Label = row.SellerCountry, LabelId = row.SellerCountryId, Sakhan = includeSakhan ? row.SakhanCode : null, row.Currency })
                 .Select(g => new AggregateGroupRow
                 {
                     Label = g.Key.Label,
+                    LabelId = g.Key.LabelId,
                     SakhanCode = g.Key.Sakhan,
                     Currency = g.Key.Currency,
                     NoOfLicences = g.Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo).Distinct().Count(),
@@ -420,6 +726,9 @@ public static class sp_ImportLicenceDetailReport_Fast
             SectionName = dimension == ReportAggregateDimension.Section ? group.Label : null,
             MethodName = dimension == ReportAggregateDimension.Method ? group.Label : null,
             Country = dimension == ReportAggregateDimension.Country ? group.Label : null,
+            SectionId = dimension == ReportAggregateDimension.Section ? group.LabelId : null,
+            MethodId = dimension == ReportAggregateDimension.Method ? group.LabelId : null,
+            CountryId = dimension == ReportAggregateDimension.Country ? group.LabelId : null,
             CompanyName = isCompanyOrHsCode ? group.CompanyName : null,
             CompanyRegistrationNo = isCompanyOrHsCode ? group.CompanyRegistrationNo : null,
             HSCode = dimension == ReportAggregateDimension.HSCode ? group.Label : null,
@@ -454,6 +763,68 @@ public static class sp_ImportLicenceDetailReport_Fast
                 .Where(_ => false)
         };
     }
+
+    /// <summary>
+    /// Lean aggregate source for the Oversea licence reports. Instead of joining the
+    /// 6.4M-row <c>ImportLicenceItem</c> table (which made the GROUP BY / COUNT(DISTINCT)
+    /// time out), it reads the indexed view <c>vw_ImportLicenceItemTotalByCurrency</c>
+    /// (one pre-summed row per licence + currency) and joins only the lookups the
+    /// aggregate/licence-list reports actually display. Filters mirror <see cref="OverseaRows"/>
+    /// exactly, so counts and sums match. Not for the HS Code report (needs item-level HS rows)
+    /// nor the per-item Detail report.
+    /// </summary>
+    private static IQueryable<ImportLicenceDetailFastRow> OverseaViewRows(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request)
+    {
+        return
+            from licence in db.ImportLicences.AsNoTracking()
+            join paThaKa in db.PaThaKas.AsNoTracking() on licence.PaThaKaId equals paThaKa.Id
+            join paThaKaType in db.PaThaKaTypes.AsNoTracking() on paThaKa.PaThaKaTypeId equals paThaKaType.Id
+            join item in db.VwImportLicenceItemTotalByCurrencies on licence.Id equals item.ImportLicenceId
+            join currency in db.Currencies.AsNoTracking() on item.CurrencyId equals currency.Id
+            join section in db.ExportImportSections.AsNoTracking() on licence.ExportImportSectionId equals section.Id
+            join sellerCountry in db.Countries.AsNoTracking() on licence.SellerCountryId equals sellerCountry.Id
+            join method in db.ExportImportMethods.AsNoTracking() on licence.ExportImportMethodId equals method.Id
+            where licence.ApplyType == New
+                && licence.Status == Approved
+                && licence.ImportLicenceNo != string.Empty
+                && licence.CreatedDate >= request.FromDate
+                && licence.CreatedDate <= request.ToDate
+                && (request.CompanyRegistrationNo == string.Empty || paThaKa.CompanyRegistrationNo == request.CompanyRegistrationNo)
+                && (request.PaThaKaTypeId == 0 || paThaKa.PaThaKaTypeId == request.PaThaKaTypeId)
+                && (request.ExportImportSectionId == 0 || licence.ExportImportSectionId == request.ExportImportSectionId)
+                && (request.ExportImportMethodId == 0 || licence.ExportImportMethodId == request.ExportImportMethodId)
+                && (request.ExportImportIncotermId == 0 || licence.ExportImportIncotermId == request.ExportImportIncotermId)
+                && (request.SellerCountryId == 0 || licence.SellerCountryId == request.SellerCountryId)
+            select new ImportLicenceDetailFastRow
+            {
+                PaThaKaTypeId = paThaKaType.Id,
+                PaThaKaTypeCode = paThaKaType.Code,
+                PaThaKaTypeName = paThaKaType.Description,
+                ExportImportSectionId = licence.ExportImportSectionId,
+                ExportImportMethodId = licence.ExportImportMethodId,
+                ExportImportIncotermId = licence.ExportImportIncotermId,
+                SellerCountryId = licence.SellerCountryId,
+                SectionCode = section.Code,
+                SectionName = section.Name,
+                LicenceNo = licence.ImportLicenceNo,
+                LicenceDate = licence.IssuedDate,
+                CompanyRegistrationNo = paThaKa.CompanyRegistrationNo,
+                CompanyName = paThaKa.CompanyName,
+                SellerCountry = sellerCountry.Name,
+                MethodName = method.Name,
+                Amount = item.TotalAmount ?? 0m,
+                Currency = currency.Code,
+            };
+    }
+
+    /// <summary>
+    /// True when the lean indexed-view source should back the aggregate/licence-list query:
+    /// Oversea import licences for every dimension except HS Code (which needs item-level rows).
+    /// </summary>
+    private static bool UseOverseaViewSource(sp_ImportLicenceDetailReportRequest request, ReportAggregateDimension dimension)
+        => request.Type == "Oversea" && dimension != ReportAggregateDimension.HSCode;
 
     /// <summary>
     /// Total row count matching the same filters as <see cref="RowsUnordered"/>, but joining only the
@@ -785,10 +1156,25 @@ public static class sp_ImportLicenceDetailReport_Fast
         public decimal TotalValue { get; init; }
     }
 
+    /// <summary>Intermediate shape returned by the licence-level (licence + currency) SQL GROUP BY.</summary>
+    private sealed class LicenceAggregateRow
+    {
+        public string? SectionName { get; init; }
+        public string? LicenceNo { get; init; }
+        public DateTime? LicenceDate { get; init; }
+        public string? CompanyRegistrationNo { get; init; }
+        public string? CompanyName { get; init; }
+        public string? MethodName { get; init; }
+        public string? SellerCountry { get; init; }
+        public string? Currency { get; init; }
+        public decimal TotalValue { get; init; }
+    }
+
     /// <summary>Intermediate shape returned by the SQL GROUP BY; mapped to <see cref="ReportAggregateResult"/>.</summary>
     private sealed class AggregateGroupRow
     {
         public string? Label { get; init; }
+        public int LabelId { get; init; }
         public string? CompanyName { get; init; }
         public string? CompanyRegistrationNo { get; init; }
         public string? HSDescription { get; init; }

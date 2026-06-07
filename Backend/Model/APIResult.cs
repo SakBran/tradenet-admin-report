@@ -398,6 +398,34 @@ namespace API.Model
         /// </summary>
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IReadOnlyDictionary<string, decimal>? ColumnTotals { get; set; }
+
+        /// <summary>
+        /// Optional currency-grouped summary footer for the Extension reports
+        /// (legacy ExtensionReport.rdlc "Currency" group: per-currency licence count
+        /// and summed value, plus a grand total licence count). Null for reports that
+        /// don't render it, so it is omitted from the response when unset.
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public ReportCurrencyTotalsSummary? CurrencyTotals { get; set; }
         #endregion
+    }
+
+    /// <summary>One per-currency line of the Extension report summary footer.</summary>
+    public sealed class ReportCurrencyTotal
+    {
+        public string Currency { get; set; } = string.Empty;
+        public int NoOfLicences { get; set; }
+        public decimal TotalValue { get; set; }
+    }
+
+    /// <summary>
+    /// The Extension report summary footer: one <see cref="ReportCurrencyTotal"/> per
+    /// currency and the grand total licence count across all currencies (mirrors the
+    /// legacy RDLC "Total:N licence(s)" row).
+    /// </summary>
+    public sealed class ReportCurrencyTotalsSummary
+    {
+        public IReadOnlyList<ReportCurrencyTotal> Currencies { get; set; } = new List<ReportCurrencyTotal>();
+        public int GrandTotalLicences { get; set; }
     }
 }

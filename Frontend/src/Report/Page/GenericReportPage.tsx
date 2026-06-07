@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Button,
   Card,
@@ -25,6 +26,7 @@ import { AnyObject } from '../../types/AnyObject';
 import { PaginationType } from '../../types/PaginationType';
 import {
   ReportColumnConfig,
+  ReportColumnDrilldown,
   ReportFilterConfig,
   ReportPageConfig,
 } from '../config/reportTypes';
@@ -477,6 +479,9 @@ interface GenericReportPageProps {
 
 const GenericReportPage = ({ config }: GenericReportPageProps) => {
   const [form] = Form.useForm<FilterFormValues>();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const lastDrillRef = useRef<Record<string, unknown> | undefined>(undefined);
   const derivedFilterValues = useMemo(
     () => getDerivedFilterValues(config.controllerName, config.filters),
     [config.controllerName, config.filters]
@@ -723,6 +728,68 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
     setRefreshKey((current) => current + 1);
   };
 
+  // Drill-down: navigate to a target report carrying the clicked row's params
+  // plus selected current filters (mirrors the legacy RDLC "blue cell" links).
+  const handleDrill = useCallback(
+    (drilldown: ReportColumnDrilldown, row: AnyObject) => {
+      const params: Record<string, unknown> = { ...(drilldown.staticParams ?? {}) };
+      (drilldown.carryFilters ?? []).forEach((name) => {
+        if (filters[name] !== undefined) {
+          params[name] = filters[name];
+        }
+      });
+      Object.entries(drilldown.rowParams ?? {}).forEach(([target, rowKey]) => {
+        params[target] = row[rowKey];
+      });
+      navigate(`/Report/${drilldown.targetReportKey}`, {
+        state: { drillFilters: params },
+      });
+    },
+    [filters, navigate]
+  );
+
+  // When this page is opened as a drill target, seed + auto-apply the incoming
+  // filters once. The form shows the filters that exist on this report; the
+  // request carries every drill param (even ones without a visible filter box,
+  // e.g. SellerCountryId / CompanyRegistrationNo).
+  useEffect(() => {
+    const drill = (
+      location.state as { drillFilters?: Record<string, unknown> } | null
+    )?.drillFilters;
+    if (!drill || drill === lastDrillRef.current) {
+      return;
+    }
+    lastDrillRef.current = drill;
+
+    const formSeed: FilterFormValues = {};
+    const dateRangeFilter = config.filters.find(
+      (filter) => filter.type === 'dateRange'
+    );
+    if (dateRangeFilter) {
+      const fromName = dateRangeFilter.fromName ?? 'FromDate';
+      const toName = dateRangeFilter.toName ?? 'ToDate';
+      if (drill[fromName] && drill[toName]) {
+        formSeed[dateRangeFilter.name] = [
+          dayjs(String(drill[fromName])),
+          dayjs(String(drill[toName])),
+        ];
+      }
+    }
+    config.filters.forEach((filter) => {
+      if (filter.type === 'dateRange') {
+        return;
+      }
+      if (drill[filter.name] !== undefined) {
+        formSeed[filter.name] = drill[filter.name] as FilterValue;
+      }
+    });
+    form.setFieldsValue(formSeed);
+
+    setFilters({ ...derivedFilterValues, ...drill });
+    setHasAppliedFilters(true);
+    setRefreshKey((current) => current + 1);
+  }, [location, config.filters, derivedFilterValues, form]);
+
   // Legacy RDLC-style report header rendered inside the grid, shown only once
   // filters are applied. Reflects the applied Type/Date via reportSubtitle.
   const reportHeaderLines =
@@ -790,6 +857,8 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
       <BasicTable<AnyObject>
         title={config.title}
         reportHeaderLines={reportHeaderLines}
+        currencyTotalsColumns={config.currencyTotalsColumns}
+        onDrill={handleDrill}
         tableId={`${config.controllerName}Table`}
         columns={tableColumns}
         fetchData={fetchRows}

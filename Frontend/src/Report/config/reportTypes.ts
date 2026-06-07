@@ -19,12 +19,29 @@ export interface ReportFilterOption {
   value: string | number;
 }
 
+/**
+ * Makes a column cell a clickable drill-down link that navigates to another
+ * report (the legacy RDLC "blue cell" hyperlinks: By Section/Method/Seller
+ * Country/Company/HS Code → a pre-filtered Detail report).
+ */
+export interface ReportColumnDrilldown {
+  /** Target report key — its reportConfigs key AND its route path under /Report. */
+  targetReportKey: string;
+  /** Filter names to carry from the CURRENT applied report filters into the target. */
+  carryFilters?: string[];
+  /** Map target param name → clicked row's dataIndex, e.g. { ExportImportSectionId: 'sectionId' }. */
+  rowParams?: Record<string, string>;
+  /** Params always applied on the target (e.g. { Type: 'Oversea' }). */
+  staticParams?: Record<string, string | number>;
+}
+
 export interface ReportColumnConfig {
   key: string;
   dataIndex: string;
   title: string;
   dataType?: ReportColumnDataType;
   fallbackDataIndexes?: string[];
+  drilldown?: ReportColumnDrilldown;
 }
 
 export interface ReportFilterConfig {
@@ -75,4 +92,15 @@ export interface ReportPageConfig {
    * e.g. `${Type} Company Business Organization (${Date})`.
    */
   reportSubtitle?: (filters: Record<string, unknown>) => string;
+  /**
+   * Placement for the currency-grouped summary footer (when the backend sends
+   * `currencyTotals`). `labelColumnKey` is the column.key under which the
+   * `<CUR>: N licence(s)` text and the grand `Total: N licence(s)` go; the
+   * summed value goes under `valueColumnKey`. Mirrors the legacy
+   * ExtensionReport.rdlc currency footer.
+   */
+  currencyTotalsColumns?: {
+    labelColumnKey: string;
+    valueColumnKey: string;
+  };
 }

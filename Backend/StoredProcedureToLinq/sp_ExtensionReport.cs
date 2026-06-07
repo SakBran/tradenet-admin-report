@@ -1,4 +1,5 @@
 using API.DBContext;
+using API.Model;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -88,6 +89,13 @@ public sealed class sp_ExtensionReportRow
     };
 }
 
+public sealed class sp_ExtensionReportCurrencyTotalRow
+{
+    public string? Currency { get; set; }
+    public int NoOfLicences { get; set; }
+    public decimal TotalValue { get; set; }
+}
+
 public static class sp_ExtensionReport
 {
     private const string Extension = "Extension";
@@ -145,6 +153,67 @@ public static class sp_ExtensionReport
             "@CompanyRegistrationNo, @SakhanId, @SortColumn, @SortOrder, @PageIndex, @PageSize, @IncludeTotalCount";
 
         return db.Database.SqlQueryRaw<sp_ExtensionReportRow>(sql, parameters);
+    }
+
+    /// <summary>
+    /// Currency-grouped summary footer (legacy ExtensionReport.rdlc "Currency" group):
+    /// per-currency licence count + summed value, plus the grand total licence count.
+    /// Runs <c>dbo.sp_ExtensionReportCurrencyTotals</c>, whose filtering matches
+    /// <see cref="ExecuteQueryable"/> so the totals line up with the grid rows.
+    /// </summary>
+    public static async Task<ReportCurrencyTotalsSummary> ExecuteCurrencyTotalsAsync(
+        TradeNetDbContext db,
+        sp_ExtensionReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var parameters = new[]
+        {
+            new SqlParameter("@FormType", request.FormType ?? string.Empty),
+            new SqlParameter("@FromDate", request.FromDate),
+            new SqlParameter("@ToDate", request.ToDate),
+            new SqlParameter("@ExportImportSectionId", request.ExportImportSectionId),
+            new SqlParameter("@CompanyRegistrationNo", request.CompanyRegistrationNo ?? string.Empty),
+            new SqlParameter("@SakhanId", request.SakhanId),
+        };
+
+        const string sql =
+            "EXEC dbo.sp_ExtensionReportCurrencyTotals @FormType, @FromDate, @ToDate, " +
+            "@ExportImportSectionId, @CompanyRegistrationNo, @SakhanId";
+
+        List<sp_ExtensionReportCurrencyTotalRow> rows;
+        try
+        {
+            rows = await db.Database
+                .SqlQueryRaw<sp_ExtensionReportCurrencyTotalRow>(sql, parameters)
+                .ToListAsync();
+        }
+        catch (SqlException)
+        {
+            // The summary footer is an enhancement on top of an already-working
+            // report. If sp_ExtensionReportCurrencyTotals has not been deployed yet
+            // (the .sql migrations are applied by hand), degrade to "no footer"
+            // rather than 500-ing the whole report.
+            return new ReportCurrencyTotalsSummary();
+        }
+
+        var currencies = rows
+            .OrderByDescending(row => row.NoOfLicences)
+            .ThenBy(row => row.Currency, StringComparer.OrdinalIgnoreCase)
+            .Select(row => new ReportCurrencyTotal
+            {
+                Currency = row.Currency ?? string.Empty,
+                NoOfLicences = row.NoOfLicences,
+                TotalValue = row.TotalValue,
+            })
+            .ToList();
+
+        return new ReportCurrencyTotalsSummary
+        {
+            Currencies = currencies,
+            GrandTotalLicences = currencies.Sum(currency => currency.NoOfLicences),
+        };
     }
 
     public static IQueryable<sp_ExtensionReportResult> Query(

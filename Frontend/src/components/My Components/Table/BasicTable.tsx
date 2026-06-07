@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import './style.css';
 
 import TableAction from '../TableAction/TableAction';
@@ -15,6 +15,7 @@ import {
 import NameConvert from '../../../services/NameConvert';
 import { AnyObject } from '../../../types/AnyObject';
 import { PaginationType } from '../../../types/PaginationType';
+import { ReportColumnDrilldown } from '../../../Report/config/reportTypes';
 import { FileExcelOutlined } from '@ant-design/icons';
 import * as XLSX from 'xlsx';
 
@@ -42,6 +43,8 @@ export interface BasicTableColumn<T extends AnyObject = AnyObject> {
   width?: number | string;
   dataType?: 'string' | 'number' | 'date' | 'boolean' | 'money';
   render?: (value: unknown, row: T, rowIndex: number) => React.ReactNode;
+  /** When set, the cell renders as a clickable link that drills into another report. */
+  drilldown?: ReportColumnDrilldown;
 }
 
 const isNumericColumn = (dataType?: string) =>
@@ -86,6 +89,23 @@ interface PropsType<T extends AnyObject = AnyObject> {
    * columns above the column-header row (mirrors the legacy RDLC report header).
    */
   reportHeaderLines?: string[];
+  /**
+   * Invoked when a drill-down cell is clicked, with the column's drilldown
+   * descriptor and the clicked row. The host (GenericReportPage) navigates to
+   * the target report with the mapped filters seeded.
+   */
+  onDrill?: (drilldown: ReportColumnDrilldown, row: AnyObject) => void;
+  /**
+   * Placement for the currency-grouped summary footer when the response carries
+   * `currencyTotals`. `labelColumnKey` is the column.key under which the
+   * `<CUR>: N licence(s)` text (and grand `Total: N licence(s)`) renders;
+   * the summed value renders under `valueColumnKey`. Falls back to the first
+   * text / first numeric column when omitted.
+   */
+  currencyTotalsColumns?: {
+    labelColumnKey: string;
+    valueColumnKey: string;
+  };
 }
 
 const emptyPage = <T extends AnyObject>(): PaginationType<T> => ({
@@ -145,6 +165,8 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   rowNumberTitle = 'No',
   legacyReportViewer = false,
   reportHeaderLines,
+  onDrill,
+  currencyTotalsColumns,
 }: PropsType<T>) => {
   const normalizedColumns = useMemo<BasicTableColumn<T>[]>(() => {
     if (columns?.length) {
@@ -181,6 +203,9 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(initialPageSize);
   const [data, setData] = useState<PaginationType<T>>(emptyPage<T>());
+  // Lazy/partial delivery: rows render from a fast page that skips the expensive
+  // COUNT(*); the exact total loads separately and patches the pager when ready.
+  const [exactTotalCount, setExactTotalCount] = useState<number | null>(null);
 
   const shouldShowActions =
     showActions ??
@@ -222,8 +247,11 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
       setError(null);
 
       try {
+        // Report (fetchData) path: request a "fast page" that skips the
+        // expensive COUNT(*) so the grid paints immediately; the exact total is
+        // fetched lazily below. The legacy fetch/api path keeps the exact count.
         const result = fetchData
-          ? await fetchData(query)
+          ? await fetchData({ ...query, includeTotalCount: false })
           : await fetch!(buildLegacyUrl(api!, query));
 
         setData(result ?? emptyPage<T>());
@@ -236,6 +264,62 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
 
     load();
   }, [api, enabled, fetch, fetchData, query, refreshKey]);
+
+  // Reset the lazily-fetched total whenever the filter set changes, so a stale
+  // count never shows against new results.
+  const countedFilterSig = useRef<string | null>(null);
+  const filterSig = `${filterColumn}|${filterQuery}|${refreshKey}`;
+  useEffect(() => {
+    setExactTotalCount(null);
+    countedFilterSig.current = null;
+  }, [filterSig]);
+
+  // Lazy total count (partial delivery). Only fires when the rows came back as an
+  // ESTIMATED fast page (isTotalCountExact === false) — i.e. the heavy detail /
+  // pagination reports. Aggregate reports already return an exact total, so they
+  // are skipped (no double work). Fetched once per filter set, off the critical
+  // path, via the fetchData (report) path only; the legacy fetch/api path is untouched.
+  useEffect(() => {
+    if (!enabled || !fetchData) {
+      return;
+    }
+    if (data.isTotalCountExact !== false) {
+      return;
+    }
+    if (countedFilterSig.current === filterSig) {
+      return;
+    }
+    countedFilterSig.current = filterSig;
+
+    let cancelled = false;
+    const countQuery: BasicTableQuery = {
+      pageIndex: 0,
+      pageSize: 1,
+      sortColumn: '',
+      sortOrder: '',
+      filterColumn,
+      filterQuery,
+      includeTotalCount: true,
+    };
+
+    fetchData(countQuery)
+      .then((result) => {
+        if (!cancelled && result) {
+          setExactTotalCount(result.totalCount ?? null);
+        }
+      })
+      .catch(() => {
+        // Leave the estimated total from the fast page in place on failure.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, fetchData, data.isTotalCountExact, filterSig]);
+
+  // Pager shows the exact total once it arrives, otherwise the fast page's estimate.
+  const displayTotalCount = exactTotalCount ?? data.totalCount;
 
   const exportClientTableToExcel = () => {
     const table = document.getElementById(tableId);
@@ -277,11 +361,34 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
     const key = (column.dataIndex ?? column.key).toString();
     const value = row[key];
 
-    if (column.render) {
-      return column.render(value, row, index);
+    const content = column.render
+      ? column.render(value, row, index)
+      : value?.toString() ?? 'N/A';
+
+    // Drill-down cells (legacy RDLC blue hyperlinks) navigate to another report.
+    // Only linkify when the cell has a real value and a handler is wired.
+    const hasContent = value !== undefined && value !== null && value.toString().trim() !== '';
+    if (column.drilldown && onDrill && hasContent) {
+      return (
+        <a
+          className="report-drill-link"
+          role="button"
+          tabIndex={0}
+          style={{ color: '#1677ff', cursor: 'pointer', textDecoration: 'underline' }}
+          onClick={() => onDrill(column.drilldown!, row)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              onDrill(column.drilldown!, row);
+            }
+          }}
+        >
+          {content}
+        </a>
+      );
     }
 
-    return value?.toString() ?? 'N/A';
+    return content;
   };
 
   const columnCount =
@@ -304,6 +411,31 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
     (column) =>
       !((column.dataIndex ?? column.key).toString() in columnTotals)
   );
+
+  // Optional currency-grouped summary footer (legacy ExtensionReport.rdlc):
+  // one "<CUR>: N licence(s)" + summed-value row per currency, then a grand
+  // "Total: N licence(s)" row. Placement is config-driven (currencyTotalsColumns)
+  // and falls back to the first text / first numeric column.
+  const currencyTotals = data.currencyTotals;
+  const showCurrencyTotals =
+    !loading &&
+    (data.data?.length ?? 0) > 0 &&
+    (currencyTotals?.currencies?.length ?? 0) > 0;
+  const currencyLabelColumnKey =
+    currencyTotalsColumns?.labelColumnKey ??
+    normalizedColumns
+      .find((column) => !isNumericColumn(column.dataType))
+      ?.key.toString();
+  const currencyValueColumnKey =
+    currencyTotalsColumns?.valueColumnKey ??
+    normalizedColumns.find((column) => isNumericColumn(column.dataType))?.key.toString();
+  // Matches the legacy RDLC FORMAT(Sum(Amount), "N4"): thousands separators and
+  // exactly 4 decimal places.
+  const formatCurrencyTotalValue = (value: number) =>
+    Number(value).toLocaleString('en-US', {
+      minimumFractionDigits: 4,
+      maximumFractionDigits: 4,
+    });
 
   return (
     <>
@@ -465,43 +597,115 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
               </tbody>
             )}
 
-            {showTotalRow && (
+            {(showTotalRow || showCurrencyTotals) && (
               <tfoot>
-                <tr className="report-total-row">
-                  {showRowNumber && <td />}
-                  {normalizedColumns.map((column, index) => {
-                    const dataIndex = (
-                      column.dataIndex ?? column.key
-                    ).toString();
-                    const key = column.key.toString();
-                    const total = columnTotals[dataIndex];
+                {showTotalRow && (
+                  <tr className="report-total-row">
+                    {showRowNumber && <td />}
+                    {normalizedColumns.map((column, index) => {
+                      const dataIndex = (
+                        column.dataIndex ?? column.key
+                      ).toString();
+                      const key = column.key.toString();
+                      const total = columnTotals[dataIndex];
 
-                    if (total !== undefined) {
-                      return (
-                        <td
-                          key={key}
-                          className={
-                            isNumericColumn(column.dataType) ? 'col-numeric' : undefined
-                          }
-                          style={{ fontWeight: 700 }}
-                        >
-                          {String(total)}
-                        </td>
-                      );
-                    }
+                      if (total !== undefined) {
+                        return (
+                          <td
+                            key={key}
+                            className={
+                              isNumericColumn(column.dataType) ? 'col-numeric' : undefined
+                            }
+                            style={{ fontWeight: 700 }}
+                          >
+                            {String(total)}
+                          </td>
+                        );
+                      }
 
-                    if (index === totalLabelIndex) {
-                      return (
-                        <td key={key} style={{ fontWeight: 700 }}>
-                          Total
-                        </td>
-                      );
-                    }
+                      if (index === totalLabelIndex) {
+                        return (
+                          <td key={key} style={{ fontWeight: 700 }}>
+                            Total
+                          </td>
+                        );
+                      }
 
-                    return <td key={key} />;
-                  })}
-                  {shouldShowActions && <td />}
-                </tr>
+                      return <td key={key} />;
+                    })}
+                    {shouldShowActions && <td />}
+                  </tr>
+                )}
+
+                {showCurrencyTotals &&
+                  currencyTotals!.currencies.map((entry) => (
+                    <tr
+                      key={`currency-${entry.currency}`}
+                      className="report-total-row"
+                    >
+                      {showRowNumber && <td />}
+                      {normalizedColumns.map((column) => {
+                        const key = column.key.toString();
+
+                        if (key === currencyLabelColumnKey) {
+                          return (
+                            <td key={key} style={{ fontWeight: 700 }}>
+                              {`${entry.currency}:${entry.noOfLicences} licence(s)`}
+                            </td>
+                          );
+                        }
+
+                        if (key === currencyValueColumnKey) {
+                          return (
+                            <td
+                              key={key}
+                              className="col-numeric"
+                              style={{ fontWeight: 700 }}
+                            >
+                              {`${entry.currency}:${formatCurrencyTotalValue(entry.totalValue)}`}
+                            </td>
+                          );
+                        }
+
+                        return <td key={key} />;
+                      })}
+                      {shouldShowActions && <td />}
+                    </tr>
+                  ))}
+
+                {showCurrencyTotals && (
+                  <tr className="report-total-row">
+                    {showRowNumber && (
+                      <td style={{ fontWeight: 700 }}>TOTAL</td>
+                    )}
+                    {normalizedColumns.map((column, index) => {
+                      const key = column.key.toString();
+
+                      if (key === currencyLabelColumnKey) {
+                        return (
+                          <td key={key} style={{ fontWeight: 700 }}>
+                            {`Total:${currencyTotals!.grandTotalLicences} licence(s)`}
+                          </td>
+                        );
+                      }
+
+                      if (
+                        !showRowNumber &&
+                        index === 0 &&
+                        key !== currencyLabelColumnKey
+                      ) {
+                        return (
+                          <td key={key} style={{ fontWeight: 700 }}>
+                            TOTAL
+                          </td>
+                        );
+                      }
+
+                      return <td key={key} />;
+                    })}
+                    {shouldShowActions && <td />}
+                  </tr>
+                )}
               </tfoot>
             )}
           </table>
@@ -520,7 +724,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
             }}
             current={query.pageIndex + 1}
             pageSize={pageSize}
-            total={data.totalCount}
+            total={displayTotalCount}
             onChange={(page, size) => {
               setPageIndex(page - 1);
               setPageSize(size);
