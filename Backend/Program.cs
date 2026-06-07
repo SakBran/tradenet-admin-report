@@ -64,7 +64,13 @@ internal class Program
         builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("TemplateDB") ?? builder.Configuration.GetConnectionString("DefaultConnection")));
         builder.Services.AddDbContextPool<TradeNetDbContext>(options =>
-            options.UseSqlServer(builder.Configuration.GetConnectionString("TradeNetDBTest")));
+            options.UseSqlServer(
+                builder.Configuration.GetConnectionString("TradeNetDBTest"),
+                // The report queries fan out over large licence/permit + item tables; the
+                // default 30s command timeout throws "Execution Timeout Expired" on heavy
+                // date ranges. Raise it so slow-but-valid reports complete (the indexes /
+                // fast-pagination changes bring most well under this ceiling).
+                sql => sql.CommandTimeout(180)));
         builder.Services.AddAuthentication(x =>
         {
             x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
