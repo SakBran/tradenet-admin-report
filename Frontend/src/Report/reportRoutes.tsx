@@ -92,6 +92,7 @@ import ImportLicenceBySellerCountryReport from './Page/ImportLicenceBySellerCoun
 import ImportLicenceCancellationReport from './Page/ImportLicenceCancellationReport';
 import ImportLicenceCompanyListReport from './Page/ImportLicenceCompanyListReport';
 import ImportLicenceDailyReportNewLicenceReport from './Page/ImportLicenceDailyReportNewLicenceReport';
+import ImportLicenceDetailByLicenceReport from './Page/ImportLicenceDetailByLicenceReport';
 import ImportLicenceDetailReport from './Page/ImportLicenceDetailReport';
 import ImportLicenceDetailReportPending from './Page/ImportLicenceDetailReportPending';
 import ImportLicenceExtensionReport from './Page/ImportLicenceExtensionReport';
@@ -254,6 +255,7 @@ export const reportRoutes = [
   { path: 'ImportLicenceCancellationReport', element: <ImportLicenceCancellationReport /> },
   { path: 'ImportLicenceCompanyListReport', element: <ImportLicenceCompanyListReport /> },
   { path: 'ImportLicenceDailyReportNewLicenceReport', element: <ImportLicenceDailyReportNewLicenceReport /> },
+  { path: 'ImportLicenceDetailByLicenceReport', element: <ImportLicenceDetailByLicenceReport /> },
   { path: 'ImportLicenceDetailReport', element: <ImportLicenceDetailReport /> },
   { path: 'ImportLicenceDetailReportPending', element: <ImportLicenceDetailReportPending /> },
   { path: 'ImportLicenceExtensionReport', element: <ImportLicenceExtensionReport /> },

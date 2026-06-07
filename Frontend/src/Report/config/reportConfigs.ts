@@ -253,6 +253,19 @@ const importLicenceSellerCountryFilters: ReportFilterConfig[] = [
   importLicenceSellerCountryFilter,
 ];
 
+// Drill target reached from By Section / Method / Seller Country / Company. Carries
+// every dimension filter so the seeded request reproduces the clicked cell exactly.
+const importLicenceDetailByLicenceFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceOverseaTypeFilter,
+  importLicencePaThaKaTypeFilter,
+  importLicenceSectionFilter,
+  importLicenceMethodFilter,
+  importLicenceSellerCountryFilter,
+  importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
+];
+
 const importLicenceCompanyListFilters: ReportFilterConfig[] = [
   importLicenceDateRangeFilter,
   importLicenceOverseaTypeFilter,
@@ -9804,9 +9817,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'methodName',
         title: 'Method',
         drilldown: {
-          targetReportKey: 'ImportLicenceDetailReport',
+          targetReportKey: 'ImportLicenceDetailByLicenceReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId'],
-          rowParams: { ExportImportMethodId: 'methodId' },
+          rowParams: { ExportImportMethodId: 'methodId', Currency: 'currency' },
         },
       },
       {
@@ -9845,9 +9858,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'sectionName',
         title: 'Section',
         drilldown: {
-          targetReportKey: 'ImportLicenceDetailReport',
+          targetReportKey: 'ImportLicenceDetailByLicenceReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportMethodId'],
-          rowParams: { ExportImportSectionId: 'sectionId' },
+          rowParams: { ExportImportSectionId: 'sectionId', Currency: 'currency' },
         },
       },
       {
@@ -9886,9 +9899,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'country',
         title: 'Country',
         drilldown: {
-          targetReportKey: 'ImportLicenceDetailReport',
+          targetReportKey: 'ImportLicenceDetailByLicenceReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId', 'ExportImportMethodId'],
-          rowParams: { SellerCountryId: 'countryId' },
+          rowParams: { SellerCountryId: 'countryId', Currency: 'currency' },
         },
       },
       {
@@ -10003,9 +10016,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'companyName',
         title: 'Company Name',
         drilldown: {
-          targetReportKey: 'ImportLicenceDetailReport',
+          targetReportKey: 'ImportLicenceDetailByLicenceReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId', 'ExportImportMethodId'],
-          rowParams: { CompanyRegistrationNo: 'companyRegistrationNo' },
+          rowParams: { CompanyRegistrationNo: 'companyRegistrationNo', Currency: 'currency' },
         },
       },
       {
@@ -10065,6 +10078,77 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'totalUSDValue',
         title: 'Total USD Value',
         dataType: 'number',
+      },
+    ],
+  },
+  // Licence-level drill target (one row per licence + currency) reached from the
+  // By Section / Method / Seller Country / Company summaries. Its record count
+  // equals the "No of Licences" of the clicked cell (the per-item Detail report
+  // fans out per HS line, so its count never matched).
+  ImportLicenceDetailByLicenceReport: {
+    controllerName: 'ImportLicenceDetailByLicenceReport',
+    title: 'Import Licence Detail Report',
+    apiRoute: 'ImportLicenceDetailByLicenceReport',
+    excelRoute: 'ImportLicenceDetailByLicenceReport/Excel',
+    excelFileName: 'ImportLicenceDetailByLicenceReport.xlsx',
+    initialSortColumn: 'licenceNo',
+    showRowNumber: true,
+    filters: importLicenceDetailByLicenceFilters,
+    reportSubtitle: importLicenceRangeSubtitle(
+      'List of Import Licences By Detail',
+      true
+    ),
+    currencyTotalsColumns: {
+      labelColumnKey: 'LicenceNo',
+      valueColumnKey: 'TotalValue',
+    },
+    columns: [
+      {
+        key: 'Section',
+        dataIndex: 'sectionName',
+        title: 'Section',
+      },
+      {
+        key: 'LicenceNo',
+        dataIndex: 'licenceNo',
+        title: 'Licence No',
+      },
+      {
+        key: 'LicenceDate',
+        dataIndex: 'licenceDate',
+        title: 'Licence Date',
+        dataType: 'date',
+      },
+      {
+        key: 'CompanyRegistrationNo',
+        dataIndex: 'companyRegistrationNo',
+        title: 'Company Registration No',
+      },
+      {
+        key: 'CompanyName',
+        dataIndex: 'companyName',
+        title: 'Company Name',
+      },
+      {
+        key: 'Method',
+        dataIndex: 'methodName',
+        title: 'Method',
+      },
+      {
+        key: 'SellerCountry',
+        dataIndex: 'sellerCountry',
+        title: 'Seller Country',
+      },
+      {
+        key: 'TotalValue',
+        dataIndex: 'totalValue',
+        title: 'Total Value',
+        dataType: 'number',
+      },
+      {
+        key: 'Currency',
+        dataIndex: 'currency',
+        title: 'Currency',
       },
     ],
   },

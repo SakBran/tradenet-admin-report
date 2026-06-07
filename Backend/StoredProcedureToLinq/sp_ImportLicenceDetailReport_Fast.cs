@@ -289,6 +289,241 @@ public static class sp_ImportLicenceDetailReport_Fast
             .ThenBy(row => row.Currency);
     }
 
+    // -----------------------------------------------------------------------------
+    // Licence-level drill report (one row per licence + currency).
+    //
+    // Used as the drill target from By Section / Method / Seller Country / Company:
+    // the per-item Detail report has many rows per licence (one per HS line), so its
+    // record count never matches the summary's "No of Licences". This view groups the
+    // SAME filtered detail rows by (licence, currency) and sums the item amounts, so
+    // the row count equals the distinct-licence-per-currency count shown in those
+    // summaries — that is exactly what the legacy "click the count → detail" drill did.
+    // -----------------------------------------------------------------------------
+
+    /// <summary>
+    /// One page of the licence-level list: distinct (licence, currency) rows with the
+    /// licence's section/method/seller-country/company and the summed item amount.
+    /// Honours every standard filter plus an optional currency filter (the drill carries
+    /// the clicked row's currency so the count reconciles cell-for-cell).
+    /// </summary>
+    public static async Task<ApiResult<ReportLicenceListResult>> CreateLicenceListPagedResultAsync(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request,
+        string? currency,
+        ReportQueryRequest pagingRequest)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(pagingRequest);
+
+        var groups = LicenceGroups(db, request, currency);
+
+        var pageIndex = Math.Max(0, pagingRequest.PageIndex);
+        var pageSize = pagingRequest.PageSize <= 0
+            ? DefaultPageSize
+            : Math.Min(pagingRequest.PageSize, MaxPageSize);
+
+        var totalCount = pagingRequest.IncludeTotalCount
+            ? await groups.CountAsync()
+            : (int?)null;
+
+        var pageRowsRaw = await groups
+            .Skip(pageIndex * pageSize)
+            .Take(pageSize + (totalCount.HasValue ? 0 : 1))
+            .ToListAsync();
+
+        var pageRows = pageRowsRaw.Select(MapLicenceRow).ToList();
+
+        return totalCount.HasValue
+            ? ApiResult<ReportLicenceListResult>.CreatePageFromRows(
+                pageRows, totalCount.Value, pageIndex, pageSize, null, null,
+                pagingRequest.FilterColumn, pagingRequest.FilterQuery)
+            : ApiResult<ReportLicenceListResult>.CreateFastPageFromRows(
+                pageRows, pageIndex, pageSize, null, null,
+                pagingRequest.FilterColumn, pagingRequest.FilterQuery);
+    }
+
+    /// <summary>
+    /// Currency-grouped footer for the licence-level list: distinct non-empty licence
+    /// count and summed amount per currency, plus the grand total licence count. Matches
+    /// the per-currency "No of Licences" shown in the By-X summaries, so the drilled list
+    /// footer reconciles with the row the user clicked. Returns null when empty.
+    /// </summary>
+    public static async Task<ReportCurrencyTotalsSummary?> CreateLicenceCurrencyTotalsAsync(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request,
+        string? currency)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var source = RowsUnordered(db, request);
+        if (!string.IsNullOrEmpty(currency))
+        {
+            source = source.Where(row => row.Currency == currency);
+        }
+
+        var rows = await source
+            .GroupBy(row => row.Currency)
+            .Select(g => new
+            {
+                Currency = g.Key,
+                NoOfLicences = g.Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo).Distinct().Count(),
+                TotalValue = g.Sum(x => x.Amount),
+            })
+            .ToListAsync();
+
+        if (rows.Count == 0)
+        {
+            return null;
+        }
+
+        var currencies = rows
+            .OrderByDescending(r => r.NoOfLicences)
+            .ThenBy(r => r.Currency, StringComparer.OrdinalIgnoreCase)
+            .Select(r => new ReportCurrencyTotal
+            {
+                Currency = r.Currency ?? string.Empty,
+                NoOfLicences = r.NoOfLicences,
+                TotalValue = r.TotalValue,
+            })
+            .ToList();
+
+        return new ReportCurrencyTotalsSummary
+        {
+            Currencies = currencies,
+            GrandTotalLicences = currencies.Sum(c => c.NoOfLicences),
+        };
+    }
+
+    /// <summary>All licence-level rows (no paging) for the Excel export.</summary>
+    public static async Task<List<ReportLicenceListResult>> GetLicenceListRowsAsync(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request,
+        string? currency)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var rows = await LicenceGroups(db, request, currency).ToListAsync();
+        return rows.Select(MapLicenceRow).ToList();
+    }
+
+    private static ReportLicenceListResult MapLicenceRow(LicenceAggregateRow row) => new()
+    {
+        SectionName = row.SectionName,
+        LicenceNo = row.LicenceNo,
+        LicenceDate = row.LicenceDate,
+        CompanyRegistrationNo = row.CompanyRegistrationNo,
+        CompanyName = row.CompanyName,
+        MethodName = row.MethodName,
+        SellerCountry = row.SellerCountry,
+        Currency = row.Currency,
+        TotalValue = row.TotalValue,
+    };
+
+    /// <summary>
+    /// Groups the filtered detail rows by (licence, currency) — one row per licence per
+    /// currency, with the summed item amount. Ordered by licence then currency. Fully SQL.
+    /// </summary>
+    private static IQueryable<LicenceAggregateRow> LicenceGroups(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request,
+        string? currency)
+    {
+        var source = RowsUnordered(db, request);
+        if (!string.IsNullOrEmpty(currency))
+        {
+            source = source.Where(row => row.Currency == currency);
+        }
+
+        return source
+            .GroupBy(row => new
+            {
+                row.SectionName,
+                row.LicenceNo,
+                row.LicenceDate,
+                row.CompanyRegistrationNo,
+                row.CompanyName,
+                row.MethodName,
+                row.SellerCountry,
+                row.Currency,
+            })
+            .Select(g => new LicenceAggregateRow
+            {
+                SectionName = g.Key.SectionName,
+                LicenceNo = g.Key.LicenceNo,
+                LicenceDate = g.Key.LicenceDate,
+                CompanyRegistrationNo = g.Key.CompanyRegistrationNo,
+                CompanyName = g.Key.CompanyName,
+                MethodName = g.Key.MethodName,
+                SellerCountry = g.Key.SellerCountry,
+                Currency = g.Key.Currency,
+                TotalValue = g.Sum(x => x.Amount),
+            })
+            .OrderBy(r => r.LicenceNo)
+            .ThenBy(r => r.Currency);
+    }
+
+    // -----------------------------------------------------------------------------
+    // Total Value & Licences report (two summary sections + a USD grand total).
+    // Mirrors the legacy ImportLicenceByTotalValueLicenceReport.rdlc:
+    //   Section 1: Total Value summed per Currency.
+    //   Section 2: Total Licences = CountDistinct(LicenceNo) per Pa Tha Ka Type.
+    //   Section 3: "Total USD Value" = the FX-converted grand total (CBM rates).
+    // -----------------------------------------------------------------------------
+
+    /// <summary>
+    /// Builds the Total Value &amp; Licences summary: per-currency value totals, per-Pa-Tha-Ka-Type
+    /// distinct licence counts, and the USD-normalised grand total. Honours the report filters.
+    /// </summary>
+    public static async Task<ImportLicenceTotalValueLicencesSummary> GetTotalValueLicencesSummaryAsync(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var source = RowsUnordered(db, request);
+
+        // Section 1: Total Value per Currency (Sum of item amounts).
+        var byCurrency = await source
+            .GroupBy(row => row.Currency)
+            .Select(g => new TotalValueByCurrencyRow
+            {
+                Currency = g.Key ?? string.Empty,
+                TotalValue = g.Sum(x => x.Amount),
+            })
+            .ToListAsync();
+
+        // Section 2: Total Licences per Pa Tha Ka Type (distinct non-empty licence count).
+        var byPaThaKaType = await source
+            .GroupBy(row => new { row.PaThaKaTypeCode, row.PaThaKaTypeName })
+            .Select(g => new TotalLicencesByPaThaKaTypeRow
+            {
+                PaThaKaType = g.Key.PaThaKaTypeName,
+                NoOfLicences = g.Select(x => x.LicenceNo == string.Empty ? null : x.LicenceNo).Distinct().Count(),
+            })
+            .ToListAsync();
+
+        // Section 3: Total USD Value — convert each (Date, Currency) group's summed value
+        // via the CBM FX service and roll up. Because the FX factor is constant within a
+        // (Date, Currency) group, this equals the legacy per-row USD sum exactly.
+        var dailyGroups = await AggregateInSqlAsync(db, request, ReportAggregateDimension.Daily, includeSakhan: false);
+        var totalUsdValue = decimal.Round(dailyGroups.Sum(g => g.TotalUSDValue ?? 0m), 4);
+
+        return new ImportLicenceTotalValueLicencesSummary
+        {
+            TotalValueByCurrency = byCurrency
+                .OrderBy(r => r.Currency, StringComparer.OrdinalIgnoreCase)
+                .ToList(),
+            TotalLicencesByPaThaKaType = byPaThaKaType
+                .OrderBy(r => r.PaThaKaType, StringComparer.OrdinalIgnoreCase)
+                .ToList(),
+            TotalUsdValue = totalUsdValue,
+        };
+    }
+
     /// <summary>
     /// Groups the detail rows in SQL (GROUP BY) so only the grouped rows are returned, instead of
     /// materializing the entire un-paged detail set in memory and grouping in C#. Counts and sums
@@ -788,6 +1023,20 @@ public static class sp_ImportLicenceDetailReport_Fast
         public string? SectionName { get; init; }
         public string? Currency { get; init; }
         public int NoOfLicences { get; init; }
+        public decimal TotalValue { get; init; }
+    }
+
+    /// <summary>Intermediate shape returned by the licence-level (licence + currency) SQL GROUP BY.</summary>
+    private sealed class LicenceAggregateRow
+    {
+        public string? SectionName { get; init; }
+        public string? LicenceNo { get; init; }
+        public DateTime? LicenceDate { get; init; }
+        public string? CompanyRegistrationNo { get; init; }
+        public string? CompanyName { get; init; }
+        public string? MethodName { get; init; }
+        public string? SellerCountry { get; init; }
+        public string? Currency { get; init; }
         public decimal TotalValue { get; init; }
     }
 
