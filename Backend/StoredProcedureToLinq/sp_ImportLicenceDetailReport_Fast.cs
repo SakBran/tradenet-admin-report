@@ -357,7 +357,9 @@ public static class sp_ImportLicenceDetailReport_Fast
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
-        var source = RowsUnordered(db, request);
+        var source = request.Type == "Oversea"
+            ? OverseaViewRows(db, request)
+            : RowsUnordered(db, request);
         if (!string.IsNullOrEmpty(currency))
         {
             source = source.Where(row => row.Currency == currency);
@@ -431,7 +433,11 @@ public static class sp_ImportLicenceDetailReport_Fast
         sp_ImportLicenceDetailReportRequest request,
         string? currency)
     {
-        var source = RowsUnordered(db, request);
+        // Licence-level drill list is Oversea-only; read the pre-aggregated view so it
+        // doesn't fan out over the 6.4M-row item table (which timed out).
+        var source = request.Type == "Oversea"
+            ? OverseaViewRows(db, request)
+            : RowsUnordered(db, request);
         if (!string.IsNullOrEmpty(currency))
         {
             source = source.Where(row => row.Currency == currency);
@@ -484,7 +490,11 @@ public static class sp_ImportLicenceDetailReport_Fast
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
-        var source = RowsUnordered(db, request);
+        // Oversea: read the pre-aggregated view (no 6.4M-row item join). Border falls
+        // back to the full detail rows.
+        var source = request.Type == "Oversea"
+            ? OverseaViewRows(db, request)
+            : RowsUnordered(db, request);
 
         // Section 1: Total Value per Currency (Sum of item amounts).
         var byCurrency = await source
@@ -537,7 +547,12 @@ public static class sp_ImportLicenceDetailReport_Fast
         ReportAggregateDimension dimension,
         bool includeSakhan)
     {
-        var source = RowsUnordered(db, request);
+        // Oversea summaries (except HS Code) group over the pre-aggregated indexed view
+        // — joining the 6.4M-row item table here made them time out. HS Code and Border
+        // still need the full detail rows.
+        var source = UseOverseaViewSource(request, dimension)
+            ? OverseaViewRows(db, request)
+            : RowsUnordered(db, request);
 
         List<AggregateGroupRow> groups = dimension switch
         {
@@ -695,6 +710,68 @@ public static class sp_ImportLicenceDetailReport_Fast
                 .Where(_ => false)
         };
     }
+
+    /// <summary>
+    /// Lean aggregate source for the Oversea licence reports. Instead of joining the
+    /// 6.4M-row <c>ImportLicenceItem</c> table (which made the GROUP BY / COUNT(DISTINCT)
+    /// time out), it reads the indexed view <c>vw_ImportLicenceItemTotalByCurrency</c>
+    /// (one pre-summed row per licence + currency) and joins only the lookups the
+    /// aggregate/licence-list reports actually display. Filters mirror <see cref="OverseaRows"/>
+    /// exactly, so counts and sums match. Not for the HS Code report (needs item-level HS rows)
+    /// nor the per-item Detail report.
+    /// </summary>
+    private static IQueryable<ImportLicenceDetailFastRow> OverseaViewRows(
+        TradeNetDbContext db,
+        sp_ImportLicenceDetailReportRequest request)
+    {
+        return
+            from licence in db.ImportLicences.AsNoTracking()
+            join paThaKa in db.PaThaKas.AsNoTracking() on licence.PaThaKaId equals paThaKa.Id
+            join paThaKaType in db.PaThaKaTypes.AsNoTracking() on paThaKa.PaThaKaTypeId equals paThaKaType.Id
+            join item in db.VwImportLicenceItemTotalByCurrencies on licence.Id equals item.ImportLicenceId
+            join currency in db.Currencies.AsNoTracking() on item.CurrencyId equals currency.Id
+            join section in db.ExportImportSections.AsNoTracking() on licence.ExportImportSectionId equals section.Id
+            join sellerCountry in db.Countries.AsNoTracking() on licence.SellerCountryId equals sellerCountry.Id
+            join method in db.ExportImportMethods.AsNoTracking() on licence.ExportImportMethodId equals method.Id
+            where licence.ApplyType == New
+                && licence.Status == Approved
+                && licence.ImportLicenceNo != string.Empty
+                && licence.CreatedDate >= request.FromDate
+                && licence.CreatedDate <= request.ToDate
+                && (request.CompanyRegistrationNo == string.Empty || paThaKa.CompanyRegistrationNo == request.CompanyRegistrationNo)
+                && (request.PaThaKaTypeId == 0 || paThaKa.PaThaKaTypeId == request.PaThaKaTypeId)
+                && (request.ExportImportSectionId == 0 || licence.ExportImportSectionId == request.ExportImportSectionId)
+                && (request.ExportImportMethodId == 0 || licence.ExportImportMethodId == request.ExportImportMethodId)
+                && (request.ExportImportIncotermId == 0 || licence.ExportImportIncotermId == request.ExportImportIncotermId)
+                && (request.SellerCountryId == 0 || licence.SellerCountryId == request.SellerCountryId)
+            select new ImportLicenceDetailFastRow
+            {
+                PaThaKaTypeId = paThaKaType.Id,
+                PaThaKaTypeCode = paThaKaType.Code,
+                PaThaKaTypeName = paThaKaType.Description,
+                ExportImportSectionId = licence.ExportImportSectionId,
+                ExportImportMethodId = licence.ExportImportMethodId,
+                ExportImportIncotermId = licence.ExportImportIncotermId,
+                SellerCountryId = licence.SellerCountryId,
+                SectionCode = section.Code,
+                SectionName = section.Name,
+                LicenceNo = licence.ImportLicenceNo,
+                LicenceDate = licence.IssuedDate,
+                CompanyRegistrationNo = paThaKa.CompanyRegistrationNo,
+                CompanyName = paThaKa.CompanyName,
+                SellerCountry = sellerCountry.Name,
+                MethodName = method.Name,
+                Amount = item.TotalAmount ?? 0m,
+                Currency = currency.Code,
+            };
+    }
+
+    /// <summary>
+    /// True when the lean indexed-view source should back the aggregate/licence-list query:
+    /// Oversea import licences for every dimension except HS Code (which needs item-level rows).
+    /// </summary>
+    private static bool UseOverseaViewSource(sp_ImportLicenceDetailReportRequest request, ReportAggregateDimension dimension)
+        => request.Type == "Oversea" && dimension != ReportAggregateDimension.HSCode;
 
     /// <summary>
     /// Total row count matching the same filters as <see cref="RowsUnordered"/>, but joining only the
