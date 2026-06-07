@@ -1,3 +1,10 @@
+-- The dynamic SELECT below uses XML data type methods (FOR XML PATH ... .value(...)), which
+-- require QUOTED_IDENTIFIER ON. Like indexed views, this is captured at create time, so deploy
+-- with this header to avoid a Msg 1934 "SET options ... 'QUOTED_IDENTIFIER' ... XML data type methods".
+SET ANSI_NULLS ON;
+GO
+SET QUOTED_IDENTIFIER ON;
+GO
 CREATE OR ALTER PROCEDURE [dbo].[sp_ImportLicencePendingDetailReport_pagination]
     @Type nvarchar(20) = N'',
     @FromDate datetime = NULL,
@@ -59,7 +66,7 @@ BEGIN
   AND ImportLicence.ExportImportMethodId=(CASE WHEN @ExportImportMethodId=0 then ImportLicence.ExportImportMethodId ELSE @ExportImportMethodId END)
   AND ImportLicence.ExportImportIncotermId=(CASE WHEN @ExportImportIncotermId=0 then ImportLicence.ExportImportIncotermId ELSE @ExportImportIncotermId END)
   AND ImportLicence.SellerCountryId=(CASE WHEN @SellerCountryId=0 then ImportLicence.SellerCountryId ELSE @SellerCountryId END)
-  OPTION (RECOMPILE); '
+  OPTION (RECOMPILE, MAX_GRANT_PERCENT = 20); '
         ELSE N'DECLARE @__total int = NULL; ' END;
 
     DECLARE @sql nvarchar(max) = @cntpart + N'SELECT pg.*,(  
@@ -136,7 +143,10 @@ ImportLicence.ConsignedCountryId AS __k_ConsignedCountryId, ImportLicence.Countr
         ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
     ) pg
     ORDER BY ' + @ob + N'
-    OPTION (RECOMPILE);';
+    -- MAX_GRANT_PERCENT caps the memory grant so this query can no longer hit Msg 8645
+    -- ("timeout waiting for memory resources"): the optimizer over-estimates the grant for the
+    -- 6.4M-row ImportLicenceItem join + IssuedDate sort, but the real (filtered) input is tiny.
+    OPTION (RECOMPILE, MAX_GRANT_PERCENT = 20);';
 
     EXEC sp_executesql @sql, N'@Type nvarchar(20), @FromDate datetime, @ToDate datetime, @PaThaKaTypeId int, @ExportImportSectionId int, @ExportImportMethodId int, @ExportImportIncotermId int, @SellerCountryId int, @CompanyRegistrationNo nvarchar(50), @SakhanId int, @off bigint, @ps bigint', @Type=@Type, @FromDate=@FromDate, @ToDate=@ToDate, @PaThaKaTypeId=@PaThaKaTypeId, @ExportImportSectionId=@ExportImportSectionId, @ExportImportMethodId=@ExportImportMethodId, @ExportImportIncotermId=@ExportImportIncotermId, @SellerCountryId=@SellerCountryId, @CompanyRegistrationNo=@CompanyRegistrationNo, @SakhanId=@SakhanId, @off=@off, @ps=@ps;
 END

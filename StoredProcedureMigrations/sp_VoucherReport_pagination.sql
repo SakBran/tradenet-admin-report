@@ -1,4 +1,14 @@
-﻿CREATE OR ALTER PROCEDURE [dbo].[sp_VoucherReport_pagination]
+﻿-- The OUTER APPLYs below read the materialized (indexed) per-currency views WITH (NOEXPAND).
+-- Indexed-view access requires the procedure to be CREATED with QUOTED_IDENTIFIER ON and
+-- ANSI_NULLS ON (both are captured at create time and reapplied on every execution, overriding
+-- the connection). Deploying without this header bakes in QUOTED_IDENTIFIER OFF and every call
+-- then fails with: Msg 1934 "SELECT failed because the following SET options have incorrect
+-- settings: 'QUOTED_IDENTIFIER' ... for use with indexed views". Keep these batches.
+SET ANSI_NULLS ON;
+GO
+SET QUOTED_IDENTIFIER ON;
+GO
+CREATE OR ALTER PROCEDURE [dbo].[sp_VoucherReport_pagination]
     @FormType nvarchar(50) = N'',
     @FromDate datetime = NULL,
     @ToDate datetime = NULL,
@@ -15,6 +25,10 @@
 AS
 BEGIN
     SET NOCOUNT ON;
+    -- Indexed-view access via WITH (NOEXPAND) also requires ARITHABORT ON at execution time.
+    -- Unlike QUOTED_IDENTIFIER/ANSI_NULLS this is NOT captured at create time, and .NET SqlClient
+    -- connects with ARITHABORT OFF, so set it here for the dynamic SQL EXEC below.
+    SET ARITHABORT ON;
 
     DECLARE @ps bigint = CASE
         WHEN ISNULL(@PageSize,0) <= 0 THEN 9223372036854775807
