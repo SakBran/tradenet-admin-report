@@ -151,7 +151,8 @@ ExportPermit.Id AS __k_Id
 		INNER JOIN PaThaKa ON ExportLicence.PaThaKaId = PaThaKa.Id
 		INNER JOIN ExportImportSection section ON ExportLicence.ExportImportSectionId = section.Id
 		WHERE ApplyType=''New'' AND ExportLicence.Status=''Approved''
-		AND (ExportLicence.CreatedDate>=@FromDate AND ExportLicence.CreatedDate<=@ToDate)
+		AND ((@FromDate IS NULL) OR ExportLicence.CreatedDate>=@FromDate)
+		AND ((@ToDate IS NULL) OR ExportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
 		AND ExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
 		AND (@auto='''' OR ExportLicence.auto=@auto) OPTION (RECOMPILE); '
@@ -181,14 +182,15 @@ State,
 Country,
 PostalCode,
 ExportLicence.auto,
-CAST(NULL AS nvarchar(50)) quota,
+CAST(N'''' AS nvarchar(50)) quota,
 ExportLicence.CommodityType,
 ExportLicence.Id AS __k_Id
         FROM ExportLicence
 		INNER JOIN PaThaKa ON ExportLicence.PaThaKaId = PaThaKa.Id
 		INNER JOIN ExportImportSection section ON ExportLicence.ExportImportSectionId = section.Id
 		WHERE ApplyType=''New'' AND ExportLicence.Status=''Approved''
-		AND (ExportLicence.CreatedDate>=@FromDate AND ExportLicence.CreatedDate<=@ToDate)
+		AND ((@FromDate IS NULL) OR ExportLicence.CreatedDate>=@FromDate)
+		AND ((@ToDate IS NULL) OR ExportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
 		AND ExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
 		AND (@auto='''' OR ExportLicence.auto=@auto)

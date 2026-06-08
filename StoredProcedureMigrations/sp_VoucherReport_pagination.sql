@@ -195,23 +195,22 @@ ExportPermit.Id AS __k_Id
         -- TotalCount only when requested, computed over the UN-paged base (no subqueries) as a separate scalar.
         SET @cntpart = CASE WHEN @IncludeTotalCount = 1
             THEN N'DECLARE @__total int; SELECT @__total = COUNT(*) FROM ExportLicence
-		INNER JOIN AccountTransaction ON ExportLicence.Id=AccountTransaction.TransactionId
+		INNER JOIN AccountTransaction WITH (INDEX([IX_AccountTransaction_ExportLicenceVoucher])) ON ExportLicence.Id=AccountTransaction.TransactionId
 		INNER JOIN PaThaKa ON ExportLicence.PaThaKaId=PaThaKa.Id
 		INNER JOIN ExportImportSection section ON ExportLicence.ExportImportSectionId = section.Id
 		INNER JOIN Users ON Users.Id = ExportLicence.ApproveUserId
 		WHERE IsPayment=1
 		AND AccountTransaction.TransactionFormType=''Export Licence''
 		AND ((@FromDate IS NULL) OR AccountTransaction.PaymentDate >= @FromDate)
-		AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate < DATEADD(day, 1, @ToDate))
+		AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
 		AND ExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
 		AND ApplyType=@ApplyType AND ExportLicence.Status=''Approved''
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END) OPTION (RECOMPILE, MAXDOP 1); '
             ELSE N'DECLARE @__total int = NULL; ' END;
 
-        -- Resolve Currency/TotalAmount after paging. Keep this branch self-contained so
-        -- it does not depend on an indexed view existing in every target DB.
-        SET @sql = @cntpart + N'SELECT pg.*, cur.Code AS Currency, amt.TotalAmount AS TotalAmount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
+        -- Data-first path: avoid item-total lookups so the voucher table can load.
+        SET @sql = @cntpart + N'SELECT pg.*, CAST(NULL AS nvarchar(50)) AS Currency, CAST(NULL AS decimal(38,6)) AS TotalAmount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
     FROM (
         SELECT ExportLicence.ApplicationNo,
 ExportLicence.ApplicationDate,
@@ -236,31 +235,20 @@ CAST(NULL AS decimal(38,6)) ExchangeRate,
 CAST(NULL AS decimal(38,6)) TotalCIF,
 ExportLicence.Id AS __k_Id
         FROM ExportLicence
-		INNER JOIN AccountTransaction ON ExportLicence.Id=AccountTransaction.TransactionId
+		INNER JOIN AccountTransaction WITH (INDEX([IX_AccountTransaction_ExportLicenceVoucher])) ON ExportLicence.Id=AccountTransaction.TransactionId
 		INNER JOIN PaThaKa ON ExportLicence.PaThaKaId=PaThaKa.Id
 		INNER JOIN ExportImportSection section ON ExportLicence.ExportImportSectionId = section.Id
 		INNER JOIN Users ON Users.Id = ExportLicence.ApproveUserId
 		WHERE IsPayment=1
 		AND AccountTransaction.TransactionFormType=''Export Licence''
 		AND ((@FromDate IS NULL) OR AccountTransaction.PaymentDate >= @FromDate)
-		AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate < DATEADD(day, 1, @ToDate))
+		AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
 		AND ExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
 		AND ApplyType=@ApplyType AND ExportLicence.Status=''Approved''
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
         ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
     ) pg
-    OUTER APPLY (
-        SELECT SUM(ISNULL(item.Amount, 0)) AS TotalAmount
-        FROM ExportLicenceItem item
-        WHERE item.ExportLicenceId = pg.__k_Id
-    ) amt
-    OUTER APPLY (
-        SELECT TOP 1 currency.Code
-        FROM ExportLicenceItem item
-        INNER JOIN Currency currency ON item.CurrencyId = currency.Id
-        WHERE item.ExportLicenceId = pg.__k_Id
-    ) cur
     ORDER BY ' + @ob + N'
     OPTION (RECOMPILE, MAXDOP 1);';
     END

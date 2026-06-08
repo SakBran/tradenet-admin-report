@@ -32,7 +32,7 @@ BEGIN
                 INNER JOIN PaThaKa ON ImportPermit.PaThaKaId = PaThaKa.Id
                 INNER JOIN ExportImportSection section ON ImportPermit.ExportImportSectionId = section.Id
             WHERE ApplyType = 'Extension' AND ImportPermit.Status = 'Approved'
-                AND (ImportPermit.CreatedDate >= @FromDate AND ImportPermit.CreatedDate <= @ToDate)
+                AND ((@FromDate IS NULL OR ImportPermit.CreatedDate >= @FromDate) AND (@ToDate IS NULL OR ImportPermit.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate))))
                 AND ImportPermit.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN ImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
         ) d
@@ -53,7 +53,7 @@ BEGIN
                 INNER JOIN PaThaKa ON ExportPermit.PaThaKaId = PaThaKa.Id
                 INNER JOIN ExportImportSection section ON ExportPermit.ExportImportSectionId = section.Id
             WHERE ApplyType = 'Extension' AND ExportPermit.Status = 'Approved'
-                AND (ExportPermit.CreatedDate >= @FromDate AND ExportPermit.CreatedDate <= @ToDate)
+                AND ((@FromDate IS NULL OR ExportPermit.CreatedDate >= @FromDate) AND (@ToDate IS NULL OR ExportPermit.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate))))
                 AND ExportPermit.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN ExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
         ) d
@@ -74,7 +74,7 @@ BEGIN
                 INNER JOIN PaThaKa ON ExportLicence.PaThaKaId = PaThaKa.Id
                 INNER JOIN ExportImportSection section ON ExportLicence.ExportImportSectionId = section.Id
             WHERE ApplyType = 'Extension' AND ExportLicence.Status = 'Approved'
-                AND (ExportLicence.CreatedDate >= @FromDate AND ExportLicence.CreatedDate <= @ToDate)
+                AND ((@FromDate IS NULL OR ExportLicence.CreatedDate >= @FromDate) AND (@ToDate IS NULL OR ExportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate))))
                 AND ExportLicence.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN ExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
         ) d
@@ -96,7 +96,7 @@ BEGIN
                 INNER JOIN ExportImportSection section ON BorderExportLicence.ExportImportSectionId = section.Id
                 INNER JOIN Sakhan sakhan ON BorderExportLicence.SakhanId = sakhan.Id
             WHERE ApplyType = 'Extension' AND BorderExportLicence.Status = 'Approved' AND CardType = 'Pa Tha Ka'
-                AND (BorderExportLicence.CreatedDate >= @FromDate AND BorderExportLicence.CreatedDate <= @ToDate)
+                AND ((@FromDate IS NULL OR BorderExportLicence.CreatedDate >= @FromDate) AND (@ToDate IS NULL OR BorderExportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate))))
                 AND BorderExportLicence.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN BorderExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
                 AND BorderExportLicence.SakhanId = (CASE WHEN @SakhanId = 0 THEN BorderExportLicence.SakhanId ELSE @SakhanId END)
@@ -112,7 +112,7 @@ BEGIN
                 INNER JOIN ExportImportSection section ON BorderExportLicence.ExportImportSectionId = section.Id
                 INNER JOIN Sakhan sakhan ON BorderExportLicence.SakhanId = sakhan.Id
             WHERE ApplyType = 'Extension' AND BorderExportLicence.Status = 'Approved' AND CardType = 'Individual Trading'
-                AND (BorderExportLicence.CreatedDate >= @FromDate AND BorderExportLicence.CreatedDate <= @ToDate)
+                AND ((@FromDate IS NULL OR BorderExportLicence.CreatedDate >= @FromDate) AND (@ToDate IS NULL OR BorderExportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate))))
                 AND BorderExportLicence.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN BorderExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND IndividualTrading.TINNo = (CASE WHEN @CompanyRegistrationNo = '' THEN IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
                 AND BorderExportLicence.SakhanId = (CASE WHEN @SakhanId = 0 THEN BorderExportLicence.SakhanId ELSE @SakhanId END)
@@ -135,7 +135,7 @@ BEGIN
                 INNER JOIN ExportImportSection section ON BorderImportLicence.ExportImportSectionId = section.Id
                 INNER JOIN Sakhan sakhan ON BorderImportLicence.SakhanId = sakhan.Id
             WHERE ApplyType = 'Extension' AND BorderImportLicence.Status = 'Approved' AND CardType = 'Pa Tha Ka'
-                AND (BorderImportLicence.CreatedDate >= @FromDate AND BorderImportLicence.CreatedDate <= @ToDate)
+                AND ((@FromDate IS NULL OR BorderImportLicence.CreatedDate >= @FromDate) AND (@ToDate IS NULL OR BorderImportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate))))
                 AND BorderImportLicence.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
                 AND BorderImportLicence.SakhanId = (CASE WHEN @SakhanId = 0 THEN BorderImportLicence.SakhanId ELSE @SakhanId END)
@@ -151,7 +151,7 @@ BEGIN
                 INNER JOIN ExportImportSection section ON BorderImportLicence.ExportImportSectionId = section.Id
                 INNER JOIN Sakhan sakhan ON BorderImportLicence.SakhanId = sakhan.Id
             WHERE ApplyType = 'Extension' AND BorderImportLicence.Status = 'Approved' AND CardType = 'Individual Trading'
-                AND (BorderImportLicence.CreatedDate >= @FromDate AND BorderImportLicence.CreatedDate <= @ToDate)
+                AND ((@FromDate IS NULL OR BorderImportLicence.CreatedDate >= @FromDate) AND (@ToDate IS NULL OR BorderImportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate))))
                 AND BorderImportLicence.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND IndividualTrading.TINNo = (CASE WHEN @CompanyRegistrationNo = '' THEN IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
                 AND BorderImportLicence.SakhanId = (CASE WHEN @SakhanId = 0 THEN BorderImportLicence.SakhanId ELSE @SakhanId END)
@@ -174,7 +174,7 @@ BEGIN
                 INNER JOIN ExportImportSection section ON BorderExportPermit.ExportImportSectionId = section.Id
                 INNER JOIN Sakhan sakhan ON BorderExportPermit.SakhanId = sakhan.Id
             WHERE ApplyType = 'Extension' AND BorderExportPermit.Status = 'Approved'
-                AND (BorderExportPermit.CreatedDate >= @FromDate AND BorderExportPermit.CreatedDate <= @ToDate)
+                AND ((@FromDate IS NULL OR BorderExportPermit.CreatedDate >= @FromDate) AND (@ToDate IS NULL OR BorderExportPermit.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate))))
                 AND BorderExportPermit.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN BorderExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
                 AND BorderExportPermit.SakhanId = (CASE WHEN @SakhanId = 0 THEN BorderExportPermit.SakhanId ELSE @SakhanId END)
@@ -197,7 +197,7 @@ BEGIN
                 INNER JOIN ExportImportSection section ON BorderImportPermit.ExportImportSectionId = section.Id
                 INNER JOIN Sakhan sakhan ON BorderImportPermit.SakhanId = sakhan.Id
             WHERE ApplyType = 'Extension' AND BorderImportPermit.Status = 'Approved'
-                AND (BorderImportPermit.CreatedDate >= @FromDate AND BorderImportPermit.CreatedDate <= @ToDate)
+                AND ((@FromDate IS NULL OR BorderImportPermit.CreatedDate >= @FromDate) AND (@ToDate IS NULL OR BorderImportPermit.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate))))
                 AND BorderImportPermit.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN BorderImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
                 AND BorderImportPermit.SakhanId = (CASE WHEN @SakhanId = 0 THEN BorderImportPermit.SakhanId ELSE @SakhanId END)
@@ -219,7 +219,7 @@ BEGIN
                 INNER JOIN PaThaKa ON ImportLicence.PaThaKaId = PaThaKa.Id
                 INNER JOIN ExportImportSection section ON ImportLicence.ExportImportSectionId = section.Id
             WHERE ApplyType = 'Extension' AND ImportLicence.Status = 'Approved'
-                AND (ImportLicence.CreatedDate >= @FromDate AND ImportLicence.CreatedDate <= @ToDate)
+                AND ((@FromDate IS NULL OR ImportLicence.CreatedDate >= @FromDate) AND (@ToDate IS NULL OR ImportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate))))
                 AND ImportLicence.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN ImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
         ) d
