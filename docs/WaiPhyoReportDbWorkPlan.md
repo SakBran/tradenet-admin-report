@@ -1,6 +1,6 @@
 # Wai Phyo Report DB Work Plan
 
-Updated: 2026-06-07
+Updated: 2026-06-09
 
 ## Scope After Meeting
 
@@ -24,13 +24,13 @@ Target:
 
 ## Current Summary Dashboard
 
-Last updated: 2026-06-07
+Last updated: 2026-06-09
 
 ### Next Target
 
-Next target: Priority 2 cleanup - Export Licence Voucher wide-range retest after DB rollback clears.
+Next target: frontend retest for Export Licence New Report quota column.
 
-Reason: Priority 1 is finished, and Export Licence Total Value & Licences now passes DB/API verification. Export Licence Voucher now has a targeted payment index and safer date/form filters, but the broad retest is blocked by a long-running SQL Server rollback session.
+Reason: `dbo.sp_NewReport_pagination` now returns blank quota instead of `NULL` for Export Licence rows, because `ExportLicence` has no quota column in the DB.
 
 Completed Priority 1 API/controller retests:
 
@@ -52,8 +52,8 @@ Still pending from Priority 1: none.
 | Border Import Permit Actual Amendment Report | `dbo.sp_ActualAmendReport_pagination` | DB + API smoke passed, valid no-data | 76 ms DB | Procedure works; DB has no approved actual-amend rows for tested range. |
 | Border Import Permit New Report | `dbo.sp_NewReport_pagination` | DB + API smoke passed | 85 ms DB | Senior SQL verified after pull; returns New/Approved rows. |
 | Border Export Permit New Report | `dbo.sp_NewReport_pagination` | API/controller retest passed | 1,060 ms API | DB returns rows and controller returns `totalCount=42`, `pageCount=20`. |
-| Export Licence Voucher Report | `dbo.sp_VoucherReport_pagination` | DB fixed for one-day target; broad retest blocked by DB rollback | 247 ms exact count / 127 ms fast page; wide retest blocked after 60 sec | Replaced slow broad path with direct `ExportLicenceItem` aggregation after paging; added `TransactionFormType='Export Licence'`, inclusive ToDate handling, and targeted payment index script. |
-| Export Licence New Report | `dbo.sp_NewReport_pagination` | DB fixed for one-day target | 159 ms DB | One-day exact-count path returns data. Wide exact-count range is still risky. |
+| Export Licence Voucher Report | `dbo.sp_VoucherReport_pagination` | DB data-show passed | 1,856 ms fast page | Data-first branch returns rows for date-only frontend filters; Currency/TotalAmount are temporarily blank for this branch to avoid item-total lookup timeout. |
+| Export Licence New Report | `dbo.sp_NewReport_pagination` | DB data-show passed | 10,246 ms fast page | Date-only frontend filters now include the full selected day and return rows. |
 | Border Import Licence Amendment Report | `dbo.sp_AmendReport_pagination` | API/controller retest passed | 1,618 ms API | Fixed wrong Sakhan filter comparing section id to Sakhan id; controller returns `totalCount=4`, `pageCount=4`. |
 | Border Import Licence Voucher Report | `dbo.sp_VoucherReport_pagination` | API/controller retest passed | 4,394 ms API / 3,114 ms DB | Empty ApplyType now means all; ToDate includes whole day; exact count moved outside dynamic page query; added `TransactionFormType` filter and existing index hint. |
 | Border Import Licence New Report | `dbo.sp_NewReport_pagination` | API/controller retest passed | 1,345 ms API | ToDate includes whole day; empty Auto means all; controller returns `totalCount=824`, `pageCount=20`. |
@@ -64,10 +64,11 @@ Still pending from Priority 1: none.
 
 | Report | Current status | Why it is still pending | Next action |
 |---|---|---|---|
-| Export Licence Voucher Report | One-day fixed, wide retest blocked | SQL Server session 64 is in `KILLED/ROLLBACK` and blocking schema stability locks; timings are not trustworthy until it clears | Retest wide fast-page and exact-count after rollback clears. |
-| Export Licence New Report | One-day fixed, wide exact-count still risky | Three-year exact-count test timed out after 120 seconds | Use one-day target first; only optimize wide exact count if business needs it. |
-| Export Licence Actual Amendment Report | No-data still needs source-row verification | Could be valid no-data or filter mismatch | Check source DB rows before changing SQL. |
-| Border Import Permit Amendment Report | No-data still needs source-row verification | Could be valid no-data or filter mismatch | Check source DB rows before changing SQL. |
+| Export Licence Voucher Report | Data shows; item totals intentionally skipped for now | Currency/TotalAmount are blank in data-first mode | Revisit only after all tables show data. |
+| Export Licence New Report | Data shows | Performance can still be improved later | Revisit only if frontend still fails. |
+| Export Licence Amendment Report | DB data-show passed | If frontend still fails, the DB procedure is not the blocker | Retest API/frontend request payload. |
+| Export Licence Extension Report | DB data-show passed | If frontend still fails, the DB procedure is not the blocker | Retest API/frontend request payload. |
+| Export Licence New Report quota | DB output fixed | Real quota source does not exist on `ExportLicence`; old procedure also did not select it | Retest frontend; quota should render blank instead of `N/A`. |
 
 ### Remaining Wai Phyo Work
 
@@ -83,20 +84,20 @@ Priority 1 - done:
 | Border Export Permit New Report (New Report) | API/controller retest passed | `totalCount=42`, `pageCount=20`, 1,060 ms API. |
 | Export Licence By HS Code Report | DB + focused controller retest passed | DB fast page 1,192 ms; DB exact count 948 ms; focused xUnit controller test passed. |
 
-Priority 2 - performance/count cleanup:
+Priority 2 - data-show cleanup:
 
 | Report | Why still left | Next check |
 |---|---|---|
-| Export Licence Voucher Report | One-day exact count is fast; wide retest currently blocked by DB rollback | Retest after session 64 rollback clears. |
-| Export Licence New Report (New Report) | One-day exact count is fast; multi-year exact count timed out | Only optimize wide exact count if business requires it. |
-| Border Import Licence New Report (New Report) | Uses `COUNT(*) OVER()` even when fast-page mode could skip exact count | Make count conditional if frontend/API uses `IncludeTotalCount = false`. |
+| Export Licence Voucher Report | Data shows in DB fast-page mode; Currency/TotalAmount are blank for now | Frontend/API retest. |
+| Export Licence New Report (New Report) | Data shows in DB fast-page mode | Frontend/API retest. |
+| Border Import Licence New Report (New Report) | Data already shows; count optimization intentionally paused | No action unless frontend fails. |
 
 Priority 3 - no-data validation:
 
 | Report | Why still left | Next check |
 |---|---|---|
-| Export Licence Actual Amendment Report | Marked OK/no data, but source rows have not been rechecked after latest pull | Check base DB rows before changing SQL. |
-| Border Import Permit Amendment Report | Marked OK/no data, but source rows have not been rechecked after latest pull | Check base DB rows before changing SQL. |
+| Export Licence Actual Amendment Report | Source rows exist and procedure returns rows | Frontend/API retest if page still shows no data. |
+| Border Import Permit Amendment Report | Source row exists and procedure returns row | Frontend/API retest if page still shows no data. |
 
 ### DB Deployment Status
 
@@ -234,12 +235,143 @@ Pull rule:
 
 ## Active Wai Phyo Task Tracker
 
+## Export Licence New Report Quota Pass - 2026-06-09
+
+Goal:
+
+- Fix `quota` showing `N/A` for every Export Licence New Report row.
+
+Finding:
+
+- `ExportLicence` table does not have a `quota` column.
+- DB schema has `quota` only on `ImportLicence` and `BorderImportLicence`.
+- The old `dbo.sp_NewReport` Export Licence branch selected `ExportLicence.auto` only, not quota.
+- Current frontend config still includes the `quota` column for parity with the RDLC column list.
+
+Fix applied:
+
+- Updated only the Export Licence branch in `StoredProcedureMigrations/sp_NewReport_pagination.sql`.
+- Changed the output from `NULL quota` to blank-string quota.
+- Deployed `dbo.sp_NewReport_pagination` to `TradeNetDB`.
+
+Test result:
+
+| Report | Test date | Rows shown | Time | Quota result |
+|---|---|---:|---:|---|
+| Export Licence New Report | 2023-04-03 | 6 fast-page rows | 267 ms | `quota` returned as blank string, not `NULL`. |
+
+Conclusion:
+
+- The DB cannot provide a real Export Licence quota value because the source column does not exist.
+- The report should no longer render `N/A`; it should render the quota cell blank.
+- If the frontend still shows `N/A`, inspect the API JSON to confirm whether `quota` is arriving as `""` or being transformed back to `null`.
+
+## Extension Data-Show Pass - 2026-06-09
+
+Goal:
+
+- Focus on Export Licence Extension Report.
+- Make sure related `dbo.sp_ExtensionReport_pagination` branches still show data.
+
+Problem found:
+
+- The procedure used `CreatedDate <= @ToDate`.
+- Frontend date-only filters send values like `2026-05-25`, which means midnight at the start of the day.
+- Rows later on the selected day were excluded, so the report could show no data even when DB rows existed.
+
+Fix applied:
+
+- Updated `StoredProcedureMigrations/sp_ExtensionReport_pagination.sql`.
+- Updated `StoredProcedureMigrations/sp_ExtensionReportCurrencyTotals.sql`.
+- Date filters now use the full selected day:
+  - `CreatedDate >= @FromDate`
+  - `CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate))`
+- Deployed both procedures to `TradeNetDB`.
+
+Export Licence result:
+
+| Report | Test date | Rows shown | Time | Note |
+|---|---|---:|---:|---|
+| Export Licence Extension Report | 2026-05-25 | 2 | 96 ms | Rows returned with `Currency=USD`, `Amount` populated; currency totals returned `USD`, 2 licences, total value 2100. |
+
+Related extension smoke results:
+
+| FormType | Test date | Rows shown | Time | Note |
+|---|---|---:|---:|---|
+| Import Licence | 2026-02-01 | 1 | 87 ms | Data returns. |
+| Import Permit | 2026-05-25 | 1 | 55 ms | Data returns. |
+| Export Permit | 2026-05-25 | 1 | 53 ms | Data returns. |
+| Border Export Licence | 2026-05-25 | 1 | 258 ms | Data returns. |
+| Border Import Licence | 2026-05-25 | 1 | 308 ms | Data returns. |
+| Border Export Permit | 2026-05-25 | 1 | 50 ms | Data returns. |
+| Border Import Permit | 2026-05-25 | 1 | 76 ms | Data returns. |
+
+Conclusion:
+
+- Export Licence Extension Report is OK at DB level.
+- The shared extension pagination procedure returns data for tested one-day filters.
+- If the UI still fails, check controller payload, API response, or frontend mapping before changing SQL again.
+
+## Amendment Data-Show Pass - 2026-06-08
+
+Goal:
+
+- Focus on Export Licence Amendment Report first.
+- Confirm other `dbo.sp_AmendReport_pagination` branches still return data after the same procedure change.
+
+Fix applied:
+
+- Fixed Border Export Licence amendment Sakhan filter in `StoredProcedureMigrations/sp_AmendReport_pagination.sql`.
+- Wrong condition was comparing `ExportImportSectionId` against `SakhanId`.
+- Correct condition now filters `BorderExportLicence.SakhanId`.
+- Deployed `dbo.sp_AmendReport_pagination` to `TradeNetDB`.
+
+DB smoke results:
+
+| FormType | Test date | Rows shown | Time | Sample fields |
+|---|---|---:|---:|---|
+| Export Licence | 2026-05-22 | 2 | 58 ms | `HSCode`, `Currency`, and `Amount` populated. |
+| Import Licence | 2026-05-11 | 1 | 90 ms | `HSCode`, `Currency`, and `Amount` populated. |
+| Export Permit | 2026-05-22 | 1 | 59 ms | `HSCode`, `Currency`, and `Amount` populated. |
+| Import Permit | 2026-05-22 | 1 | 35 ms | `HSCode`, `Currency`, and `Amount` populated. |
+| Border Export Licence | 2026-05-22 | 2 | 132 ms | Fixed by Sakhan predicate correction; data now returns. |
+| Border Import Licence | 2026-05-22 | 1 | 241 ms | Data returns. |
+| Border Export Permit | 2026-05-22 | 1 | 35 ms | Data returns. |
+| Border Import Permit | 2026-05-22 | 1 | 39 ms | Data returns. |
+
+Conclusion:
+
+- Export Licence Amendment Report is OK at DB level.
+- The amend stored procedure family returns rows in the tested one-day filters.
+- If the UI still fails, check controller payload, API response, or frontend mapping before changing SQL again.
+
+## Data-Show Pass - 2026-06-07
+
+Goal:
+
+- Pause deeper optimization.
+- Confirm leftover Wai Phyo tables can return rows first.
+
+Results:
+
+| Report | DB result | Test date | Time | Note |
+|---|---|---|---:|---|
+| Export Licence New Report | Returned rows | 2023-04-03 | 10,246 ms | Fixed Export Licence branch date filter to include full selected day for date-only frontend values. |
+| Export Licence Voucher Report | Returned rows | 2023-04-03 | 1,856 ms | Data-first path skips Currency/TotalAmount item lookups for now so rows load. |
+| Export Licence Actual Amendment Report | Returned rows | 2026-04-01 | 814 ms | Source rows exist: 5,476 approved actual-amend rows overall; procedure returned 2 rows for 2026-04-01. |
+| Border Import Permit Amendment Report | Returned row | 2026-05-22 | 840 ms | Source row exists: 1 approved amend row overall; procedure returned it. |
+
+Current tradeoff:
+
+- Export Licence Voucher rows now show first.
+- Currency/TotalAmount are temporarily blank for Export Licence Voucher until there is enough time to tune item-total lookup safely.
+
 ### Border Export Permit
 
 | Report | Stored procedure | Owner | Deadline | Sheet status | Current note | Next action |
 |---|---|---|---|---|---|---|
-| Border Export Permit Amendment Report | `dbo.sp_AmendReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
-| Border Export Permit Extension Report | `dbo.sp_ExtensionReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
+| Border Export Permit Amendment Report | `dbo.sp_AmendReport` | Wai Phyo | 5.June.2026 | OK | DB smoke passed through amend procedure | No action unless frontend regression appears |
+| Border Export Permit Extension Report | `dbo.sp_ExtensionReport` | Wai Phyo | 5.June.2026 | OK | DB smoke passed after extension date fix | No action unless frontend regression appears |
 | Border Export Permit Cancellation Report | `dbo.sp_CancelReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
 | Border Export Permit By HS Code Report | `dbo.sp_HSCodeReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
 | Border Export Permit Voucher Report | `dbo.sp_VoucherReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
@@ -250,21 +382,21 @@ Pull rule:
 
 | Report | Stored procedure | Owner | Deadline | Sheet status | Current note | Next action |
 |---|---|---|---|---|---|---|
-| Export Licence Amendment Report | `dbo.sp_AmendReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
-| Export Licence Extension Report | `dbo.sp_ExtensionReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
+| Export Licence Amendment Report | `dbo.sp_AmendReport` | Wai Phyo | 5.June.2026 | OK | DB smoke passed; `HSCode`, `Currency`, and `Amount` return | Retest API/frontend only if UI still fails |
+| Export Licence Extension Report | `dbo.sp_ExtensionReport` | Wai Phyo | 5.June.2026 | OK | DB smoke passed; date-only filters now return rows | Retest API/frontend only if UI still fails |
 | Export Licence Cancellation Report | `dbo.sp_CancelReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
 | Export Licence By HS Code Report | `dbo.sp_HSCodeReport` | Wai Phyo | 10.June.2026 | Fixed | DB and focused controller retest passed | Done for Priority 1 |
 | Export Licence Total Value & Licences Report | `dbo.sp_ExportLicenceDetailReport` | Wai Phyo | 5.June.2026 | Fixed | DB and focused controller retest passed | Done |
 | Export Licence Voucher Report | `dbo.sp_VoucherReport` | Wai Phyo | 10.June.2026 | Fixed for one-day target | DB returns data; one-day exact count is fast | Wide exact count still risky |
 | Export Licence Actual Amendment Report | `dbo.sp_ActualAmendReport` | Wai Phyo | 5.June.2026 | OK | No data | Verify DB has matching rows before changing SQL |
-| Export Licence New Report (New Report) | `dbo.sp_NewReport` | Wai Phyo | 10.June.2026 | Fixed for one-day target | DB returns data; one-day exact count is fast | Wide exact count still risky |
+| Export Licence New Report (New Report) | `dbo.sp_NewReport` | Wai Phyo | 10.June.2026 | Fixed for one-day target | DB returns data; quota now returns blank instead of `N/A` because source table has no quota column | Frontend retest |
 
 ### Border Import Licence
 
 | Report | Stored procedure | Owner | Deadline | Sheet status | Current note | Next action |
 |---|---|---|---|---|---|---|
-| Border Import Licence Amendment Report | `dbo.sp_AmendReport` | Wai Phyo | 10.June.2026 | Fixed in DB | DB returns data after Sakhan filter fix | Needs frontend/API retest |
-| Border Import Licence Extension Report | `dbo.sp_ExtensionReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
+| Border Import Licence Amendment Report | `dbo.sp_AmendReport` | Wai Phyo | 10.June.2026 | Fixed in DB | DB smoke passed through amend procedure | Needs frontend/API retest only if UI still fails |
+| Border Import Licence Extension Report | `dbo.sp_ExtensionReport` | Wai Phyo | 5.June.2026 | OK | DB smoke passed after extension date fix | No action unless frontend regression appears |
 | Border Import Licence Cancellation Report | `dbo.sp_CancelReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
 | Border Import Licence By HS Code Report | `dbo.sp_HSCodeReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
 | Border Import Licence Voucher Report | `dbo.sp_VoucherReport` | Wai Phyo | 10.June.2026 | Fixed in DB | DB returns data with exact count in target | Needs frontend/API retest |
@@ -277,8 +409,8 @@ Senior note: this area was updated and should be tested again after pulling the 
 
 | Report | Stored procedure | Owner | Deadline | Sheet status | Current note | Next action |
 |---|---|---|---|---|---|---|
-| Border Import Permit Amendment Report | `dbo.sp_AmendReport` | Wai Phyo, Bran | 5.June.2026 | OK | No data | Verify DB has matching rows |
-| Border Import Permit Extension Report | `dbo.sp_ExtensionReport` | Wai Phyo, Bran | 10.June.2026 | Fixed in DB/API smoke | DB returns data; endpoint executes | Done |
+| Border Import Permit Amendment Report | `dbo.sp_AmendReport` | Wai Phyo, Bran | 5.June.2026 | OK | DB smoke passed; matching row exists | No SQL action unless frontend fails |
+| Border Import Permit Extension Report | `dbo.sp_ExtensionReport` | Wai Phyo, Bran | 10.June.2026 | Fixed in DB/API smoke | DB smoke passed after extension date fix; endpoint previously executed | Done |
 | Border Import Permit Cancellation Report | `dbo.sp_CancelReport` | Wai Phyo, Bran | 10.June.2026 | Fixed/no data | Procedure and endpoint execute; no approved cancel rows in DB | Done |
 | Border Import Permit By HS Code Report | `dbo.sp_HSCodeReport` | Wai Phyo, Bran | 5.June.2026 | OK | Working | No action unless regression appears |
 | Border Import Permit Voucher Report | `dbo.sp_VoucherReport` | Wai Phyo, Bran | 10.June.2026 | Fixed in DB/API smoke | DB returns voucher data; endpoint executes | Done |

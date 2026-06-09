@@ -72,6 +72,20 @@ public static partial class sp_HSCodeReport
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
+        // The deployed sp_HSCodeReport_pagination trims @HSCode (LTRIM/RTRIM) before its
+        // LIKE, so trim here too -- otherwise the LINQ footer below would match on a
+        // different (padded) token than the grid rows and the Total could disagree.
+        request.HSCode = request.HSCode?.Trim() ?? string.Empty;
+
+        // Grand "Total No of License" footer: distinct licences across the whole filtered
+        // set. A licence can span several HS codes, so this is deliberately NOT a sum of the
+        // per-row NoOfLicences -- it ties out to the HSCode detail record count.
+        var grandLicences = await Query(db, request)
+            .Select(row => row.LicenceNo)
+            .Distinct()
+            .CountAsync();
+        var columnTotals = new Dictionary<string, decimal> { ["noOfLicences"] = grandLicences };
+
         if (UsesAggregateStoredProcedure(request))
         {
             var pageIndex = Math.Max(0, pagingRequest.PageIndex);
@@ -99,7 +113,7 @@ public static partial class sp_HSCodeReport
             {
                 var totalCount = rows.FirstOrDefault()?.TotalCount ?? 0;
 
-                return ApiResult<ReportAggregateResult>.CreatePageFromRows(
+                var aggregateResult = ApiResult<ReportAggregateResult>.CreatePageFromRows(
                     data,
                     totalCount,
                     pageIndex,
@@ -108,9 +122,11 @@ public static partial class sp_HSCodeReport
                     null,
                     pagingRequest.FilterColumn,
                     pagingRequest.FilterQuery);
+                aggregateResult.ColumnTotals = columnTotals;
+                return aggregateResult;
             }
 
-            return ApiResult<ReportAggregateResult>.CreateFastPageFromRows(
+            var fastAggregateResult = ApiResult<ReportAggregateResult>.CreateFastPageFromRows(
                 data,
                 pageIndex,
                 pageSize,
@@ -118,10 +134,12 @@ public static partial class sp_HSCodeReport
                 null,
                 pagingRequest.FilterColumn,
                 pagingRequest.FilterQuery);
+            fastAggregateResult.ColumnTotals = columnTotals;
+            return fastAggregateResult;
         }
 
         var query = AggregateQuery(db, request);
-        return await ApiResult<ReportAggregateResult>.CreateFastPageAsync(
+        var fastResult = await ApiResult<ReportAggregateResult>.CreateFastPageAsync(
             query,
             pagingRequest.PageIndex,
             pagingRequest.PageSize,
@@ -130,6 +148,8 @@ public static partial class sp_HSCodeReport
             pagingRequest.FilterColumn,
             pagingRequest.FilterQuery,
             pagingRequest.IncludeTotalCount);
+        fastResult.ColumnTotals = columnTotals;
+        return fastResult;
     }
 
     private static bool UsesAggregateStoredProcedure(sp_HSCodeReportRequest request)

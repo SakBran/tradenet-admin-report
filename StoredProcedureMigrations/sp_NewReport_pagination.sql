@@ -49,9 +49,9 @@ BEGIN
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END) OPTION (RECOMPILE); '
             ELSE N'DECLARE @__total int = NULL; ' END;
 
-        -- ImportPermit has no auto/quota columns and the original sp_NewReport leaves
-        -- auto/quota/CommodityType unselected for Import Permit; emit them as NULL so the
-        -- result set still matches sp_NewReportRow.
+        -- ImportPermit has no auto/quota columns, so emit those as NULL to keep the result
+        -- set matching sp_NewReportRow. CommodityType IS a real ImportPermit column, so
+        -- source it (the grid's "Commodity Type" column was showing N/A otherwise).
         SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM ImportPermitItem
 		INNER JOIN Currency currency ON ImportPermitItem.CurrencyId = currency.Id
 		WHERE ImportPermitItem.ImportPermitId=pg.__k_Id) Currency,
@@ -77,7 +77,7 @@ Country,
 PostalCode,
 CAST(NULL AS nvarchar(50)) auto,
 CAST(NULL AS nvarchar(50)) quota,
-CAST(NULL AS nvarchar(max)) CommodityType,
+ImportPermit.CommodityType,
 ImportPermit.Id AS __k_Id
         FROM ImportPermit
 		INNER JOIN PaThaKa ON ImportPermit.PaThaKaId = PaThaKa.Id
@@ -151,7 +151,8 @@ ExportPermit.Id AS __k_Id
 		INNER JOIN PaThaKa ON ExportLicence.PaThaKaId = PaThaKa.Id
 		INNER JOIN ExportImportSection section ON ExportLicence.ExportImportSectionId = section.Id
 		WHERE ApplyType=''New'' AND ExportLicence.Status=''Approved''
-		AND (ExportLicence.CreatedDate>=@FromDate AND ExportLicence.CreatedDate<=@ToDate)
+		AND ((@FromDate IS NULL) OR ExportLicence.CreatedDate>=@FromDate)
+		AND ((@ToDate IS NULL) OR ExportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
 		AND ExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
 		AND (@auto='''' OR ExportLicence.auto=@auto) OPTION (RECOMPILE); '
@@ -181,14 +182,15 @@ State,
 Country,
 PostalCode,
 ExportLicence.auto,
-CAST(NULL AS nvarchar(50)) quota,
+CAST(N'''' AS nvarchar(50)) quota,
 ExportLicence.CommodityType,
 ExportLicence.Id AS __k_Id
         FROM ExportLicence
 		INNER JOIN PaThaKa ON ExportLicence.PaThaKaId = PaThaKa.Id
 		INNER JOIN ExportImportSection section ON ExportLicence.ExportImportSectionId = section.Id
 		WHERE ApplyType=''New'' AND ExportLicence.Status=''Approved''
-		AND (ExportLicence.CreatedDate>=@FromDate AND ExportLicence.CreatedDate<=@ToDate)
+		AND ((@FromDate IS NULL) OR ExportLicence.CreatedDate>=@FromDate)
+		AND ((@ToDate IS NULL) OR ExportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
 		AND ExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
 		AND (@auto='''' OR ExportLicence.auto=@auto)

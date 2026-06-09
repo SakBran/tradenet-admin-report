@@ -487,6 +487,7 @@ public static class sp_NewReport
                 PostalCode = paThaKa.PostalCode,
                 Currency = currencyRow.Code,
                 HSCode = hsCodeRow.HSCode,
+                CommodityType = permit.CommodityType,
                 Amount = amountRow.Amount ?? 0
             };
     }
