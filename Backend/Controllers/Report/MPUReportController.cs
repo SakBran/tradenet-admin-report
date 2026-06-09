@@ -52,15 +52,20 @@ namespace Backend.Controllers.Report
 
             var sortColumn = string.IsNullOrWhiteSpace(request.SortColumn) ? null : request.SortColumn;
             var sortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? null : request.SortOrder;
+            var includeTotalCount = request.IncludeTotalCount;
 
             var rows = await sp_MPUReport.ExecuteAsync(
-                _context, procedureRequest!, sortColumn, sortOrder, pageIndex, pageSize, includeTotalCount: true);
+                _context, procedureRequest!, sortColumn, sortOrder, pageIndex, pageSize, includeTotalCount);
 
             var data = rows.Select(row => row.ToResult()).ToList();
 
-            var result = ApiResult<sp_MPUReportResult>.CreatePageFromRows(
-                data, rows.Count > 0 ? (rows[0].TotalCount ?? 0) : 0, pageIndex, pageSize,
-                request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
+            var result = includeTotalCount
+                ? ApiResult<sp_MPUReportResult>.CreatePageFromRows(
+                    data, rows.Count > 0 ? (rows[0].TotalCount ?? 0) : 0, pageIndex, pageSize,
+                    request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery)
+                : ApiResult<sp_MPUReportResult>.CreateFastPageFromRows(
+                    data, pageIndex, pageSize,
+                    request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
 
             return Ok(result);
         }

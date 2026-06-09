@@ -12,6 +12,9 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    SET @FormType = LTRIM(RTRIM(ISNULL(@FormType, N'')));
+    SET @SakhanId = ISNULL(@SakhanId, 0);
+
     DECLARE @ps bigint = CASE
         WHEN ISNULL(@PageSize, 0) <= 0 THEN 9223372036854775807
         WHEN @IncludeTotalCount = 0 THEN @PageSize + 1
@@ -47,9 +50,12 @@ BEGIN
     WHERE AccountTransaction.IsPayment = 1
         AND AccountTitle.FormType = N'Online Fees'
         AND AccountTransaction.VoucherDate >= @FromDate
-        AND AccountTransaction.VoucherDate <= @ToDate;
+        AND AccountTransaction.VoucherDate <= @ToDate
+        AND (@FormType = N'' OR AccountTransaction.TransactionFormType = @FormType)
+    OPTION (RECOMPILE);
 
     CREATE INDEX IX_OnlineFeeRows_TransactionId ON #OnlineFeeRows (TransactionId);
+    CREATE INDEX IX_OnlineFeeRows_Order ON #OnlineFeeRows (VoucherDate, FormType, TransactionId);
 
     DECLARE @sql nvarchar(max) = N'
     SELECT pg.*
