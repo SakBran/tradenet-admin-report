@@ -12,6 +12,9 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    SET @FormType = LTRIM(RTRIM(ISNULL(@FormType, N'')));
+    SET @SakhanId = ISNULL(@SakhanId, 0);
+
     CREATE TABLE #payments
     (
         Id nvarchar(36) NOT NULL,
@@ -54,10 +57,12 @@ BEGIN
         ON AccountTransactionDetail.AccountTitleId = AccountTitle.Id
     WHERE AccountTransaction.IsPayment = 1
         AND AccountTransaction.VoucherDate >= @FromDate
-        AND AccountTransaction.VoucherDate <= @ToDate;
+        AND AccountTransaction.VoucherDate <= @ToDate
+        AND (@FormType = N'' OR AccountTransaction.TransactionFormType = @FormType)
+    OPTION (RECOMPILE);
 
     CREATE INDEX IX_payments_TransactionId ON #payments(TransactionId);
-    CREATE INDEX IX_payments_Order ON #payments(PaymentDate, SortOrder, Id);
+    CREATE INDEX IX_payments_Order ON #payments(PaymentDate, SortOrder, Id) INCLUDE (TransactionId);
 
     CREATE TABLE #rows
     (
@@ -315,7 +320,8 @@ BEGIN
     INNER JOIN dbo.Sakhan ON BorderImportPermit.SakhanId = Sakhan.Id
     INNER JOIN dbo.PaThaKa ON BorderImportPermit.PaThaKaId = PaThaKa.Id
     WHERE (@SakhanId = 0 OR Sakhan.Id = @SakhanId)
-        AND (@FormType = N'' OR @FormType = N'Border Import Permit');
+        AND (@FormType = N'' OR @FormType = N'Border Import Permit')
+    OPTION (RECOMPILE);
 
     CREATE INDEX IX_rows_Order ON #rows(PaymentDate, SortOrder, Id);
 

@@ -65,6 +65,31 @@ const voucherPaymentTypeOptions: ReportFilterOption[] = [
   { label: 'Citizen Pay', value: 'Citizen Pay' },
 ];
 
+const certificateTypeOptions: ReportFilterOption[] = [
+  { label: '--- All ---', value: '' },
+  { label: 'Member', value: 'Member' },
+  { label: 'Pa Tha Ka', value: 'Pa Tha Ka' },
+  { label: 'Import Licence', value: 'Import Licence' },
+  { label: 'Import Permit', value: 'Import Permit' },
+  { label: 'Export Licence', value: 'Export Licence' },
+  { label: 'Export Permit', value: 'Export Permit' },
+  { label: 'Border Import Licence', value: 'Border Import Licence' },
+  { label: 'Border Import Permit', value: 'Border Import Permit' },
+  { label: 'Border Export Licence', value: 'Border Export Licence' },
+  { label: 'Border Export Permit', value: 'Border Export Permit' },
+  { label: 'Business Service Agency', value: 'Business Service Agency' },
+  { label: 'Duty Free Shop', value: 'Duty Free Shop' },
+  { label: 'Re-Export', value: 'Re-Export' },
+  { label: 'Sale Center', value: 'Sale Center' },
+  { label: 'Show Room', value: 'Show Room' },
+  { label: 'EV Show Room', value: 'EV Show Room' },
+  { label: 'EV Cycle Show Room', value: 'EV Cycle Show Room' },
+  { label: 'Whole Sale', value: 'Whole Sale' },
+  { label: 'Retail', value: 'Retail' },
+  { label: 'Whole Sale and Retail', value: 'Whole Sale and Retail' },
+  { label: 'Alcoholic Beverages Importation', value: 'Wine Importation' },
+];
+
 const importLicenceDateRangeFilter: ReportFilterConfig = {
   name: 'dateRange',
   label: 'From Date / To Date',
@@ -352,6 +377,14 @@ const importLicenceRangeSubtitle =
     return `${label}${fromText} (${fromDate}) To (${toDate})`;
   };
 
+const reportDateRangeSubtitle =
+  (label: string) => (filters: Record<string, unknown>) => {
+    const fromDate = formatLegacyReportDate(filters.FromDate);
+    const toDate = formatLegacyReportDate(filters.ToDate);
+
+    return `${label} (${fromDate}) To (${toDate})`;
+  };
+
 const resolveImportLicenceVoucherColumns = (
   filters: Record<string, unknown>,
   columns: ReportColumnConfig[]
@@ -382,6 +415,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'AccountSummaryReport.xlsx',
     initialSortColumn: 'VoucherDate',
     showRowNumber: true,
+    reportSubtitle: reportDateRangeSubtitle('Account Summary Report'),
     filters: [
       {
         name: 'dateRange',
@@ -6537,6 +6571,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ChequeNoReport.xlsx',
     initialSortColumn: 'ChequeId',
     showRowNumber: false,
+    reportSubtitle: reportDateRangeSubtitle('Cheque No Report'),
     filters: [
       {
         name: 'dateRange',
@@ -12711,6 +12746,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'MPUReport.xlsx',
     initialSortColumn: 'Sakhan',
     showRowNumber: true,
+    reportSubtitle: reportDateRangeSubtitle('MPU Report'),
     filters: [
       {
         name: 'dateRange',
@@ -12823,7 +12859,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'MPU',
         dataIndex: 'mpuAmount',
-        title: 'MPU Amount',
+        title: 'MPU',
         dataType: 'money',
       },
       {
@@ -12847,6 +12883,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'MPUReportV3.xlsx',
     initialSortColumn: 'Sakhan',
     showRowNumber: true,
+    reportSubtitle: reportDateRangeSubtitle('MPU Report'),
     filters: [
       {
         name: 'dateRange',
@@ -12959,7 +12996,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'MPU',
         dataIndex: 'mpuAmount',
-        title: 'MPU Amount',
+        title: 'MPU',
         dataType: 'money',
       },
       {
@@ -12983,6 +13020,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'OnlineFeesReport.xlsx',
     initialSortColumn: 'SakhanId',
     showRowNumber: true,
+    reportSubtitle: reportDateRangeSubtitle('Online Fees Report'),
     filters: [
       {
         name: 'dateRange',
@@ -12996,15 +13034,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
+        label: 'Certificate Type',
+        type: 'select',
         defaultValue: '',
+        options: certificateTypeOptions,
       },
       {
         name: 'SakhanId',
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     columns: [
