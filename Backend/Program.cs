@@ -14,7 +14,8 @@ using Microsoft.OpenApi.Models;
 using System;
 using System.Text;
 
-internal class Program
+// Public so Backend.Tests can boot the app via WebApplicationFactory<Program> (system tests).
+public class Program
 {
     private static void Main(string[] args)
     {
