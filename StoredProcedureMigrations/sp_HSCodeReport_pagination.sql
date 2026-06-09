@@ -6,7 +6,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_HSCodeReport_pagination]
 	@HSCode nvarchar(50),
 	@SakhanId int,
 	@PageIndex int = 0,
-	@PageSize int = 10
+	@PageSize int = 10,
+	@IncludeTotalCount bit = 1
 AS
 BEGIN
 	SET NOCOUNT ON;
@@ -19,6 +20,35 @@ BEGIN
 
 	IF(@FormType='Export Licence')
 	BEGIN
+		IF(@IncludeTotalCount=0)
+		BEGIN
+			SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+			result.NoOfLicences,result.TotalValue,CAST(NULL AS int) TotalCount
+			FROM
+			(
+			SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
+			COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
+			FROM
+			(SELECT HSCodeId,HSCode.Code HSCode,HSCode.Description HSDescription,ExportLicenceItem.Amount,currency.Code Currency,
+			ExportLicence.ExportLicenceNo LicenceNo,CompanyRegistrationNo,CompanyName
+			FROM ExportLicence
+			INNER JOIN ExportLicenceItem ON ExportLicence.Id = ExportLicenceItem.ExportLicenceId
+			INNER JOIN PaThaKa ON ExportLicence.PaThaKaId = PaThaKa.Id
+			INNER JOIN HSCode ON ExportLicenceItem.HSCodeId = HSCode.Id
+			INNER JOIN Currency currency ON ExportLicenceItem.CurrencyId = currency.Id
+			WHERE ExportLicence.ApplyType='New' AND ExportLicence.Status='Approved'
+			AND (ExportLicence.LicenceDate>=@FromDate AND ExportLicence.LicenceDate<=@ToDate)
+			AND (@HSCode='' OR (@FilterType='Start' AND HSCode.Code LIKE @HSCode+'%') OR (@FilterType<>'Start' AND HSCode.Code LIKE '%'+@HSCode)))tmp
+			GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
+			)result
+			ORDER BY result.HSCode,result.CompanyName,result.Currency
+			OFFSET @PageIndex * @PageSize ROWS
+			FETCH NEXT @PageSize ROWS ONLY
+			OPTION (RECOMPILE, MAXDOP 1);
+
+			RETURN;
+		END
+
 		IF(@HSCode='')
 		BEGIN
 			SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,

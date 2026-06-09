@@ -1,3 +1,8 @@
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
 CREATE OR ALTER PROCEDURE [dbo].[sp_ExportLicenceDetailReport_Pagination]
     @Type                   nvarchar(20),       -- 'Oversea', 'Border'
     @FromDate               datetime,
@@ -62,7 +67,8 @@ BEGIN
                 INNER JOIN Countries countryofOrigin ON countryofOrigin.Id = ExportLicence.CountryofOriginId
                 INNER JOIN ExportImportIncoterm incoterm ON incoterm.Id = ExportLicence.ExportImportIncotermId
                 WHERE ApplyType=''New'' AND ExportLicence.Status=''Approved''
-                  AND (ExportLicence.CreatedDate>=@FromDate AND ExportLicence.CreatedDate<=@ToDate)
+                  AND ((@FromDate IS NULL) OR ExportLicence.CreatedDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR ExportLicence.CreatedDate < DATEADD(day, 1, @ToDate))
                   AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
                   AND paThaKaType.Id=(CASE WHEN @PaThaKaTypeId=0 then paThaKaType.Id ELSE @PaThaKaTypeId END)
                   AND ExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
@@ -115,7 +121,8 @@ BEGIN
                 INNER JOIN Countries countryofOrigin ON countryofOrigin.Id = ExportLicence.CountryofOriginId
                 INNER JOIN ExportImportIncoterm incoterm ON incoterm.Id = ExportLicence.ExportImportIncotermId
                 WHERE ApplyType=''New'' AND ExportLicence.Status=''Approved''
-                  AND (ExportLicence.CreatedDate>=@FromDate AND ExportLicence.CreatedDate<=@ToDate)
+                  AND ((@FromDate IS NULL) OR ExportLicence.CreatedDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR ExportLicence.CreatedDate < DATEADD(day, 1, @ToDate))
                   AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
                   AND paThaKaType.Id=(CASE WHEN @PaThaKaTypeId=0 then paThaKaType.Id ELSE @PaThaKaTypeId END)
                   AND ExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
@@ -153,7 +160,8 @@ BEGIN
                     INNER JOIN Sakhan sakhan ON sakhan.Id = BorderExportLicence.SakhanId
                     WHERE ApplyType=''New'' AND BorderExportLicence.Status=''Approved''
                       AND BorderExportLicence.CardType=''Pa Tha Ka''
-                      AND (BorderExportLicence.CreatedDate>=@FromDate AND BorderExportLicence.CreatedDate<=@ToDate)
+                      AND ((@FromDate IS NULL) OR BorderExportLicence.CreatedDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR BorderExportLicence.CreatedDate < DATEADD(day, 1, @ToDate))
                       AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
                       AND paThaKaType.Id=(CASE WHEN @PaThaKaTypeId=0 then paThaKaType.Id ELSE @PaThaKaTypeId END)
                       AND BorderExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
@@ -177,7 +185,8 @@ BEGIN
                     INNER JOIN Sakhan sakhan ON sakhan.Id = BorderExportLicence.SakhanId
                     WHERE ApplyType=''New'' AND BorderExportLicence.Status=''Approved''
                       AND BorderExportLicence.CardType=''Individual Trading''
-                      AND (BorderExportLicence.CreatedDate>=@FromDate AND BorderExportLicence.CreatedDate<=@ToDate)
+                      AND ((@FromDate IS NULL) OR BorderExportLicence.CreatedDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR BorderExportLicence.CreatedDate < DATEADD(day, 1, @ToDate))
                       AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
                       AND paThaKaType.Id=(CASE WHEN @PaThaKaTypeId=0 then paThaKaType.Id ELSE @PaThaKaTypeId END)
                       AND BorderExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
@@ -235,7 +244,8 @@ BEGIN
                     INNER JOIN Sakhan sakhan ON sakhan.Id = BorderExportLicence.SakhanId
                     WHERE ApplyType=''New'' AND BorderExportLicence.Status=''Approved''
                       AND BorderExportLicence.CardType=''Pa Tha Ka''
-                      AND (BorderExportLicence.CreatedDate>=@FromDate AND BorderExportLicence.CreatedDate<=@ToDate)
+                      AND ((@FromDate IS NULL) OR BorderExportLicence.CreatedDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR BorderExportLicence.CreatedDate < DATEADD(day, 1, @ToDate))
                       AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
                       AND paThaKaType.Id=(CASE WHEN @PaThaKaTypeId=0 then paThaKaType.Id ELSE @PaThaKaTypeId END)
                       AND BorderExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
@@ -287,7 +297,8 @@ BEGIN
                     INNER JOIN Sakhan sakhan ON sakhan.Id = BorderExportLicence.SakhanId
                     WHERE ApplyType=''New'' AND BorderExportLicence.Status=''Approved''
                       AND BorderExportLicence.CardType=''Individual Trading''
-                      AND (BorderExportLicence.CreatedDate>=@FromDate AND BorderExportLicence.CreatedDate<=@ToDate)
+                      AND ((@FromDate IS NULL) OR BorderExportLicence.CreatedDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR BorderExportLicence.CreatedDate < DATEADD(day, 1, @ToDate))
                       AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
                       AND paThaKaType.Id=(CASE WHEN @PaThaKaTypeId=0 then paThaKaType.Id ELSE @PaThaKaTypeId END)
                       AND BorderExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)

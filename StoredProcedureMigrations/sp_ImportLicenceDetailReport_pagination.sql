@@ -42,7 +42,8 @@ BEGIN
   INNER JOIN ImportLicenceItem ON ImportLicence.Id = ImportLicenceItem.ImportLicenceId
   WHERE ImportLicence.ApplyType=''New''
   AND ImportLicence.Status=''Approved'' AND ImportLicence.ImportLicenceNo <> ''''
-  AND (ImportLicence.CreatedDate>=@FromDate AND ImportLicence.CreatedDate<=@ToDate)
+  AND ((@FromDate IS NULL) OR ImportLicence.CreatedDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR ImportLicence.CreatedDate < DATEADD(day, 1, @ToDate))
   AND (@CompanyRegistrationNo='''' OR PaThaKa.CompanyRegistrationNo=@CompanyRegistrationNo)
   AND (@PaThaKaTypeId=0 OR PaThaKa.PaThaKaTypeId=@PaThaKaTypeId)
   AND (@ExportImportSectionId=0 OR ImportLicence.ExportImportSectionId=@ExportImportSectionId)
@@ -116,7 +117,8 @@ ImportLicence.ConsignedCountryId AS __k_ConsignedCountryId, ImportLicence.Countr
   INNER JOIN ExportImportIncoterm incoterm ON incoterm.Id  = ImportLicence.ExportImportIncotermId  
   WHERE ApplyType=''New'' 
   AND ImportLicence.Status=''Approved'' AND ImportLicence.ImportLicenceNo <> ''''  
-  AND (ImportLicence.CreatedDate>=@FromDate AND ImportLicence.CreatedDate<=@ToDate)
+  AND ((@FromDate IS NULL) OR ImportLicence.CreatedDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR ImportLicence.CreatedDate < DATEADD(day, 1, @ToDate))
   AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
   AND paThaKaType.Id=(CASE WHEN @PaThaKaTypeId=0 then paThaKaType.Id ELSE @PaThaKaTypeId END)
   AND ImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
