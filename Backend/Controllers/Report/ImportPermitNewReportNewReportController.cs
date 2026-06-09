@@ -66,6 +66,13 @@ namespace Backend.Controllers.Report
                     data, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
 
+            if (data.Count > 0)
+            {
+                result.CurrencyTotals = await ImportPermitListingCurrencyTotals.ExecuteAsync(
+                    _context, "New", procedureRequest!.FromDate, procedureRequest.ToDate,
+                    procedureRequest.ExportImportSectionId, procedureRequest.CompanyRegistrationNo, 0);
+            }
+
             return Ok(result);
         }
 

@@ -32,10 +32,12 @@ namespace API.Service.Reports
         public string? SakhanCode { get; init; }
         public string? SakhanName { get; init; }
         public string? SectionName { get; init; }
+        public int? SectionId { get; init; }
         public string? MethodName { get; init; }
 
         /// <summary>Trade counterparty country (buyer for export, seller for import).</summary>
         public string? Country { get; init; }
+        public int? CountryId { get; init; }
         public string? CompanyName { get; init; }
         public string? CompanyRegistrationNo { get; init; }
         public string? HSCode { get; init; }
@@ -115,6 +117,11 @@ namespace API.Service.Reports
                     HSCode = dimension == ReportAggregateDimension.HSCode ? group.Key.Label : null,
                     HSDescription = dimension == ReportAggregateDimension.HSCode ? group.Key.HSDescription : null,
                     Date = dimension == ReportAggregateDimension.Daily ? group.Key.Label : null,
+                    // Carry the group's id (name↔id is 1:1 within a group) so the frontend
+                    // can drill into an id-filtered Detail report. Only the matching
+                    // dimension is set; sources that don't supply the id leave it null.
+                    SectionId = dimension == ReportAggregateDimension.Section ? group.Max(row => row.SectionId) : null,
+                    CountryId = dimension == ReportAggregateDimension.Country ? group.Max(row => row.CountryId) : null,
                     Currency = group.Key.Currency,
                     NoOfLicences = group
                         .Select(row => row.LicenceNo)

@@ -89,8 +89,8 @@ CONVERT(varchar,AccountTransaction.VoucherDate,103) sVoucherDate,
 CAST(AccountTransaction.TotalAmount AS decimal(38,6)) Amount,
 PaymentType,
 ImportPermit.CommodityType,
-CAST(NULL AS decimal(38,6)) ExchangeRate,
-CAST(NULL AS decimal(38,6)) TotalCIF,
+CAST(ImportPermit.ExchangeRate AS decimal(38,6)) ExchangeRate,
+CAST(ImportPermit.TotalCIF AS float) TotalCIF,
 ImportPermit.Id AS __k_Id
         FROM ImportPermit
 		INNER JOIN AccountTransaction ON ImportPermit.Id=AccountTransaction.TransactionId
