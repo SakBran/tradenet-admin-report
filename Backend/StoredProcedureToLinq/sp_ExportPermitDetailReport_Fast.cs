@@ -2,6 +2,7 @@ using API.DBContext;
 using API.Model;
 using API.Service.ExcelExport;
 using API.Service.Reports;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System;
@@ -133,19 +134,19 @@ public static class sp_ExportPermitDetailReport_Fast
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
-        var source = await AggregateSourceRowsAsync(db, request);
+        // Group in SQL (sp_ExportPermitDetailReport_Aggregate) instead of pulling the whole detail
+        // join into memory — the old in-memory path transferred ~12k wide rows over the DB link and
+        // hung (~50s). The grouped rows are equivalent to ReportAggregationService.Aggregate.
+        var groups = await AggregateGroupedRowsAsync(db, request, dimension, includeSakhan);
 
         if (dimension == ReportAggregateDimension.Daily)
         {
-            // Daily reports carry a "Total USD Value" column. Group, fill the FX conversion
-            // (which needs DB access, unlike the in-memory CreatePagedResult), then page.
-            var groups = ReportAggregationService.Aggregate(source, dimension, includeSakhan);
+            // Daily reports carry a "Total USD Value" column; fill the FX conversion (needs DB access).
             await ReportUsdConversionService.FillDailyUsdValuesAsync(db, groups);
-            return ReportAggregationService.CreatePagedResultFromGroups(
-                groups, dimension, includeSakhan, pagingRequest, includeColumnTotals);
         }
 
-        return ReportAggregationService.CreatePagedResult(source, dimension, includeSakhan, pagingRequest, includeColumnTotals);
+        return ReportAggregationService.CreatePagedResultFromGroups(
+            groups, dimension, includeSakhan, pagingRequest, includeColumnTotals);
     }
 
     public static async Task<byte[]> CreateAggregateExcelWorkbookAsync(
@@ -160,9 +161,14 @@ public static class sp_ExportPermitDetailReport_Fast
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
-        var source = await AggregateSourceRowsAsync(db, request);
-        return await ReportAggregationService.CreateExcelWorkbookAsync(
-            source, dimension, includeSakhan, pagingRequest, worksheetName);
+        var groups = await AggregateGroupedRowsAsync(db, request, dimension, includeSakhan);
+        if (dimension == ReportAggregateDimension.Daily)
+        {
+            await ReportUsdConversionService.FillDailyUsdValuesAsync(db, groups);
+        }
+
+        return await ReportAggregationService.CreateExcelWorkbookFromGroupsAsync(
+            groups, dimension, includeSakhan, pagingRequest, worksheetName);
     }
 
     public static async Task<List<ReportAggregateResult>> GetAggregateRowsAsync(
@@ -174,15 +180,66 @@ public static class sp_ExportPermitDetailReport_Fast
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
-        var source = await AggregateSourceRowsAsync(db, request);
-        var groups = ReportAggregationService.Aggregate(source, dimension, includeSakhan);
+        var groups = await AggregateGroupedRowsAsync(db, request, dimension, includeSakhan);
 
         if (dimension == ReportAggregateDimension.Daily)
         {
             await ReportUsdConversionService.FillDailyUsdValuesAsync(db, groups);
         }
 
-        return groups;
+        // SQL returns the groups unordered; apply the report's canonical ordering so the
+        // streamed Excel rows match the on-screen order.
+        return ReportAggregationService.OrderGroups(groups, dimension, includeSakhan);
+    }
+
+    // Dimensions handled by sp_ExportPermitDetailReport_Aggregate (the SQL-side GROUP BY).
+    private static readonly Dictionary<ReportAggregateDimension, string> AggregateProcDimensions = new()
+    {
+        [ReportAggregateDimension.Section] = "Section",
+        [ReportAggregateDimension.Country] = "Country",
+        [ReportAggregateDimension.Company] = "Company",
+        [ReportAggregateDimension.Daily] = "Daily",
+    };
+
+    /// <summary>
+    /// Returns the aggregate groups for the report's dimension, grouped in SQL via
+    /// <c>dbo.sp_ExportPermitDetailReport_Aggregate</c> (equivalent to the in-memory
+    /// <see cref="ReportAggregationService.Aggregate"/> but without materializing the detail join).
+    /// Falls back to the in-memory path for any dimension the proc does not handle.
+    /// </summary>
+    private static async Task<List<ReportAggregateResult>> AggregateGroupedRowsAsync(
+        TradeNetDbContext db,
+        sp_ExportPermitDetailReportRequest request,
+        ReportAggregateDimension dimension,
+        bool includeSakhan)
+    {
+        if (!AggregateProcDimensions.TryGetValue(dimension, out var dimensionArg))
+        {
+            var source = await AggregateSourceRowsAsync(db, request);
+            return ReportAggregationService.Aggregate(source, dimension, includeSakhan);
+        }
+
+        var parameters = new[]
+        {
+            new SqlParameter("@Type", (object?)request.Type ?? "Oversea"),
+            new SqlParameter("@Dimension", dimensionArg),
+            new SqlParameter("@IncludeSakhan", includeSakhan),
+            new SqlParameter("@FromDate", request.FromDate),
+            new SqlParameter("@ToDate", request.ToDate),
+            new SqlParameter("@PaThaKaTypeId", request.PaThaKaTypeId),
+            new SqlParameter("@ExportImportSectionId", request.ExportImportSectionId),
+            new SqlParameter("@BuyerCountryId", request.BuyerCountryId),
+            new SqlParameter("@CompanyRegistrationNo", (object?)request.CompanyRegistrationNo ?? string.Empty),
+            new SqlParameter("@SakhanId", request.SakhanId),
+        };
+
+        const string sql =
+            "EXEC dbo.sp_ExportPermitDetailReport_Aggregate @Type, @Dimension, @IncludeSakhan, @FromDate, " +
+            "@ToDate, @PaThaKaTypeId, @ExportImportSectionId, @BuyerCountryId, @CompanyRegistrationNo, @SakhanId";
+
+        return await db.Database
+            .SqlQueryRaw<ReportAggregateResult>(sql, parameters)
+            .ToListAsync();
     }
 
     private static async Task<List<AggregateSourceRow>> AggregateSourceRowsAsync(

@@ -275,6 +275,19 @@ namespace API.Service.Reports
             return ExcelGenerator.CreateWorkbookAsync(ordered.AsQueryable(), pagingRequest, worksheetName);
         }
 
+        /// <summary>
+        /// Applies the report's canonical ordering to rows that have ALREADY been grouped
+        /// (e.g. grouped in SQL). Same ordering as <see cref="Aggregate"/>.
+        /// </summary>
+        public static List<ReportAggregateResult> OrderGroups(
+            IReadOnlyList<ReportAggregateResult> grouped,
+            ReportAggregateDimension dimension,
+            bool includeSakhan)
+        {
+            ArgumentNullException.ThrowIfNull(grouped);
+            return Order(new List<ReportAggregateResult>(grouped), dimension, includeSakhan);
+        }
+
         private static AggregateKey BuildKey(
             AggregateSourceRow row,
             ReportAggregateDimension dimension,
