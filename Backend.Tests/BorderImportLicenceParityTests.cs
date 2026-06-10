@@ -1,4 +1,5 @@
 using API.Model.TradeNet;
+using API.Service.Reports;
 using Backend.Controllers;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -13,6 +14,7 @@ public sealed class BorderImportLicenceParityTests
     [InlineData("BorderImportLicenceCompanyListReportController")]
     [InlineData("BorderImportLicenceDailyReportNewLicenceReportController")]
     [InlineData("BorderImportLicenceDetailReportController")]
+    [InlineData("BorderImportLicenceTotalValueLicencesReportController")]
     public void Border_import_licence_reports_force_border_type(string controllerName)
     {
         var controllerType = ReportTestHelper.ControllerTypes.Single(type => type.Name == controllerName);
@@ -23,6 +25,20 @@ public sealed class BorderImportLicenceParityTests
             procedureRequest.GetType().GetProperty("Type")?.GetValue(procedureRequest));
 
         Assert.Equal("Border", actualType);
+    }
+
+    [Fact]
+    public void Border_import_licence_total_value_uses_composite_summary_contract()
+    {
+        var controllerType = ReportTestHelper.ControllerTypes.Single(
+            type => type.Name == "BorderImportLicenceTotalValueLicencesReportController");
+        var post = controllerType.GetMethod("Post")
+            ?? throw new InvalidOperationException("Post action is missing.");
+
+        var taskResultType = Assert.Single(post.ReturnType.GetGenericArguments());
+        var actionResultType = Assert.Single(taskResultType.GetGenericArguments());
+
+        Assert.Equal(typeof(ImportLicenceTotalValueLicencesSummary), actionResultType);
     }
 
     [Theory]

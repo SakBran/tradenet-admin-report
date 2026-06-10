@@ -399,8 +399,8 @@ Extra in new (0): _None_
 
 Title: Border Import Licence Total Value & Licences Report
 Old source: `BorderImportLicenceByTotalValueLicenceReport.rdlc`
-Old columns (3): `Sr.No.`, `Total Value`, `Currency`
-New columns (3): `No`, `Total Value`, `Currency`
+Old columns (7): `Sr.No.`, `Total Value`, `Currency`, `Sr.No.`, `Total Licences`, `Pa Tha Ka Type`, `Totol USD Value`
+New columns (7): `Sr.No.`, `Total Value`, `Currency`, `Sr.No.`, `Total Licences`, `Pa Tha Ka Type`, `Total USD Value`
 Need in new (0): _None_
 Extra in new (0): _None_
 

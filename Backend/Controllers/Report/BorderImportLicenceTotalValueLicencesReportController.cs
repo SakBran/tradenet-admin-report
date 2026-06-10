@@ -33,15 +33,15 @@ namespace Backend.Controllers.Report
         }
 
         [HttpPost]
-        public async Task<ActionResult<ApiResult<ReportAggregateResult>>> Post([FromBody] BorderImportLicenceTotalValueLicencesReportRequest? request)
+        public async Task<ActionResult<ImportLicenceTotalValueLicencesSummary>> Post([FromBody] BorderImportLicenceTotalValueLicencesReportRequest? request)
         {
             if (!TryCreateReportRequest(request, out var procedureRequest, out var errorResult))
             {
                 return errorResult!;
             }
 
-            var result = await sp_ImportLicenceDetailReport_Fast.CreateAggregateResultAsync(
-                _context, procedureRequest!, request!, ReportAggregateDimension.TotalValue, includeSakhan: false);
+            var result = await sp_ImportLicenceDetailReport_Fast.GetTotalValueLicencesSummaryAsync(
+                _context, procedureRequest!);
 
             return Ok(result);
         }
