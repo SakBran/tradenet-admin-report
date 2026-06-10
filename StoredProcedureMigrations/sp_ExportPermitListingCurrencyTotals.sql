@@ -32,7 +32,7 @@ BEGIN
 
     IF @FormType = N'Border Export Permit'
     BEGIN
-        IF @ApplyType = N'Amend' OR @ApplyType = N'Actual Amend'
+        IF @ApplyType = N'Amend' OR @ApplyType = N'ActualAmend'
         BEGIN
             SELECT ISNULL(d.Currency, N'') AS Currency, COUNT(*) AS NoOfLicences, ISNULL(SUM(d.Amount), 0) AS TotalValue
             FROM (
@@ -107,7 +107,7 @@ BEGIN
     END
     ELSE
     BEGIN
-        IF @ApplyType = N'Amend' OR @ApplyType = N'Actual Amend'
+        IF @ApplyType = N'Amend' OR @ApplyType = N'ActualAmend'
         BEGIN
             SELECT ISNULL(d.Currency, N'') AS Currency, COUNT(*) AS NoOfLicences, ISNULL(SUM(d.Amount), 0) AS TotalValue
             FROM (

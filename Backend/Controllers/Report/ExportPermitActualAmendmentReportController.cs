@@ -69,7 +69,7 @@ namespace Backend.Controllers.Report
             if (data.Count > 0)
             {
                 result.CurrencyTotals = await ExportPermitListingCurrencyTotals.ExecuteAsync(
-                    _context, procedureRequest!.FormType, "Actual Amend", procedureRequest.FromDate, procedureRequest.ToDate,
+                    _context, procedureRequest!.FormType, "ActualAmend", procedureRequest.FromDate, procedureRequest.ToDate,
                     procedureRequest.ExportImportSectionId, procedureRequest.CompanyRegistrationNo,
                     procedureRequest.AmendRemarkId, procedureRequest.SakhanId);
             }
