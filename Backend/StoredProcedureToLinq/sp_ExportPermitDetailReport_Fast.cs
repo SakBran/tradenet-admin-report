@@ -126,7 +126,8 @@ public static class sp_ExportPermitDetailReport_Fast
         sp_ExportPermitDetailReportRequest request,
         ReportQueryRequest pagingRequest,
         ReportAggregateDimension dimension,
-        bool includeSakhan)
+        bool includeSakhan,
+        bool includeColumnTotals = false)
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
@@ -141,10 +142,10 @@ public static class sp_ExportPermitDetailReport_Fast
             var groups = ReportAggregationService.Aggregate(source, dimension, includeSakhan);
             await ReportUsdConversionService.FillDailyUsdValuesAsync(db, groups);
             return ReportAggregationService.CreatePagedResultFromGroups(
-                groups, dimension, includeSakhan, pagingRequest);
+                groups, dimension, includeSakhan, pagingRequest, includeColumnTotals);
         }
 
-        return ReportAggregationService.CreatePagedResult(source, dimension, includeSakhan, pagingRequest);
+        return ReportAggregationService.CreatePagedResult(source, dimension, includeSakhan, pagingRequest, includeColumnTotals);
     }
 
     public static async Task<byte[]> CreateAggregateExcelWorkbookAsync(
@@ -196,8 +197,10 @@ public static class sp_ExportPermitDetailReport_Fast
                 SakhanCode = row.SakhanCode,
                 SakhanName = row.SakhanName,
                 SectionName = row.SectionName,
+                SectionId = row.ExportImportSectionId,
                 MethodName = null,
                 Country = row.BuyerCountry,
+                CountryId = row.BuyerCountryId,
                 CompanyName = row.CompanyName,
                 CompanyRegistrationNo = row.CompanyRegistrationNo,
                 HSCode = row.HSCode,
