@@ -362,6 +362,71 @@ const importLicenceVoucherHeaders: Record<string, [string, string]> = {
   ],
 };
 
+const borderImportLicenceSectionFilter: ReportFilterConfig = {
+  ...importLicenceSectionFilter,
+  lookupName: 'borderImportLicenceSections',
+};
+
+const borderImportLicenceMethodFilter: ReportFilterConfig = {
+  name: 'ExportImportMethodId',
+  label: 'Import Method',
+  type: 'number',
+  defaultValue: 0,
+  lookupName: 'borderImportLicenceMethods',
+};
+
+const borderImportLicenceIncotermFilter: ReportFilterConfig = {
+  name: 'ExportImportIncotermId',
+  label: 'Import Incoterms',
+  type: 'number',
+  defaultValue: 0,
+  lookupName: 'borderImportLicenceIncoterms',
+};
+
+const borderImportLicenceSakhanFilter: ReportFilterConfig = {
+  name: 'SakhanId',
+  label: 'Sakhan',
+  type: 'number',
+  defaultValue: 0,
+};
+
+const borderImportLicenceSectionMethodFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  borderImportLicenceSakhanFilter,
+  importLicencePaThaKaTypeFilter,
+  borderImportLicenceSectionFilter,
+  borderImportLicenceMethodFilter,
+];
+
+const borderImportLicenceSellerCountryFilters: ReportFilterConfig[] = [
+  ...borderImportLicenceSectionMethodFilters,
+  importLicenceSellerCountryFilter,
+];
+
+const borderImportLicenceCompanyListFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicencePaThaKaTypeFilter,
+  borderImportLicenceSakhanFilter,
+  borderImportLicenceSectionFilter,
+  borderImportLicenceMethodFilter,
+  importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
+];
+
+const borderImportLicenceDailyFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  borderImportLicenceSakhanFilter,
+  borderImportLicenceSectionFilter,
+  importLicencePaThaKaTypeFilter,
+  importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
+];
+
+const borderImportLicenceDetailFilters: ReportFilterConfig[] = [
+  ...borderImportLicenceSectionMethodFilters,
+  borderImportLicenceIncotermFilter,
+];
+
 const formatLegacyReportDate = (value: unknown) => {
   const parsed = dayjs(String(value ?? ''));
   return parsed.isValid() ? parsed.format('DD/MM/YYYY') : String(value ?? '');
@@ -3735,68 +3800,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'BorderImportLicenceByMethodReport',
     excelRoute: 'BorderImportLicenceByMethodReport/Excel',
     excelFileName: 'BorderImportLicenceByMethodReport.xlsx',
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Licences By Method', true),
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'PaThaKaTypeId',
-        label: 'EIR Card Type',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportMethodId',
-        label: 'Import Method',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Import Incoterms',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'SellerCountryId',
-        label: 'Seller Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: borderImportLicenceSectionMethodFilters,
     columns: [
       {
         key: 'Method',
@@ -3826,68 +3833,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'BorderImportLicenceBySectionReport',
     excelRoute: 'BorderImportLicenceBySectionReport/Excel',
     excelFileName: 'BorderImportLicenceBySectionReport.xlsx',
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Licences By Section', true),
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'PaThaKaTypeId',
-        label: 'EIR Card Type',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportMethodId',
-        label: 'Import Method',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Import Incoterms',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'SellerCountryId',
-        label: 'Seller Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: borderImportLicenceSectionMethodFilters,
     columns: [
       {
         key: 'Section',
@@ -3917,68 +3866,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'BorderImportLicenceBySellerCountryReport',
     excelRoute: 'BorderImportLicenceBySellerCountryReport/Excel',
     excelFileName: 'BorderImportLicenceBySellerCountryReport.xlsx',
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Licences By Seller Country', true),
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'PaThaKaTypeId',
-        label: 'EIR Card Type',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportMethodId',
-        label: 'Import Method',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Import Incoterms',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'SellerCountryId',
-        label: 'Seller Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: borderImportLicenceSellerCountryFilters,
     columns: [
       {
         key: 'Country',
@@ -4124,68 +4015,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'BorderImportLicenceCompanyListReport',
     excelRoute: 'BorderImportLicenceCompanyListReport/Excel',
     excelFileName: 'BorderImportLicenceCompanyListReport.xlsx',
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Licences By Company'),
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'PaThaKaTypeId',
-        label: 'EIR Card Type',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportMethodId',
-        label: 'Import Method',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Import Incoterms',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'SellerCountryId',
-        label: 'Seller Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: borderImportLicenceCompanyListFilters,
     columns: [
       {
         key: 'CompanyName',
@@ -4215,68 +4048,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'BorderImportLicenceDailyReportNewLicenceReport',
     excelRoute: 'BorderImportLicenceDailyReportNewLicenceReport/Excel',
     excelFileName: 'BorderImportLicenceDailyReportNewLicenceReport.xlsx',
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Licences By Daily', true),
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: false,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'PaThaKaTypeId',
-        label: 'EIR Card Type',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportMethodId',
-        label: 'Import Method',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Import Incoterms',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'SellerCountryId',
-        label: 'Seller Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: borderImportLicenceDailyFilters,
     columns: [
       {
         key: 'Date',
@@ -4313,68 +4088,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'BorderImportLicenceDetailReport',
     excelRoute: 'BorderImportLicenceDetailReport/Excel',
     excelFileName: 'BorderImportLicenceDetailReport.xlsx',
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Licences By Detail', true),
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'PaThaKaTypeId',
-        label: 'EIR Card Type',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportMethodId',
-        label: 'Import Method',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Import Incoterms',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'SellerCountryId',
-        label: 'Seller Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: borderImportLicenceDetailFilters,
     columns: [
       {
         key: 'Section',
@@ -4400,7 +4117,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'LicenceDate',
         dataIndex: 'licenceDate',
-        title: 'Licence Date',
+        title: 'Create Date',
+        dataType: 'date',
+      },
+      {
+        key: 'ApproveDate',
+        dataIndex: 'approveDate',
+        title: 'Approve Date',
         dataType: 'date',
       },
       {
