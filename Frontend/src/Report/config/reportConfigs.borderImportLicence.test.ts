@@ -11,6 +11,26 @@ const BORDER_IMPORT_LICENCE_CREATED_REPORTS = [
 ];
 
 describe('Border Import Licence report configs', () => {
+  it('Detail and Pending Detail expose report titles', () => {
+    expect(reportConfigs.BorderImportLicenceDetailReport.title).toBe(
+      'Border Import Licence Detail Report'
+    );
+    expect(reportConfigs.BorderImportLicenceDetailReport.reportSubtitle?.({
+      FromDate: '2026-06-01',
+      ToDate: '2026-06-10',
+    })).toBe('List of Border Import Licences By Detail From (01/06/2026) To (10/06/2026)');
+
+    expect(reportConfigs.BorderImportLicenceDetailReportPending.title).toBe(
+      'Border Import Licence Detail Report (Pending)'
+    );
+    expect(reportConfigs.BorderImportLicenceDetailReportPending.reportSubtitle?.({
+      FromDate: '2026-06-01',
+      ToDate: '2026-06-10',
+    })).toBe(
+      'List of Border Import Licences By Detail From (01/06/2026) To (10/06/2026)'
+    );
+  });
+
   it('created reports expose old-admin style report subtitles', () => {
     const filters = { FromDate: '2026-06-01', ToDate: '2026-06-10' };
 
@@ -23,6 +43,29 @@ describe('Border Import Licence report configs', () => {
 
   it('Detail matches the old RDLC date headers and filter shape', () => {
     const cfg = reportConfigs.BorderImportLicenceDetailReport;
+
+    expect(cfg.filters.map((f) => f.name)).toEqual([
+      'dateRange',
+      'SakhanId',
+      'PaThaKaTypeId',
+      'ExportImportSectionId',
+      'ExportImportMethodId',
+      'ExportImportIncotermId',
+    ]);
+
+    const dateColumns = cfg.columns
+      .filter((c) => ['ApplicationDate', 'LicenceDate', 'ApproveDate'].includes(c.key))
+      .map((c) => [c.key, c.dataIndex, c.title]);
+
+    expect(dateColumns).toEqual([
+      ['ApplicationDate', 'applicationDate', 'Application Date'],
+      ['LicenceDate', 'licenceDate', 'Create Date'],
+      ['ApproveDate', 'approveDate', 'Approve Date'],
+    ]);
+  });
+
+  it('Pending Detail matches the old RDLC date headers and filter shape', () => {
+    const cfg = reportConfigs.BorderImportLicenceDetailReportPending;
 
     expect(cfg.filters.map((f) => f.name)).toEqual([
       'dateRange',

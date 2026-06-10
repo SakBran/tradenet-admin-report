@@ -27,6 +27,32 @@ public sealed class BorderImportLicenceParityTests
         Assert.Equal("Border", actualType);
     }
 
+    [Theory]
+    [InlineData("BorderImportLicenceDetailReportController")]
+    [InlineData("BorderImportLicenceDetailReportPendingController")]
+    public void Border_import_licence_detail_reports_treat_date_only_to_date_as_full_day(string controllerName)
+    {
+        var controllerType = ReportTestHelper.ControllerTypes.Single(type => type.Name == controllerName);
+        var request = ReportTestHelper.CreateRequest(controllerType);
+        request.GetType().GetProperty("FromDate")?.SetValue(request, new DateTime(2026, 5, 21));
+        request.GetType().GetProperty("ToDate")?.SetValue(request, new DateTime(2026, 5, 21));
+
+        using var db = ReportTestHelper.CreateInMemoryDbContext($"{controllerName}_InclusiveToDate");
+        var controller = ReportTestHelper.CreateController(controllerType, db);
+        var method = ReportTestHelper.GetTryCreateReportRequest(controllerType);
+
+        object?[] parameters = [request, null, null];
+        var ok = Assert.IsType<bool>(method.Invoke(controller, parameters));
+
+        Assert.True(ok);
+        Assert.NotNull(parameters[1]);
+        var procedureRequest = parameters[1]!;
+        var toDate = Assert.IsType<DateTime>(
+            procedureRequest.GetType().GetProperty("ToDate")?.GetValue(procedureRequest));
+
+        Assert.Equal(new DateTime(2026, 5, 21, 23, 59, 59, 999).AddTicks(9999), toDate);
+    }
+
     [Fact]
     public void Border_import_licence_total_value_uses_composite_summary_contract()
     {

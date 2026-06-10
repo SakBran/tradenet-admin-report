@@ -10,6 +10,7 @@ using API.Service.Reports;
 using API.StoredProcedureToLinq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Controllers.Report
 {
@@ -21,13 +22,11 @@ namespace Backend.Controllers.Report
         private const string ReportKey = "BorderImportLicenceDetailReport";
 
         private readonly TradeNetDbContext _context;
-        private readonly ICountryCache _countryCache;
         private readonly IExcelExportJobService _excelExportJobs;
 
-        public BorderImportLicenceDetailReportController(TradeNetDbContext context, ICountryCache countryCache, IExcelExportJobService excelExportJobs)
+        public BorderImportLicenceDetailReportController(TradeNetDbContext context, IExcelExportJobService excelExportJobs)
         {
             _context = context;
-            _countryCache = countryCache;
             _excelExportJobs = excelExportJobs;
         }
 
@@ -39,7 +38,7 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var result = await sp_ImportLicenceDetailReport_Fast.CreatePagedResultAsync(_context, _countryCache, procedureRequest!, request!);
+            var result = await sp_BorderImportLicenceDetailReport.CreatePagedResultAsync(_context, procedureRequest!, request!);
 
             return Ok(result);
         }
@@ -76,10 +75,10 @@ namespace Backend.Controllers.Report
             CancellationToken cancellationToken)
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
-            await foreach (var chunk in sp_ImportLicenceDetailReport_Fast.StreamResolvedChunksAsync(
-                _context, _countryCache, procedureRequest!, chunkSize, cancellationToken))
+            await foreach (var chunk in sp_BorderImportLicenceDetailReport.ExecuteQueryable(_context, procedureRequest!)
+                .AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
             {
-                sink.Append(chunk);
+                sink.Append(chunk.ConvertAll(row => row.ToResult()));
             }
         }
 
@@ -118,7 +117,7 @@ namespace Backend.Controllers.Report
             {
                 Type = "Border",
                 FromDate = request.FromDate,
-                ToDate = request.ToDate,
+                ToDate = NormalizeInclusiveToDate(request.ToDate),
                 PaThaKaTypeId = request.PaThaKaTypeId,
                 ExportImportSectionId = request.ExportImportSectionId,
                 ExportImportMethodId = request.ExportImportMethodId,
@@ -130,6 +129,11 @@ namespace Backend.Controllers.Report
 
             return true;
         }
+
+        private static DateTime NormalizeInclusiveToDate(DateTime toDate)
+            => toDate.TimeOfDay == TimeSpan.Zero
+                ? toDate.Date.AddDays(1).AddTicks(-1)
+                : toDate;
     }
 
     public sealed class BorderImportLicenceDetailReportRequest : ReportQueryRequest
