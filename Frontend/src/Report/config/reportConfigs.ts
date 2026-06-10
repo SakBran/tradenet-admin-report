@@ -2062,6 +2062,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderExportPermitActualAmendmentReport: {
     controllerName: 'BorderExportPermitActualAmendmentReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permit Report'),
     title: 'Border Export Permit Actual Amendment Report',
     apiRoute: 'BorderExportPermitActualAmendmentReport',
     excelRoute: 'BorderExportPermitActualAmendmentReport/Excel',
@@ -2090,6 +2092,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportPermitSections',
       },
       {
         name: 'AmendRemarkId',
@@ -2123,7 +2126,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
       },
       {
@@ -2167,7 +2170,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'hsCode',
         dataIndex: 'hsCode',
-        title: 'hsCode',
+        title: 'HS Code',
       },
       {
         key: 'TotalValue',
@@ -2179,6 +2182,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderExportPermitAmendmentReport: {
     controllerName: 'BorderExportPermitAmendmentReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permit Report'),
     title: 'Border Export Permit Amendment Report',
     apiRoute: 'BorderExportPermitAmendmentReport',
     excelRoute: 'BorderExportPermitAmendmentReport/Excel',
@@ -2207,6 +2212,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportPermitSections',
       },
       {
         name: 'AmendRemarkId',
@@ -2240,7 +2246,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
       },
       {
@@ -2282,11 +2288,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Curency',
       },
       {
-        key: 'hsCode',
-        dataIndex: 'hsCode',
-        title: 'hsCode',
-      },
-      {
         key: 'TotalValue',
         dataIndex: 'amount',
         title: 'Total Value',
@@ -2296,6 +2297,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderExportPermitByHSCodeReport: {
     controllerName: 'BorderExportPermitByHSCodeReport',
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permit By HS Code', true),
     title: 'Border Export Permit By HS Code Report',
     apiRoute: 'BorderExportPermitByHSCodeReport',
     excelRoute: 'BorderExportPermitByHSCodeReport/Excel',
@@ -2322,8 +2324,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'FilterType',
         label: 'Filter By',
-        type: 'text',
-        defaultValue: '',
+        type: 'select',
+        defaultValue: 'Start',
+        options: [
+          { label: 'Start', value: 'Start' },
+          { label: 'End', value: 'End' },
+        ],
       },
       {
         name: 'hsCode',
@@ -2373,6 +2379,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderExportPermitBySectionReport: {
     controllerName: 'BorderExportPermitBySectionReport',
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permit By Section', true),
     title: 'Border Export Permit By Section Report',
     apiRoute: 'BorderExportPermitBySectionReport',
     excelRoute: 'BorderExportPermitBySectionReport/Excel',
@@ -2407,6 +2414,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportPermitSections',
       },
       {
         name: 'BuyerCountryId',
@@ -2432,6 +2440,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'Section',
         dataIndex: 'sectionName',
         title: 'Section',
+        drilldown: {
+          targetReportKey: 'BorderExportPermitDetailReport',
+          carryFilters: ['FromDate', 'ToDate', 'Type', 'PaThaKaTypeId'],
+          rowParams: { ExportImportSectionId: 'sectionId' },
+        },
       },
       {
         key: 'NoOfLicences',
@@ -2452,6 +2465,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderExportPermitBySellerCountryReport: {
     controllerName: 'BorderExportPermitBySellerCountryReport',
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Permit By Buyer Country', true),
     title: 'Border Export Permit By Seller Country Report',
     apiRoute: 'BorderExportPermitBySellerCountryReport',
     excelRoute: 'BorderExportPermitBySellerCountryReport/Excel',
@@ -2486,6 +2500,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportPermitSections',
       },
       {
         name: 'BuyerCountryId',
@@ -2511,6 +2526,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'Country',
         dataIndex: 'country',
         title: 'Country',
+        drilldown: {
+          targetReportKey: 'BorderExportPermitDetailReport',
+          carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId', 'SakhanId'],
+          rowParams: { BuyerCountryId: 'countryId' },
+        },
       },
       {
         key: 'NoOfLicences',
@@ -2531,6 +2551,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderExportPermitCancellationReport: {
     controllerName: 'BorderExportPermitCancellationReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permit Report'),
     title: 'Border Export Permit Cancellation Report',
     apiRoute: 'BorderExportPermitCancellationReport',
     excelRoute: 'BorderExportPermitCancellationReport/Excel',
@@ -2559,6 +2581,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportPermitSections',
       },
       {
         name: 'CompanyRegistrationNo',
@@ -2586,7 +2609,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
       },
       {
@@ -2636,7 +2659,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'hsCode',
         dataIndex: 'hsCode',
-        title: 'hsCode',
+        title: 'HS Code',
       },
       {
         key: 'Remark',
@@ -2647,6 +2670,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderExportPermitCompanyListReport: {
     controllerName: 'BorderExportPermitCompanyListReport',
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permit By Company', true),
     title: 'Border Export Permit Company List Report',
     apiRoute: 'BorderExportPermitCompanyListReport',
     excelRoute: 'BorderExportPermitCompanyListReport/Excel',
@@ -2681,6 +2705,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportPermitSections',
       },
       {
         name: 'BuyerCountryId',
@@ -2706,6 +2731,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyName',
         dataIndex: 'companyName',
         title: 'Company Name',
+        drilldown: {
+          targetReportKey: 'BorderExportPermitDetailReport',
+          carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId', 'SakhanId'],
+          rowParams: { CompanyRegistrationNo: 'companyRegistrationNo' },
+        },
       },
       {
         key: 'NoOfLicences',
@@ -2726,6 +2756,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderExportPermitDailyReportNewPermitReport: {
     controllerName: 'BorderExportPermitDailyReportNewPermitReport',
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permit By Daily', true),
     title: 'Border Export Permit Daily Report (New Permit Report)',
     apiRoute: 'BorderExportPermitDailyReportNewPermitReport',
     excelRoute: 'BorderExportPermitDailyReportNewPermitReport/Excel',
@@ -2760,6 +2791,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportPermitSections',
       },
       {
         name: 'BuyerCountryId',
@@ -2812,6 +2844,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderExportPermitDetailReport: {
     controllerName: 'BorderExportPermitDetailReport',
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permit By Detail', true),
     title: 'Border Export Permit Detail Report',
     apiRoute: 'BorderExportPermitDetailReport',
     excelRoute: 'BorderExportPermitDetailReport/Excel',
@@ -2846,6 +2879,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportPermitSections',
       },
       {
         name: 'BuyerCountryId',
@@ -2965,7 +2999,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'hsCode',
         dataIndex: 'hsCode',
-        title: 'hsCode',
+        title: 'HSCode',
       },
       {
         key: 'Decription',
@@ -3039,6 +3073,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportPermitSections',
       },
       {
         name: 'CompanyRegistrationNo',
@@ -3066,7 +3101,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
       },
       {
@@ -3117,6 +3152,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderExportPermitNewReportNewReport: {
     controllerName: 'BorderExportPermitNewReportNewReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permit Report'),
     title: 'Border Export Permit New Report (New Report )',
     apiRoute: 'BorderExportPermitNewReportNewReport',
     excelRoute: 'BorderExportPermitNewReportNewReport/Excel',
@@ -3145,6 +3182,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportPermitSections',
       },
       {
         name: 'CompanyRegistrationNo',
@@ -3157,12 +3195,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
-      },
-      {
-        name: 'Auto',
-        label: 'Auto',
-        type: 'text',
-        defaultValue: '',
       },
     ],
     columns: [
@@ -3215,15 +3247,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Total Value',
         dataType: 'number',
       },
-      {
-        key: 'Auto',
-        dataIndex: 'auto',
-        title: 'auto',
-      },
     ],
   },
   BorderExportPermitVoucherReport: {
     controllerName: 'BorderExportPermitVoucherReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalAmount' },
+    reportSubtitle: importLicenceRangeSubtitle('Border Export Permit Voucher List'),
+    resolveColumns: resolveImportLicenceVoucherColumns,
     title: 'Border Export Permit Voucher Report',
     apiRoute: 'BorderExportPermitVoucherReport',
     excelRoute: 'BorderExportPermitVoucherReport/Excel',
@@ -3252,6 +3282,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'borderExportPermitSections',
       },
       {
         name: 'PaymentType',
@@ -3298,9 +3329,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Sakhan',
       },
       {
-        key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        key: 'OriginalLicenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
+        fallbackDataIndexes: ['licenceNo'],
       },
       {
         key: 'ApplicationDate',
@@ -3314,14 +3346,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Application No',
       },
       {
-        key: 'ParametersHeader2Value',
+        key: 'LicenceNo',
         dataIndex: 'licenceNo',
-        title: '=Parameters!header2.Value',
+        title: 'Licence No',
       },
       {
-        key: 'ParametersHeader3Value',
+        key: 'LicenceDate',
         dataIndex: 'sLicenceDate',
-        title: '=Parameters!header3.Value',
+        title: 'Licence Date',
       },
       {
         key: 'CompanyRegistrationNo',
@@ -8358,6 +8390,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ExportPermitActualAmendmentReport: {
     controllerName: 'ExportPermitActualAmendmentReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Licence Report', true),
     title: 'Export Permit Actual Amendment Report',
     apiRoute: 'ExportPermitActualAmendmentReport',
     excelRoute: 'ExportPermitActualAmendmentReport/Excel',
@@ -8386,6 +8420,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'exportPermitSections',
       },
       {
         name: 'AmendRemarkId',
@@ -8399,12 +8434,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'text',
         defaultValue: '',
       },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
     ],
     columns: [
       {
@@ -8414,7 +8443,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
       },
       {
@@ -8456,11 +8485,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Curency',
       },
       {
-        key: 'hsCode',
-        dataIndex: 'hsCode',
-        title: 'hsCode',
-      },
-      {
         key: 'TotalValue',
         dataIndex: 'amount',
         title: 'Total Value',
@@ -8470,6 +8494,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ExportPermitAmendmentReport: {
     controllerName: 'ExportPermitAmendmentReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Licence Report', true),
     title: 'Export Permit Amendment Report',
     apiRoute: 'ExportPermitAmendmentReport',
     excelRoute: 'ExportPermitAmendmentReport/Excel',
@@ -8498,6 +8524,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'exportPermitSections',
       },
       {
         name: 'AmendRemarkId',
@@ -8511,12 +8538,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'text',
         defaultValue: '',
       },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
     ],
     columns: [
       {
@@ -8526,7 +8547,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
       },
       {
@@ -8568,11 +8589,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Curency',
       },
       {
-        key: 'hsCode',
-        dataIndex: 'hsCode',
-        title: 'hsCode',
-      },
-      {
         key: 'TotalValue',
         dataIndex: 'amount',
         title: 'Total Value',
@@ -8582,11 +8598,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ExportPermitByHSCodeReport: {
     controllerName: 'ExportPermitByHSCodeReport',
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Permit By HS Code', true),
     title: 'Export Permit By HS Code Report',
     apiRoute: 'ExportPermitByHSCodeReport',
     excelRoute: 'ExportPermitByHSCodeReport/Excel',
     excelFileName: 'ExportPermitByHSCodeReport.xlsx',
-    initialSortColumn: 'SakhanId',
+    initialSortColumn: 'hsCode',
     showRowNumber: true,
     filters: [
       {
@@ -8608,20 +8625,18 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'FilterType',
         label: 'Filter By',
-        type: 'text',
-        defaultValue: '',
+        type: 'select',
+        defaultValue: 'Start',
+        options: [
+          { label: 'Start', value: 'Start' },
+          { label: 'End', value: 'End' },
+        ],
       },
       {
         name: 'hsCode',
         label: 'HS Code',
         type: 'text',
         defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
       },
     ],
     columns: [
@@ -8650,15 +8665,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'currency',
         title: 'Currency',
       },
-      {
-        key: 'CompanyName',
-        dataIndex: 'companyName',
-        title: 'Company Name',
-      },
     ],
   },
   ExportPermitBySectionReport: {
     controllerName: 'ExportPermitBySectionReport',
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Permit By Section', true),
     title: 'Export Permit By Section Report',
     apiRoute: 'ExportPermitBySectionReport',
     excelRoute: 'ExportPermitBySectionReport/Excel',
@@ -8693,6 +8704,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'exportPermitSections',
       },
       {
         name: 'BuyerCountryId',
@@ -8706,18 +8718,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'text',
         defaultValue: '',
       },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
     ],
     columns: [
       {
         key: 'Section',
         dataIndex: 'sectionName',
         title: 'Section',
+        drilldown: {
+          targetReportKey: 'ExportPermitDetailReport',
+          carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId'],
+          rowParams: { ExportImportSectionId: 'exportImportSectionId' },
+        },
       },
       {
         key: 'NoOfLicences',
@@ -8738,6 +8749,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ExportPermitBySellerCountryReport: {
     controllerName: 'ExportPermitBySellerCountryReport',
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Permit By Buyer Country', true),
     title: 'Export Permit By Seller Country Report',
     apiRoute: 'ExportPermitBySellerCountryReport',
     excelRoute: 'ExportPermitBySellerCountryReport/Excel',
@@ -8772,6 +8784,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'exportPermitSections',
       },
       {
         name: 'BuyerCountryId',
@@ -8785,18 +8798,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'text',
         defaultValue: '',
       },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
     ],
     columns: [
       {
         key: 'Country',
         dataIndex: 'country',
         title: 'Country',
+        drilldown: {
+          targetReportKey: 'ExportPermitDetailReport',
+          carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId'],
+          rowParams: { BuyerCountryId: 'countryId' },
+        },
       },
       {
         key: 'NoOfLicences',
@@ -8817,6 +8829,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ExportPermitCancellationReport: {
     controllerName: 'ExportPermitCancellationReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Permit Report'),
     title: 'Export Permit Cancellation Report',
     apiRoute: 'ExportPermitCancellationReport',
     excelRoute: 'ExportPermitCancellationReport/Excel',
@@ -8845,6 +8859,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'exportPermitSections',
       },
       {
         name: 'CompanyRegistrationNo',
@@ -8852,19 +8867,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'text',
         defaultValue: '',
       },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
     ],
     columns: [
-      {
-        key: 'hsCode',
-        dataIndex: 'hsCode',
-        title: 'hsCode',
-      },
       {
         key: 'Section',
         dataIndex: 'sectionName',
@@ -8872,7 +8876,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
       },
       {
@@ -8928,6 +8932,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ExportPermitCompanyListReport: {
     controllerName: 'ExportPermitCompanyListReport',
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Permit By Company', true),
     title: 'Export Permit Company List Report',
     apiRoute: 'ExportPermitCompanyListReport',
     excelRoute: 'ExportPermitCompanyListReport/Excel',
@@ -8962,12 +8967,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
-      },
-      {
-        name: 'BuyerCountryId',
-        label: 'Buyer Country',
-        type: 'number',
-        defaultValue: 0,
+        lookupName: 'exportPermitSections',
       },
       {
         name: 'CompanyRegistrationNo',
@@ -8975,18 +8975,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'text',
         defaultValue: '',
       },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
     ],
     columns: [
       {
         key: 'CompanyName',
         dataIndex: 'companyName',
         title: 'Company Name',
+        drilldown: {
+          targetReportKey: 'ExportPermitDetailReport',
+          carryFilters: ['FromDate', 'ToDate', 'Type', 'PaThaKaTypeId', 'ExportImportSectionId'],
+          rowParams: { CompanyRegistrationNo: 'companyRegistrationNo' },
+        },
       },
       {
         key: 'NoOfLicences',
@@ -9007,6 +9006,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ExportPermitDailyReportNewPermitReport: {
     controllerName: 'ExportPermitDailyReportNewPermitReport',
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Permit By Daily', true),
     title: 'Export Permit Daily Report (New Permit Report)',
     apiRoute: 'ExportPermitDailyReportNewPermitReport',
     excelRoute: 'ExportPermitDailyReportNewPermitReport/Excel',
@@ -9041,24 +9041,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
-      },
-      {
-        name: 'BuyerCountryId',
-        label: 'Buyer Country',
-        type: 'number',
-        defaultValue: 0,
+        lookupName: 'exportPermitSections',
       },
       {
         name: 'CompanyRegistrationNo',
         label: 'Company Registration No',
         type: 'text',
         defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
       },
     ],
     columns: [
@@ -9093,6 +9082,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ExportPermitDetailReport: {
     controllerName: 'ExportPermitDetailReport',
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Permit By Detail', true),
     title: 'Export Permit Detail Report',
     apiRoute: 'ExportPermitDetailReport',
     excelRoute: 'ExportPermitDetailReport/Excel',
@@ -9127,6 +9117,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'exportPermitSections',
       },
       {
         name: 'BuyerCountryId',
@@ -9139,12 +9130,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Company Registration No',
         type: 'text',
         defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
       },
     ],
     columns: [
@@ -9320,18 +9305,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'exportPermitSections',
       },
       {
         name: 'CompanyRegistrationNo',
         label: 'Company Registration No',
         type: 'text',
         defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
       },
     ],
     columns: [
@@ -9393,6 +9373,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ExportPermitNewReportNewReport: {
     controllerName: 'ExportPermitNewReportNewReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Permit Report'),
     title: 'Export Permit New Report (New Report )',
     apiRoute: 'ExportPermitNewReportNewReport',
     excelRoute: 'ExportPermitNewReportNewReport/Excel',
@@ -9421,22 +9403,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'exportPermitSections',
       },
       {
         name: 'CompanyRegistrationNo',
         label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'Auto',
-        label: 'Auto',
         type: 'text',
         defaultValue: '',
       },
@@ -9486,30 +9457,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Total Value',
         dataType: 'number',
       },
-      {
-        key: 'CommodityType',
-        dataIndex: 'commodityType',
-        title: 'Commodity Type',
-      },
-      {
-        key: 'hsCode',
-        dataIndex: 'hsCode',
-        title: 'hsCode',
-      },
-      {
-        key: 'Quota',
-        dataIndex: 'quota',
-        title: 'quota',
-      },
-      {
-        key: 'Auto',
-        dataIndex: 'auto',
-        title: 'auto',
-      },
     ],
   },
   ExportPermitVoucherReport: {
     controllerName: 'ExportPermitVoucherReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'Amount' },
+    reportSubtitle: importLicenceRangeSubtitle('Export Permit Voucher List'),
     title: 'Export Permit Voucher Report',
     apiRoute: 'ExportPermitVoucherReport',
     excelRoute: 'ExportPermitVoucherReport/Excel',
@@ -9538,6 +9491,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'exportPermitSections',
       },
       {
         name: 'ApplyType',
@@ -9570,12 +9524,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Company Registration No',
         type: 'text',
         defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
       },
     ],
     columns: [

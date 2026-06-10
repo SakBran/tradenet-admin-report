@@ -66,6 +66,14 @@ namespace Backend.Controllers.Report
                     data, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
 
+            if (data.Count > 0)
+            {
+                result.CurrencyTotals = await ExportPermitListingCurrencyTotals.ExecuteVoucherAsync(
+                    _context, procedureRequest!.FormType, procedureRequest.FromDate, procedureRequest.ToDate,
+                    procedureRequest.ExportImportSectionId, procedureRequest.PaymentType,
+                    procedureRequest.ApplyType, procedureRequest.CompanyRegistrationNo, procedureRequest.SakhanId);
+            }
+
             return Ok(result);
         }
 
