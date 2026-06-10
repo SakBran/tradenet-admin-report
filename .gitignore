@@ -41,6 +41,7 @@ storybook-static/
 **/GeneratedFiles/
 **/wwwroot/
 Backend/publish/
+.deploy/
 *.user
 *.rsuser
 *.suo

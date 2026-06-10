@@ -71,6 +71,45 @@ function Invoke-Robocopy {
     Write-Host "Robocopy completed with exit code $exitCode."
 }
 
+function Remove-LocalDirectory {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+
+        [Parameter(Mandatory = $true)]
+        [string]$AllowedRoot
+    )
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return
+    }
+
+    $resolvedPath = [System.IO.Path]::GetFullPath($Path)
+    $resolvedRoot = [System.IO.Path]::GetFullPath($AllowedRoot)
+    if (-not $resolvedRoot.EndsWith([System.IO.Path]::DirectorySeparatorChar)) {
+        $resolvedRoot += [System.IO.Path]::DirectorySeparatorChar
+    }
+
+    if (-not $resolvedPath.StartsWith($resolvedRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Refusing to remove '$resolvedPath' because it is outside '$resolvedRoot'."
+    }
+
+    Write-Host "Removing local generated folder: $resolvedPath"
+    for ($attempt = 1; $attempt -le 5; $attempt++) {
+        try {
+            Remove-Item -LiteralPath $resolvedPath -Recurse -Force
+            return
+        }
+        catch {
+            if ($attempt -eq 5) {
+                throw
+            }
+
+            Start-Sleep -Seconds 2
+        }
+    }
+}
+
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Write-Host "Root folder: $root"
 Set-Location $root
@@ -80,10 +119,16 @@ if (-not $NoGit) {
 }
 
 $backendDir = Join-Path $root 'Backend'
+$legacyPublishOutput = Join-Path $backendDir 'publish'
+Remove-LocalDirectory -Path $legacyPublishOutput -AllowedRoot $backendDir
+
+$publishOutput = Join-Path $root '.deploy\backend-publish'
+Remove-LocalDirectory -Path $publishOutput -AllowedRoot $root
+New-Item -ItemType Directory -Force -Path $publishOutput | Out-Null
+
 Set-Location $backendDir
 Invoke-NativeCommand 'Building Backend...' { dotnet build -c Release }
 
-$publishOutput = Join-Path $root 'Backend\publish'
 Invoke-NativeCommand "Publishing Backend to: $publishOutput" { dotnet publish API.csproj -c Release -o $publishOutput }
 
 $backendConfigFiles = @(
