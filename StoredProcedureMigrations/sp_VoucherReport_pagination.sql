@@ -130,11 +130,12 @@ ImportPermit.Id AS __k_Id
 		INNER JOIN ExportImportSection section ON ExportPermit.ExportImportSectionId = section.Id
 		INNER JOIN Users ON Users.Id = ExportPermit.ApproveUserId
 		WHERE IsPayment=1
+		AND AccountTransaction.TransactionFormType=''Export Permit''
 		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
 		AND ExportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
 		AND ApplyType=@ApplyType AND ExportPermit.Status=''Approved''
-		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END) OPTION (RECOMPILE); '
+		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END) OPTION (RECOMPILE, LOOP JOIN); '
             ELSE N'DECLARE @__total int = NULL; ' END;
 
         -- The original sp_VoucherReport selects only CommodityType for Export Permit;
@@ -169,6 +170,7 @@ ExportPermit.Id AS __k_Id
 		INNER JOIN ExportImportSection section ON ExportPermit.ExportImportSectionId = section.Id
 		INNER JOIN Users ON Users.Id = ExportPermit.ApproveUserId
 		WHERE IsPayment=1
+		AND AccountTransaction.TransactionFormType=''Export Permit''
 		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
 		AND ExportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
@@ -517,12 +519,13 @@ BorderImportLicence.Id AS __k_Id
 		INNER JOIN Sakhan sakhan ON BorderExportPermit.SakhanId = sakhan.Id
 		INNER JOIN Users ON Users.Id = BorderExportPermit.ApproveUserId
 		WHERE IsPayment=1
+		AND AccountTransaction.TransactionFormType=''Border Export Permit''
 		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
 		AND BorderExportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
 		AND ApplyType=@ApplyType AND BorderExportPermit.Status=''Approved''
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
-		AND BorderExportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderExportPermit.SakhanId ELSE @SakhanId END) OPTION (RECOMPILE); '
+		AND BorderExportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderExportPermit.SakhanId ELSE @SakhanId END) OPTION (RECOMPILE, LOOP JOIN); '
             ELSE N'DECLARE @__total int = NULL; ' END;
 
         SET @sql = @cntpart + N'SELECT pg.*,
@@ -564,6 +567,7 @@ BorderExportPermit.Id AS __k_Id
 		INNER JOIN Sakhan sakhan ON BorderExportPermit.SakhanId = sakhan.Id
 		INNER JOIN Users ON Users.Id = BorderExportPermit.ApproveUserId
 		WHERE IsPayment=1
+		AND AccountTransaction.TransactionFormType=''Border Export Permit''
 		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
 		AND BorderExportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)

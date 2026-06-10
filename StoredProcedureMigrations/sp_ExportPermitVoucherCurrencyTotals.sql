@@ -20,7 +20,16 @@ BEGIN
     -- ApplyType + Approved, the Users approver join -- so the footer lines up with the rows shown.
     -- Currency + licence value come from the permit's items (TOP 1 item currency + SUM of item
     -- amounts), matching the grid's Currency / Lic Value (TotalAmount) columns. @SakhanId is only
-    -- applied for the Border branch. OPTION (RECOMPILE) dodges the param-sniffing timeout.
+    -- applied for the Border branch.
+    -- PERF: AccountTransaction has 2M+ payment rows shared across ALL document types. Without the
+    -- TransactionFormType discriminator the optimizer scans the whole (columnstore) table over a wide
+    -- PaymentDate range -- cold that scan took 30-56s and blocked the report (this proc is awaited
+    -- synchronously before the grid response). The TransactionFormType = 'Export Permit' /
+    -- 'Border Export Permit' predicate makes the AccountTransaction side selective, and OPTION
+    -- (RECOMPILE, LOOP JOIN) forces a per-permit TransactionId seek instead of the cold scan -- proven
+    -- to return identical rows in ~0.2s. (The Export Licence branch of sp_VoucherReport_pagination
+    -- solves the same problem; its filtered index IX_AccountTransaction_ExportLicenceVoucher is scoped
+    -- to 'Export Licence' so it cannot be reused here.)
 
     IF @FormType = N'Border Export Permit'
     BEGIN
@@ -39,6 +48,7 @@ BEGIN
                 INNER JOIN Sakhan sakhan ON BorderExportPermit.SakhanId = sakhan.Id
                 INNER JOIN Users ON Users.Id = BorderExportPermit.ApproveUserId
             WHERE AccountTransaction.IsPayment = 1
+                AND AccountTransaction.TransactionFormType = N'Border Export Permit'
                 AND (AccountTransaction.PaymentDate >= @FromDate AND AccountTransaction.PaymentDate <= @ToDate)
                 AND BorderExportPermit.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN BorderExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND AccountTransaction.PaymentType = (CASE WHEN @PaymentType = '' THEN AccountTransaction.PaymentType ELSE @PaymentType END)
@@ -47,7 +57,7 @@ BEGIN
                 AND BorderExportPermit.SakhanId = (CASE WHEN @SakhanId = 0 THEN BorderExportPermit.SakhanId ELSE @SakhanId END)
         ) d
         GROUP BY ISNULL(d.Currency, N'')
-        OPTION (RECOMPILE);
+        OPTION (RECOMPILE, LOOP JOIN);
     END
     ELSE
     BEGIN
@@ -65,6 +75,7 @@ BEGIN
                 INNER JOIN ExportImportSection section ON ExportPermit.ExportImportSectionId = section.Id
                 INNER JOIN Users ON Users.Id = ExportPermit.ApproveUserId
             WHERE AccountTransaction.IsPayment = 1
+                AND AccountTransaction.TransactionFormType = N'Export Permit'
                 AND (AccountTransaction.PaymentDate >= @FromDate AND AccountTransaction.PaymentDate <= @ToDate)
                 AND ExportPermit.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN ExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND AccountTransaction.PaymentType = (CASE WHEN @PaymentType = '' THEN AccountTransaction.PaymentType ELSE @PaymentType END)
@@ -72,6 +83,6 @@ BEGIN
                 AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
         ) d
         GROUP BY ISNULL(d.Currency, N'')
-        OPTION (RECOMPILE);
+        OPTION (RECOMPILE, LOOP JOIN);
     END
 END
