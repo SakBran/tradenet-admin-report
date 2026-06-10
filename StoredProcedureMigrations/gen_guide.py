@@ -20,6 +20,8 @@ PURPOSE = {
  "sp_ExportPermitVoucherCurrencyTotals": ("Export Permit","Per-currency footer totals for the Export/Border Export Permit Voucher report.",[]),
  "sp_ExportLicenceDetailReport_Pagination": ("Export Licence","Export Licence Detail — paginated detail rows.",[]),
  "sp_ExportLicenceTotalValueReport_Fast_pagination": ("Export Licence","Export Licence Total-Value — fast paginated totals.",[]),
+ "sp_ExportLicenceListingCurrencyTotals": ("Export Licence","Per-currency footer totals for Export/Border Export Licence New / Amend / Actual Amend / Cancel listings (by FormType; Border splits Pa Tha Ka + Individual Trading).",[]),
+ "sp_ExportLicenceVoucherCurrencyTotals": ("Export Licence","Per-currency footer totals for the Export/Border Export Licence Voucher report.",[]),
  "sp_ImportPermitListingCurrencyTotals": ("Import Permit","Per-currency footer totals for Import Permit listing reports.",[]),
  "sp_ImportPermitVoucherCurrencyTotals": ("Import Permit","Per-currency footer totals for the Import Permit Voucher report.",[]),
  "sp_ImportLicenceDetailReport_pagination": ("Import Licence","Import Licence Detail — paginated detail rows.",[]),

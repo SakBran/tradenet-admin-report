@@ -34,6 +34,7 @@ namespace API.Service.Reports
         public string? SectionName { get; init; }
         public int? SectionId { get; init; }
         public string? MethodName { get; init; }
+        public int? MethodId { get; init; }
 
         /// <summary>Trade counterparty country (buyer for export, seller for import).</summary>
         public string? Country { get; init; }
@@ -121,6 +122,7 @@ namespace API.Service.Reports
                     // can drill into an id-filtered Detail report. Only the matching
                     // dimension is set; sources that don't supply the id leave it null.
                     SectionId = dimension == ReportAggregateDimension.Section ? group.Max(row => row.SectionId) : null,
+                    MethodId = dimension == ReportAggregateDimension.Method ? group.Max(row => row.MethodId) : null,
                     CountryId = dimension == ReportAggregateDimension.Country ? group.Max(row => row.CountryId) : null,
                     Currency = group.Key.Currency,
                     NoOfLicences = group
