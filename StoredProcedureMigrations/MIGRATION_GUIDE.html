@@ -53,13 +53,13 @@ footer{margin-top:50px;color:var(--muted);font-size:12px;text-align:center}
 </header>
 
 <div class="cards">
-  <div class="stat"><div class="n">34</div><div class="l">Stored procedures</div></div>
+  <div class="stat"><div class="n">36</div><div class="l">Stored procedures</div></div>
   <div class="stat"><div class="n">3</div><div class="l">Indexed views</div></div>
   <div class="stat"><div class="n">6</div><div class="l">Index scripts</div></div>
   <div class="stat"><div class="n">2</div><div class="l">Removed (orphans)</div></div>
 </div>
 
-<div class="note ok"><b>Reconciliation vs UAT (203.81.66.111,14330):</b> all 34 procedures and 3 indexed views in this folder exist and are deployed on UAT; the 3 indexed views carry their unique clustered index. No <i>missing</i> migrations were found (the <code>_pagination</code> wrappers also depend on the pre-existing base procs <code>sp_PaThaKaReport</code> / <code>sp_PaThaKaValidInvalidReport</code>, which already exist on the server).</div>
+<div class="note ok"><b>Reconciliation vs UAT (203.81.66.111,14330):</b> all 36 procedures and 3 indexed views in this folder exist and are deployed on UAT; the 3 indexed views carry their unique clustered index. No <i>missing</i> migrations were found (the <code>_pagination</code> wrappers also depend on the pre-existing base procs <code>sp_PaThaKaReport</code> / <code>sp_PaThaKaValidInvalidReport</code>, which already exist on the server).</div>
 
 <h2>What was removed (unnecessary)</h2>
 <table>
@@ -76,7 +76,7 @@ footer{margin-top:50px;color:var(--muted);font-size:12px;text-align:center}
 <div class="arrow">→</div>
 <div class="step"><span class="sn">2</span><b>Indexes</b><div class="pp">Run the consolidated production index script (ONLINE, safe-to-rerun).</div></div>
 <div class="arrow">→</div>
-<div class="step"><span class="sn">3</span><b>Stored Procedures</b><div class="pp">34 procedures (CREATE OR ALTER, idempotent).</div></div>
+<div class="step"><span class="sn">3</span><b>Stored Procedures</b><div class="pp">36 procedures (CREATE OR ALTER, idempotent).</div></div>
 </div>
 <div class="note crit"><b>Critical — SET QUOTED_IDENTIFIER ON &amp; ANSI_NULLS ON</b> before creating the indexed views and the NOEXPAND procedures (<code>sp_VoucherReport_pagination</code>, the two <code>*_Indexed</code> procs) and <code>sp_ImportLicencePendingDetailReport_pagination</code> (XML <code>.value()</code>). <code>sqlcmd</code>/SSMS default these ON; <b>pymssql/ad-hoc clients may not</b> → Msg 1934. Creating a proc with QI OFF makes it fail at <i>run</i> time.</div>
 
@@ -116,15 +116,17 @@ footer{margin-top:50px;color:var(--muted);font-size:12px;text-align:center}
 <div class="item"><div class="chk"></div><div class="body"><div class="fn">Indexes/ExportLicenceVoucherReport_indexes.sql</div><div class="pp">Per-report granular index script (covered by the consolidated production script; run only if applying piecemeal).</div></div></div>
 <div class="item"><div class="chk"></div><div class="body"><div class="fn">Indexes/IX_ImportLicence_PendingReport.sql</div><div class="pp">Per-report granular index script (covered by the consolidated production script; run only if applying piecemeal).</div></div></div>
 
-<h2>Phase 3 — Stored Procedures <span style="color:#94a3b8;font-weight:400">(34 files, any order within the phase)</span></h2>
+<h2>Phase 3 — Stored Procedures <span style="color:#94a3b8;font-weight:400">(36 files, any order within the phase)</span></h2>
 <div class="legend"><span class="badge" style="background:#2563eb">Export Permit</span><span class="badge" style="background:#0891b2">Export Licence</span><span class="badge" style="background:#7c3aed">Import Permit</span><span class="badge" style="background:#c026d3">Import Licence</span><span class="badge" style="background:#ea580c">Shared listing</span><span class="badge" style="background:#16a34a">Pa Tha Ka / Registration</span><span class="badge" style="background:#ca8a04">Payments &amp; Fees</span><span class="badge" style="background:#dc2626">MPU</span></div>
 <h3><span class="badge" style="background:#2563eb">Export Permit</span> &nbsp;Export Permit <span style="color:#94a3b8;font-weight:400">(3)</span></h3>
 <div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ExportPermitDetailReport_Fast_pagination.sql</div><div class="pp">Export Permit Detail — DB-side paginated detail rows.</div></div></div>
 <div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ExportPermitListingCurrencyTotals.sql</div><div class="pp">Per-currency footer totals for New / Amend / Actual Amend / Cancel listings (both families, by FormType).</div></div></div>
 <div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ExportPermitVoucherCurrencyTotals.sql</div><div class="pp">Per-currency footer totals for the Export/Border Export Permit Voucher report.</div></div></div>
-<h3><span class="badge" style="background:#0891b2">Export Licence</span> &nbsp;Export Licence <span style="color:#94a3b8;font-weight:400">(2)</span></h3>
+<h3><span class="badge" style="background:#0891b2">Export Licence</span> &nbsp;Export Licence <span style="color:#94a3b8;font-weight:400">(4)</span></h3>
 <div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ExportLicenceDetailReport_pagination.sql</div><div class="pp">Export Licence Detail — paginated detail rows.</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ExportLicenceListingCurrencyTotals.sql</div><div class="pp">Per-currency footer totals for Export/Border Export Licence New / Amend / Actual Amend / Cancel listings (by FormType; Border splits Pa Tha Ka + Individual Trading).</div></div></div>
 <div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ExportLicenceTotalValueReport_pagination.sql</div><div class="pp">Export Licence Total-Value — fast paginated totals.</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ExportLicenceVoucherCurrencyTotals.sql</div><div class="pp">Per-currency footer totals for the Export/Border Export Licence Voucher report.</div></div></div>
 <h3><span class="badge" style="background:#7c3aed">Import Permit</span> &nbsp;Import Permit <span style="color:#94a3b8;font-weight:400">(2)</span></h3>
 <div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ImportPermitListingCurrencyTotals.sql</div><div class="pp">Per-currency footer totals for Import Permit listing reports.</div></div></div>
 <div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ImportPermitVoucherCurrencyTotals.sql</div><div class="pp">Per-currency footer totals for the Import Permit Voucher report.</div></div></div>
