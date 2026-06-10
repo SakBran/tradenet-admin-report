@@ -7,7 +7,7 @@ const oldAdminRoot = path.resolve(repoRoot, '..', 'tradenet-2.0-admin', 'Tradene
 const oldReportRoot = path.join(oldAdminRoot, 'ReportControl');
 const oldReportsControllerPath = path.join(oldAdminRoot, 'Controllers', 'ReportsController.cs');
 const newConfigPath = path.join(repoRoot, 'Frontend', 'src', 'Report', 'config', 'reportConfigs.ts');
-const outputPath = path.join(repoRoot, 'ReportColumnComparison.md');
+const outputPath = path.join(repoRoot, 'docs', 'ReportColumnComparison.md');
 
 const explicitAliases = new Map([
   ['CardListsByCompanyRegistrationNumber', ['CardListsByPaThaKa']],

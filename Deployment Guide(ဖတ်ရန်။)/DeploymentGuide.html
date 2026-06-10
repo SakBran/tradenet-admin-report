@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TradeNet Admin Report — Deployment Guide</title>
+<style>
+  :root{
+    --blue:#1d6fb8; --blue-dark:#114a7c; --green:#1b9e57; --amber:#e08e0b;
+    --red:#d6453d; --ink:#222; --grey:#5a6470; --line:#e2e6ea; --bg:#f5f7fa;
+    --uat:#e08e0b; --prod:#1b9e57;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink); background:var(--bg); line-height:1.6; font-size:16px;
+  }
+  .wrap{max-width:920px; margin:0 auto; padding:0 20px 80px;}
+  header.hero{
+    background:linear-gradient(135deg,var(--blue),var(--blue-dark));
+    color:#fff; padding:38px 20px 30px; text-align:center;
+  }
+  header.hero h1{margin:0 0 6px; font-size:30px;}
+  header.hero p{margin:0; opacity:.92; font-size:16px;}
+  h2{font-size:23px; margin:46px 0 8px; padding-bottom:8px; border-bottom:3px solid var(--line);}
+  h3{font-size:18px; margin:26px 0 8px;}
+  p{margin:10px 0;}
+  code{background:#eef1f4; padding:2px 6px; border-radius:5px; font-family:"SF Mono",Consolas,Menlo,monospace; font-size:14px;}
+  a{color:var(--blue);}
+
+  /* Step number badge */
+  .step{margin:24px 0; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden;
+        box-shadow:0 1px 3px rgba(0,0,0,.05);}
+  .step .head{display:flex; align-items:center; gap:14px; padding:16px 20px; background:#fbfcfd; border-bottom:1px solid var(--line);}
+  .step .num{flex:0 0 auto; width:40px; height:40px; border-radius:50%; background:var(--blue); color:#fff;
+             font-weight:700; font-size:20px; display:flex; align-items:center; justify-content:center;}
+  .step .head h3{margin:0;}
+  .step .body{padding:6px 20px 18px;}
+
+  /* callout boxes */
+  .box{border-radius:10px; padding:14px 16px 14px 18px; margin:16px 0; border-left:6px solid;}
+  .box.info{background:#eaf4fb; border-color:var(--blue);}
+  .box.warn{background:#fdf4e3; border-color:var(--amber);}
+  .box.good{background:#e9f7ef; border-color:var(--green);}
+  .box.bad{background:#fdecea; border-color:var(--red);}
+  .box b{display:block; margin-bottom:3px;}
+  .box .ic{font-size:18px; margin-right:6px;}
+
+  /* code block */
+  pre{background:#1e2430; color:#e6edf3; padding:16px 18px; border-radius:10px; overflow-x:auto;
+      font-family:"SF Mono",Consolas,Menlo,monospace; font-size:13.5px; line-height:1.55; margin:14px 0;}
+  pre .c{color:#7d8aa0;}           /* comment */
+  pre .k{color:#7fb3ff;}           /* keyword */
+  pre .s{color:#a5e6a5;}           /* string */
+  pre .fill{background:#5a2d2d; color:#ffd5d0; padding:0 4px; border-radius:4px; font-weight:700;}
+  pre .add{background:#1f3d2b; color:#b6f0c4; display:block; border-left:3px solid #2ec27e; padding-left:8px;}
+
+  /* diagram */
+  .diagram{background:#fff; border:1px solid var(--line); border-radius:12px; padding:22px; margin:18px 0;}
+  .lane{display:flex; align-items:stretch; gap:10px; margin:14px 0; flex-wrap:wrap;}
+  .lane .tag{flex:0 0 92px; display:flex; align-items:center; justify-content:center; border-radius:10px;
+             color:#fff; font-weight:700; font-size:14px; text-align:center; padding:8px;}
+  .lane.uat .tag{background:var(--uat);}
+  .lane.prod .tag{background:var(--prod);}
+  .node{flex:1; min-width:150px; background:#f7f9fb; border:1.5px solid var(--line); border-radius:10px;
+        padding:12px 14px; text-align:center;}
+  .node .t{font-weight:700; font-size:15px;}
+  .node .u{font-size:12.5px; color:var(--grey); word-break:break-all; margin-top:3px;}
+  .arrow{flex:0 0 auto; align-self:center; font-size:24px; color:var(--blue); font-weight:700;}
+  .arrow small{display:block; font-size:10.5px; color:var(--grey); font-weight:600; text-align:center; line-height:1.1;}
+
+  /* IIS mockup */
+  .iis{background:#fff; border:1px solid #c6ccd2; border-radius:8px; margin:14px 0; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.08);}
+  .iis .bar{background:#2b5797; color:#fff; padding:8px 12px; font-size:14px; font-weight:600;}
+  .iis table{width:100%; border-collapse:collapse; font-size:13.5px;}
+  .iis th{background:#eef1f4; text-align:left; padding:7px 12px; border-bottom:1px solid #d4dae0;}
+  .iis td{padding:7px 12px; border-bottom:1px solid #eef1f4;}
+  .iis tr.hl td{background:#fff7e0;}
+  .iis .host{color:var(--blue-dark); font-weight:700;}
+
+  table.check{width:100%; border-collapse:collapse; margin:14px 0; background:#fff; border:1px solid var(--line); border-radius:10px; overflow:hidden;}
+  table.check td{padding:11px 14px; border-bottom:1px solid var(--line); vertical-align:top;}
+  table.check td:first-child{width:34px; text-align:center; font-size:18px;}
+  table.check tr:last-child td{border-bottom:none;}
+
+  .pill{display:inline-block; padding:2px 9px; border-radius:20px; font-size:12px; font-weight:700; color:#fff;}
+  .pill.uat{background:var(--uat);}
+  .pill.prod{background:var(--prod);}
+
+  .toc{background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px 22px; margin:20px 0;}
+  .toc ol{margin:6px 0; padding-left:22px;}
+  .toc a{text-decoration:none;}
+  .toc a:hover{text-decoration:underline;}
+  footer{text-align:center; color:var(--grey); font-size:13px; margin-top:50px;}
+  .kbd{background:#fff; border:1px solid #c6ccd2; border-bottom-width:2px; border-radius:5px; padding:1px 7px; font-size:13px; font-family:monospace;}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>🚀 TradeNet Admin Report — Deployment Guide</h1>
+  <p>How to point the website to the correct API, allow it in CORS, and publish — for <b>UAT</b> and <b>Production</b>.</p>
+</header>
+
+<div class="wrap">
+
+  <div class="box info">
+    <b><span class="ic">💡</span>You only need to get TWO things right</b>
+    <ol style="margin:6px 0 0;">
+      <li><b>Frontend → API:</b> the website must call the <i>correct</i> API address. <span style="color:var(--grey)">(file: <code>Frontend/src/config.ts</code>)</span></li>
+      <li><b>API → Frontend:</b> the API must <i>allow</i> the website's address in CORS. <span style="color:var(--grey)">(file: <code>Backend/Program.cs</code>)</span></li>
+    </ol>
+    These two must match each other. Everything else is just "build and copy the files".
+  </div>
+
+  <div class="toc">
+    <b>Steps in this guide</b>
+    <ol>
+      <li><a href="#big">The big picture (read this first)</a></li>
+      <li><a href="#s0">Step&nbsp;1 — Find the real URLs from IIS bindings</a></li>
+      <li><a href="#s1">Step&nbsp;2 — Frontend: set the API URLs in <code>config.ts</code></a></li>
+      <li><a href="#s2">Step&nbsp;3 — Frontend: build the website</a></li>
+      <li><a href="#s3">Step&nbsp;4 — Backend: add the website URLs to CORS</a></li>
+      <li><a href="#s4">Step&nbsp;5 — Backend: build &amp; publish</a></li>
+      <li><a href="#s5">Step&nbsp;6 — Copy the files to the server</a></li>
+      <li><a href="#trouble">If something goes wrong (troubleshooting)</a></li>
+      <li><a href="#checklist">Final checklist</a></li>
+    </ol>
+  </div>
+
+  <!-- ============ BIG PICTURE ============ -->
+  <h2 id="big">🗺️ The big picture</h2>
+  <p>There are <b>two separate environments</b>. Each one has its own <b>website (frontend)</b> and its own <b>API (backend)</b>.
+     The website talks to the API, and the API must allow the website.</p>
+
+  <div class="diagram">
+    <div class="lane uat">
+      <div class="tag">UAT<br>(testing)</div>
+      <div class="node">
+        <div class="t">🌐 UAT Website</div>
+        <div class="u">e.g. reportuat.myanmartradenet.com</div>
+      </div>
+      <div class="arrow">⇄<small>1) website<br>calls API<br><br>2) API<br>allows<br>website</small></div>
+      <div class="node">
+        <div class="t">⚙️ UAT API</div>
+        <div class="u">e.g. uatapi.ecomreg.gov.mm/api/</div>
+      </div>
+    </div>
+
+    <div class="lane prod">
+      <div class="tag">PROD<br>(live)</div>
+      <div class="node">
+        <div class="t">🌐 Production Website</div>
+        <div class="u">e.g. report.myanmartradenet.com</div>
+      </div>
+      <div class="arrow">⇄<small>1) website<br>calls API<br><br>2) API<br>allows<br>website</small></div>
+      <div class="node">
+        <div class="t">⚙️ Production API</div>
+        <div class="u">e.g. api.ecomreg.gov.mm/api/</div>
+      </div>
+    </div>
+
+    <div class="box warn" style="margin:14px 0 0;">
+      <b><span class="ic">⚠️</span>The example addresses above are just examples.</b>
+      Use the <b>real</b> addresses from your server's IIS bindings (Step&nbsp;1).
+    </div>
+  </div>
+
+  <div class="box info">
+    <b><span class="ic">🔑</span>Remember the direction</b>
+    In <b>config.ts</b> you write the <b>API</b> addresses (<code>...api/</code>).<br>
+    In <b>CORS</b> you write the <b>website</b> addresses (where the browser opens the app).<br>
+    <span style="color:var(--red); font-weight:700;">Do not mix them up</span> — this is the #1 cause of "it doesn't work".
+  </div>
+
+  <!-- ============ STEP 0 — IIS bindings ============ -->
+  <h2 id="s0">🔎 Step 1 — Find the real URLs from IIS bindings</h2>
+  <p>Log in to the <b>server</b> and open <b>IIS Manager</b> (press <span class="kbd">⊞ Win</span>, type <code>inetmgr</code>, Enter).
+     The address of each site is in its <b>Bindings</b>.</p>
+
+  <div class="step">
+    <div class="head"><div class="num" style="background:var(--grey)">A</div><h3>How to read a site's address</h3></div>
+    <div class="body">
+      <ol>
+        <li>In IIS Manager, expand <b>Sites</b> on the left.</li>
+        <li>Click the site (for example the website, or the API).</li>
+        <li>On the right side, click <b>Bindings…</b></li>
+        <li>Look at the <b>Host Name</b>, <b>Type</b> (http/https) and <b>Port</b>.</li>
+      </ol>
+
+      <div class="iis">
+        <div class="bar">🧰 Site Bindings  —  <i>reportuat (UAT website)</i></div>
+        <table>
+          <tr><th>Type</th><th>Host Name</th><th>Port</th><th>IP Address</th></tr>
+          <tr class="hl"><td>https</td><td class="host">reportuat.myanmartradenet.com</td><td>443</td><td>*</td></tr>
+        </table>
+      </div>
+
+      <p>Read that row like this:</p>
+      <p style="text-align:center; font-size:17px;">
+        <code>https</code> + <code>reportuat.myanmartradenet.com</code> + port <code>443</code>
+        &nbsp;→&nbsp; <b>https://reportuat.myanmartradenet.com</b>
+      </p>
+      <div class="box info" style="margin:8px 0 0;">
+        <b><span class="ic">ℹ️</span>About the port</b>
+        Port <b>443</b> = normal https, you don't write it. Port <b>80</b> = normal http, you don't write it.
+        Any other port (like <code>8000</code>) you <b>do</b> write it, e.g. <code>https://myapi:8000</code>.
+      </div>
+    </div>
+  </div>
+
+  <div class="box good">
+    <b><span class="ic">📝</span>Write down 4 addresses before you continue</b>
+    <table style="width:100%; border-collapse:collapse; margin-top:6px; font-size:14.5px;">
+      <tr><td style="padding:4px 8px;"><span class="pill uat">UAT</span> Website</td><td style="padding:4px 8px;">https://__________________</td></tr>
+      <tr><td style="padding:4px 8px;"><span class="pill uat">UAT</span> API</td><td style="padding:4px 8px;">https://__________________/api/</td></tr>
+      <tr><td style="padding:4px 8px;"><span class="pill prod">PROD</span> Website</td><td style="padding:4px 8px;">https://__________________</td></tr>
+      <tr><td style="padding:4px 8px;"><span class="pill prod">PROD</span> API</td><td style="padding:4px 8px;">https://__________________/api/</td></tr>
+    </table>
+  </div>
+
+  <!-- ============ STEP 1 — config.ts ============ -->
+  <h2 id="s1">🖥️ Step 2 — Frontend: set the API URLs in <code>config.ts</code></h2>
+  <p>File: <code>Frontend/src/config.ts</code>. This is where the website learns which API to call.</p>
+
+  <h3>What it looks like now</h3>
+  <pre><span class="k">const</span> envConfig = {
+  baseUrl:  <span class="s">'https://localhost:8000/api/'</span>,   <span class="c">// API for data</span>
+  imageUrl: <span class="s">'https://localhost:8000/Image/'</span>,  <span class="c">// API for images</span>
+  qrUrl:    <span class="s">'https://uatapi.ecomreg.gov.mm/QR/'</span>,
+};
+<span class="k">export default</span> envConfig;</pre>
+
+  <div class="box bad">
+    <b><span class="ic">🚫</span>Problem</b>
+    These point to <code>localhost</code> (your own PC). On the real server the website would try to reach the API on
+    the user's own computer — so no data loads. You must put the <b>real API address</b> here.
+  </div>
+
+  <h3>✅ Recommended: keep BOTH addresses, auto-pick by website</h3>
+  <p>Replace the whole file with the version below. It holds the <b>Production</b> API and the <b>UAT</b> API, and
+     automatically chooses the right one based on which website the user opened. This means
+     <b>one build works on both servers</b> — no need to edit and rebuild twice.</p>
+
+  <pre><span class="c">// ============================================================</span>
+<span class="c">//  API ADDRESSES — fill in the REAL urls from IIS (Step 1).</span>
+<span class="c">//  Keep the "/api/", "/Image/", "/QR/" endings exactly.</span>
+<span class="c">// ============================================================</span>
+
+<span class="c">// ---- PRODUCTION (live) ----</span>
+<span class="k">const</span> PRODUCTION = {
+  baseUrl:  <span class="s">'https://<span class="fill">PROD-API-ADDRESS</span>/api/'</span>,
+  imageUrl: <span class="s">'https://<span class="fill">PROD-API-ADDRESS</span>/Image/'</span>,
+  qrUrl:    <span class="s">'https://<span class="fill">PROD-API-ADDRESS</span>/QR/'</span>,
+};
+
+<span class="c">// ---- UAT (testing) ----</span>
+<span class="k">const</span> UAT = {
+  baseUrl:  <span class="s">'https://<span class="fill">UAT-API-ADDRESS</span>/api/'</span>,
+  imageUrl: <span class="s">'https://<span class="fill">UAT-API-ADDRESS</span>/Image/'</span>,
+  qrUrl:    <span class="s">'https://uatapi.ecomreg.gov.mm/QR/'</span>,   <span class="c">// existing UAT QR — confirm on server</span>
+};
+
+<span class="c">// The PRODUCTION website's host name (NO https://, NO slash).</span>
+<span class="c">// Find it in IIS bindings for the live website.</span>
+<span class="k">const</span> PRODUCTION_WEBSITE = <span class="s">'<span class="fill">PROD-WEBSITE-HOST</span>'</span>;  <span class="c">// e.g. 'report.myanmartradenet.com'</span>
+
+<span class="k">const</span> isProduction = window.location.hostname === PRODUCTION_WEBSITE;
+
+<span class="k">const</span> envConfig = isProduction ? PRODUCTION : UAT;
+<span class="k">export default</span> envConfig;</pre>
+
+  <div class="box warn">
+    <b><span class="ic">✏️</span>Replace every <span class="fill" style="background:#5a2d2d;color:#ffd5d0;">red box</span></b>
+    with your real addresses from Step&nbsp;1. <b>Do not</b> change the <code>/api/</code>, <code>/Image/</code>, <code>/QR/</code>
+    endings, and <b>keep the last slash</b> <code>/</code> — the app glues the rest of the path onto these.
+  </div>
+
+  <div class="box info">
+    <b><span class="ic">🔁</span>Simpler alternative (if you prefer one address at a time)</b>
+    If you build separately for each environment, you can instead set just one set of values before each build:
+    put the UAT API in <code>baseUrl</code>/<code>imageUrl</code>/<code>qrUrl</code>, build &amp; deploy to UAT, then change them to
+    Production, build &amp; deploy to Production. The "auto-pick" version above avoids this double work, so it is recommended.
+  </div>
+
+  <!-- ============ STEP 2 — build frontend ============ -->
+  <h2 id="s2">📦 Step 3 — Frontend: build the website</h2>
+  <p>In the <code>Frontend</code> folder, run:</p>
+  <pre><span class="k">cd</span> Frontend
+npm install        <span class="c"># only the first time, or after package changes</span>
+npm run build      <span class="c"># creates the dist/ folder</span></pre>
+  <p>This produces the ready-to-publish files in <code>Frontend/dist/</code>. That whole <code>dist</code> folder is what goes
+     onto the website's IIS folder.</p>
+  <div class="box good">
+    <b><span class="ic">✅</span>Check</b>
+    After it finishes you should see <code>Frontend/dist/index.html</code> and a <code>dist/assets/</code> folder.
+  </div>
+
+  <!-- ============ STEP 3 — CORS ============ -->
+  <h2 id="s3">🛡️ Step 4 — Backend: add the website URLs to CORS</h2>
+  <p>File: <code>Backend/Program.cs</code>, inside the <code>#region Cors</code> block (around line 142).
+     CORS is the API's "guest list" — only the website addresses on this list are allowed to call the API from a browser.</p>
+
+  <div class="box bad">
+    <b><span class="ic">🚫</span>If a website is NOT on this list</b>
+    the browser blocks it and you see a <b>CORS error</b> in the console (F12), and reports show no data.
+  </div>
+
+  <h3>Add your two WEBSITE addresses here</h3>
+  <pre>builder.WithOrigins(
+    <span class="s">"https://vehicle.myanmartradenet.com"</span>,
+    <span class="s">"https://testingvehicle.myanmartradenet.com"</span>,
+    <span class="s">"https://www.mpu-ecommerce.com"</span>,
+    <span class="s">"https://www.mpuecomuat.com"</span>,
+    <span class="s">"https://reportuat.myanmartradenet.com"</span>,    <span class="c">// &lt;- UAT website (already here)</span>
+<span class="add">    "https://<span class="fill">PROD-WEBSITE-ADDRESS</span>",            // &lt;- ADD the Production website</span>
+    <span class="s">"http://localhost:5173"</span>,                     <span class="c">// (local dev — leave as is)</span>
+    <span class="c">// ... the other localhost lines stay ...</span>
+).AllowAnyMethod().AllowAnyHeader().AllowCredentials();</pre>
+
+  <div class="box warn">
+    <b><span class="ic">📏</span>Rules for CORS addresses (must be exact)</b>
+    <ul style="margin:6px 0 0;">
+      <li>Use the <b>website</b> address (where users open the app) — <b>not</b> the <code>/api/</code> address.</li>
+      <li>Include <code>https://</code> (or <code>http://</code>) — must match how the site is opened.</li>
+      <li><b>No trailing slash</b> and <b>no path</b>: write <code>https://report.myanmartradenet.com</code>,
+          <span style="color:var(--red)">not</span> <code>.../</code> or <code>.../reports</code>.</li>
+      <li>If UAT website (<code>reportuat...</code>) is already correct, you may only need to add Production.</li>
+    </ul>
+  </div>
+
+  <!-- ============ STEP 4 — build backend ============ -->
+  <h2 id="s4">📦 Step 5 — Backend: build &amp; publish</h2>
+  <p>In the <code>Backend</code> folder, run:</p>
+  <pre><span class="k">cd</span> Backend
+dotnet publish API.csproj -c Release -o publish</pre>
+  <p>This creates a <code>Backend/publish/</code> folder containing the compiled API ready for IIS.</p>
+  <div class="box info">
+    <b><span class="ic">🔐</span>Don't overwrite the server's settings</b>
+    The live server's <code>appsettings.json</code> (database connection string, JWT key) must <b>not</b> be replaced by
+    your local one. When copying, <b>skip</b> <code>appsettings.json</code> and any <code>appsettings.*.json</code>.
+    (The <code>deploy.ps1</code> script already excludes these for you.)
+  </div>
+
+  <!-- ============ STEP 5 — deploy ============ -->
+  <h2 id="s5">🚚 Step 6 — Copy the files to the server</h2>
+  <p>Each environment has its own folder under IIS. You copy the built files into the matching folder, then the site is live.</p>
+
+  <div class="lane" style="display:flex; gap:10px; flex-wrap:wrap;">
+    <div class="node"><div class="t">📂 Frontend</div><div class="u">copy everything inside <code>Frontend/dist/</code> → the website's IIS folder</div></div>
+    <div class="node"><div class="t">📂 Backend</div><div class="u">copy everything inside <code>Backend/publish/</code> → the API's IIS folder</div></div>
+  </div>
+
+  <div class="box good">
+    <b><span class="ic">⚡</span>Easiest way — use the included script</b>
+    There is already a <code>deploy.ps1</code> in the project. On the server it: pulls latest code, builds backend &amp; frontend,
+    and copies them to <code>P:\WEBSITES\tradenet-admin-backend</code> and <code>P:\WEBSITES\tradenenet-admin-frontend</code>,
+    while protecting <code>appsettings.json</code> and <code>web.config</code>. Run it from the project root:
+    <pre style="margin-top:8px;">powershell -ExecutionPolicy Bypass -File .\deploy.ps1</pre>
+    <span style="font-size:13.5px; color:var(--grey)">Tip: confirm those two target paths match your real IIS site folders before running.</span>
+  </div>
+
+  <div class="box warn">
+    <b><span class="ic">♻️</span>After deploying the API</b>
+    In IIS Manager, recycle the API's <b>Application Pool</b> (or restart the site) so the new CORS settings take effect.
+    For the website, just refresh the browser with <span class="kbd">Ctrl</span>+<span class="kbd">F5</span> (hard refresh).
+  </div>
+
+  <!-- ============ TROUBLESHOOTING ============ -->
+  <h2 id="trouble">🩺 If something goes wrong</h2>
+  <table class="check">
+    <tr><td>❌</td><td><b>Reports show no data + browser console (F12) shows a "CORS" / "blocked by CORS policy" error</b><br>
+        → The website address is missing or misspelled in <b>CORS</b> (Step 4). Add the exact address, no trailing slash, then recycle the API app pool.</td></tr>
+    <tr><td>❌</td><td><b>Page loads but every request fails / points to <code>localhost</code></b><br>
+        → <code>config.ts</code> still has the old <code>localhost</code> address, or you forgot to rebuild the frontend (Step 2 &amp; 3).</td></tr>
+    <tr><td>❌</td><td><b>UAT works but Production calls the UAT API (or vice-versa)</b><br>
+        → <code>PRODUCTION_WEBSITE</code> in <code>config.ts</code> does not exactly match the live website's host name from IIS bindings.</td></tr>
+    <tr><td>❌</td><td><b>"Mixed content" error</b><br>
+        → Website is <code>https</code> but the API address is <code>http</code>. Make both <code>https</code>.</td></tr>
+    <tr><td>❌</td><td><b>404 on every API call</b><br>
+        → The <code>baseUrl</code> is missing the <code>/api/</code> ending or the final slash <code>/</code>. It must end with <code>/api/</code>.</td></tr>
+  </table>
+
+  <!-- ============ CHECKLIST ============ -->
+  <h2 id="checklist">✅ Final checklist</h2>
+  <table class="check">
+    <tr><td>☐</td><td>Got the 4 real addresses from <b>IIS bindings</b> (UAT website, UAT API, Prod website, Prod API).</td></tr>
+    <tr><td>☐</td><td><code>Frontend/src/config.ts</code> has the real <b>Production</b> and <b>UAT API</b> addresses (no <code>localhost</code>).</td></tr>
+    <tr><td>☐</td><td><code>PRODUCTION_WEBSITE</code> exactly matches the live website host name.</td></tr>
+    <tr><td>☐</td><td>Frontend built (<code>npm run build</code>) — <code>dist/</code> folder created.</td></tr>
+    <tr><td>☐</td><td><code>Backend/Program.cs</code> CORS list includes both the <b>Production</b> and <b>UAT website</b> addresses (no trailing slash).</td></tr>
+    <tr><td>☐</td><td>Backend published (<code>dotnet publish</code>) — <code>publish/</code> folder created.</td></tr>
+    <tr><td>☐</td><td>Files copied to the correct IIS folders (server <code>appsettings.json</code> NOT overwritten).</td></tr>
+    <tr><td>☐</td><td>API app pool recycled, website hard-refreshed, reports load data on <b>both</b> UAT and Production.</td></tr>
+  </table>
+
+  <footer>
+    TradeNet Admin Report — Deployment Guide · Files referenced:
+    <code>Frontend/src/config.ts</code>, <code>Backend/Program.cs</code>, <code>deploy.ps1</code>.
+  </footer>
+
+</div>
+</body>
+</html>
