@@ -32,6 +32,20 @@ $publishOutput = Join-Path $root 'Backend\publish'
 Write-Host "Publishing Backend to: $publishOutput"
 dotnet publish API.csproj -c Release -o $publishOutput
 
+$backendConfigFiles = @(
+    Join-Path $publishOutput 'appsettings.json'
+) + @(
+    Get-ChildItem -LiteralPath $publishOutput -Filter 'appsettings.*.json' -File -ErrorAction SilentlyContinue |
+        Select-Object -ExpandProperty FullName
+)
+
+foreach ($configFile in $backendConfigFiles) {
+    if (Test-Path -LiteralPath $configFile) {
+        Write-Host "Removing backend publish config before copy: $configFile"
+        Remove-Item -LiteralPath $configFile -Force
+    }
+}
+
 $backendTarget = 'P:\WEBSITES\tradenet-admin-backend'
 New-Item -ItemType Directory -Force -Path $backendTarget | Out-Null
 Write-Host "Copying backend files to: $backendTarget"
