@@ -57,6 +57,9 @@ namespace Backend.Controllers
                 "importlicencemethods" => GetImportLicenceMethods,
                 "importlicencesections" => GetImportLicenceSections,
                 "importpermitsections" => GetImportPermitSections,
+                "borderimportlicenceincoterms" => GetBorderImportLicenceIncoterms,
+                "borderimportlicencemethods" => GetBorderImportLicenceMethods,
+                "borderimportlicencesections" => GetBorderImportLicenceSections,
                 "borderimportpermitsections" => GetBorderImportPermitSections,
                 "borderexportlicencesections" => GetBorderExportLicenceSections,
                 "lineofbusinesses" => GetLineofBusinesses,
@@ -230,6 +233,47 @@ namespace Backend.Controllers
                     !item.IsDeleted &&
                     item.Type == ImportLicenceFormType &&
                     item.IsOversea)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
+                .ToListAsync();
+
+        // Border Import Licence lookups mirror the legacy admin:
+        // Import Licence sections where IsBorder, and Import methods/incoterms where IsBorder.
+        private Task<List<ReportLookupOption>> GetBorderImportLicenceIncoterms() =>
+            _context.ExportImportIncoterms
+                .AsNoTracking()
+                .Where(item =>
+                    item.IsActive &&
+                    !item.IsDeleted &&
+                    item.Type == ImportTradeType &&
+                    item.IsBorder)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
+                .ToListAsync();
+
+        private Task<List<ReportLookupOption>> GetBorderImportLicenceMethods() =>
+            _context.ExportImportMethods
+                .AsNoTracking()
+                .Where(item =>
+                    item.IsActive &&
+                    !item.IsDeleted &&
+                    item.Type == ImportTradeType &&
+                    item.IsBorder)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
+                .ToListAsync();
+
+        private Task<List<ReportLookupOption>> GetBorderImportLicenceSections() =>
+            _context.ExportImportSections
+                .AsNoTracking()
+                .Where(item =>
+                    item.IsActive &&
+                    !item.IsDeleted &&
+                    item.Type == ImportLicenceFormType &&
+                    item.IsBorder)
                 .OrderBy(item => item.SortOrder)
                 .ThenBy(item => item.Name)
                 .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))

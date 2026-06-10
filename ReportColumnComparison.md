@@ -354,8 +354,8 @@ Extra in new (0): _None_
 
 Title: Border Import Licence Detail Report
 Old source: `BorderImportLicenceDetailReport.rdlc`
-Old columns (26): `Sr.No.`, `Section`, `Application Date`, `Application No`, `Licence No`, `Licence Date`, `Company Registration No`, `Company Name`, `Company Address`, `Seller Name`, `Seller Address`, `Seller Country`, `Place/Port of Discharge`, `Last Date`, `Method`, `Consigned Country`, `Country of Orign`, `HSCode`, `Decription`, `A/U`, `Price`, `Qty`, `Value`, `Currency`, `Commodity Type`, `Conditions`
-New columns (26): `No`, `Section`, `Application Date`, `Application No`, `Licence No`, `Licence Date`, `Company Registration No`, `Company Name`, `Company Address`, `Seller Name`, `Seller Address`, `Seller Country`, `Place/Port of Discharge`, `Last Date`, `Method`, `Consigned Country`, `Country of Orign`, `HSCode`, `Decription`, `A/U`, `Price`, `Qty`, `Value`, `Currency`, `Commodity Type`, `Conditions`
+Old columns (27): `Sr.No.`, `Section`, `Application Date`, `Application No`, `Licence No`, `Create Date`, `Approve Date`, `Company Registration No`, `Company Name`, `Company Address`, `Seller Name`, `Seller Address`, `Seller Country`, `Place/Port of Discharge`, `Last Date`, `Method`, `Consigned Country`, `Country of Orign`, `HSCode`, `Decription`, `A/U`, `Price`, `Qty`, `Value`, `Currency`, `Commodity Type`, `Conditions`
+New columns (27): `No`, `Section`, `Application Date`, `Application No`, `Licence No`, `Create Date`, `Approve Date`, `Company Registration No`, `Company Name`, `Company Address`, `Seller Name`, `Seller Address`, `Seller Country`, `Place/Port of Discharge`, `Last Date`, `Method`, `Consigned Country`, `Country of Orign`, `HSCode`, `Decription`, `A/U`, `Price`, `Qty`, `Value`, `Currency`, `Commodity Type`, `Conditions`
 Need in new (0): _None_
 Extra in new (0): _None_
 
@@ -363,10 +363,10 @@ Extra in new (0): _None_
 
 Title: Border Import Licence Detail Report (Pending)
 Old source: `BorderImportLicenceDetailReport.rdlc`
-Old columns (26): `Sr.No.`, `Section`, `Application Date`, `Application No`, `Licence No`, `Licence Date`, `Company Registration No`, `Company Name`, `Company Address`, `Seller Name`, `Seller Address`, `Seller Country`, `Place/Port of Discharge`, `Last Date`, `Method`, `Consigned Country`, `Country of Orign`, `HSCode`, `Decription`, `A/U`, `Price`, `Qty`, `Value`, `Currency`, `Commodity Type`, `Conditions`
+Old columns (27): `Sr.No.`, `Section`, `Application Date`, `Application No`, `Licence No`, `Create Date`, `Approve Date`, `Company Registration No`, `Company Name`, `Company Address`, `Seller Name`, `Seller Address`, `Seller Country`, `Place/Port of Discharge`, `Last Date`, `Method`, `Consigned Country`, `Country of Orign`, `HSCode`, `Decription`, `A/U`, `Price`, `Qty`, `Value`, `Currency`, `Commodity Type`, `Conditions`
 New columns (26): `No`, `Section`, `Application Date`, `Application No`, `Licence No`, `Licence Date`, `Company Registration No`, `Company Name`, `Company Address`, `Seller Name`, `Seller Address`, `Seller Country`, `Place/Port of Discharge`, `Last Date`, `Method`, `Consigned Country`, `Country of Orign`, `HSCode`, `Decription`, `A/U`, `Price`, `Qty`, `Value`, `Currency`, `Commodity Type`, `Conditions`
-Need in new (0): _None_
-Extra in new (0): _None_
+Need in new (2): `Create Date`, `Approve Date`
+Extra in new (1): `Licence Date`
 
 ### BorderImportLicenceExtensionReport
 
