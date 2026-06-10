@@ -9,28 +9,82 @@ Pulls latest git changes, builds and publishes the Backend, runs Frontend build,
 [CmdletBinding()]
 param(
     [switch]$NoGit,
-    [switch]$NoFrontend
+    [switch]$NoFrontend,
+    [string]$BackendTarget = 'P:\WEBSITES\tradenet-admin-backend',
+    [string]$FrontendTarget = 'P:\WEBSITES\tradenenet-admin-frontend'
 )
 
 $ErrorActionPreference = 'Stop'
+
+function Invoke-NativeCommand {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Description,
+
+        [Parameter(Mandatory = $true)]
+        [scriptblock]$Command
+    )
+
+    Write-Host $Description
+    & $Command
+    if ($LASTEXITCODE -ne 0) {
+        throw "$Description failed with exit code $LASTEXITCODE."
+    }
+}
+
+function Invoke-Robocopy {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Source,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Destination,
+
+        [string[]]$ExcludeFiles = @()
+    )
+
+    $arguments = @(
+        $Source,
+        $Destination,
+        '/E',
+        '/MT:8',
+        '/NFL',
+        '/NDL',
+        '/NJH',
+        '/NJS',
+        '/nc',
+        '/ns',
+        '/np'
+    )
+
+    if ($ExcludeFiles.Count -gt 0) {
+        $arguments += '/XF'
+        $arguments += $ExcludeFiles
+    }
+
+    & robocopy @arguments
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -ge 8) {
+        throw "Robocopy from '$Source' to '$Destination' failed with exit code $exitCode."
+    }
+
+    Write-Host "Robocopy completed with exit code $exitCode."
+}
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Write-Host "Root folder: $root"
 Set-Location $root
 
 if (-not $NoGit) {
-    Write-Host 'Pulling latest changes from git...'
-    git pull --ff-only
+    Invoke-NativeCommand 'Pulling latest changes from git...' { git pull --ff-only }
 }
 
 $backendDir = Join-Path $root 'Backend'
 Set-Location $backendDir
-Write-Host 'Building Backend...'
-dotnet build
+Invoke-NativeCommand 'Building Backend...' { dotnet build -c Release }
 
 $publishOutput = Join-Path $root 'Backend\publish'
-Write-Host "Publishing Backend to: $publishOutput"
-dotnet publish API.csproj -c Release -o $publishOutput
+Invoke-NativeCommand "Publishing Backend to: $publishOutput" { dotnet publish API.csproj -c Release -o $publishOutput }
 
 $backendConfigFiles = @(
     Join-Path $publishOutput 'appsettings.json'
@@ -46,22 +100,20 @@ foreach ($configFile in $backendConfigFiles) {
     }
 }
 
-$backendTarget = 'P:\WEBSITES\tradenet-admin-backend'
-New-Item -ItemType Directory -Force -Path $backendTarget | Out-Null
-Write-Host "Copying backend files to: $backendTarget"
-robocopy $publishOutput $backendTarget /E /MT:8 /NFL /NDL /NJH /NJS /nc /ns /np /XF appsettings.json appsettings.*.json
+New-Item -ItemType Directory -Force -Path $BackendTarget | Out-Null
+Write-Host "Copying backend files to: $BackendTarget"
+Invoke-Robocopy -Source $publishOutput -Destination $BackendTarget -ExcludeFiles @('appsettings.json', 'appsettings.*.json')
 
 if (-not $NoFrontend) {
     $frontendDir = Join-Path $root 'Frontend'
     Set-Location $frontendDir
-    Write-Host 'Building Frontend...'
-    npm run build
+    Invoke-NativeCommand 'Installing Frontend dependencies...' { npm install --legacy-peer-deps }
+    Invoke-NativeCommand 'Building Frontend...' { npm run build }
 
     $frontendOutput = Join-Path $frontendDir 'dist'
-    $frontendTarget = 'P:\WEBSITES\tradenenet-admin-frontend'
-    New-Item -ItemType Directory -Force -Path $frontendTarget | Out-Null
-    Write-Host "Copying frontend files to: $frontendTarget"
-    robocopy $frontendOutput $frontendTarget /E /MT:8 /NFL /NDL /NJH /NJS /nc /ns /np /XF web.config
+    New-Item -ItemType Directory -Force -Path $FrontendTarget | Out-Null
+    Write-Host "Copying frontend files to: $FrontendTarget"
+    Invoke-Robocopy -Source $frontendOutput -Destination $FrontendTarget -ExcludeFiles @('web.config')
 }
 
 Write-Host 'Deployment complete.'
