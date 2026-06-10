@@ -43,4 +43,24 @@ describe('Border Import Licence report configs', () => {
       ['ApproveDate', 'approveDate', 'Approve Date'],
     ]);
   });
+
+  it('Total Value & Licences matches old Border Import filter scope', () => {
+    const cfg = reportConfigs.BorderImportLicenceTotalValueLicencesReport;
+
+    expect(cfg.reportSubtitle?.({
+      FromDate: '2026-06-01',
+      ToDate: '2026-06-10',
+    })).toBe('Border Import Licences Total Value & Licences (01/06/2026) To (10/06/2026)');
+
+    expect(cfg.filters.map((f) => f.name)).toEqual([
+      'dateRange',
+      'SakhanId',
+      'PaThaKaTypeId',
+      'ExportImportSectionId',
+    ]);
+
+    expect(cfg.filters.find((f) => f.name === 'ExportImportSectionId')?.lookupName).toBe(
+      'borderImportLicenceSections'
+    );
+  });
 });

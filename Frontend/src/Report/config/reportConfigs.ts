@@ -422,6 +422,13 @@ const borderImportLicenceDailyFilters: ReportFilterConfig[] = [
   importLicenceCompanyNameFilter,
 ];
 
+const borderImportLicenceTotalValueFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  borderImportLicenceSakhanFilter,
+  importLicencePaThaKaTypeFilter,
+  borderImportLicenceSectionFilter,
+];
+
 const borderImportLicenceDetailFilters: ReportFilterConfig[] = [
   ...borderImportLicenceSectionMethodFilters,
   borderImportLicenceIncotermFilter,
@@ -4709,66 +4716,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'BorderImportLicenceTotalValueLicencesReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'PaThaKaTypeId',
-        label: 'EIR Card Type',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportMethodId',
-        label: 'Import Method',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Import Incoterms',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'SellerCountryId',
-        label: 'Seller Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: borderImportLicenceTotalValueFilters,
+    reportSubtitle: importLicenceRangeSubtitle(
+      'Border Import Licences Total Value & Licences'
+    ),
     columns: [
       {
         key: 'TotalValue',
