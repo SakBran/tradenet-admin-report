@@ -1,0 +1,178 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TradeNet Report — SQL Migration Run Guide</title>
+<style>
+:root{--bg:#0f172a;--card:#fff;--ink:#1e293b;--muted:#64748b;--line:#e2e8f0;--accent:#2563eb}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.55 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:#f1f5f9}
+.wrap{max-width:1120px;margin:0 auto;padding:32px 20px 80px}
+header.hero{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border-radius:16px;padding:28px 32px;box-shadow:0 10px 30px rgba(30,58,138,.25)}
+header.hero h1{margin:0 0 6px;font-size:26px}
+header.hero p{margin:4px 0;opacity:.92}
+.pill{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);padding:3px 10px;border-radius:999px;font-size:12px;margin-right:6px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:22px 0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.stat .n{font-size:30px;font-weight:700;color:var(--accent)}
+.stat .l{color:var(--muted);font-size:13px;margin-top:2px}
+h2{margin:38px 0 12px;font-size:20px;border-left:4px solid var(--accent);padding-left:10px}
+h3{margin:22px 0 8px;font-size:16px}
+.note{background:#fffbeb;border:1px solid #fde68a;border-left:4px solid #f59e0b;border-radius:8px;padding:12px 16px;margin:12px 0}
+.note.crit{background:#fef2f2;border-color:#fecaca;border-left-color:#ef4444}
+.note.ok{background:#f0fdf4;border-color:#bbf7d0;border-left-color:#22c55e}
+.badge{color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin:18px 0}
+.step{flex:1;min-width:180px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;position:relative}
+.step .sn{display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;align-items:center;justify-content:center;font-weight:700;font-size:13px;margin-bottom:8px}
+.arrow{display:flex;align-items:center;color:#94a3b8;font-size:24px;padding:0 8px}
+table{width:100%;border-collapse:collapse;background:var(--card);border-radius:10px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04);margin:10px 0}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top}
+th{background:#f8fafc;color:#334155;font-weight:600}
+tr:last-child td{border-bottom:0}
+code{background:#f1f5f9;padding:1px 6px;border-radius:5px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px}
+pre{background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:10px;overflow:auto;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.5}
+pre .c{color:#7dd3fc}.pre .k{color:#fca5a5}
+.item{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:8px 0;display:flex;gap:12px;align-items:flex-start}
+.chk{width:18px;height:18px;border:2px solid #cbd5e1;border-radius:5px;flex:none;margin-top:2px}
+.item .body{flex:1}
+.item .fn{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;font-weight:600;color:#0f172a}
+.item .pp{color:var(--muted);font-size:12.5px;margin-top:2px}
+.dep{display:inline-block;background:#ecfeff;border:1px solid #a5f3fc;color:#0e7490;font-size:11px;padding:1px 7px;border-radius:6px;margin-top:6px;margin-right:4px}
+.removed{text-decoration:line-through;color:#94a3b8}
+.legend{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+svg{max-width:100%;height:auto;background:var(--card);border:1px solid var(--line);border-radius:12px}
+footer{margin-top:50px;color:var(--muted);font-size:12px;text-align:center}
+</style></head><body><div class="wrap">
+<header class="hero">
+  <h1>TradeNet Report — SQL Migration Run Guide</h1>
+  <p>Hand-run sequence for deploying report stored procedures, indexed views &amp; indexes.</p>
+  <p style="margin-top:10px">
+    <span class="pill">Generated 2026-06-10</span>
+    <span class="pill">UAT: 203.81.66.111,14330 / TradeNetDB ✓ deployed</span>
+    <span class="pill">Production: run by hand ⚠</span>
+  </p>
+</header>
+
+<div class="cards">
+  <div class="stat"><div class="n">34</div><div class="l">Stored procedures</div></div>
+  <div class="stat"><div class="n">3</div><div class="l">Indexed views</div></div>
+  <div class="stat"><div class="n">6</div><div class="l">Index scripts</div></div>
+  <div class="stat"><div class="n">2</div><div class="l">Removed (orphans)</div></div>
+</div>
+
+<div class="note ok"><b>Reconciliation vs UAT (203.81.66.111,14330):</b> all 34 procedures and 3 indexed views in this folder exist and are deployed on UAT; the 3 indexed views carry their unique clustered index. No <i>missing</i> migrations were found (the <code>_pagination</code> wrappers also depend on the pre-existing base procs <code>sp_PaThaKaReport</code> / <code>sp_PaThaKaValidInvalidReport</code>, which already exist on the server).</div>
+
+<h2>What was removed (unnecessary)</h2>
+<table>
+<tr><th>File</th><th>Why removed</th></tr>
+<tr><td class="removed">sp_ImportPermitDetailReport_Fast_pagination.sql</td><td>Orphan — not referenced by any C#/proc (the Import Permit Detail report runs via the in-memory LINQ aggregate path) and <b>not deployed to UAT</b>. Only mentioned in a planning doc.</td></tr>
+<tr><td class="removed">Views/vw_ExportLicenceItemTotalByCurrency.sql</td><td>Orphan indexed view — referenced by no procedure, and <b>not indexed in UAT</b> (its clustered index was never applied). Only mentioned in planning docs.</td></tr>
+</table>
+
+<h2>Run order</h2>
+<div class="flow">
+<div class="step"><span class="sn">0</span><b>Prerequisites</b><div class="pp">Base legacy procs exist (sp_PaThaKaReport, sp_PaThaKaValidInvalidReport). Session SET options ON.</div></div>
+<div class="arrow">→</div>
+<div class="step"><span class="sn">1</span><b>Indexed Views</b><div class="pp">3 views + unique clustered index. Must precede the NOEXPAND procs.</div></div>
+<div class="arrow">→</div>
+<div class="step"><span class="sn">2</span><b>Indexes</b><div class="pp">Run the consolidated production index script (ONLINE, safe-to-rerun).</div></div>
+<div class="arrow">→</div>
+<div class="step"><span class="sn">3</span><b>Stored Procedures</b><div class="pp">34 procedures (CREATE OR ALTER, idempotent).</div></div>
+</div>
+<div class="note crit"><b>Critical — SET QUOTED_IDENTIFIER ON &amp; ANSI_NULLS ON</b> before creating the indexed views and the NOEXPAND procedures (<code>sp_VoucherReport_pagination</code>, the two <code>*_Indexed</code> procs) and <code>sp_ImportLicencePendingDetailReport_pagination</code> (XML <code>.value()</code>). <code>sqlcmd</code>/SSMS default these ON; <b>pymssql/ad-hoc clients may not</b> → Msg 1934. Creating a proc with QI OFF makes it fail at <i>run</i> time.</div>
+
+<h2>Indexed-view dependency map</h2>
+<p class="pp">Phase 1 must complete before these Phase 3 procedures (they read the views with <code>WITH (NOEXPAND)</code>).</p>
+<svg viewBox="0 0 720 250" role="img" aria-label="Indexed view dependency diagram">
+<defs><marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#0d9488"/></marker></defs>
+<text x="120" y="24" text-anchor="middle" font-size="13" font-weight="700" fill="#0d9488">Indexed Views (Phase 1)</text>
+<text x="560" y="24" text-anchor="middle" font-size="13" font-weight="700" fill="#ea580c">Dependent Procedures (Phase 3)</text>
+<g font-size="11" font-family="monospace">
+<rect x="20" y="50" width="210" height="34" rx="7" fill="#ecfeff" stroke="#0d9488"/><text x="30" y="71" fill="#0e7490">vw_ExportPermitItemTotalByCurrency</text>
+<rect x="20" y="108" width="210" height="34" rx="7" fill="#ecfeff" stroke="#0d9488"/><text x="30" y="129" fill="#0e7490">vw_ImportLicenceItemTotalByCurrency</text>
+<rect x="20" y="166" width="210" height="34" rx="7" fill="#ecfeff" stroke="#0d9488"/><text x="30" y="187" fill="#0e7490">vw_ImportPermitItemTotalByCurrency</text>
+<rect x="440" y="50" width="250" height="34" rx="7" fill="#fff7ed" stroke="#ea580c"/><text x="450" y="71" fill="#9a3412">sp_VoucherReport_pagination</text>
+<rect x="440" y="108" width="250" height="34" rx="7" fill="#fdf4ff" stroke="#c026d3"/><text x="450" y="129" fill="#a21caf">sp_ImportLicenceSummaryReport_Indexed</text>
+<rect x="440" y="166" width="250" height="34" rx="7" fill="#fdf4ff" stroke="#c026d3"/><text x="450" y="187" fill="#a21caf">sp_ImportLicenceDetailByLicenceReport_Indexed</text>
+</g>
+<g stroke="#0d9488" stroke-width="1.6" fill="none" marker-end="url(#ah)">
+<path d="M230,67 C340,67 340,67 440,67"/>
+<path d="M230,125 C340,125 340,67 440,72"/>
+<path d="M230,125 C340,125 340,125 440,125"/>
+<path d="M230,125 C340,160 340,180 440,183"/>
+<path d="M230,183 C340,183 340,72 440,76"/>
+</g>
+</svg>
+
+<h2>Phase 1 — Indexed Views <span style="color:#94a3b8;font-weight:400">(run first)</span></h2>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">Views/vw_ExportPermitItemTotalByCurrency.sql</div><div class="pp">Indexed view: per-(ExportPermitId, CurrencyId) item totals. Speeds Voucher.</div><span class="dep" style="background:#f0fdfa;border-color:#99f6e4;color:#0f766e">indexed in UAT ✓</span></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">Views/vw_ImportLicenceItemTotalByCurrency.sql</div><div class="pp">Indexed view: per-(LicenceId, CurrencyId) item totals. Used by Import Licence Indexed procs + Voucher.</div><span class="dep" style="background:#f0fdfa;border-color:#99f6e4;color:#0f766e">indexed in UAT ✓</span></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">Views/vw_ImportPermitItemTotalByCurrency.sql</div><div class="pp">Indexed view: per-(ImportPermitId, CurrencyId) item totals. Speeds Voucher.</div><span class="dep" style="background:#f0fdfa;border-color:#99f6e4;color:#0f766e">indexed in UAT ✓</span></div></div>
+
+<h2>Phase 2 — Indexes</h2>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">IndexedMigrations/TradeNetReportIndexes_Production.sql</div><div class="pp">Consolidated production rollout — preflight + ONLINE + safe-to-rerun. Run THIS on prod.</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">Indexes/BorderExportPermitDetailReport_indexes.sql</div><div class="pp">Per-report granular index script (covered by the consolidated production script; run only if applying piecemeal).</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">Indexes/ExportLicenceDetailReport_indexes.sql</div><div class="pp">Per-report granular index script (covered by the consolidated production script; run only if applying piecemeal).</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">Indexes/ExportLicenceHSCodeReport_indexes.sql</div><div class="pp">Per-report granular index script (covered by the consolidated production script; run only if applying piecemeal).</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">Indexes/ExportLicenceVoucherReport_indexes.sql</div><div class="pp">Per-report granular index script (covered by the consolidated production script; run only if applying piecemeal).</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">Indexes/IX_ImportLicence_PendingReport.sql</div><div class="pp">Per-report granular index script (covered by the consolidated production script; run only if applying piecemeal).</div></div></div>
+
+<h2>Phase 3 — Stored Procedures <span style="color:#94a3b8;font-weight:400">(34 files, any order within the phase)</span></h2>
+<div class="legend"><span class="badge" style="background:#2563eb">Export Permit</span><span class="badge" style="background:#0891b2">Export Licence</span><span class="badge" style="background:#7c3aed">Import Permit</span><span class="badge" style="background:#c026d3">Import Licence</span><span class="badge" style="background:#ea580c">Shared listing</span><span class="badge" style="background:#16a34a">Pa Tha Ka / Registration</span><span class="badge" style="background:#ca8a04">Payments &amp; Fees</span><span class="badge" style="background:#dc2626">MPU</span></div>
+<h3><span class="badge" style="background:#2563eb">Export Permit</span> &nbsp;Export Permit <span style="color:#94a3b8;font-weight:400">(3)</span></h3>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ExportPermitDetailReport_Fast_pagination.sql</div><div class="pp">Export Permit Detail — DB-side paginated detail rows.</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ExportPermitListingCurrencyTotals.sql</div><div class="pp">Per-currency footer totals for New / Amend / Actual Amend / Cancel listings (both families, by FormType).</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ExportPermitVoucherCurrencyTotals.sql</div><div class="pp">Per-currency footer totals for the Export/Border Export Permit Voucher report.</div></div></div>
+<h3><span class="badge" style="background:#0891b2">Export Licence</span> &nbsp;Export Licence <span style="color:#94a3b8;font-weight:400">(2)</span></h3>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ExportLicenceDetailReport_pagination.sql</div><div class="pp">Export Licence Detail — paginated detail rows.</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ExportLicenceTotalValueReport_pagination.sql</div><div class="pp">Export Licence Total-Value — fast paginated totals.</div></div></div>
+<h3><span class="badge" style="background:#7c3aed">Import Permit</span> &nbsp;Import Permit <span style="color:#94a3b8;font-weight:400">(2)</span></h3>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ImportPermitListingCurrencyTotals.sql</div><div class="pp">Per-currency footer totals for Import Permit listing reports.</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ImportPermitVoucherCurrencyTotals.sql</div><div class="pp">Per-currency footer totals for the Import Permit Voucher report.</div></div></div>
+<h3><span class="badge" style="background:#c026d3">Import Licence</span> &nbsp;Import Licence <span style="color:#94a3b8;font-weight:400">(4)</span></h3>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ImportLicenceDetailByLicenceReport_Indexed.sql</div><div class="pp">Detail-by-Licence — reads the indexed view via NOEXPAND.</div><span class="dep">⤷ NOEXPAND vw_ImportLicenceItemTotalByCurrency</span></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ImportLicenceDetailReport_pagination.sql</div><div class="pp">Import Licence Detail — paginated detail rows.</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ImportLicencePendingDetailReport_pagination.sql</div><div class="pp">Import Licence Pending Detail — paginated. NEEDS QUOTED_IDENTIFIER/ANSI_NULLS ON (XML .value()).</div> <span class="dep" style="background:#fef2f2;border-color:#fecaca;color:#b91c1c">QI/ANSI ON</span></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ImportLicenceSummaryReport_Indexed.sql</div><div class="pp">Summary — reads the indexed view via NOEXPAND.</div><span class="dep">⤷ NOEXPAND vw_ImportLicenceItemTotalByCurrency</span></div></div>
+<h3><span class="badge" style="background:#ea580c">Shared listing</span> &nbsp;Shared listing <span style="color:#94a3b8;font-weight:400">(8)</span></h3>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ActualAmendReport_pagination.sql</div><div class="pp">Actual-Amendment listing (FormType-branched).</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_AmendReport_pagination.sql</div><div class="pp">Amendment listing (FormType-branched across permit/licence families).</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_CancelReport_pagination.sql</div><div class="pp">Cancellation listing (FormType-branched).</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ExtensionReportCurrencyTotals.sql</div><div class="pp">Per-currency footer totals for Extension reports.</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ExtensionReport_pagination.sql</div><div class="pp">Extension listing (FormType-branched).</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_HSCodeReport_pagination.sql</div><div class="pp">HS Code aggregate report (windowed paging).</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_NewReport_pagination.sql</div><div class="pp">New permit/licence listing (FormType-branched).</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_VoucherReport_pagination.sql</div><div class="pp">Voucher listing — reads 3 indexed views via NOEXPAND.</div><span class="dep">⤷ NOEXPAND vw_ExportPermitItemTotalByCurrency</span><span class="dep">⤷ NOEXPAND vw_ImportLicenceItemTotalByCurrency</span><span class="dep">⤷ NOEXPAND vw_ImportPermitItemTotalByCurrency</span></div></div>
+<h3><span class="badge" style="background:#16a34a">Pa Tha Ka / Registration</span> &nbsp;Pa Tha Ka / Registration <span style="color:#94a3b8;font-weight:400">(10)</span></h3>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_CardListsByPaThaKaReport_pagination.sql</div><div class="pp">Card Lists by Pa Tha Ka — paginated.</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_CompanyProfileReport_pagination.sql</div><div class="pp">Company Profile report — paginated.</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_DirectorListReport_pagination.sql</div><div class="pp">Director List report — paginated.</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_PaThaKaAllReport_pagination.sql</div><div class="pp">Pa Tha Ka All report — paginated.</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_PaThaKaByBusinessTypeReport_pagination.sql</div><div class="pp">Pa Tha Ka by Business Type — paginated.</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_PaThaKaRegistrationReport_pagination.sql</div><div class="pp">Pa Tha Ka Registration — paginated.</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_PaThaKaReport_pagination.sql</div><div class="pp">Pa Tha Ka report — wraps base sp_PaThaKaReport (INSERT-EXEC).</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_PaThaKaValidInvalidReport_pagination.sql</div><div class="pp">Valid/Invalid report — wraps base sp_PaThaKaValidInvalidReport.</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_PathakaBindReport_pagination.sql</div><div class="pp">Pa Tha Ka Bind report — paginated.</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_PendingReport_pagination.sql</div><div class="pp">Pending report — paginated.</div></div></div>
+<h3><span class="badge" style="background:#ca8a04">Payments &amp; Fees</span> &nbsp;Payments &amp; Fees <span style="color:#94a3b8;font-weight:400">(3)</span></h3>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_AccountSummaryReport_pagination.sql</div><div class="pp">Account Summary report — paginated.</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_ChequeNoReport_pagination.sql</div><div class="pp">Cheque-No report — paginated.</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_OnlineFeesReport_pagination.sql</div><div class="pp">Online Fees report — paginated.</div></div></div>
+<h3><span class="badge" style="background:#dc2626">MPU</span> &nbsp;MPU <span style="color:#94a3b8;font-weight:400">(2)</span></h3>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_MPUReport_V3_pagination.sql</div><div class="pp">MPU payment report v3 — current paginated version.</div></div></div>
+<div class="item"><div class="chk"></div><div class="body"><div class="fn">sp_MPUReport_pagination.sql</div><div class="pp">MPU payment report — paginated (legacy).</div></div></div>
+
+<h2>How to run (Production, by hand)</h2>
+<p class="pp">All scripts are <code>CREATE OR ALTER</code> / idempotent and safe to re-run. Replace <code>SERVER</code> with the production instance.</p>
+<pre><span class="c"># Run each phase in order with sqlcmd (-b = stop on error). Production = TradeNetDB.</span>
+SET QUOTED_IDENTIFIER ON      <span class="c"># (sqlcmd sets these ON by default; pymssql does NOT)</span>
+
+<span class="c"># Phase 1 - indexed views (run BEFORE the procedures)</span>
+for f in StoredProcedureMigrations/Views/*.sql;            do sqlcmd -S SERVER -d TradeNetDB -i "$f" -b; done
+<span class="c"># Phase 2 - consolidated production indexes</span>
+sqlcmd -S SERVER -d TradeNetDB -i StoredProcedureMigrations/IndexedMigrations/TradeNetReportIndexes_Production.sql -b
+<span class="c"># Phase 3 - stored procedures</span>
+for f in StoredProcedureMigrations/*.sql;                  do sqlcmd -S SERVER -d TradeNetDB -i "$f" -b; done</pre>
+<div class="note"><b>SSMS / Azure Data Studio:</b> connect to the production <code>TradeNetDB</code>, then open &amp; Execute each file in the Phase 1 → 2 → 3 order above. The index script prints its own preflight and aborts if not connected to <code>TradeNetDB</code>.</div>
+
+<footer>Generated from <code>StoredProcedureMigrations/</code> on 2026-06-10. Re-run <code>gen_guide.py</code> after adding/removing migrations to refresh this guide.</footer>
+</div></body></html>
