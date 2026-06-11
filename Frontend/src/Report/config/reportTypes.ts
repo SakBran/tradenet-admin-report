@@ -55,6 +55,7 @@ export interface ReportFilterConfig {
   fromLabel?: string;
   toLabel?: string;
   defaultValue?: string | number | boolean;
+  defaultDateRangeMonths?: number;
   required?: boolean;
   excludeFromRequest?: boolean;
   populateFromCompanyRegistrationNo?: boolean;
@@ -75,6 +76,7 @@ export interface ReportPageConfig {
   filters: ReportFilterConfig[];
   initialSortColumn?: string;
   showRowNumber?: boolean;
+  disableLazyTotalCount?: boolean;
   /**
    * Renders the result grid in a legacy RDLC ReportViewer-like shell.
    * Used only where we are intentionally matching the old admin report UI.

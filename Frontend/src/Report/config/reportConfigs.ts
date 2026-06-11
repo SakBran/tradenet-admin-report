@@ -6752,6 +6752,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         toName: 'ToDate',
         fromLabel: 'From Date',
         toLabel: 'To Date',
+        defaultDateRangeMonths: 3,
         required: true,
       },
       {
@@ -6829,6 +6830,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         toName: 'ToDate',
         fromLabel: 'From Date',
         toLabel: 'To Date',
+        defaultDateRangeMonths: 3,
         required: true,
       },
       {
@@ -6920,6 +6922,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         toName: 'ToDate',
         fromLabel: 'From Date',
         toLabel: 'To Date',
+        defaultDateRangeMonths: 3,
         required: true,
       },
       {
@@ -7011,6 +7014,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         toName: 'ToDate',
         fromLabel: 'From Date',
         toLabel: 'To Date',
+        defaultDateRangeMonths: 3,
         required: true,
       },
       {
@@ -7213,6 +7217,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         toName: 'ToDate',
         fromLabel: 'From Date',
         toLabel: 'To Date',
+        defaultDateRangeMonths: 3,
         required: true,
       },
       {
@@ -7304,6 +7309,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         toName: 'ToDate',
         fromLabel: 'From Date',
         toLabel: 'To Date',
+        defaultDateRangeMonths: 3,
         required: true,
       },
       {
@@ -7391,7 +7397,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'ExportLicenceDetailReport',
     excelRoute: 'ExportLicenceDetailReport/Excel',
     excelFileName: 'ExportLicenceDetailReport.xlsx',
-    initialSortColumn: 'PaThaKaTypeId',
+    initialSortColumn: 'licenceDate',
     showRowNumber: true,
     filters: [
       {
@@ -7402,13 +7408,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         toName: 'ToDate',
         fromLabel: 'From Date',
         toLabel: 'To Date',
+        defaultDateRangeMonths: 3,
         required: true,
-      },
-      {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
       },
       {
         name: 'PaThaKaTypeId',
@@ -7421,36 +7422,21 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'exportLicenceSections',
       },
       {
         name: 'ExportImportMethodId',
         label: 'Method of export',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'exportLicenceMethods',
       },
       {
         name: 'ExportImportIncotermId',
         label: 'Method of export According to Incoterms',
         type: 'number',
         defaultValue: 0,
-      },
-      {
-        name: 'BuyerCountryId',
-        label: 'Buyer Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
+        lookupName: 'exportLicenceIncoterms',
       },
     ],
     columns: [
@@ -7568,7 +7554,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'AU',
         dataIndex: 'unit',
-        title: 'A/U',
+        title: 'Unit',
       },
       {
         key: 'Price',
@@ -7842,6 +7828,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         toName: 'ToDate',
         fromLabel: 'From Date',
         toLabel: 'To Date',
+        defaultDateRangeMonths: 3,
         required: true,
       },
       {
