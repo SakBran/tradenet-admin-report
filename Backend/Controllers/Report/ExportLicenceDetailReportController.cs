@@ -40,7 +40,8 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var result = await sp_ExportLicenceDetailReport_Fast.CreatePagedResultAsync(_context, _cache, procedureRequest!, request!);
+            var result = await sp_ExportLicenceDetailReportV2.CreatePagedResultAsync(
+                _context, procedureRequest!, request!);
 
             return Ok(result);
         }

@@ -30,6 +30,7 @@ namespace Backend.Controllers
         private const string ExportLicenceFormType = "Export Licence";
         private const string ExportPermitFormType = "Export Permit";
         private const string ImportTradeType = "Import";
+        private const string ExportTradeType = "Export";
 
         private readonly TradeNetDbContext _context;
         private readonly IMemoryCache _cache;
@@ -57,6 +58,9 @@ namespace Backend.Controllers
                 "importlicenceincoterms" => GetImportLicenceIncoterms,
                 "importlicencemethods" => GetImportLicenceMethods,
                 "importlicencesections" => GetImportLicenceSections,
+                "exportlicenceincoterms" => GetExportLicenceIncoterms,
+                "exportlicencemethods" => GetExportLicenceMethods,
+                "exportlicencesections" => GetExportLicenceSections,
                 "importpermitsections" => GetImportPermitSections,
                 "borderimportlicenceincoterms" => GetBorderImportLicenceIncoterms,
                 "borderimportlicencemethods" => GetBorderImportLicenceMethods,
@@ -235,6 +239,47 @@ namespace Backend.Controllers
                     item.IsActive &&
                     !item.IsDeleted &&
                     item.Type == ImportLicenceFormType &&
+                    item.IsOversea)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
+                .ToListAsync();
+
+        // Oversea Export Licence lookups mirror the legacy admin:
+        // Export Licence sections where IsOversea, and Export methods/incoterms where IsOversea.
+        private Task<List<ReportLookupOption>> GetExportLicenceIncoterms() =>
+            _context.ExportImportIncoterms
+                .AsNoTracking()
+                .Where(item =>
+                    item.IsActive &&
+                    !item.IsDeleted &&
+                    item.Type == ExportTradeType &&
+                    item.IsOversea)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
+                .ToListAsync();
+
+        private Task<List<ReportLookupOption>> GetExportLicenceMethods() =>
+            _context.ExportImportMethods
+                .AsNoTracking()
+                .Where(item =>
+                    item.IsActive &&
+                    !item.IsDeleted &&
+                    item.Type == ExportTradeType &&
+                    item.IsOversea)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
+                .ToListAsync();
+
+        private Task<List<ReportLookupOption>> GetExportLicenceSections() =>
+            _context.ExportImportSections
+                .AsNoTracking()
+                .Where(item =>
+                    item.IsActive &&
+                    !item.IsDeleted &&
+                    item.Type == ExportLicenceFormType &&
                     item.IsOversea)
                 .OrderBy(item => item.SortOrder)
                 .ThenBy(item => item.Name)
