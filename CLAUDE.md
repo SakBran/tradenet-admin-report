@@ -17,4 +17,4 @@ Confirm parity on two axes, then report diffs before changing anything:
    (BusinessType dropdowns must filter `FormType='Pa Tha Ka'`).
 2. **Table columns** — same columns, same header text, same language (English/Myanmar) as the old RDLC.
 
-Reference: `ReportColumnComparison.md` tracks column parity for ~134 reports.
+Reference: `docs/ReportColumnComparison.md` tracks column parity for ~134 reports.

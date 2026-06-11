@@ -203,6 +203,11 @@ const toApiDate = (value: Dayjs, edge: 'start' | 'end') =>
 const getInitialFilterValue = (filter: ReportFilterConfig): FilterValue => {
   if (filter.type === 'dateRange') {
     const today = dayjs();
+    const months = Math.max(1, filter.defaultDateRangeMonths ?? 1);
+    if (months > 1) {
+      return [today.subtract(months - 1, 'month').startOf('month'), today];
+    }
+
     return [today.startOf('month'), today];
   }
 
@@ -870,6 +875,7 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
         refreshKey={refreshKey}
         initialSortColumn={config.initialSortColumn}
         initialSortOrder="desc"
+        lazyTotalCount={!config.disableLazyTotalCount}
         excelFileName={config.excelFileName}
         showRowNumber={config.showRowNumber ?? true}
         rowNumberTitle={legacyReportViewer ? 'No.' : 'No'}

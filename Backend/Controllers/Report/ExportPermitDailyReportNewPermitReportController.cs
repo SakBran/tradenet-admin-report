@@ -38,7 +38,8 @@ namespace Backend.Controllers.Report
             }
 
             var result = await sp_ExportPermitDetailReport_Fast.CreateAggregateResultAsync(
-                _context, procedureRequest!, request!, ReportAggregateDimension.Daily, includeSakhan: false);
+                _context, procedureRequest!, request!, ReportAggregateDimension.Daily, includeSakhan: false,
+                includeColumnTotals: true);
 
             return Ok(result);
         }

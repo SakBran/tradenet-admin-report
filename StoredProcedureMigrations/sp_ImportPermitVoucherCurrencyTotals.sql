@@ -17,7 +17,13 @@ BEGIN
     -- PaymentType / section / company catch-all CASE predicates, ApplyType + Approved --
     -- so the footer lines up with the rows shown. Currency + licence value come from the
     -- permit's items (TOP 1 item currency + SUM of item amounts), matching the grid's
-    -- Currency / Lic Value columns. OPTION (RECOMPILE) dodges the param-sniffing timeout.
+    -- Currency / Lic Value columns.
+    -- PERF: AccountTransaction has 2M+ payment rows across all document types; without the
+    -- TransactionFormType discriminator the optimizer cold-scans the columnstore over a wide
+    -- PaymentDate range (this proc is awaited synchronously before the grid response). The
+    -- TransactionFormType = 'Import Permit' predicate + OPTION (RECOMPILE, LOOP JOIN) force a
+    -- per-permit TransactionId seek -- identical rows, ~0.2s. See sibling
+    -- sp_ExportPermitVoucherCurrencyTotals.
 
     SELECT ISNULL(d.Currency, N'') AS Currency, COUNT(*) AS NoOfLicences, ISNULL(SUM(d.Amount), 0) AS TotalValue
     FROM (
@@ -33,6 +39,7 @@ BEGIN
             INNER JOIN ExportImportSection section ON ImportPermit.ExportImportSectionId = section.Id
             INNER JOIN Users ON Users.Id = ImportPermit.ApproveUserId
         WHERE AccountTransaction.IsPayment = 1
+            AND AccountTransaction.TransactionFormType = N'Import Permit'
             AND (AccountTransaction.PaymentDate >= @FromDate AND AccountTransaction.PaymentDate <= @ToDate)
             AND ImportPermit.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN ImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
             AND AccountTransaction.PaymentType = (CASE WHEN @PaymentType = '' THEN AccountTransaction.PaymentType ELSE @PaymentType END)
@@ -40,5 +47,5 @@ BEGIN
             AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
     ) d
     GROUP BY ISNULL(d.Currency, N'')
-    OPTION (RECOMPILE);
+    OPTION (RECOMPILE, LOOP JOIN);
 END

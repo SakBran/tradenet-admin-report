@@ -34,6 +34,6 @@ New:
 
 ### Reference
 
-`ReportColumnComparison.md` already tracks column parity for ~134 reports against
+`docs/ReportColumnComparison.md` already tracks column parity for ~134 reports against
 the old RDLC sources. Cross-check / extend it (and verify filters) when handling a
 complaint.

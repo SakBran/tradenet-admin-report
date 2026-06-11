@@ -73,6 +73,7 @@ interface PropsType<T extends AnyObject = AnyObject> {
   initialPageSize?: number;
   emptyText?: string;
   enabled?: boolean;
+  lazyTotalCount?: boolean;
   /**
    * Controls the Excel button's enabled state independently of `enabled`
    * (which gates the grid fetch). Defaults to `enabled` so callers that only
@@ -159,6 +160,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   initialPageSize = 10,
   emptyText = 'No data',
   enabled = true,
+  lazyTotalCount = true,
   excelEnabled = enabled,
   idleText = 'Set filters, then click Filter to load data',
   showRowNumber = true,
@@ -280,7 +282,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   // are skipped (no double work). Fetched once per filter set, off the critical
   // path, via the fetchData (report) path only; the legacy fetch/api path is untouched.
   useEffect(() => {
-    if (!enabled || !fetchData) {
+    if (!enabled || !fetchData || !lazyTotalCount) {
       return;
     }
     if (data.isTotalCountExact !== false) {
@@ -316,10 +318,13 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, fetchData, data.isTotalCountExact, filterSig]);
+  }, [enabled, fetchData, lazyTotalCount, data.isTotalCountExact, filterSig]);
 
-  // Pager shows the exact total once it arrives, otherwise the fast page's estimate.
+  // Pager shows the exact total once it arrives, otherwise the fast page's
+  // lower-bound estimate so Ant Pagination can still expose the next page.
   const displayTotalCount = exactTotalCount ?? data.totalCount;
+  const isEstimatedTotalCount =
+    data.isTotalCountExact === false && exactTotalCount === null;
 
   const exportClientTableToExcel = () => {
     const table = document.getElementById(tableId);
@@ -714,7 +719,9 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
           <Pagination
             showSizeChanger
             showTotal={(total, range) =>
-              `${range[0]}-${range[1]} of ${total} total`
+              isEstimatedTotalCount
+                ? `${range[0]}-${range[1]} of at least ${total} (calculating total)`
+                : `${range[0]}-${range[1]} of ${total} total`
             }
             pageSizeOptions={[10, 20, 50, 100, 1000]}
             defaultPageSize={initialPageSize}

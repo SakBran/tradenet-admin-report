@@ -1,6 +1,6 @@
 # Wai Phyo Report DB Work Plan
 
-Updated: 2026-06-09
+Updated: 2026-06-11
 
 ## Scope After Meeting
 
@@ -16,6 +16,13 @@ Ko Htet-only tasks are removed from the active work list. Do not change those co
 4. Update this markdown before and after each report target.
 5. Deploy SQL only to the correct `TradeNetDB` database.
 6. Do not write database passwords into docs, commits, screenshots, or summaries.
+7. For report parity/customer complaints, compare against old Tradenet 2.0 Admin first.
+
+Old admin reference:
+
+- Path: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin`
+- RDLC columns source: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\ReportControl\*.rdlc`
+- Old filters source: old report ASPX/page/code-behind files under the same project.
 
 Target:
 
@@ -24,13 +31,13 @@ Target:
 
 ## Current Summary Dashboard
 
-Last updated: 2026-06-09
+Last updated: 2026-06-11
 
 ### Next Target
 
-Next target: frontend retest for Export Licence New Report quota column.
+Next target: customer-complaint parity pass for Wai Phyo Export Licence reports.
 
-Reason: `dbo.sp_NewReport_pagination` now returns blank quota instead of `NULL` for Export Licence rows, because `ExportLicence` has no quota column in the DB.
+Reason: the same customer-complaint pass now needs to be applied to Export Licence reports. Per `AGENTS.md`, compare old Tradenet 2.0 Admin filters/columns before changing code.
 
 Completed Priority 1 API/controller retests:
 
@@ -64,6 +71,13 @@ Still pending from Priority 1: none.
 
 | Report | Current status | Why it is still pending | Next action |
 |---|---|---|---|
+| Border Export Permit Amendment Report | Data-show + supported parity fixes done | Section dropdown/title/extra HSCode fixed; DB returns 2 rows in 246 ms; RDLC footer totals still pending | Retest frontend after dependency install; decide later on amendment currency footer totals. |
+| Border Export Permit Extension Report | Data-show + supported parity fixes done | Section dropdown/title/currency footer wiring done; DB returns 3 rows in 192 ms | Frontend retest after dependency install. |
+| Border Export Permit Cancellation Report | Data-show + supported parity fixes done | Section dropdown/title/currency footer wiring done; extra HSCode removed; DB returns 2 rows in 60 ms | Frontend retest after dependency install. |
+| Border Export Permit By HS Code Report | Data-show + supported parity fixes done | Title, section filter, Start/End dropdown, CompanyName removal, backend section mapping done; DB returns 74 grouped rows in 279 ms | HS Code detail drilldown still pending because the new frontend has no detail route/config. |
+| Border Export Permit Voucher Report | Data-show + supported parity fixes done | Title, section dropdown, dynamic header resolver fixed; DB returns 42 rows in 556 ms | Total amount footer still pending. |
+| Border Export Permit Actual Amendment Report | Valid no-data + supported parity fixes done | `TradeNetDB` has 0 approved Border Export Permit `Actual Amend` rows; section/title/extra HSCode fixed | Retest frontend after dependency install; no SQL fix unless source data is expected. |
+| Border Export Permit New Report (New Report) | Data-show + supported parity fixes done | Sakhan-specific DB search returns data; section/title/Auto filter/Auto column fixed | Currency-wise footer totals still pending. |
 | Export Licence Voucher Report | Data shows; item totals intentionally skipped for now | Currency/TotalAmount are blank in data-first mode | Revisit only after all tables show data. |
 | Export Licence New Report | Data shows | Performance can still be improved later | Revisit only if frontend still fails. |
 | Export Licence Amendment Report | DB data-show passed | If frontend still fails, the DB procedure is not the blocker | Retest API/frontend request payload. |
@@ -234,6 +248,536 @@ Pull rule:
 - If pull is blocked by local changes, stop and decide whether to stash or merge manually.
 
 ## Active Wai Phyo Task Tracker
+
+## Customer Complaint Intake - Export Licence - 2026-06-11
+
+Source:
+
+- User request: apply the same customer-complaint parity pass to Export Licence.
+- Old admin reference: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin`.
+- Old RDLC/header sources checked:
+  - `ReportControl\AmendReport.rdlc`
+  - `ReportControl\ExtensionReport.rdlc`
+  - `ReportControl\CancelReport.rdlc`
+  - `ReportControl\HSCodeReport.rdlc`
+  - `ReportControl\VoucherReport.rdlc`
+  - `ReportControl\NewLicenceReport.rdlc`
+  - `ReportControl\ExportLicenceByTotalValueLicenceReport.rdlc`
+- Old filter sources checked:
+  - `Views\Reports\ExportLicenceAmendReport.cshtml`
+  - `Views\Reports\ExportLicenceExtensionReport.cshtml`
+  - `Views\Reports\ExportLicenceCancelReport.cshtml`
+  - `Views\Reports\ExportLicenceByHSCodeReport.cshtml`
+  - `Views\Reports\ExportLicenceVoucherReport.cshtml`
+  - `Views\Reports\ExportLicenceNewReport.cshtml`
+  - `Views\Reports\ExportLicenceByTotalValueLicenceReport.cshtml`
+  - matching actions in `Controllers\ReportsController.cs`.
+
+Old admin filter rule confirmed:
+
+- Export Licence section dropdowns use `ExportImportSectionRepository.GetAll(AppConfig.ExportLicence).Where(x => x.IsActive == true && x.IsOversea == true)`.
+- New report configs should use a dedicated oversea Export Licence section lookup, not generic section lists and not border section lists.
+
+Parity diffs found before editing:
+
+| Report | Old filters / columns | New diff found | Planned fix |
+|---|---|---|---|
+| Export Licence Amendment Report | Filters: From/To, Export Section, Company Registration No, readonly Company Name, Remark. RDLC columns: No, Section, Licence No, Licence Amendment No, Amendment Date, Company Registration No, Company Name, Company Address, Curency, Total Value. | New has extra hidden-ish `FormType` and `SakhanId` request fields, and extra visible `hsCode` column that old RDLC does not have. Export Section is numeric without the old oversea Export Licence lookup. | Keep request fields needed by backend; remove visible `hsCode`; add report subtitle and `exportLicenceSections` lookup. |
+| Export Licence Actual Amendment Report | Uses the same filter form and `AmendReport.rdlc` as Amendment, title changes to Actual Amendment. | Same diffs as Amendment: extra visible `hsCode`, section lookup missing. | Same fix as Amendment. |
+| Export Licence Extension Report | Filters: From/To, Export Section, Company Registration No, readonly Company Name. RDLC columns include Extension No, Extension Last Date, Curency, Total Value. | Section lookup missing. | Add `exportLicenceSections` lookup; existing title/subtitle/currency total setup is kept. |
+| Export Licence Cancellation Report | Filters: From/To, Export Section, Company Registration No, readonly Company Name. RDLC columns include Cancellation No, Cancellation Date, Curency, Total Value, Remark. | New has extra visible `hsCode`; section lookup missing. | Remove visible `hsCode`; add subtitle, currency total wiring, and `exportLicenceSections` lookup. |
+| Export Licence By HS Code Report | Filters: From/To, Export Section, Filter By Start/End, HS Code. RDLC columns: Sr.No, HS Code, Description, No of Licences, Total Value, Currency. | New is missing Export Section, `FilterType` is plain text default empty, extra visible Company Name column, no subtitle. | Add Export Section with `exportLicenceSections`, convert Filter By to Start/End select, remove Company Name, keep HSCode detail route as later work. |
+| Export Licence Voucher Report | Filters: From/To, Export Section, Apply Type, Payment Type, Company Registration No, readonly Company Name. RDLC columns: No, dynamic Licence/Amend/Extension/Cancel/Actual number, Application No, dynamic date, Company Registration No, Company Name, Lic Value, Currency, Voucher No, Voucher Date, Approved User, Total Amount. | New shows raw `=Parameters!header2.Value` and `=Parameters!header3.Value`; section lookup missing. | Add subtitle, dynamic voucher header resolver, and `exportLicenceSections` lookup. |
+| Export Licence New Report | Filters: From/To, Export Section, Company Registration No, readonly Company Name. RDLC is `NewLicenceReport.rdlc`. | New has extra Auto filter/column; section lookup missing. Quota exists in new config but old source must be checked in RDLC before removing because user previously complained about quota. | Add subtitle and `exportLicenceSections`; remove Auto filter/column if not in old RDLC. Leave quota until RDLC field check is completed. |
+| Export Licence Total Value & Licences Report | Filters: From/To, PaThaKa Type, Export Section. RDLC is `ExportLicenceByTotalValueLicenceReport.rdlc`. | Section lookup missing; other filters are shared with generic import licence helpers. | Add `exportLicenceSections` lookup and subtitle if missing; no DB change unless frontend still fails. |
+
+Implementation applied:
+
+- Added `exportLicenceSections` lookup in `Backend/Controllers/ReportLookupsController.cs`.
+- Wired the lookup into these Wai Phyo Export Licence reports:
+  - Export Licence Actual Amendment Report
+  - Export Licence Amendment Report
+  - Export Licence Extension Report
+  - Export Licence Cancellation Report
+  - Export Licence By HS Code Report
+  - Export Licence New Report (New Report)
+  - Export Licence Total Value & Licences Report
+  - Export Licence Voucher Report
+- Export Licence By HS Code:
+  - Added Export Section filter.
+  - Changed Filter By from text to Start/End dropdown.
+  - Removed Company Name column because `HSCodeReport.rdlc` does not include it.
+  - Updated `ExportLicenceByHSCodeReportController` so `ExportImportSectionId` is passed to `sp_HSCodeReportRequest`.
+- Export Licence Amendment / Actual Amendment:
+  - Removed extra visible `hsCode` column because `AmendReport.rdlc` does not include it.
+- Export Licence Cancellation:
+  - Removed extra visible `hsCode` column because `CancelReport.rdlc` does not include it.
+  - Added currency total footer wiring to match the RDLC total behavior already used by similar reports.
+- Export Licence Voucher:
+  - Added old RDLC-style subtitle.
+  - Added dynamic voucher header resolver so `=Parameters!header2.Value` / `=Parameters!header3.Value` no longer render as literal column names.
+  - Removed extra Application Date and Commodity Type columns because `VoucherReport.rdlc` does not include them.
+  - Converted Payment Type and Apply Type to dropdowns.
+- Export Licence New Report:
+  - Added old RDLC-style subtitle.
+  - Removed Auto filter/column.
+  - Removed Commodity Type, HSCode, and Quota columns because `NewLicenceReport.rdlc` does not include them. This fixes the quota `N/A` complaint by restoring old-report column parity instead of inventing a DB value.
+- Export Licence Total Value & Licences:
+  - Added old RDLC-style subtitle.
+  - Added `exportLicenceSections` lookup.
+
+Verification:
+
+- Backend build: passed with existing nullable/migration warnings only.
+- Targeted config scan passed:
+  - all eight touched Export Licence reports have exactly one `exportLicenceSections` lookup;
+  - no raw `=Parameters!...` voucher headers remain in the touched Export Licence voucher config;
+  - extra HSCode / Auto / Quota / Commodity columns are absent from the touched reports where old RDLC files do not include them.
+- Frontend build was not rerun because local `Frontend/node_modules` is still missing `vitest` from the earlier dependency issue.
+- DB stored procedure changes: none for this pass. These fixes are frontend/API parity fixes; current deployed procedures were not changed.
+
+## Customer Complaint Intake - Ma Nge Feedback - 2026-06-10
+
+Source:
+
+- Google Sheet shared by user: `1paKyNjI_5bKekx9a7XZl3cNnfcrPk26NxjkkZ3sczSo`
+- Pasted feedback column: Ma Nge / customer complaint notes.
+
+Rules for this pass:
+
+- Do not touch Ko Htet-only rows.
+- For each Wai Phyo report, first compare:
+  - old admin RDLC columns from `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\ReportControl\*.rdlc`
+  - old admin filter/page code under `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin`
+  - current frontend config in `Frontend/src/Report/config/reportConfigs.ts`
+  - Import Permit reference implementation where requested by the user.
+- Report filter/column diffs before code changes.
+- Then fix data-show issues first, followed by frontend mapping/titles/totals, then performance.
+
+Active Wai Phyo Border Export Permit complaints:
+
+| Priority | Report | Procedure | Complaint / requested fix | First check before code changes |
+|---:|---|---|---|---|
+| 1 | Border Export Permit Amendment Report | `dbo.sp_AmendReport` | Report title; live data not showing; Export Section dropdown should show only Export Permit sections. | Compare old `AmendReport` / border amend filters; test live-data source rows and procedure output. |
+| 2 | Border Export Permit Actual Amendment Report | `dbo.sp_ActualAmendReport` | Live data not showing. | Verify source rows for approved actual amendment; compare old actual amend report. |
+| 3 | Border Export Permit New Report (New Report) | `dbo.sp_NewReport` | Report title; total licence count; currency-wise total value; Export Permit section dropdown; Sakhan-specific search returns no data; remove Auto filter. | Compare old new report and Import Permit New reference; test Sakhan filter in DB. |
+| 4 | Border Export Permit Voucher Report | `dbo.sp_VoucherReport` | Report title; sum total amount; bad `=Parameters!header2/header3` column names; section dropdown should be Export Permit section. | Compare old voucher RDLC headers and Import Permit voucher reference. |
+| 5 | Border Export Permit Extension Report | `dbo.sp_ExtensionReport` | Report title; total licence count; currency-wise total value; Export Permit-only section dropdown. | Compare old extension RDLC/footer and Import Permit extension reference. |
+| 6 | Border Export Permit Cancellation Report | `dbo.sp_CancelReport` | Report title; total licence count; currency-wise total value; Export Permit-only section dropdown. | Compare old cancel RDLC/footer and Import Permit cancellation reference. |
+| 7 | Border Export Permit By HS Code Report | `dbo.sp_HSCodeReport` | Report title; total licence count; remove Company Name column; section dropdown note; HSCode drilldown to HS Code Detail; Start/End filter dropdown. | Compare old HSCode report/detail report and current HS Code report config. |
+
+Excluded from this Wai Phyo pass:
+
+| Report | Owner in feedback | Reason excluded |
+|---|---|---|
+| Border Export Permit Daily Report (New Permit Report) | Ko Htet | User said only Wai Phyo task part after meeting. |
+| Border Export Permit Detail Report | Ko Htet | User said only Wai Phyo task part after meeting. |
+| Border Export Permit By Section Report | Ko Htet | User said only Wai Phyo task part after meeting. |
+| Border Export Permit By Seller Country Report | Ko Htet | User said only Wai Phyo task part after meeting. |
+| Border Export Permit Company List Report | Ko Htet | User said only Wai Phyo task part after meeting. |
+
+Next concrete target:
+
+- Start with `Border Export Permit Amendment Report`, because it is Wai Phyo-owned and has a data-show complaint on live.
+- Old-admin/current diff is recorded below. First implementation pass is now in progress.
+
+### Parity Diff - Border Export Permit Amendment Report - 2026-06-10
+
+Old admin references checked:
+
+- Controller/action: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Controllers\ReportsController.cs`, `BorderExportPermitAmendReport`
+- View/filter form: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Views\Reports\BorderExportPermitAmendReport.cshtml`
+- RDLC: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\ReportControl\BorderAmendReport.rdlc`
+
+Old filter box:
+
+| Filter | Old admin behavior | New config status | Diff |
+|---|---|---|---|
+| From Date / To Date | Required text/date fields | Present | OK |
+| Sakhan | Dropdown, all sakhans, `--- All ---` | Present as numeric lookup fallback | OK if lookup renders as dropdown |
+| Export Section | Dropdown from `GetAll(AppConfig.ExportPermit).Where(IsActive && IsBorder)` | Present but no explicit `lookupName` in this report | Diff: must use Border Export Permit / Export Permit border sections only. |
+| Company Registration No | Textbox with company lookup JS | Present | OK |
+| Company Name | Readonly textbox auto-filled by company registration no | Not present as visible filter | Diff from old UI, but may be acceptable if new UI intentionally omits readonly display. |
+| Remark | Dropdown from active amend remarks | Present as numeric lookup fallback | OK if lookup renders as dropdown |
+
+Old RDLC table/header:
+
+| Old column | New status |
+|---|---|
+| No. | Present as row number |
+| Sakhan | Present |
+| Section | Present |
+| Licence No | Present |
+| Licence Amendment No | Present |
+| Amendment Date | Present |
+| Company Registration No | Present |
+| Company Name | Present |
+| Company Address | Present |
+| Curency | Present with same misspelling |
+| Total Value | Present |
+
+Diffs found before code changes:
+
+- New report has extra `HSCode` column; old `BorderAmendReport.rdlc` does not.
+- Old RDLC has footer totals:
+  - currency-wise licence count: `Currency: N licence(s)`
+  - currency-wise amount total
+  - grand total licence count: `Total: N licence(s)`
+- New frontend config for this report currently does not explicitly request `borderExportPermitSections`; it falls back to generic `exportImportSections`.
+- Old report title parameter is `List of Border Export Permit Report ({FromDate}) To ({ToDate})`; new page title is only static `Border Export Permit Amendment Report` unless generic report header lines are added.
+- Customer complaint says live data does not show; this needs DB/source-row verification after this parity diff.
+
+Planned fixes after diff:
+
+1. Fix Export Section lookup to use Border Export Permit / Export Permit border sections only. Done in code; backend build passed.
+2. Verify live-data source rows and `dbo.sp_AmendReport_pagination` output for `FormType='Border Export Permit'`. Done; DB has 2 approved amend source rows and the procedure returned 2 rows.
+3. Remove or hide the extra `HSCode` column unless user decides to keep the new column despite old RDLC mismatch. Done in code.
+4. Add report title/header behavior if the generic report page supports report header lines for this report. Done in code with old RDLC-style date subtitle.
+5. Add/verify currency totals and total licence count if this report should match the RDLC footer. Pending, because the current backend amendment response does not yet provide `currencyTotals`.
+
+Implementation applied:
+
+- Added backend lookup endpoint key `borderExportPermitSections` in `Backend/Controllers/ReportLookupsController.cs`.
+- The new lookup filters `ExportImportSection` by active, not deleted, `Type = 'Export Permit'`, and `IsBorder = 1`, matching the old admin `GetAll(AppConfig.ExportPermit).Where(IsActive && IsBorder)` behavior.
+- Updated `BorderExportPermitAmendmentReport` in `Frontend/src/Report/config/reportConfigs.ts` to use `lookupName: 'borderExportPermitSections'`.
+- Added `reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permit Report')` to match the old RDLC title parameter style.
+- Removed the extra `hsCode` column from this report because `BorderAmendReport.rdlc` does not include HS Code.
+
+Verification:
+
+- Backend build: passed with existing nullable/migration warnings only.
+- DB source-row check on `TradeNetDB`: `BorderExportPermit` has 2 approved amend rows in the tested range (`2026-05-15` to `2026-05-22`).
+- DB procedure check: `dbo.sp_AmendReport_pagination` with `FormType = 'Border Export Permit'`, date range `2023-01-01` to `2026-06-30`, page size 5 returned both rows in 246 ms.
+- Frontend build: blocked before validating this change because local `Frontend/node_modules` is missing `vitest`; `npm run build` fails at `reportConfigs.importPermit.test.ts` with `Cannot find module 'vitest'`.
+- Attempted `npm install` to repair dependencies, but it exceeded 2 minutes and did not install `vitest`; no package-lock change was produced.
+
+### Parity Diff - Border Export Permit Actual Amendment Report - 2026-06-10
+
+Old admin references checked:
+
+- Controller/action: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Controllers\ReportsController.cs`, `BorderExportPermitActualAmendReport`
+- View/filter form: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Views\Reports\BorderExportPermitAmendReport.cshtml`
+- RDLC: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\ReportControl\BorderAmendReport.rdlc`
+
+Old filter box:
+
+| Filter | Old admin behavior | New config status | Diff |
+|---|---|---|---|
+| From Date / To Date | Required date fields | Present | OK |
+| Sakhan | Dropdown, all sakhans, `--- All ---` | Present as numeric lookup fallback | OK if lookup renders as dropdown |
+| Export Section | Dropdown from `GetAll(AppConfig.ExportPermit).Where(IsActive && IsBorder)` | Present but no explicit `lookupName` in this report | Diff: must use Border Export Permit / Export Permit border sections only. |
+| Company Registration No | Textbox with company lookup JS | Present | OK |
+| Company Name | Readonly textbox auto-filled by company registration no | Not present as visible filter | Diff from old UI, same as amendment report. |
+| Remark | Dropdown from active amend remarks | Present as numeric lookup fallback | OK if lookup renders as dropdown |
+
+Old RDLC table/header:
+
+| Old column | New status |
+|---|---|
+| No. | Present as row number |
+| Sakhan | Present |
+| Section | Present |
+| Licence No | Present |
+| Licence Amendment No | Present |
+| Amendment Date | Present |
+| Company Registration No | Present |
+| Company Name | Present |
+| Company Address | Present |
+| Curency | Present with same misspelling |
+| Total Value | Present |
+
+Diffs found before code changes:
+
+- New report has extra `HSCode` column; old `BorderAmendReport.rdlc` does not.
+- New frontend config falls back to generic `exportImportSections`; old admin uses Export Permit border sections only.
+- Old report title parameter is `List of Border Export Permit Report ({FromDate}) To ({ToDate})`.
+- Customer complaint says live data does not show; DB validation found this is true because there are no approved actual-amend source rows.
+
+DB verification:
+
+- Source check on `TradeNetDB`: `BorderExportPermit` has 0 rows where `ApplyType = 'Actual Amend'` and `Status = 'Approved'`.
+- Procedure check: `dbo.sp_ActualAmendReport_pagination` with `FormType = 'Border Export Permit'`, date range `2023-01-01` to `2026-06-30`, page size 5 returned 0 rows in 60 ms.
+
+Planned fixes after diff:
+
+1. Use the same `borderExportPermitSections` lookup as the amendment report. Done in code.
+2. Add the old RDLC-style date subtitle. Done in code.
+3. Remove the extra `HSCode` column. Done in code.
+4. No SQL data-show fix is required unless the customer expects rows that are missing from source data.
+
+Implementation applied:
+
+- Updated `BorderExportPermitActualAmendmentReport` in `Frontend/src/Report/config/reportConfigs.ts` to use `lookupName: 'borderExportPermitSections'`.
+- Added `reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permit Report')`.
+- Removed the extra `hsCode` column to match `BorderAmendReport.rdlc`.
+
+### Parity Diff - Border Export Permit New Report (New Report) - 2026-06-10
+
+Old admin references checked:
+
+- Controller/action: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Controllers\ReportsController.cs`, `BorderExportPermitNewReport`
+- View/filter form: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Views\Reports\BorderExportPermitNewReport.cshtml`
+- RDLC: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\ReportControl\BorderNewReport.rdlc`
+
+Old filter box:
+
+| Filter | Old admin behavior | New config status | Diff |
+|---|---|---|---|
+| From Date / To Date | Required date fields | Present | OK |
+| Sakhan | Dropdown, all sakhans, `--- All ---` | Present as numeric lookup fallback | OK if lookup renders as dropdown |
+| Export Section | Dropdown from `GetAll(AppConfig.ExportPermit).Where(IsActive && IsBorder)` | Present but no explicit `lookupName` in this report | Diff: must use Border Export Permit / Export Permit border sections only. |
+| Company Registration No | Textbox with company lookup JS | Present | OK |
+| Company Name | Readonly textbox auto-filled by company registration no | Not present as visible filter | Diff from old UI. |
+| Auto | Not present | Present as frontend filter | Diff: remove Auto filter per complaint and old UI. |
+
+Old RDLC table/header:
+
+| Old column | New status |
+|---|---|
+| No. | Present as row number |
+| Sakhan | Present |
+| Section | Present |
+| Licence No | Present |
+| Company Registration No | Present |
+| Company Name | Present |
+| Company Address | Present |
+| Curency | Present with same misspelling |
+| Total Value | Present |
+
+Diffs found before code changes:
+
+- New frontend config falls back to generic `exportImportSections`; old admin uses Export Permit border sections only.
+- New frontend has an `Auto` filter; old UI does not and customer explicitly requested removing Auto filter.
+- New frontend has an `Auto` column; old `BorderNewReport.rdlc` does not show Auto.
+- Old report title parameter is `List of Border Export Permit Report ({FromDate}) To ({ToDate})`.
+- Old RDLC has footer totals:
+  - currency-wise licence count: `Currency: N licence(s)`
+  - currency-wise amount total
+  - grand total licence count: `Total: N licence(s)`
+
+DB verification:
+
+- Source check on `TradeNetDB`: approved New rows exist for Sakhan values 1, 3, 4, 5, 15, and 24 in the tested range.
+- Procedure check: `dbo.sp_NewReport_pagination` with `FormType = 'Border Export Permit'`, date range `2023-01-01` to `2026-06-30`, all Sakhan returned `TotalCount = 42` in 136 ms.
+- Procedure check: same request with `SakhanId = 5` returned `TotalCount = 29` in 69 ms.
+- Current DB does not reproduce the complaint that Sakhan-specific search returns no data.
+
+Planned fixes after diff:
+
+1. Use `borderExportPermitSections` lookup. Done in code.
+2. Add old RDLC-style date subtitle. Done in code.
+3. Remove Auto filter. Done in code.
+4. Remove Auto column to match `BorderNewReport.rdlc`. Done in code.
+5. Footer totals are still pending because the current controller returns only paged rows and total count, not currency grouped totals.
+
+Implementation applied:
+
+- Updated `BorderExportPermitNewReportNewReport` in `Frontend/src/Report/config/reportConfigs.ts` to use `lookupName: 'borderExportPermitSections'`.
+- Added `reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permit Report')`.
+- Removed the `Auto` filter per customer complaint and old UI parity.
+- Removed the `Auto` column because `BorderNewReport.rdlc` does not include it.
+
+### Parity Diff - Border Export Permit Voucher Report - 2026-06-10
+
+Old admin references checked:
+
+- Controller/action: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Controllers\ReportsController.cs`, `BorderExportPermitVoucherReport`
+- View/filter form: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Views\Reports\BorderExportPermitVoucherReport.cshtml`
+- RDLC: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\ReportControl\BorderVoucherReport.rdlc`
+
+Old filter box:
+
+| Filter | Old admin behavior | New config status | Diff |
+|---|---|---|---|
+| From Date / To Date | Required date fields | Present | OK |
+| Sakhan | Dropdown, all sakhans, `--- All ---` | Present as numeric lookup fallback | OK if lookup renders as dropdown |
+| Export Section | Dropdown from `GetAll(AppConfig.ExportPermit).Where(IsActive && IsBorder)` | Present but no explicit `lookupName` in this report | Diff: must use Border Export Permit / Export Permit border sections only. |
+| Apply Type | Dropdown from common apply types excluding Fine | Present select | OK |
+| Payment Type | Dropdown from active payment types, `--- All ---` | Present select, hardcoded values | Possible diff if DB payment types change; leave for now because visible complaint is headers/section. |
+| Company Registration No | Textbox with company lookup JS | Present | OK |
+| Company Name | Readonly textbox auto-filled by company registration no | Not present as visible filter | Diff from old UI. |
+
+Old RDLC table/header:
+
+| Old column | New status |
+|---|---|
+| No. | Present as row number |
+| Sakhan | Present |
+| Licence No | Present |
+| Application No | Present |
+| Dynamic licence header (`header2`) | Present but currently rendered literally as `=Parameters!header2.Value` |
+| Dynamic date header (`header3`) | Present but currently rendered literally as `=Parameters!header3.Value` |
+| Company Registration No | Present |
+| Company Name | Present |
+| Voucher No | Present |
+| Voucher Date | Present |
+| Total Amount | Present |
+
+Old dynamic header mapping:
+
+| ApplyType | Header 2 | Header 3 |
+|---|---|---|
+| New | Licence No | Licence Date |
+| Amend | Licence Amendment No | Amendment Date |
+| Extension | Licence Extension No | Extension Date |
+| Cancel | Licence Cancel No | Cancellation Date |
+| Actual Amend | Licence Actual Amendment No | Actual Amendment Date |
+
+Diffs found before code changes:
+
+- New frontend config falls back to generic `exportImportSections`; old admin uses Export Permit border sections only.
+- New frontend column keys do not use the existing voucher resolver, so RDLC parameter expressions show as literal column titles.
+- Old report title parameter is `Border Export Permit Voucher List ({FromDate}) To ({ToDate})`.
+- Old RDLC has a total amount footer: `TOTAL` and `SUM(Amount)`.
+
+Planned fixes after diff:
+
+1. Use `borderExportPermitSections` lookup. Done in code.
+2. Add old RDLC-style voucher subtitle. Done in code.
+3. Wire this report to `resolveImportLicenceVoucherColumns` and rename the dynamic columns to keys `LicenceNo` and `LicenceDate`. Done in code.
+4. Footer total amount is pending because current generic table footer support is separate from this config patch.
+
+Implementation applied:
+
+- Updated `BorderExportPermitVoucherReport` in `Frontend/src/Report/config/reportConfigs.ts` to use `lookupName: 'borderExportPermitSections'`.
+- Added `reportSubtitle: importLicenceRangeSubtitle('Border Export Permit Voucher List')`.
+- Added `resolveColumns: resolveImportLicenceVoucherColumns`.
+- Renamed dynamic parameter columns from `ParametersHeader2Value` / `ParametersHeader3Value` to `LicenceNo` / `LicenceDate`, so the resolver displays `Licence No`, `Licence Date`, `Licence Amendment No`, etc. based on Apply Type.
+
+Verification:
+
+- DB procedure check: `dbo.sp_VoucherReport_pagination` with `FormType = 'Border Export Permit'`, date range `2023-01-01` to `2026-06-30`, `ApplyType = 'New'`, page size 3 returned rows with `TotalCount = 42` in 556 ms.
+
+### Parity Diff - Border Export Permit Extension/Cancellation Reports - 2026-06-10
+
+Old admin references checked:
+
+- Extension controller/action: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Controllers\ReportsController.cs`, `BorderExportPermitExtensionReport`
+- Cancellation controller/action: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Controllers\ReportsController.cs`, `BorderExportPermitCancelReport`
+- Extension RDLC: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\ReportControl\BorderExtensionReport.rdlc`
+- Cancellation RDLC: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\ReportControl\BorderCancelReport.rdlc`
+
+Shared old filter behavior:
+
+| Filter | Old admin behavior | New config status | Diff |
+|---|---|---|---|
+| From Date / To Date | Required date fields | Present | OK |
+| Sakhan | Dropdown, all sakhans, `--- All ---` | Present as numeric lookup fallback | OK if lookup renders as dropdown |
+| Export Section | Dropdown from `GetAll(AppConfig.ExportPermit).Where(IsActive && IsBorder)` | Present but no explicit `lookupName` in these reports | Diff: must use Border Export Permit / Export Permit border sections only. |
+| Company Registration No | Textbox with company lookup JS | Present | OK |
+| Company Name | Readonly textbox auto-filled by company registration no | Not present as visible filter | Diff from old UI. |
+
+Old RDLC table/header:
+
+| Extension old column | New status |
+|---|---|
+| No., Sakhan, Section, Licence No, Extension No, Extension Last Date, Company Registration No, Company Name, Company Address, Curency, Total Value | Present |
+
+| Cancellation old column | New status |
+|---|---|
+| No., Sakhan, Section, Licence No, Cancellation No, Cancellation Date, Company Registration No, Company Name, Company Address, Curency, Total Value, Remark | Present |
+| HSCode | Extra in new config; not in old `BorderCancelReport.rdlc` |
+
+Shared old RDLC footer:
+
+- currency-wise licence count: `Currency: N licence(s)`
+- currency-wise amount total
+- grand total licence count: `Total: N licence(s)`
+
+Diffs found before code changes:
+
+- Both reports fall back to generic `exportImportSections`; old admin uses Export Permit border sections only.
+- Extension already has `reportSubtitle` and `currencyTotalsColumns` in the current config.
+- Cancellation does not yet have `reportSubtitle` / `currencyTotalsColumns`.
+- Cancellation has an extra `hsCode` column that is not in old RDLC.
+
+Planned fixes after diff:
+
+1. Add `lookupName: 'borderExportPermitSections'` to Extension and Cancellation. Done in code.
+2. Add old RDLC-style date subtitle to Cancellation. Done in code.
+3. Add `currencyTotalsColumns` to Cancellation. Done in code.
+4. Remove extra `hsCode` column from Cancellation. Done in code.
+
+Implementation applied:
+
+- Updated `BorderExportPermitExtensionReport` in `Frontend/src/Report/config/reportConfigs.ts` to use `lookupName: 'borderExportPermitSections'`.
+- Updated `BorderExportPermitCancellationReport` to use `lookupName: 'borderExportPermitSections'`.
+- Added cancellation `reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permit Report')`.
+- Added cancellation `currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' }`.
+- Removed the extra cancellation `hsCode` column because `BorderCancelReport.rdlc` does not include HS Code.
+
+Verification:
+
+- DB procedure check: `dbo.sp_ExtensionReport_pagination` with `FormType = 'Border Export Permit'`, date range `2023-01-01` to `2026-06-30`, page size 3 returned rows with `TotalCount = 3` in 192 ms.
+- DB procedure check: `dbo.sp_CancelReport_pagination` with `FormType = 'Border Export Permit'`, date range `2023-01-01` to `2026-06-30`, page size 3 returned rows with `TotalCount = 2` in 60 ms.
+- Lookup scan confirmed `borderExportPermitSections` is now only on the Wai Phyo-owned Border Export Permit reports in this pass: Actual Amendment, Amendment, Cancellation, Extension, New, and Voucher.
+
+### Parity Diff - Border Export Permit By HS Code Report - 2026-06-10
+
+Old admin references checked:
+
+- Controller/action: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Controllers\ReportsController.cs`, `BorderExportPermitByHSCodeReport`
+- View/filter form: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Views\Reports\BorderExportPermitByHSCodeReport.cshtml`
+- RDLC: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\ReportControl\BorderHSCodeReport.rdlc`
+
+Old filter box:
+
+| Filter | Old admin behavior | New config status | Diff |
+|---|---|---|---|
+| From Date / To Date | Required date fields | Present | OK |
+| Sakhan | Dropdown, all sakhans, `--- All ---` | Present as numeric lookup fallback | OK if lookup renders as dropdown |
+| Export Section | Dropdown from `GetAll(AppConfig.ExportPermit).Where(IsActive && IsBorder)` | Missing in this report config | Diff: add Export Permit border section filter. |
+| Filter By | Dropdown from `CommonRepository.GetFilterType()` | Present as free text | Diff: use Start/End dropdown. |
+| HS Code | Textbox | Present | OK |
+
+Old RDLC table/header:
+
+| Old column | New status |
+|---|---|
+| Sr.No. | Present as row number |
+| HS Code | Present |
+| Description | Present |
+| No of Licences | Present |
+| Total Value | Present |
+| Currency | Present |
+| Company Name | Extra in new config; not in old `BorderHSCodeReport.rdlc` |
+
+Old RDLC / controller behavior:
+
+- Report title parameter: `List of Border Export Permit By HS Code From ({FromDate}) To ({ToDate})`.
+- HS Code cell has a hyperlink to `Reports/BorderHSCodeDetailReport` with filters carried in query string.
+- RDLC footer shows total distinct licence count.
+
+Diffs found before code changes:
+
+- New config is missing Export Section filter.
+- New backend controller does not copy `ExportImportSectionId` into `sp_HSCodeReportRequest`.
+- New config uses text input for `FilterType`; old UI uses a dropdown.
+- New config includes `CompanyName`; old RDLC does not.
+- New frontend currently has no `BorderHSCodeDetailReport` route/config target, so HS Code drilldown cannot be completed as a small config patch.
+
+Planned fixes after diff:
+
+1. Add Export Section filter with `lookupName: 'borderExportPermitSections'`. Done in code.
+2. Add `ExportImportSectionId` to `BorderExportPermitByHSCodeReportRequest` and pass it into `sp_HSCodeReportRequest`. Done in code.
+3. Change Filter By to Start/End dropdown with default `Start`. Done in code.
+4. Remove Company Name column. Done in code.
+5. Add old RDLC-style report subtitle. Done in code.
+6. HS Code detail drilldown is pending until a new `BorderHSCodeDetailReport` frontend route/config exists.
+
+Implementation applied:
+
+- Updated `BorderExportPermitByHSCodeReport` in `Frontend/src/Report/config/reportConfigs.ts` to add the missing Export Section filter using `lookupName: 'borderExportPermitSections'`.
+- Changed `FilterType` from free text to a Start/End dropdown with default `Start`.
+- Added `reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permit By HS Code', true)`.
+- Removed the extra `CompanyName` column because `BorderHSCodeReport.rdlc` does not include it.
+- Updated `Backend/Controllers/Report/BorderExportPermitByHSCodeReportController.cs` to accept `ExportImportSectionId` and pass it into `sp_HSCodeReportRequest`.
+
+Verification:
+
+- Backend build: passed with existing nullable/migration warnings only.
+- DB procedure check: `dbo.sp_HSCodeReport_pagination` with `FormType = 'Border Export Permit'`, date range `2023-01-01` to `2026-06-30`, `FilterType = 'Start'`, page size 3 returned rows with `TotalCount = 74` in 279 ms.
+- Section-filtered frontend/API behavior uses the existing LINQ path because `sp_HSCodeReport.CreateAggregateResultAsync` deliberately skips the aggregate stored procedure when `ExportImportSectionId != 0`.
 
 ## Export Licence New Report Quota Pass - 2026-06-09
 

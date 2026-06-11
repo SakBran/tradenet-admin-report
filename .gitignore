@@ -12,6 +12,8 @@ lerna-debug.log*
 .env.*
 !.env.example
 *.local
+.codex
+
 
 # React / Vite / Node
 **/node_modules/

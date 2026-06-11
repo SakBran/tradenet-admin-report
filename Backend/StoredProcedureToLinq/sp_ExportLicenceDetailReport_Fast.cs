@@ -33,30 +33,40 @@ public static partial class sp_ExportLicenceDetailReport_Fast
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
+        var ports = await ReportLookupCache.GetPortNamesAsync(db, cache);
+        var countries = await ReportLookupCache.GetCountryNamesAsync(db, cache);
         var pageIndex = Math.Max(0, pagingRequest.PageIndex);
         var pageSize = pagingRequest.PageSize <= 0
             ? DefaultPageSize
             : Math.Min(pagingRequest.PageSize, MaxPageSize);
 
-        var pageRows = await ExecuteAsync(
-            db,
-            request,
-            pagingRequest.SortColumn,
-            pagingRequest.SortOrder,
-            pageIndex,
-            pagingRequest.IncludeTotalCount ? pageSize : pageSize + 1,
-            pagingRequest.IncludeTotalCount);
+        var totalCount = pagingRequest.IncludeTotalCount
+            ? await CountRowsAsync(db, request)
+            : (int?)null;
+
+        var pageItemIds = await RowKeys(db, request)
+            .Skip(pageIndex * pageSize)
+            .Take(pageSize + (totalCount.HasValue ? 0 : 1))
+            .Select(row => row.ItemUniqueId)
+            .ToListAsync();
+
+        var pageRows = pageItemIds.Count == 0
+            ? new List<ExportLicenceDetailFastRow>()
+            : await Rows(db, request)
+                .Where(row => pageItemIds.Contains(row.ItemUniqueId))
+                .OrderBy(row => row.LicenceDate)
+                .ThenBy(row => row.ItemNo)
+                .ToListAsync();
 
         var results = pageRows
-            .Select(row => row.ToResult())
+            .Select(row => row.ToResult(ports, countries))
             .ToList();
 
-        if (pagingRequest.IncludeTotalCount)
+        if (totalCount.HasValue)
         {
-            var totalCount = pageRows.Count == 0 ? 0 : pageRows[0].TotalCount;
             return ApiResult<sp_ExportLicenceDetailReportResult>.CreatePageFromRows(
                 results,
-                totalCount,
+                totalCount.Value,
                 pageIndex,
                 pageSize,
                 null,
@@ -87,8 +97,10 @@ public static partial class sp_ExportLicenceDetailReport_Fast
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
-        var rows = await ExecuteAsync(db, request, null, null, 0, 0, includeTotalCount: false);
-        var resolved = rows.Select(row => row.ToResult()).ToList();
+        var ports = await ReportLookupCache.GetPortNamesAsync(db, cache);
+        var countries = await ReportLookupCache.GetCountryNamesAsync(db, cache);
+        var rows = await Rows(db, request).ToListAsync();
+        var resolved = rows.Select(row => row.ToResult(ports, countries)).ToList();
 
         return await ExcelGenerator.CreateWorkbookAsync(resolved.AsQueryable(), pagingRequest, worksheetName);
     }
@@ -101,13 +113,15 @@ public static partial class sp_ExportLicenceDetailReport_Fast
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(cache);
         ArgumentNullException.ThrowIfNull(request);
 
-        var query = ExecuteQueryable(db, request, null, null, 0, 0, includeTotalCount: false);
+        var ports = await ReportLookupCache.GetPortNamesAsync(db, cache);
+        var countries = await ReportLookupCache.GetCountryNamesAsync(db, cache);
 
-        await foreach (var rawChunk in query.AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
+        await foreach (var rawChunk in Rows(db, request).AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
         {
-            yield return rawChunk.Select(row => row.ToResult()).ToList();
+            yield return rawChunk.Select(row => row.ToResult(ports, countries)).ToList();
         }
     }
 
@@ -202,14 +216,7 @@ public static partial class sp_ExportLicenceDetailReport_Fast
         TradeNetDbContext db,
         sp_ExportLicenceDetailReportRequest request)
     {
-        var rows = await ExecuteAsync(
-            db,
-            request,
-            sortColumn: null,
-            sortOrder: null,
-            pageIndex: 0,
-            pageSize: 0,
-            includeTotalCount: false);
+        var rows = await Rows(db, request).ToListAsync();
 
         return rows
             .Select(row => new AggregateSourceRow
@@ -217,8 +224,11 @@ public static partial class sp_ExportLicenceDetailReport_Fast
                 SakhanCode = row.SakhanCode,
                 SakhanName = row.SakhanName,
                 SectionName = row.SectionName,
+                SectionId = row.ExportImportSectionId,
                 MethodName = row.MethodName,
+                MethodId = row.ExportImportMethodId,
                 Country = row.BuyerCountry,
+                CountryId = row.BuyerCountryId,
                 CompanyName = row.CompanyName,
                 CompanyRegistrationNo = row.CompanyRegistrationNo,
                 HSCode = row.HSCode,
@@ -246,6 +256,121 @@ public static partial class sp_ExportLicenceDetailReport_Fast
                 .Where(_ => false)
                 .OrderBy(row => row.LicenceDate)
         };
+    }
+
+    private static Task<int> CountRowsAsync(
+        TradeNetDbContext db,
+        sp_ExportLicenceDetailReportRequest request)
+    {
+        return RowKeys(db, request).CountAsync();
+    }
+
+    private static IQueryable<ExportLicenceDetailRowKey> RowKeys(
+        TradeNetDbContext db,
+        sp_ExportLicenceDetailReportRequest request)
+    {
+        return request.Type switch
+        {
+            "Oversea" => OverseaRowKeys(db, request)
+                .OrderBy(row => row.LicenceDate)
+                .ThenBy(row => row.ItemNo),
+            "Border" => BorderPaThaKaRowKeys(db, request)
+                .Concat(BorderIndividualTradingRowKeys(db, request))
+                .OrderBy(row => row.LicenceDate)
+                .ThenBy(row => row.ItemNo),
+            _ => OverseaRowKeys(db, request)
+                .Where(_ => false)
+                .OrderBy(row => row.LicenceDate)
+                .ThenBy(row => row.ItemNo)
+        };
+    }
+
+    private static IQueryable<ExportLicenceDetailRowKey> OverseaRowKeys(
+        TradeNetDbContext db,
+        sp_ExportLicenceDetailReportRequest request)
+    {
+        return
+            from licence in db.ExportLicences.AsNoTracking()
+            join paThaKa in db.PaThaKas.AsNoTracking() on licence.PaThaKaId equals paThaKa.Id
+            join paThaKaType in db.PaThaKaTypes.AsNoTracking() on paThaKa.PaThaKaTypeId equals paThaKaType.Id
+            join item in db.ExportLicenceItems.AsNoTracking() on licence.Id equals item.ExportLicenceId
+            where request.Type == "Oversea"
+                && licence.ApplyType == New
+                && licence.Status == Approved
+                && licence.CreatedDate >= request.FromDate
+                && licence.CreatedDate <= request.ToDate
+                && (request.CompanyRegistrationNo == string.Empty || paThaKa.CompanyRegistrationNo == request.CompanyRegistrationNo)
+                && (request.PaThaKaTypeId == 0 || paThaKaType.Id == request.PaThaKaTypeId)
+                && (request.ExportImportSectionId == 0 || licence.ExportImportSectionId == request.ExportImportSectionId)
+                && (request.ExportImportMethodId == 0 || licence.ExportImportMethodId == request.ExportImportMethodId)
+                && (request.ExportImportIncotermId == 0 || licence.ExportImportIncotermId == request.ExportImportIncotermId)
+                && (request.BuyerCountryId == 0 || licence.BuyerCountryId == request.BuyerCountryId)
+            select new ExportLicenceDetailRowKey
+            {
+                ItemUniqueId = item.UniqueId,
+                ItemNo = item.ItemNo,
+                LicenceDate = licence.IssuedDate
+            };
+    }
+
+    private static IQueryable<ExportLicenceDetailRowKey> BorderPaThaKaRowKeys(
+        TradeNetDbContext db,
+        sp_ExportLicenceDetailReportRequest request)
+    {
+        return
+            from licence in db.BorderExportLicences.AsNoTracking()
+            join paThaKa in db.PaThaKas.AsNoTracking() on licence.PaThaKaId equals paThaKa.Id
+            join paThaKaType in db.PaThaKaTypes.AsNoTracking() on paThaKa.PaThaKaTypeId equals paThaKaType.Id
+            join item in db.BorderExportLicenceItems.AsNoTracking() on licence.Id equals item.BorderExportLicenceId
+            where request.Type == "Border"
+                && licence.ApplyType == New
+                && licence.Status == Approved
+                && licence.CardType == PaThaKaCardType
+                && licence.CreatedDate >= request.FromDate
+                && licence.CreatedDate <= request.ToDate
+                && (request.CompanyRegistrationNo == string.Empty || paThaKa.CompanyRegistrationNo == request.CompanyRegistrationNo)
+                && (request.PaThaKaTypeId == 0 || paThaKaType.Id == request.PaThaKaTypeId)
+                && (request.ExportImportSectionId == 0 || licence.ExportImportSectionId == request.ExportImportSectionId)
+                && (request.ExportImportMethodId == 0 || licence.ExportImportMethodId == request.ExportImportMethodId)
+                && (request.ExportImportIncotermId == 0 || licence.ExportImportIncotermId == request.ExportImportIncotermId)
+                && (request.BuyerCountryId == 0 || licence.BuyerCountryId == request.BuyerCountryId)
+                && (request.SakhanId == 0 || licence.SakhanId == request.SakhanId)
+            select new ExportLicenceDetailRowKey
+            {
+                ItemUniqueId = item.UniqueId,
+                ItemNo = item.ItemNo,
+                LicenceDate = licence.IssuedDate
+            };
+    }
+
+    private static IQueryable<ExportLicenceDetailRowKey> BorderIndividualTradingRowKeys(
+        TradeNetDbContext db,
+        sp_ExportLicenceDetailReportRequest request)
+    {
+        return
+            from licence in db.BorderExportLicences.AsNoTracking()
+            join individualTrading in db.IndividualTradings.AsNoTracking() on licence.IndividualTradingId equals individualTrading.Id
+            join paThaKaType in db.PaThaKaTypes.AsNoTracking() on individualTrading.PaThaKaTypeId equals paThaKaType.Id
+            join item in db.BorderExportLicenceItems.AsNoTracking() on licence.Id equals item.BorderExportLicenceId
+            where request.Type == "Border"
+                && licence.ApplyType == New
+                && licence.Status == Approved
+                && licence.CardType == IndividualTradingCardType
+                && licence.CreatedDate >= request.FromDate
+                && licence.CreatedDate <= request.ToDate
+                && (request.CompanyRegistrationNo == string.Empty || individualTrading.Tinno == request.CompanyRegistrationNo)
+                && (request.PaThaKaTypeId == 0 || paThaKaType.Id == request.PaThaKaTypeId)
+                && (request.ExportImportSectionId == 0 || licence.ExportImportSectionId == request.ExportImportSectionId)
+                && (request.ExportImportMethodId == 0 || licence.ExportImportMethodId == request.ExportImportMethodId)
+                && (request.ExportImportIncotermId == 0 || licence.ExportImportIncotermId == request.ExportImportIncotermId)
+                && (request.BuyerCountryId == 0 || licence.BuyerCountryId == request.BuyerCountryId)
+                && (request.SakhanId == 0 || licence.SakhanId == request.SakhanId)
+            select new ExportLicenceDetailRowKey
+            {
+                ItemUniqueId = item.UniqueId,
+                ItemNo = item.ItemNo,
+                LicenceDate = licence.IssuedDate
+            };
     }
 
     private static IQueryable<ExportLicenceDetailFastRow> OverseaRows(
@@ -279,6 +404,8 @@ public static partial class sp_ExportLicenceDetailReport_Fast
                 && (request.BuyerCountryId == 0 || licence.BuyerCountryId == request.BuyerCountryId)
             select new ExportLicenceDetailFastRow
             {
+                ItemUniqueId = item.UniqueId,
+                ItemNo = item.ItemNo,
                 PaThaKaTypeId = paThaKaType.Id,
                 PaThaKaTypeCode = paThaKaType.Code,
                 PaThaKaTypeName = paThaKaType.Description,
@@ -357,6 +484,8 @@ public static partial class sp_ExportLicenceDetailReport_Fast
                 && (request.SakhanId == 0 || licence.SakhanId == request.SakhanId)
             select new ExportLicenceDetailFastRow
             {
+                ItemUniqueId = item.UniqueId,
+                ItemNo = item.ItemNo,
                 PaThaKaTypeId = paThaKaType.Id,
                 PaThaKaTypeCode = paThaKaType.Code,
                 PaThaKaTypeName = paThaKaType.Description,
@@ -438,6 +567,8 @@ public static partial class sp_ExportLicenceDetailReport_Fast
                 && (request.SakhanId == 0 || licence.SakhanId == request.SakhanId)
             select new ExportLicenceDetailFastRow
             {
+                ItemUniqueId = item.UniqueId,
+                ItemNo = item.ItemNo,
                 PaThaKaTypeId = paThaKaType.Id,
                 PaThaKaTypeCode = paThaKaType.Code,
                 PaThaKaTypeName = paThaKaType.Description,
@@ -487,6 +618,8 @@ public static partial class sp_ExportLicenceDetailReport_Fast
 
     private sealed class ExportLicenceDetailFastRow
     {
+        public int ItemUniqueId { get; init; }
+        public int ItemNo { get; init; }
         public int PaThaKaTypeId { get; init; }
         public string PaThaKaTypeCode { get; init; } = null!;
         public string PaThaKaTypeName { get; init; } = null!;
@@ -584,5 +717,12 @@ public static partial class sp_ExportLicenceDetailReport_Fast
                 ApproveDate = ApproveDate
             };
         }
+    }
+
+    private sealed class ExportLicenceDetailRowKey
+    {
+        public int ItemUniqueId { get; init; }
+        public int ItemNo { get; init; }
+        public DateTime? LicenceDate { get; init; }
     }
 }
