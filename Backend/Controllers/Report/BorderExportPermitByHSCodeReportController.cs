@@ -116,6 +116,7 @@ namespace Backend.Controllers.Report
                 FormType = "Border Export Permit",
                 FilterType = request.FilterType ?? string.Empty,
                 HSCode = request.HSCode ?? string.Empty,
+                ExportImportSectionId = request.ExportImportSectionId,
                 SakhanId = request.SakhanId,
             };
 
@@ -130,6 +131,7 @@ namespace Backend.Controllers.Report
         public string FormType { get; set; } = string.Empty;
         public string FilterType { get; set; } = string.Empty;
         public string HSCode { get; set; } = string.Empty;
+        public int ExportImportSectionId { get; set; }
         public int SakhanId { get; set; }
     }
 }

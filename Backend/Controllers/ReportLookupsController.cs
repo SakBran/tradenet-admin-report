@@ -28,6 +28,7 @@ namespace Backend.Controllers
         private const string ImportLicenceFormType = "Import Licence";
         private const string ImportPermitFormType = "Import Permit";
         private const string ExportLicenceFormType = "Export Licence";
+        private const string ExportPermitFormType = "Export Permit";
         private const string ImportTradeType = "Import";
 
         private readonly TradeNetDbContext _context;
@@ -56,9 +57,11 @@ namespace Backend.Controllers
                 "importlicenceincoterms" => GetImportLicenceIncoterms,
                 "importlicencemethods" => GetImportLicenceMethods,
                 "importlicencesections" => GetImportLicenceSections,
+                "exportlicencesections" => GetExportLicenceSections,
                 "importpermitsections" => GetImportPermitSections,
                 "borderimportpermitsections" => GetBorderImportPermitSections,
                 "borderexportlicencesections" => GetBorderExportLicenceSections,
+                "borderexportpermitsections" => GetBorderExportPermitSections,
                 "lineofbusinesses" => GetLineofBusinesses,
                 "nrcprefixcodes" => GetNrcprefixCodes,
                 "nrcprefixes" => GetNrcprefixes,
@@ -267,6 +270,20 @@ namespace Backend.Controllers
                 .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
                 .ToListAsync();
 
+        // Export Licence sections (legacy: GetAll(AppConfig.ExportLicence) where IsOversea).
+        private Task<List<ReportLookupOption>> GetExportLicenceSections() =>
+            _context.ExportImportSections
+                .AsNoTracking()
+                .Where(item =>
+                    item.IsActive &&
+                    !item.IsDeleted &&
+                    item.Type == ExportLicenceFormType &&
+                    item.IsOversea)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
+                .ToListAsync();
+
         // Border Export Licence sections (legacy: GetAll(AppConfig.ExportLicence) where IsBorder).
         private Task<List<ReportLookupOption>> GetBorderExportLicenceSections() =>
             _context.ExportImportSections
@@ -275,6 +292,20 @@ namespace Backend.Controllers
                     item.IsActive &&
                     !item.IsDeleted &&
                     item.Type == ExportLicenceFormType &&
+                    item.IsBorder)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
+                .ToListAsync();
+
+        // Border Export Permit sections (legacy: GetAll(AppConfig.ExportPermit) where IsBorder).
+        private Task<List<ReportLookupOption>> GetBorderExportPermitSections() =>
+            _context.ExportImportSections
+                .AsNoTracking()
+                .Where(item =>
+                    item.IsActive &&
+                    !item.IsDeleted &&
+                    item.Type == ExportPermitFormType &&
                     item.IsBorder)
                 .OrderBy(item => item.SortOrder)
                 .ThenBy(item => item.Name)

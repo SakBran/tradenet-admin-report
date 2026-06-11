@@ -117,6 +117,7 @@ namespace Backend.Controllers.Report
                 FilterType = request.FilterType ?? string.Empty,
                 HSCode = request.HSCode ?? string.Empty,
                 SakhanId = request.SakhanId,
+                ExportImportSectionId = request.ExportImportSectionId,
             };
 
             return true;
@@ -131,6 +132,7 @@ namespace Backend.Controllers.Report
         public string FilterType { get; set; } = string.Empty;
         public string HSCode { get; set; } = string.Empty;
         public int SakhanId { get; set; }
+        public int ExportImportSectionId { get; set; }
     }
 }
 
