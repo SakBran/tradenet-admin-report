@@ -6834,12 +6834,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         required: true,
       },
       {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
         name: 'PaThaKaTypeId',
         label: 'EIR Card Type',
         type: 'number',
@@ -6850,38 +6844,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'exportLicenceSections',
       },
       {
         name: 'ExportImportMethodId',
         label: 'Method of export',
         type: 'number',
         defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Method of export According to Incoterms',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'BuyerCountryId',
-        label: 'Buyer Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
+        lookupName: 'exportLicenceMethods',
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Licences By Method', true),
     columns: [
       {
         key: 'Method',
@@ -6926,12 +6899,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         required: true,
       },
       {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
         name: 'PaThaKaTypeId',
         label: 'EIR Card Type',
         type: 'number',
@@ -6942,38 +6909,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'exportLicenceSections',
       },
       {
         name: 'ExportImportMethodId',
         label: 'Method of export',
         type: 'number',
         defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Method of export According to Incoterms',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'BuyerCountryId',
-        label: 'Buyer Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
+        lookupName: 'exportLicenceMethods',
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Licences By Section', true),
     columns: [
       {
         key: 'Section',
@@ -7018,12 +6964,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         required: true,
       },
       {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
         name: 'PaThaKaTypeId',
         label: 'EIR Card Type',
         type: 'number',
@@ -7034,18 +6974,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'exportLicenceSections',
       },
       {
         name: 'ExportImportMethodId',
         label: 'Method of export',
         type: 'number',
         defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Method of export According to Incoterms',
-        type: 'number',
-        defaultValue: 0,
+        lookupName: 'exportLicenceMethods',
       },
       {
         name: 'BuyerCountryId',
@@ -7053,19 +6989,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'number',
         defaultValue: 0,
       },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Licences By Buyer Country', true),
     columns: [
       {
         key: 'Country',
@@ -7221,12 +7146,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         required: true,
       },
       {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
         name: 'PaThaKaTypeId',
         label: 'EIR Card Type',
         type: 'number',
@@ -7237,24 +7156,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'exportLicenceSections',
       },
       {
         name: 'ExportImportMethodId',
         label: 'Method of export',
         type: 'number',
         defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Method of export According to Incoterms',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'BuyerCountryId',
-        label: 'Buyer Country',
-        type: 'number',
-        defaultValue: 0,
+        lookupName: 'exportLicenceMethods',
       },
       {
         name: 'CompanyRegistrationNo',
@@ -7263,12 +7172,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
+        ...importLicenceCompanyNameFilter,
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Licences By Company', true),
     columns: [
       {
         key: 'CompanyName',
@@ -7313,38 +7220,15 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         required: true,
       },
       {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'PaThaKaTypeId',
-        label: 'EIR Card Type',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
         name: 'ExportImportSectionId',
         label: 'Export Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'exportLicenceSections',
       },
       {
-        name: 'ExportImportMethodId',
-        label: 'Method of export',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Method of export According to Incoterms',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'BuyerCountryId',
-        label: 'Buyer Country',
+        name: 'PaThaKaTypeId',
+        label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
       },
@@ -7355,12 +7239,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
+        ...importLicenceCompanyNameFilter,
       },
     ],
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Licences By Daily', true),
     columns: [
       {
         key: 'Date',

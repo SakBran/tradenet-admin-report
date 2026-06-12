@@ -37,8 +37,9 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var result = await sp_ExportLicenceDetailReport_Fast.CreateAggregateResultAsync(
-                _context, procedureRequest!, request!, ReportAggregateDimension.Country, includeSakhan: false);
+            var result = await sp_ExportLicenceDetailReportV2.CreateSummaryResultAsync(
+                _context, procedureRequest!, request!, ReportAggregateDimension.Country,
+                includeColumnTotals: true);
 
             return Ok(result);
         }
@@ -75,8 +76,8 @@ namespace Backend.Controllers.Report
             CancellationToken cancellationToken)
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
-            var rows = await sp_ExportLicenceDetailReport_Fast.GetAggregateRowsAsync(
-                _context, procedureRequest!, ReportAggregateDimension.Country, includeSakhan: false);
+            var rows = await sp_ExportLicenceDetailReportV2.GetSummaryRowsAsync(
+                _context, procedureRequest!, ReportAggregateDimension.Country);
             sink.Append(rows);
         }
 

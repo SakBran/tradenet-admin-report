@@ -178,6 +178,76 @@ public sealed class ExportLicenceDetailReportContractTests
         Assert.DoesNotContain("var pageRows = await ExecuteAsync", fastSource);
     }
 
+    [Fact]
+    public void Export_licence_summary_reports_use_export_summary_procedure_without_changing_border_reports()
+    {
+        var v2Source = File.ReadAllText(Path.Combine(
+            RepositoryRoot,
+            "Backend",
+            "StoredProcedureToLinq",
+            "sp_ExportLicenceDetailReportV2.cs"));
+        var summaryCallerSource = File.ReadAllText(Path.Combine(
+            RepositoryRoot,
+            "Backend",
+            "StoredProcedureToLinq",
+            "sp_ExportLicenceSummaryReport.cs"));
+        var summarySql = File.ReadAllText(Path.Combine(
+            RepositoryRoot,
+            "StoredProcedureMigrations",
+            "sp_ExportLicenceSummaryReport.sql"));
+
+        Assert.Contains("CreateSummaryResultAsync", v2Source);
+        Assert.Contains("GetSummaryRowsAsync", v2Source);
+        Assert.Contains("sp_ExportLicenceSummaryReport.ExecuteAsync(db, request, dimensionName)", v2Source);
+        Assert.Contains("ReportUsdConversionService.FillDailyUsdValuesAsync(db, groups)", v2Source);
+        Assert.Contains("EXEC dbo.sp_ExportLicenceSummaryReport", summaryCallerSource);
+        Assert.Contains("FROM dbo.ExportLicence AS el", summarySql);
+        Assert.Contains("FROM dbo.ExportLicenceItem AS item", summarySql);
+        Assert.DoesNotContain("BorderExportLicence", summarySql);
+
+        foreach (var controllerName in new[]
+        {
+            "ExportLicenceByMethodReportController.cs",
+            "ExportLicenceBySectionReportController.cs",
+            "ExportLicenceBySellerCountryReportController.cs",
+            "ExportLicenceCompanyListReportController.cs",
+            "ExportLicenceDailyReportNewLicenceReportController.cs",
+        })
+        {
+            var controllerSource = File.ReadAllText(Path.Combine(
+                RepositoryRoot,
+                "Backend",
+                "Controllers",
+                "Report",
+                controllerName));
+
+            Assert.Contains("sp_ExportLicenceDetailReportV2.CreateSummaryResultAsync", controllerSource);
+            Assert.Contains("sp_ExportLicenceDetailReportV2.GetSummaryRowsAsync", controllerSource);
+            Assert.DoesNotContain("sp_ExportLicenceDetailReport_Fast.CreateAggregateResultAsync", controllerSource);
+            Assert.DoesNotContain("sp_ExportLicenceDetailReport_Fast.GetAggregateRowsAsync", controllerSource);
+        }
+
+        foreach (var controllerName in new[]
+        {
+            "BorderExportLicenceByMethodReportController.cs",
+            "BorderExportLicenceBySectionReportController.cs",
+            "BorderExportLicenceBySellerCountryReportController.cs",
+            "BorderExportLicenceCompanyListReportController.cs",
+            "BorderExportLicenceDailyReportNewLicenceReportController.cs",
+        })
+        {
+            var controllerSource = File.ReadAllText(Path.Combine(
+                RepositoryRoot,
+                "Backend",
+                "Controllers",
+                "Report",
+                controllerName));
+
+            Assert.Contains("sp_ExportLicenceDetailReport_Fast.CreateAggregateResultAsync", controllerSource);
+            Assert.Contains("sp_ExportLicenceDetailReport_Fast.GetAggregateRowsAsync", controllerSource);
+        }
+    }
+
     private static IReadOnlyList<ReportColumn> ExtractColumns(string config)
     {
         var columnsStart = config.IndexOf("columns: [", StringComparison.Ordinal);

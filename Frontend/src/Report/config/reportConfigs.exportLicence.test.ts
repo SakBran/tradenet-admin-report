@@ -2,6 +2,63 @@ import { describe, expect, it } from 'vitest';
 import { reportConfigs } from './reportConfigs';
 
 describe('Export Licence report configs', () => {
+  it('summary reports match old admin filter boxes and legacy titles', () => {
+    const expected = {
+      ExportLicenceByMethodReport: {
+        filters: ['dateRange', 'PaThaKaTypeId', 'ExportImportSectionId', 'ExportImportMethodId'],
+        subtitle: 'List of Export Licences By Method From (01/02/2026) To (03/02/2026)',
+      },
+      ExportLicenceBySectionReport: {
+        filters: ['dateRange', 'PaThaKaTypeId', 'ExportImportSectionId', 'ExportImportMethodId'],
+        subtitle: 'List of Export Licences By Section From (01/02/2026) To (03/02/2026)',
+      },
+      ExportLicenceBySellerCountryReport: {
+        filters: [
+          'dateRange',
+          'PaThaKaTypeId',
+          'ExportImportSectionId',
+          'ExportImportMethodId',
+          'BuyerCountryId',
+        ],
+        subtitle: 'List of Export Licences By Buyer Country From (01/02/2026) To (03/02/2026)',
+      },
+      ExportLicenceCompanyListReport: {
+        filters: [
+          'dateRange',
+          'PaThaKaTypeId',
+          'ExportImportSectionId',
+          'ExportImportMethodId',
+          'CompanyRegistrationNo',
+          'CompanyName',
+        ],
+        subtitle: 'List of Export Licences By Company From (01/02/2026) To (03/02/2026)',
+      },
+      ExportLicenceDailyReportNewLicenceReport: {
+        filters: [
+          'dateRange',
+          'ExportImportSectionId',
+          'PaThaKaTypeId',
+          'CompanyRegistrationNo',
+          'CompanyName',
+        ],
+        subtitle: 'List of Export Licences By Daily From (01/02/2026) To (03/02/2026)',
+      },
+    } as const;
+
+    for (const [key, { filters, subtitle }] of Object.entries(expected)) {
+      const cfg = reportConfigs[key];
+
+      expect(
+        cfg.filters.map((filter) => filter.name),
+        key
+      ).toEqual(filters);
+      expect(
+        cfg.reportSubtitle?.({ FromDate: '2026-02-01', ToDate: '2026-02-03' }),
+        key
+      ).toBe(subtitle);
+    }
+  });
+
   it('list and detail reports open with a data-bearing three-month date range by default', () => {
     for (const key of [
       'ExportLicenceByHSCodeReport',
