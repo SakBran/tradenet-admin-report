@@ -73,6 +73,18 @@ const reportCategoryDefinitions: ReportCategory[] = [
     matches: (controllerName) => controllerName.startsWith('ImportPermit'),
   },
   {
+    key: 'report-export-licence',
+    title: 'Export Licence',
+    icon: <ExportOutlined />,
+    matches: (controllerName) => controllerName.startsWith('ExportLicence'),
+  },
+  {
+    key: 'report-export-permit',
+    title: 'Export Permit',
+    icon: <LogoutOutlined />,
+    matches: (controllerName) => controllerName.startsWith('ExportPermit'),
+  },
+  {
     key: 'report-border-import-licence',
     title: 'Border Import Licence',
     icon: <FileProtectOutlined />,
@@ -87,30 +99,18 @@ const reportCategoryDefinitions: ReportCategory[] = [
       controllerName.startsWith('BorderImportPermit'),
   },
   {
-    key: 'report-border-export-permit',
-    title: 'Border Export Permit',
-    icon: <SafetyOutlined />,
-    matches: (controllerName) =>
-      controllerName.startsWith('BorderExportPermit'),
-  },
-  {
-    key: 'report-export-licence',
-    title: 'Export Licence',
-    icon: <ExportOutlined />,
-    matches: (controllerName) => controllerName.startsWith('ExportLicence'),
-  },
-  {
-    key: 'report-export-permit',
-    title: 'Export Permit',
-    icon: <LogoutOutlined />,
-    matches: (controllerName) => controllerName.startsWith('ExportPermit'),
-  },
-  {
     key: 'report-border-export-licence',
     title: 'Border Export Licence',
     icon: <FileDoneOutlined />,
     matches: (controllerName) =>
       controllerName.startsWith('BorderExportLicence'),
+  },
+  {
+    key: 'report-border-export-permit',
+    title: 'Border Export Permit',
+    icon: <SafetyOutlined />,
+    matches: (controllerName) =>
+      controllerName.startsWith('BorderExportPermit'),
   },
   {
     key: 'report-wholesale',
