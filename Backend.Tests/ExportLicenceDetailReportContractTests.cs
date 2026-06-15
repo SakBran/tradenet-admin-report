@@ -203,6 +203,12 @@ public sealed class ExportLicenceDetailReportContractTests
         Assert.Contains("EXEC dbo.sp_ExportLicenceSummaryReport", summaryCallerSource);
         Assert.Contains("FROM dbo.ExportLicence AS el", summarySql);
         Assert.Contains("FROM dbo.ExportLicenceItem AS item", summarySql);
+        Assert.Contains("Previous Daily implementation kept for rollback/reference", summarySql);
+        Assert.Contains("INNER JOIN dbo.ExportLicenceItem AS item ON item.ExportLicenceId = el.Id", summarySql);
+        Assert.Contains("COALESCE(SUM(item.Amount), 0) AS TotalValue", summarySql);
+        Assert.Contains("@Auto nvarchar(20) = N''", summarySql);
+        Assert.Contains("@Auto = N'auto' AND el.[auto] = N'auto'", summarySql);
+        Assert.Contains("@Auto = N'none-auto' AND (el.[auto] IS NULL OR el.[auto] <> N'auto')", summarySql);
         Assert.DoesNotContain("BorderExportLicence", summarySql);
 
         foreach (var controllerName in new[]

@@ -39,6 +39,7 @@ describe('Export Licence report configs', () => {
           'ExportImportSectionId',
           'PaThaKaTypeId',
           'CompanyRegistrationNo',
+          'Auto',
           'CompanyName',
         ],
         subtitle: 'List of Export Licences By Daily From (01/02/2026) To (03/02/2026)',

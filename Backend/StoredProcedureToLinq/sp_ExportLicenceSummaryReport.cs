@@ -57,12 +57,13 @@ public static class sp_ExportLicenceSummaryReport
             new("@BuyerCountryId", request.BuyerCountryId),
             new("@CompanyRegistrationNo", request.CompanyRegistrationNo ?? string.Empty),
             new("@Dimension", dimension),
+            new("@Auto", request.Auto ?? string.Empty),
         };
 
         const string sql =
             "EXEC dbo.sp_ExportLicenceSummaryReport " +
             "@FromDate, @ToDate, @PaThaKaTypeId, @ExportImportSectionId, @ExportImportMethodId, " +
-            "@ExportImportIncotermId, @BuyerCountryId, @CompanyRegistrationNo, @Dimension";
+            "@ExportImportIncotermId, @BuyerCountryId, @CompanyRegistrationNo, @Dimension, @Auto";
 
         return await db.Database
             .SqlQueryRaw<sp_ExportLicenceSummaryReportRow>(sql, parameters)

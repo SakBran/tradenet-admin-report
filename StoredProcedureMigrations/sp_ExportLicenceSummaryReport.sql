@@ -23,7 +23,8 @@ CREATE OR ALTER PROCEDURE dbo.sp_ExportLicenceSummaryReport
     @ExportImportIncotermId int = 0,
     @BuyerCountryId int = 0,
     @CompanyRegistrationNo nvarchar(50) = N'',
-    @Dimension varchar(20) = 'Method'
+    @Dimension varchar(20) = 'Method',
+    @Auto nvarchar(20) = N''
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -194,12 +195,49 @@ BEGIN
 
     IF @Dimension = 'Daily'
     BEGIN
-        ;WITH ItemTotals AS
-        (
-            SELECT item.ExportLicenceId, item.CurrencyId, SUM(item.Amount) AS TotalAmount
-            FROM dbo.ExportLicenceItem AS item
-            GROUP BY item.ExportLicenceId, item.CurrencyId
-        )
+        /*
+            Previous Daily implementation kept for rollback/reference.
+            It aggregated all ExportLicenceItem rows before the licence date/filter
+            predicates were applied, which made month-range reports expensive.
+
+            ;WITH ItemTotals AS
+            (
+                SELECT item.ExportLicenceId, item.CurrencyId, SUM(item.Amount) AS TotalAmount
+                FROM dbo.ExportLicenceItem AS item
+                GROUP BY item.ExportLicenceId, item.CurrencyId
+            )
+            SELECT
+                CAST(NULL AS nvarchar(200)) AS SectionName,
+                CAST(NULL AS int) AS SectionId,
+                CAST(NULL AS nvarchar(200)) AS MethodName,
+                CAST(NULL AS int) AS MethodId,
+                CAST(NULL AS nvarchar(200)) AS Country,
+                CAST(NULL AS int) AS CountryId,
+                CAST(NULL AS nvarchar(400)) AS CompanyName,
+                CAST(NULL AS nvarchar(50)) AS CompanyRegistrationNo,
+                CONVERT(varchar(10), el.IssuedDate, 23) AS GroupDate,
+                c.Code AS Currency,
+                COUNT(DISTINCT NULLIF(el.ExportLicenceNo, N'')) AS NoOfLicences,
+                COALESCE(SUM(item.TotalAmount), 0) AS TotalValue
+            FROM dbo.ExportLicence AS el
+            INNER JOIN dbo.PaThaKa AS p ON p.Id = el.PaThaKaId
+            INNER JOIN ItemTotals AS item ON item.ExportLicenceId = el.Id
+            INNER JOIN dbo.Currency AS c ON c.Id = item.CurrencyId
+            WHERE el.ApplyType = N'New'
+              AND el.Status = N'Approved'
+              AND el.CreatedDate >= @FromDate
+              AND el.CreatedDate <= @ToDate
+              AND (@CompanyRegistrationNo = N'' OR p.CompanyRegistrationNo = @CompanyRegistrationNo)
+              AND (@PaThaKaTypeId = 0 OR p.PaThaKaTypeId = @PaThaKaTypeId)
+              AND (@ExportImportSectionId = 0 OR el.ExportImportSectionId = @ExportImportSectionId)
+              AND (@ExportImportMethodId = 0 OR el.ExportImportMethodId = @ExportImportMethodId)
+              AND (@ExportImportIncotermId = 0 OR el.ExportImportIncotermId = @ExportImportIncotermId)
+              AND (@BuyerCountryId = 0 OR el.BuyerCountryId = @BuyerCountryId)
+            GROUP BY CONVERT(varchar(10), el.IssuedDate, 23), c.Code
+            OPTION (RECOMPILE);
+            RETURN;
+        */
+
         SELECT
             CAST(NULL AS nvarchar(200)) AS SectionName,
             CAST(NULL AS int) AS SectionId,
@@ -212,10 +250,10 @@ BEGIN
             CONVERT(varchar(10), el.IssuedDate, 23) AS GroupDate,
             c.Code AS Currency,
             COUNT(DISTINCT NULLIF(el.ExportLicenceNo, N'')) AS NoOfLicences,
-            COALESCE(SUM(item.TotalAmount), 0) AS TotalValue
+            COALESCE(SUM(item.Amount), 0) AS TotalValue
         FROM dbo.ExportLicence AS el
         INNER JOIN dbo.PaThaKa AS p ON p.Id = el.PaThaKaId
-        INNER JOIN ItemTotals AS item ON item.ExportLicenceId = el.Id
+        INNER JOIN dbo.ExportLicenceItem AS item ON item.ExportLicenceId = el.Id
         INNER JOIN dbo.Currency AS c ON c.Id = item.CurrencyId
         WHERE el.ApplyType = N'New'
           AND el.Status = N'Approved'
@@ -227,6 +265,11 @@ BEGIN
           AND (@ExportImportMethodId = 0 OR el.ExportImportMethodId = @ExportImportMethodId)
           AND (@ExportImportIncotermId = 0 OR el.ExportImportIncotermId = @ExportImportIncotermId)
           AND (@BuyerCountryId = 0 OR el.BuyerCountryId = @BuyerCountryId)
+          AND (
+              @Auto = N''
+              OR (@Auto = N'auto' AND el.[auto] = N'auto')
+              OR (@Auto = N'none-auto' AND (el.[auto] IS NULL OR el.[auto] <> N'auto'))
+          )
         GROUP BY CONVERT(varchar(10), el.IssuedDate, 23), c.Code
         OPTION (RECOMPILE);
         RETURN;

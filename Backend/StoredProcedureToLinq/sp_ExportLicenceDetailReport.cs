@@ -14,6 +14,7 @@ public sealed class sp_ExportLicenceDetailReportRequest
     public int BuyerCountryId { get; set; }
     public string CompanyRegistrationNo { get; set; } = string.Empty;
     public int SakhanId { get; set; }
+    public string Auto { get; set; } = string.Empty;
 }
 
 public sealed class sp_ExportLicenceDetailReportResult

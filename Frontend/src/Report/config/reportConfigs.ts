@@ -7239,6 +7239,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        ...importLicenceAutoFilter,
+      },
+      {
         ...importLicenceCompanyNameFilter,
       },
     ],
