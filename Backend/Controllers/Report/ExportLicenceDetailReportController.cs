@@ -43,6 +43,12 @@ namespace Backend.Controllers.Report
             var result = await sp_ExportLicenceDetailReportV2.CreatePagedResultAsync(
                 _context, procedureRequest!, request!);
 
+            if (result.Data.Count > 0)
+            {
+                result.CurrencyTotals = await sp_ExportLicenceDetailReportV2.CreateCurrencyTotalsAsync(
+                    _context, procedureRequest!);
+            }
+
             return Ok(result);
         }
 
@@ -128,6 +134,7 @@ namespace Backend.Controllers.Report
                 BuyerCountryId = request.BuyerCountryId,
                 CompanyRegistrationNo = request.CompanyRegistrationNo,
                 SakhanId = request.SakhanId,
+                Auto = request.Auto?.Trim() ?? string.Empty,
             };
 
             return true;
@@ -146,6 +153,7 @@ namespace Backend.Controllers.Report
         public int BuyerCountryId { get; set; }
         public string CompanyRegistrationNo { get; set; } = string.Empty;
         public int SakhanId { get; set; }
+        public string? Auto { get; set; }
     }
 }
 

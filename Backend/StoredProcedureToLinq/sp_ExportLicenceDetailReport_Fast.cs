@@ -305,6 +305,9 @@ public static partial class sp_ExportLicenceDetailReport_Fast
                 && (request.ExportImportMethodId == 0 || licence.ExportImportMethodId == request.ExportImportMethodId)
                 && (request.ExportImportIncotermId == 0 || licence.ExportImportIncotermId == request.ExportImportIncotermId)
                 && (request.BuyerCountryId == 0 || licence.BuyerCountryId == request.BuyerCountryId)
+                && (request.Auto == string.Empty
+                    || (request.Auto == "auto" && licence.Auto == "auto")
+                    || (request.Auto == "none-auto" && (licence.Auto == null || licence.Auto != "auto")))
             select new ExportLicenceDetailRowKey
             {
                 ItemUniqueId = item.UniqueId,
@@ -402,6 +405,9 @@ public static partial class sp_ExportLicenceDetailReport_Fast
                 && (request.ExportImportMethodId == 0 || licence.ExportImportMethodId == request.ExportImportMethodId)
                 && (request.ExportImportIncotermId == 0 || licence.ExportImportIncotermId == request.ExportImportIncotermId)
                 && (request.BuyerCountryId == 0 || licence.BuyerCountryId == request.BuyerCountryId)
+                && (request.Auto == string.Empty
+                    || (request.Auto == "auto" && licence.Auto == "auto")
+                    || (request.Auto == "none-auto" && (licence.Auto == null || licence.Auto != "auto")))
             select new ExportLicenceDetailFastRow
             {
                 ItemUniqueId = item.UniqueId,

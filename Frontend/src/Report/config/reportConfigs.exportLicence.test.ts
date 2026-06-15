@@ -107,4 +107,35 @@ describe('Export Licence report configs', () => {
   it('Detail report keeps lazy exact row counts enabled for paged UI totals', () => {
     expect(reportConfigs.ExportLicenceDetailReport.disableLazyTotalCount).not.toBe(true);
   });
+
+  it('Detail report shows the legacy date-range report title', () => {
+    expect(
+      reportConfigs.ExportLicenceDetailReport.reportSubtitle?.({
+        FromDate: '2026-02-01',
+        ToDate: '2026-02-03',
+      })
+    ).toBe('List of Export Licences By Detail From (01/02/2026) To (03/02/2026)');
+  });
+
+  it('Detail report exposes the Auto / None Auto filter', () => {
+    const autoFilter = reportConfigs.ExportLicenceDetailReport.filters.find(
+      (filter) => filter.name === 'Auto'
+    );
+
+    expect(autoFilter?.label).toBe('Auto / None Auto');
+    expect(autoFilter?.type).toBe('select');
+    expect(autoFilter?.defaultValue).toBe('');
+    expect(autoFilter?.options).toEqual([
+      { label: '--- All ---', value: '' },
+      { label: 'auto', value: 'auto' },
+      { label: 'none-auto', value: 'none-auto' },
+    ]);
+  });
+
+  it('Detail report renders currency totals under Licence No and Value', () => {
+    expect(reportConfigs.ExportLicenceDetailReport.currencyTotalsColumns).toEqual({
+      labelColumnKey: 'LicenceNo',
+      valueColumnKey: 'Value',
+    });
+  });
 });

@@ -38,22 +38,10 @@ public static class sp_ExportLicenceDetailReportV2
 
         var results = rows.Select(row => row.ToResult()).ToList();
 
-        if (pagingRequest.IncludeTotalCount)
-        {
-            var totalCount = rows.Count == 0 ? 0 : rows[0].TotalCount;
-            return ApiResult<sp_ExportLicenceDetailReportResult>.CreatePageFromRows(
-                results,
-                totalCount,
-                pageIndex,
-                pageSize,
-                pagingRequest.SortColumn,
-                pagingRequest.SortOrder,
-                pagingRequest.FilterColumn,
-                pagingRequest.FilterQuery);
-        }
-
-        return ApiResult<sp_ExportLicenceDetailReportResult>.CreateFastPageFromRows(
+        var totalCount = rows.Count == 0 ? 0 : rows[0].TotalCount;
+        return ApiResult<sp_ExportLicenceDetailReportResult>.CreatePageFromRows(
             results,
+            totalCount,
             pageIndex,
             pageSize,
             pagingRequest.SortColumn,
@@ -116,6 +104,72 @@ public static class sp_ExportLicenceDetailReportV2
         return groups;
     }
 
+    public static async Task<ReportCurrencyTotalsSummary> CreateCurrencyTotalsAsync(
+        TradeNetDbContext db,
+        sp_ExportLicenceDetailReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (request.Type != "Oversea")
+        {
+            return new ReportCurrencyTotalsSummary();
+        }
+
+        var rows = await db.Database
+            .SqlQueryRaw<ExportLicenceDetailCurrencyTotalRow>(
+                """
+                SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+                SELECT
+                    currency.Code AS Currency,
+                    COUNT(DISTINCT NULLIF(licence.ExportLicenceNo, N'')) AS NoOfLicences,
+                    COALESCE(SUM(item.Amount), 0) AS TotalValue
+                FROM dbo.ExportLicence AS licence WITH (INDEX(IX_ExportLicence_Report_NewDetail_Page))
+                INNER JOIN dbo.PaThaKa AS paThaKa ON paThaKa.Id = licence.PaThaKaId
+                INNER JOIN dbo.PaThaKaType AS paThaKaType ON paThaKa.PaThaKaTypeId = paThaKaType.Id
+                INNER JOIN dbo.ExportLicenceItem AS item WITH (INDEX(IX_ExportLicenceItem_Report_Licence_Page))
+                    ON item.ExportLicenceId = licence.Id
+                INNER JOIN dbo.Currency AS currency ON currency.Id = item.CurrencyId
+                WHERE licence.ApplyType = N'New'
+                  AND licence.Status = N'Approved'
+                  AND licence.CreatedDate >= @FromDate
+                  AND licence.CreatedDate <= @ToDate
+                  AND (@CompanyRegistrationNo = N'' OR paThaKa.CompanyRegistrationNo = @CompanyRegistrationNo)
+                  AND (@PaThaKaTypeId = 0 OR paThaKaType.Id = @PaThaKaTypeId)
+                  AND (@ExportImportSectionId = 0 OR licence.ExportImportSectionId = @ExportImportSectionId)
+                  AND (@ExportImportMethodId = 0 OR licence.ExportImportMethodId = @ExportImportMethodId)
+                  AND (@ExportImportIncotermId = 0 OR licence.ExportImportIncotermId = @ExportImportIncotermId)
+                  AND (@BuyerCountryId = 0 OR licence.BuyerCountryId = @BuyerCountryId)
+                  AND (
+                      @Auto = N''
+                      OR (@Auto = N'auto' AND licence.[auto] = N'auto')
+                      OR (@Auto = N'none-auto' AND (licence.[auto] IS NULL OR licence.[auto] <> N'auto'))
+                  )
+                GROUP BY currency.Code
+                OPTION (RECOMPILE, MAXDOP 1);
+                """,
+                CreateFilterParameters(request))
+            .ToListAsync();
+
+        var currencies = rows
+            .OrderByDescending(row => row.NoOfLicences)
+            .ThenBy(row => row.Currency, StringComparer.OrdinalIgnoreCase)
+            .Select(row => new ReportCurrencyTotal
+            {
+                Currency = row.Currency ?? string.Empty,
+                NoOfLicences = row.NoOfLicences,
+                TotalValue = row.TotalValue,
+            })
+            .ToList();
+
+        return new ReportCurrencyTotalsSummary
+        {
+            Currencies = currencies,
+            GrandTotalLicences = currencies.Sum(currency => currency.NoOfLicences),
+        };
+    }
+
     private static async Task<List<sp_ExportLicenceDetailReportRow>> ExecuteAsync(
         TradeNetDbContext db,
         sp_ExportLicenceDetailReportRequest request,
@@ -124,27 +178,9 @@ public static class sp_ExportLicenceDetailReportV2
         bool includeTotalCount,
         CancellationToken cancellationToken = default)
     {
-        var parameters = new[]
-        {
-            new SqlParameter("@FromDate", SqlDbType.DateTime) { Value = request.FromDate },
-            new SqlParameter("@ToDate", SqlDbType.DateTime) { Value = request.ToDate },
-            new SqlParameter("@PaThaKaTypeId", SqlDbType.Int) { Value = request.PaThaKaTypeId },
-            new SqlParameter("@ExportImportSectionId", SqlDbType.Int) { Value = request.ExportImportSectionId },
-            new SqlParameter("@ExportImportMethodId", SqlDbType.Int) { Value = request.ExportImportMethodId },
-            new SqlParameter("@ExportImportIncotermId", SqlDbType.Int) { Value = request.ExportImportIncotermId },
-            new SqlParameter("@BuyerCountryId", SqlDbType.Int) { Value = request.BuyerCountryId },
-            new SqlParameter("@CompanyRegistrationNo", SqlDbType.NVarChar, 50)
-            {
-                Value = request.CompanyRegistrationNo ?? string.Empty
-            },
-            new SqlParameter("@PageIndex", SqlDbType.Int) { Value = pageIndex },
-            new SqlParameter("@PageSize", SqlDbType.Int) { Value = pageSize },
-            new SqlParameter("@IncludeTotalCount", SqlDbType.Bit) { Value = includeTotalCount },
-        };
-
         return await ExecuteSeekedAsync(
             db,
-            parameters,
+            CreateFilterParameters(request),
             pageIndex,
             pageSize,
             includeTotalCount,
@@ -166,7 +202,8 @@ public static class sp_ExportLicenceDetailReportV2
                 CONVERT(nvarchar(36), licence.Id) AS LicenceId,
                 licence.CreatedDate,
                 licence.IssuedDate AS LicenceDate,
-                licence.ExportLicenceNo AS LicenceNo
+                licence.ExportLicenceNo AS LicenceNo,
+                CAST(COUNT_BIG(*) OVER() AS int) AS TotalCount
             FROM dbo.ExportLicence AS licence WITH (INDEX(IX_ExportLicence_Report_NewDetail_Page))
             INNER JOIN dbo.PaThaKa AS paThaKa ON paThaKa.Id = licence.PaThaKaId
             INNER JOIN dbo.PaThaKaType AS paThaKaType ON paThaKa.PaThaKaTypeId = paThaKaType.Id
@@ -180,7 +217,13 @@ public static class sp_ExportLicenceDetailReportV2
               AND (@ExportImportMethodId = 0 OR licence.ExportImportMethodId = @ExportImportMethodId)
               AND (@ExportImportIncotermId = 0 OR licence.ExportImportIncotermId = @ExportImportIncotermId)
               AND (@BuyerCountryId = 0 OR licence.BuyerCountryId = @BuyerCountryId)
+              AND (
+                  @Auto = N''
+                  OR (@Auto = N'auto' AND licence.[auto] = N'auto')
+                  OR (@Auto = N'none-auto' AND (licence.[auto] IS NULL OR licence.[auto] <> N'auto'))
+              )
             ORDER BY licence.CreatedDate, licence.Id
+            OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY
             OPTION (RECOMPILE, MAXDOP 1);
             """;
 
@@ -228,16 +271,21 @@ public static class sp_ExportLicenceDetailReportV2
             OPTION (RECOMPILE, MAXDOP 1);
             """;
 
+        var licenceParameters = CloneFilterParameters(filterParameters)
+            .Concat(new[]
+            {
+                new SqlParameter("@Offset", SqlDbType.Int) { Value = pageIndex * pageSize },
+                new SqlParameter("@PageSize", SqlDbType.Int) { Value = pageSize },
+            })
+            .ToArray();
         var licences = await db.Database
-            .SqlQueryRaw<ExportLicenceDetailLicenceKey>(licenceKeySql, CloneFilterParameters(filterParameters))
+            .SqlQueryRaw<ExportLicenceDetailLicenceKey>(licenceKeySql, licenceParameters)
             .ToListAsync(cancellationToken);
         var itemDetailsCovered = await IsItemPageIndexCoveredAsync(db, cancellationToken);
         var itemKeySql = itemDetailsCovered ? coveredItemKeySql : safeItemKeySql;
 
-        var offset = pageIndex * pageSize;
-        var take = pageSize + (includeTotalCount ? 0 : 1);
-        var selectedKeys = new List<ExportLicenceDetailItemKey>(take);
-        var totalCount = 0;
+        var selectedKeys = new List<ExportLicenceDetailItemKey>();
+        var totalCount = licences.Count == 0 ? 0 : licences[0].TotalCount;
 
         foreach (var licence in licences)
         {
@@ -249,44 +297,9 @@ public static class sp_ExportLicenceDetailReportV2
 
             foreach (var itemKey in itemKeys)
             {
-                if (includeTotalCount)
-                {
-                    totalCount++;
-                }
-
-                if (totalCount > offset && selectedKeys.Count < take)
-                {
-                    itemKey.LicenceId = licence.LicenceId;
-                    selectedKeys.Add(itemKey);
-                }
-                else if (!includeTotalCount && selectedKeys.Count < take)
-                {
-                    if (totalCount >= offset)
-                    {
-                        itemKey.LicenceId = licence.LicenceId;
-                        selectedKeys.Add(itemKey);
-                    }
-                }
-
-                if (!includeTotalCount)
-                {
-                    totalCount++;
-                    if (selectedKeys.Count >= take)
-                    {
-                        break;
-                    }
-                }
+                itemKey.LicenceId = licence.LicenceId;
+                selectedKeys.Add(itemKey);
             }
-
-            if (!includeTotalCount && selectedKeys.Count >= take)
-            {
-                break;
-            }
-        }
-
-        if (!includeTotalCount)
-        {
-            totalCount = 0;
         }
 
         var rows = new List<sp_ExportLicenceDetailReportRow>(selectedKeys.Count);
@@ -412,6 +425,25 @@ public static class sp_ExportLicenceDetailReportV2
                 Value = parameter.Value
             })
             .ToArray();
+
+    private static SqlParameter[] CreateFilterParameters(sp_ExportLicenceDetailReportRequest request) =>
+    [
+        new SqlParameter("@FromDate", SqlDbType.DateTime) { Value = request.FromDate },
+        new SqlParameter("@ToDate", SqlDbType.DateTime) { Value = request.ToDate },
+        new SqlParameter("@PaThaKaTypeId", SqlDbType.Int) { Value = request.PaThaKaTypeId },
+        new SqlParameter("@ExportImportSectionId", SqlDbType.Int) { Value = request.ExportImportSectionId },
+        new SqlParameter("@ExportImportMethodId", SqlDbType.Int) { Value = request.ExportImportMethodId },
+        new SqlParameter("@ExportImportIncotermId", SqlDbType.Int) { Value = request.ExportImportIncotermId },
+        new SqlParameter("@BuyerCountryId", SqlDbType.Int) { Value = request.BuyerCountryId },
+        new SqlParameter("@CompanyRegistrationNo", SqlDbType.NVarChar, 50)
+        {
+            Value = request.CompanyRegistrationNo ?? string.Empty
+        },
+        new SqlParameter("@Auto", SqlDbType.NVarChar, 20)
+        {
+            Value = request.Auto ?? string.Empty
+        },
+    ];
 
     private static async Task<bool> IsItemPageIndexCoveredAsync(
         TradeNetDbContext db,
@@ -650,6 +682,14 @@ public static class sp_ExportLicenceDetailReportV2
         public DateTime CreatedDate { get; set; }
         public DateTime? LicenceDate { get; set; }
         public string? LicenceNo { get; set; }
+        public int TotalCount { get; set; }
+    }
+
+    private sealed class ExportLicenceDetailCurrencyTotalRow
+    {
+        public string? Currency { get; set; }
+        public int NoOfLicences { get; set; }
+        public decimal TotalValue { get; set; }
     }
 
     private sealed class ExportLicenceDetailItemKey

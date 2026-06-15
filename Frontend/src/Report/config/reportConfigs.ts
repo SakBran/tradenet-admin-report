@@ -7282,8 +7282,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'ExportLicenceDetailReport',
     excelRoute: 'ExportLicenceDetailReport/Excel',
     excelFileName: 'ExportLicenceDetailReport.xlsx',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'Value' },
     initialSortColumn: 'licenceDate',
     showRowNumber: true,
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Licences By Detail', true),
     filters: [
       {
         name: 'dateRange',
@@ -7322,6 +7324,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'number',
         defaultValue: 0,
         lookupName: 'exportLicenceIncoterms',
+      },
+      {
+        name: 'Auto',
+        label: 'Auto / None Auto',
+        type: 'select',
+        defaultValue: '',
+        options: [
+          { label: '--- All ---', value: '' },
+          { label: 'auto', value: 'auto' },
+          { label: 'none-auto', value: 'none-auto' },
+        ],
       },
     ],
     columns: [

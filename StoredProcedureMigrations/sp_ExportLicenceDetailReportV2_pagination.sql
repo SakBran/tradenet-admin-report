@@ -16,14 +16,14 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_ExportLicenceDetailReportV2_Pagination]
     @SortOrder              nvarchar(4)   = NULL,
     @PageIndex              int           = NULL,
     @PageSize               int           = NULL,
-    @IncludeTotalCount      bit           = 1
+    @IncludeTotalCount      bit           = 1,
+    @Auto                   nvarchar(20)  = N''
 AS
 BEGIN
     SET NOCOUNT ON;
 
     DECLARE @ps bigint = CASE
         WHEN ISNULL(@PageSize, 0) <= 0 THEN 9223372036854775807
-        WHEN @IncludeTotalCount = 0 THEN @PageSize + 1
         ELSE @PageSize
     END;
     DECLARE @off bigint = CASE
@@ -38,36 +38,6 @@ BEGIN
         FROM dbo.ExportLicence AS licence WITH (INDEX(IX_ExportLicence_Report_NewDetail_Page))
         INNER JOIN dbo.PaThaKa AS paThaKa ON paThaKa.Id = licence.PaThaKaId
         INNER JOIN dbo.PaThaKaType AS paThaKaType ON paThaKa.PaThaKaTypeId = paThaKaType.Id
-        INNER JOIN dbo.ExportLicenceItem AS item WITH (INDEX(IX_ExportLicenceItem_Report_Licence_Page))
-            ON licence.Id = item.ExportLicenceId
-        WHERE licence.ApplyType = N'New'
-          AND licence.Status = N'Approved'
-          AND licence.CreatedDate >= @FromDate
-          AND licence.CreatedDate <= @ToDate
-          AND (@CompanyRegistrationNo = N'' OR paThaKa.CompanyRegistrationNo = @CompanyRegistrationNo)
-          AND (@PaThaKaTypeId = 0 OR paThaKaType.Id = @PaThaKaTypeId)
-          AND (@ExportImportSectionId = 0 OR licence.ExportImportSectionId = @ExportImportSectionId)
-          AND (@ExportImportMethodId = 0 OR licence.ExportImportMethodId = @ExportImportMethodId)
-          AND (@ExportImportIncotermId = 0 OR licence.ExportImportIncotermId = @ExportImportIncotermId)
-          AND (@BuyerCountryId = 0 OR licence.BuyerCountryId = @BuyerCountryId);
-    END;
-
-    WITH PageKeys AS
-    (
-        SELECT
-            licence.Id AS LicenceId,
-            item.Id AS ItemId,
-            item.UniqueId AS ItemUniqueId,
-            licence.CreatedDate AS CreatedDate,
-            licence.IssuedDate AS LicenceDate,
-            licence.ExportLicenceNo AS LicenceNo,
-            item.HSCode,
-            item.ItemNo
-        FROM dbo.ExportLicence AS licence WITH (INDEX(IX_ExportLicence_Report_NewDetail_Page))
-        INNER JOIN dbo.PaThaKa AS paThaKa ON paThaKa.Id = licence.PaThaKaId
-        INNER JOIN dbo.PaThaKaType AS paThaKaType ON paThaKa.PaThaKaTypeId = paThaKaType.Id
-        INNER JOIN dbo.ExportLicenceItem AS item WITH (INDEX(IX_ExportLicenceItem_Report_Licence_Page))
-            ON licence.Id = item.ExportLicenceId
         WHERE licence.ApplyType = N'New'
           AND licence.Status = N'Approved'
           AND licence.CreatedDate >= @FromDate
@@ -78,8 +48,59 @@ BEGIN
           AND (@ExportImportMethodId = 0 OR licence.ExportImportMethodId = @ExportImportMethodId)
           AND (@ExportImportIncotermId = 0 OR licence.ExportImportIncotermId = @ExportImportIncotermId)
           AND (@BuyerCountryId = 0 OR licence.BuyerCountryId = @BuyerCountryId)
-        ORDER BY licence.CreatedDate, licence.Id, item.HSCode, item.ItemNo
+          /*
+              Previous behavior: no ExportLicence.[auto] predicate.
+              @Auto = N'' keeps that behavior for All/backward-compatible calls.
+          */
+          AND (
+              @Auto = N''
+              OR (@Auto = N'auto' AND licence.[auto] = N'auto')
+              OR (@Auto = N'none-auto' AND (licence.[auto] IS NULL OR licence.[auto] <> N'auto'))
+          );
+    END;
+
+    WITH LicencePage AS
+    (
+        SELECT
+            licence.Id AS LicenceId,
+            licence.CreatedDate AS CreatedDate,
+            licence.IssuedDate AS LicenceDate,
+            licence.ExportLicenceNo AS LicenceNo
+        FROM dbo.ExportLicence AS licence WITH (INDEX(IX_ExportLicence_Report_NewDetail_Page))
+        INNER JOIN dbo.PaThaKa AS paThaKa ON paThaKa.Id = licence.PaThaKaId
+        INNER JOIN dbo.PaThaKaType AS paThaKaType ON paThaKa.PaThaKaTypeId = paThaKaType.Id
+        WHERE licence.ApplyType = N'New'
+          AND licence.Status = N'Approved'
+          AND licence.CreatedDate >= @FromDate
+          AND licence.CreatedDate <= @ToDate
+          AND (@CompanyRegistrationNo = N'' OR paThaKa.CompanyRegistrationNo = @CompanyRegistrationNo)
+          AND (@PaThaKaTypeId = 0 OR paThaKaType.Id = @PaThaKaTypeId)
+          AND (@ExportImportSectionId = 0 OR licence.ExportImportSectionId = @ExportImportSectionId)
+          AND (@ExportImportMethodId = 0 OR licence.ExportImportMethodId = @ExportImportMethodId)
+          AND (@ExportImportIncotermId = 0 OR licence.ExportImportIncotermId = @ExportImportIncotermId)
+          AND (@BuyerCountryId = 0 OR licence.BuyerCountryId = @BuyerCountryId)
+          AND (
+              @Auto = N''
+              OR (@Auto = N'auto' AND licence.[auto] = N'auto')
+              OR (@Auto = N'none-auto' AND (licence.[auto] IS NULL OR licence.[auto] <> N'auto'))
+          )
+        ORDER BY licence.CreatedDate, licence.Id
         OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
+    ),
+    PageKeys AS
+    (
+        SELECT
+            licence.LicenceId,
+            item.Id AS ItemId,
+            item.UniqueId AS ItemUniqueId,
+            licence.CreatedDate,
+            licence.LicenceDate,
+            licence.LicenceNo,
+            item.HSCode,
+            item.ItemNo
+        FROM LicencePage AS licence
+        INNER JOIN dbo.ExportLicenceItem AS item WITH (INDEX(IX_ExportLicenceItem_Report_Licence_Page))
+            ON licence.LicenceId = item.ExportLicenceId
     )
     SELECT
         paThaKaType.Id AS PaThaKaTypeId,

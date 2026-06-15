@@ -81,6 +81,7 @@ public sealed class ExportLicenceDetailReportContractTests
                 "ExportImportSectionId",
                 "ExportImportMethodId",
                 "ExportImportIncotermId",
+                "Auto",
             ],
             filterNames);
         Assert.Contains("lookupName: 'exportLicenceSections'", config);
@@ -154,6 +155,7 @@ public sealed class ExportLicenceDetailReportContractTests
             "sp_ExportLicenceDetailReportV2.cs"));
 
         Assert.Contains("sp_ExportLicenceDetailReportV2.CreatePagedResultAsync", controllerSource);
+        Assert.Contains("result.CurrencyTotals = await sp_ExportLicenceDetailReportV2.CreateCurrencyTotalsAsync", controllerSource);
         Assert.Contains("sp_ExportLicenceDetailReport_Fast.StreamResolvedChunksAsync", controllerSource);
         Assert.Contains("ExecuteSeekedAsync", v2Source);
         Assert.Contains("IX_ExportLicence_Report_NewDetail_Page", v2Source);
@@ -167,6 +169,13 @@ public sealed class ExportLicenceDetailReportContractTests
         Assert.Contains("Quantity = item.Quantity", v2Source);
         Assert.Contains("Amount = item.Amount", v2Source);
         Assert.Contains("FetchDelimitedLookupNamesAsync", v2Source);
+        Assert.Contains("@Auto", v2Source);
+        Assert.Contains("@Auto = N'auto' AND licence.[auto] = N'auto'", v2Source);
+        Assert.Contains("@Auto = N'none-auto' AND (licence.[auto] IS NULL OR licence.[auto] <> N'auto')", v2Source);
+        Assert.Contains("CAST(COUNT_BIG(*) OVER() AS int) AS TotalCount", v2Source);
+        Assert.Contains("OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY", v2Source);
+        Assert.Contains("CreateCurrencyTotalsAsync", v2Source);
+        Assert.Contains("GROUP BY currency.Code", v2Source);
         Assert.Contains("DelimitedLookupTable.PortOfDischarge", v2Source);
         Assert.Contains("DelimitedLookupTable.Countries", v2Source);
         Assert.Contains("ORDER BY item.HSCode, item.ItemNo, item.Id", v2Source);
