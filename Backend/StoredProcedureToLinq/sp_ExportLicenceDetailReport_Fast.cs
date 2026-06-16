@@ -212,6 +212,83 @@ public static partial class sp_ExportLicenceDetailReport_Fast
         return groups;
     }
 
+    public static async Task<ImportLicenceTotalValueLicencesSummary> GetTotalValueLicencesSummaryAsync(
+        TradeNetDbContext db,
+        sp_ExportLicenceDetailReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var byCurrency = (await GetTotalValueAggregateRowsAsync(db, request))
+            .Select(row => new TotalValueByCurrencyRow
+            {
+                Currency = row.Currency ?? string.Empty,
+                TotalValue = row.TotalValue ?? 0m,
+            })
+            .ToList();
+
+        List<TotalLicencesByPaThaKaTypeRow> byPaThaKaType;
+
+        if (request.Type == "Oversea")
+        {
+            byPaThaKaType = await (
+                from licence in db.ExportLicences.AsNoTracking()
+                join paThaKa in db.PaThaKas.AsNoTracking() on licence.PaThaKaId equals paThaKa.Id
+                join paThaKaType in db.PaThaKaTypes.AsNoTracking() on paThaKa.PaThaKaTypeId equals paThaKaType.Id
+                where licence.ApplyType == New
+                    && licence.Status == Approved
+                    && licence.ExportLicenceNo != string.Empty
+                    && licence.CreatedDate >= request.FromDate
+                    && licence.CreatedDate <= request.ToDate
+                    && (request.CompanyRegistrationNo == string.Empty || paThaKa.CompanyRegistrationNo == request.CompanyRegistrationNo)
+                    && (request.PaThaKaTypeId == 0 || paThaKa.PaThaKaTypeId == request.PaThaKaTypeId)
+                    && (request.ExportImportSectionId == 0 || licence.ExportImportSectionId == request.ExportImportSectionId)
+                    && (request.ExportImportMethodId == 0 || licence.ExportImportMethodId == request.ExportImportMethodId)
+                    && (request.ExportImportIncotermId == 0 || licence.ExportImportIncotermId == request.ExportImportIncotermId)
+                    && (request.BuyerCountryId == 0 || licence.BuyerCountryId == request.BuyerCountryId)
+                    && (request.Auto == string.Empty
+                        || (request.Auto == "auto" && licence.Auto == "auto")
+                        || (request.Auto == "none-auto" && (licence.Auto == null || licence.Auto != "auto")))
+                group licence by paThaKaType.Description into g
+                select new TotalLicencesByPaThaKaTypeRow
+                {
+                    PaThaKaType = g.Key,
+                    NoOfLicences = g.Select(licence => licence.ExportLicenceNo).Distinct().Count(),
+                }).ToListAsync();
+        }
+        else
+        {
+            var rows = await Rows(db, request).ToListAsync();
+            byPaThaKaType = rows
+                .GroupBy(row => row.PaThaKaTypeName)
+                .Select(group => new TotalLicencesByPaThaKaTypeRow
+                {
+                    PaThaKaType = group.Key ?? string.Empty,
+                    NoOfLicences = group
+                        .Select(row => string.IsNullOrEmpty(row.LicenceNo) ? null : row.LicenceNo)
+                        .Distinct()
+                        .Count(),
+                })
+                .ToList();
+        }
+
+        var dailyGroups = request.Type == "Oversea"
+            ? await sp_ExportLicenceDetailReportV2.GetSummaryRowsAsync(db, request, ReportAggregateDimension.Daily)
+            : await GetAggregateRowsAsync(db, request, ReportAggregateDimension.Daily, includeSakhan: false);
+        var totalUsdValue = decimal.Round(dailyGroups.Sum(group => group.TotalUSDValue ?? 0m), 4);
+
+        return new ImportLicenceTotalValueLicencesSummary
+        {
+            TotalValueByCurrency = byCurrency
+                .OrderBy(row => row.Currency, StringComparer.OrdinalIgnoreCase)
+                .ToList(),
+            TotalLicencesByPaThaKaType = byPaThaKaType
+                .OrderBy(row => row.PaThaKaType, StringComparer.OrdinalIgnoreCase)
+                .ToList(),
+            TotalUsdValue = totalUsdValue,
+        };
+    }
+
     private static async Task<List<AggregateSourceRow>> AggregateSourceRowsAsync(
         TradeNetDbContext db,
         sp_ExportLicenceDetailReportRequest request)

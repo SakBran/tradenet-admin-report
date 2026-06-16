@@ -66,6 +66,11 @@ BEGIN
           AND (@ExportImportMethodId = 0 OR el.ExportImportMethodId = @ExportImportMethodId)
           AND (@ExportImportIncotermId = 0 OR el.ExportImportIncotermId = @ExportImportIncotermId)
           AND (@BuyerCountryId = 0 OR el.BuyerCountryId = @BuyerCountryId)
+          AND (
+              @Auto = N''
+              OR (@Auto = N'auto' AND el.[auto] = N'auto')
+              OR (@Auto = N'none-auto' AND (el.[auto] IS NULL OR el.[auto] <> N'auto'))
+          )
         GROUP BY m.Name, el.ExportImportMethodId, c.Code
         OPTION (RECOMPILE);
         RETURN;
@@ -107,6 +112,11 @@ BEGIN
           AND (@ExportImportMethodId = 0 OR el.ExportImportMethodId = @ExportImportMethodId)
           AND (@ExportImportIncotermId = 0 OR el.ExportImportIncotermId = @ExportImportIncotermId)
           AND (@BuyerCountryId = 0 OR el.BuyerCountryId = @BuyerCountryId)
+          AND (
+              @Auto = N''
+              OR (@Auto = N'auto' AND el.[auto] = N'auto')
+              OR (@Auto = N'none-auto' AND (el.[auto] IS NULL OR el.[auto] <> N'auto'))
+          )
         GROUP BY s.Name, el.ExportImportSectionId, c.Code
         OPTION (RECOMPILE);
         RETURN;
@@ -148,6 +158,11 @@ BEGIN
           AND (@ExportImportMethodId = 0 OR el.ExportImportMethodId = @ExportImportMethodId)
           AND (@ExportImportIncotermId = 0 OR el.ExportImportIncotermId = @ExportImportIncotermId)
           AND (@BuyerCountryId = 0 OR el.BuyerCountryId = @BuyerCountryId)
+          AND (
+              @Auto = N''
+              OR (@Auto = N'auto' AND el.[auto] = N'auto')
+              OR (@Auto = N'none-auto' AND (el.[auto] IS NULL OR el.[auto] <> N'auto'))
+          )
         GROUP BY co.Name, el.BuyerCountryId, c.Code
         OPTION (RECOMPILE);
         RETURN;
@@ -188,6 +203,11 @@ BEGIN
           AND (@ExportImportMethodId = 0 OR el.ExportImportMethodId = @ExportImportMethodId)
           AND (@ExportImportIncotermId = 0 OR el.ExportImportIncotermId = @ExportImportIncotermId)
           AND (@BuyerCountryId = 0 OR el.BuyerCountryId = @BuyerCountryId)
+          AND (
+              @Auto = N''
+              OR (@Auto = N'auto' AND el.[auto] = N'auto')
+              OR (@Auto = N'none-auto' AND (el.[auto] IS NULL OR el.[auto] <> N'auto'))
+          )
         GROUP BY p.CompanyName, p.CompanyRegistrationNo, c.Code
         OPTION (RECOMPILE);
         RETURN;

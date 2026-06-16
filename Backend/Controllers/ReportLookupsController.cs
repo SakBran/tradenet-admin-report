@@ -60,7 +60,8 @@ namespace Backend.Controllers
                 "importlicencemethods" => GetImportLicenceMethods,
                 "importlicencesections" => GetImportLicenceSections,
                 "exportlicencesections" => GetExportLicenceSections,
-                // "exportlicenceincoterms" => GetExportLicenceIncoterms,
+                "exportlicencemethods" => GetExportLicenceMethods,
+                "exportlicenceincoterms" => GetExportLicenceIncoterms,
 
                 "importpermitsections" => GetImportPermitSections,
                 "borderimportlicenceincoterms" => GetBorderImportLicenceIncoterms,
@@ -68,6 +69,8 @@ namespace Backend.Controllers
                 "borderimportlicencesections" => GetBorderImportLicenceSections,
                 "borderimportpermitsections" => GetBorderImportPermitSections,
                 "borderexportlicencesections" => GetBorderExportLicenceSections,
+                "borderexportlicencemethods" => GetBorderExportLicenceMethods,
+                "borderexportlicenceincoterms" => GetBorderExportLicenceIncoterms,
                 "borderexportpermitsections" => GetBorderExportPermitSections,
                 "exportpermitsections" => GetExportPermitSections,
 
@@ -383,6 +386,33 @@ namespace Backend.Controllers
                     item.IsActive &&
                     !item.IsDeleted &&
                     item.Type == ExportLicenceFormType &&
+                    item.IsBorder)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
+                .ToListAsync();
+
+        // Border Export Licence methods/incoterms (legacy: Export method/incoterm where IsBorder).
+        private Task<List<ReportLookupOption>> GetBorderExportLicenceMethods() =>
+            _context.ExportImportMethods
+                .AsNoTracking()
+                .Where(item =>
+                    item.IsActive &&
+                    !item.IsDeleted &&
+                    item.Type == ExportTradeType &&
+                    item.IsBorder)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.Name))
+                .ToListAsync();
+
+        private Task<List<ReportLookupOption>> GetBorderExportLicenceIncoterms() =>
+            _context.ExportImportIncoterms
+                .AsNoTracking()
+                .Where(item =>
+                    item.IsActive &&
+                    !item.IsDeleted &&
+                    item.Type == ExportTradeType &&
                     item.IsBorder)
                 .OrderBy(item => item.SortOrder)
                 .ThenBy(item => item.Name)

@@ -124,6 +124,7 @@ namespace Backend.Controllers.Report
                 BuyerCountryId = request.BuyerCountryId,
                 CompanyRegistrationNo = request.CompanyRegistrationNo,
                 SakhanId = request.SakhanId,
+                Auto = request.Auto?.Trim() ?? string.Empty,
             };
 
             return true;
@@ -142,6 +143,7 @@ namespace Backend.Controllers.Report
         public int BuyerCountryId { get; set; }
         public string CompanyRegistrationNo { get; set; } = string.Empty;
         public int SakhanId { get; set; }
+        public string? Auto { get; set; }
     }
 }
 

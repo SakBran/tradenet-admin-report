@@ -1,6 +1,8 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Text.Json;
+using API.Model;
+using API.Service.Reports;
 using API.StoredProcedureToLinq;
 
 namespace Backend.Tests;
@@ -81,6 +83,8 @@ public sealed class ExportLicenceDetailReportContractTests
                 "ExportImportSectionId",
                 "ExportImportMethodId",
                 "ExportImportIncotermId",
+                "BuyerCountryId",
+                "CompanyRegistrationNo",
                 "Auto",
             ],
             filterNames);
@@ -261,6 +265,46 @@ public sealed class ExportLicenceDetailReportContractTests
             Assert.Contains("sp_ExportLicenceDetailReport_Fast.CreateAggregateResultAsync", controllerSource);
             Assert.Contains("sp_ExportLicenceDetailReport_Fast.GetAggregateRowsAsync", controllerSource);
         }
+    }
+
+    [Fact]
+    public void Export_licence_total_value_uses_export_composite_summary_contract()
+    {
+        var post = typeof(Backend.Controllers.Report.ExportLicenceTotalValueLicencesReportController)
+            .GetMethod("Post")
+            ?? throw new InvalidOperationException("Post action is missing.");
+
+        var taskResultType = Assert.Single(post.ReturnType.GetGenericArguments());
+        var actionResultType = Assert.Single(taskResultType.GetGenericArguments());
+
+        Assert.Equal(typeof(ImportLicenceTotalValueLicencesSummary), actionResultType);
+    }
+
+    [Fact]
+    public void Export_licence_total_value_usd_uses_sql_summary_path()
+    {
+        var fastSource = File.ReadAllText(Path.Combine(
+            RepositoryRoot,
+            "Backend",
+            "StoredProcedureToLinq",
+            "sp_ExportLicenceDetailReport_Fast.cs"));
+
+        var methodIndex = fastSource.IndexOf(
+            "public static async Task<ImportLicenceTotalValueLicencesSummary> GetTotalValueLicencesSummaryAsync",
+            StringComparison.Ordinal);
+        Assert.True(methodIndex >= 0, "Export total value summary method was not found.");
+
+        var aggregateRowsIndex = fastSource.IndexOf(
+            "GetAggregateRowsAsync(db, request, ReportAggregateDimension.Daily",
+            methodIndex,
+            StringComparison.Ordinal);
+        var sqlSummaryIndex = fastSource.IndexOf(
+            "sp_ExportLicenceDetailReportV2.GetSummaryRowsAsync(db, request, ReportAggregateDimension.Daily)",
+            methodIndex,
+            StringComparison.Ordinal);
+
+        Assert.True(sqlSummaryIndex >= 0, "Oversea Total USD Value must use the SQL summary path.");
+        Assert.True(aggregateRowsIndex < 0 || sqlSummaryIndex < aggregateRowsIndex);
     }
 
     private static IReadOnlyList<ReportColumn> ExtractColumns(string config)

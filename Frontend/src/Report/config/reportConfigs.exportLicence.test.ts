@@ -5,11 +5,23 @@ describe('Export Licence report configs', () => {
   it('summary reports match old admin filter boxes and legacy titles', () => {
     const expected = {
       ExportLicenceByMethodReport: {
-        filters: ['dateRange', 'PaThaKaTypeId', 'ExportImportSectionId', 'ExportImportMethodId'],
+        filters: [
+          'dateRange',
+          'PaThaKaTypeId',
+          'ExportImportSectionId',
+          'ExportImportMethodId',
+          'Auto',
+        ],
         subtitle: 'List of Export Licences By Method From (01/02/2026) To (03/02/2026)',
       },
       ExportLicenceBySectionReport: {
-        filters: ['dateRange', 'PaThaKaTypeId', 'ExportImportSectionId', 'ExportImportMethodId'],
+        filters: [
+          'dateRange',
+          'PaThaKaTypeId',
+          'ExportImportSectionId',
+          'ExportImportMethodId',
+          'Auto',
+        ],
         subtitle: 'List of Export Licences By Section From (01/02/2026) To (03/02/2026)',
       },
       ExportLicenceBySellerCountryReport: {
@@ -19,6 +31,7 @@ describe('Export Licence report configs', () => {
           'ExportImportSectionId',
           'ExportImportMethodId',
           'BuyerCountryId',
+          'Auto',
         ],
         subtitle: 'List of Export Licences By Buyer Country From (01/02/2026) To (03/02/2026)',
       },
@@ -29,6 +42,7 @@ describe('Export Licence report configs', () => {
           'ExportImportSectionId',
           'ExportImportMethodId',
           'CompanyRegistrationNo',
+          'Auto',
           'CompanyName',
         ],
         subtitle: 'List of Export Licences By Company From (01/02/2026) To (03/02/2026)',
@@ -37,6 +51,7 @@ describe('Export Licence report configs', () => {
         filters: [
           'dateRange',
           'ExportImportSectionId',
+          'ExportImportMethodId',
           'PaThaKaTypeId',
           'CompanyRegistrationNo',
           'Auto',
@@ -57,6 +72,71 @@ describe('Export Licence report configs', () => {
         cfg.reportSubtitle?.({ FromDate: '2026-02-01', ToDate: '2026-02-03' }),
         key
       ).toBe(subtitle);
+    }
+  });
+
+  it('Seller Country route displays Buyer Country report title for export licence', () => {
+    expect(reportConfigs.ExportLicenceBySellerCountryReport.title).toBe(
+      'Export Licence By Buyer Country Report'
+    );
+  });
+
+  it('Total Value & Licences report keeps the old three-filter box', () => {
+    const cfg = reportConfigs.ExportLicenceTotalValueLicencesReport;
+
+    expect(cfg.filters.map((filter) => filter.name)).toEqual([
+      'dateRange',
+      'PaThaKaTypeId',
+      'ExportImportSectionId',
+    ]);
+    expect(cfg.filters.find((filter) => filter.name === 'PaThaKaTypeId')?.lookupName).toBe(
+      'paThaKaTypes'
+    );
+    expect(
+      cfg.filters.find((filter) => filter.name === 'ExportImportSectionId')?.lookupName
+    ).toBe('exportLicenceSections');
+  });
+
+  it('summary links drill into Export Licence Detail with clicked values applied', () => {
+    const expected = {
+      ExportLicenceByMethodReport: {
+        columnKey: 'Method',
+        drilldown: {
+          targetReportKey: 'ExportLicenceDetailReport',
+          carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId', 'Auto'],
+          rowParams: { ExportImportMethodId: 'methodId' },
+        },
+      },
+      ExportLicenceBySectionReport: {
+        columnKey: 'Section',
+        drilldown: {
+          targetReportKey: 'ExportLicenceDetailReport',
+          carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportMethodId', 'Auto'],
+          rowParams: { ExportImportSectionId: 'sectionId' },
+        },
+      },
+      ExportLicenceBySellerCountryReport: {
+        columnKey: 'Country',
+        drilldown: {
+          targetReportKey: 'ExportLicenceDetailReport',
+          carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId', 'ExportImportMethodId', 'Auto'],
+          rowParams: { BuyerCountryId: 'countryId' },
+        },
+      },
+      ExportLicenceCompanyListReport: {
+        columnKey: 'CompanyName',
+        drilldown: {
+          targetReportKey: 'ExportLicenceDetailReport',
+          carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId', 'ExportImportMethodId', 'Auto'],
+          rowParams: { CompanyRegistrationNo: 'companyRegistrationNo' },
+        },
+      },
+    };
+
+    for (const [reportKey, { columnKey, drilldown }] of Object.entries(expected)) {
+      const column = reportConfigs[reportKey].columns.find((item) => item.key === columnKey);
+
+      expect(column?.drilldown, reportKey).toEqual(drilldown);
     }
   });
 
