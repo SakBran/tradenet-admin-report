@@ -9386,6 +9386,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     showRowNumber: true,
     filters: importLicenceExtensionFilters,
     reportSubtitle: importLicenceRangeSubtitle('List of Import Licence Report'),
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
     columns: [
       {
         key: 'hsCode',
@@ -9399,7 +9400,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
       },
       {

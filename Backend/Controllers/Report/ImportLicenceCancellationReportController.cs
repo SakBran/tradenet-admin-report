@@ -66,6 +66,16 @@ namespace Backend.Controllers.Report
                     data, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
 
+            if (data.Count > 0)
+            {
+                // Cancellations carry no amend remark, so pass amendRemarkId: 0 (the proc's
+                // Cancel branch ignores it). Reuses sp_ImportLicenceListingCurrencyTotals.
+                result.CurrencyTotals = await ImportLicenceListingCurrencyTotals.ExecuteAsync(
+                    _context, "Cancel", procedureRequest!.FromDate, procedureRequest.ToDate,
+                    procedureRequest.ExportImportSectionId, procedureRequest.CompanyRegistrationNo,
+                    amendRemarkId: 0);
+            }
+
             return Ok(result);
         }
 
