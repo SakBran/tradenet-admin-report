@@ -9316,6 +9316,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           targetReportKey: 'ImportLicenceDetailByLicenceReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportMethodId'],
           rowParams: { ExportImportSectionId: 'sectionId', Currency: 'currency' },
+          openInNewTab: true,
         },
       },
       {

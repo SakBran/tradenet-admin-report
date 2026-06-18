@@ -50,7 +50,13 @@ namespace Backend.Controllers.Report
 
             // Currency-grouped footer ("<CUR>: N licence(s)" + "Total: N licence(s)") so the
             // drilled list reconciles with the per-currency count clicked in the summary.
-            if (result.Data.Count > 0)
+            // It is a heavy COUNT(DISTINCT)+SUM aggregate over the whole section (no
+            // seek-and-stop), so it is computed ONLY on the exact-count request — the same
+            // lazy request the grid uses for the total — never on the initial fast page.
+            // Otherwise a large section (e.g. Section 4 / USD ~32k licences) would block the
+            // first paint for ~60s and the grid would look empty ("data not appearing").
+            // BasicTable merges this footer from the lazy response.
+            if (request.IncludeTotalCount && result.Data.Count > 0)
             {
                 result.CurrencyTotals = await sp_ImportLicenceDetailReport_Fast.CreateLicenceCurrencyTotalsAsync(
                     _context, procedureRequest!, currency);

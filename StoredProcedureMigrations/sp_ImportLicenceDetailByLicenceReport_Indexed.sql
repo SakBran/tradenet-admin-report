@@ -87,7 +87,15 @@ BEGIN
         AND (@ExportImportIncotermId = 0 OR il.ExportImportIncotermId = @ExportImportIncotermId)
         AND (@SellerCountryId = 0 OR il.SellerCountryId = @SellerCountryId)
         AND (@Currency = N'' OR c.Code = @Currency)
-    ORDER BY il.ImportLicenceNo, c.Code
+    -- Order by the licence Id (clustered/Id-keyed indexes exist, e.g. the
+    -- (ApplyType,Status,ExportImportSectionId,...,Id) index) rather than ImportLicenceNo.
+    -- A drill into a large section (e.g. Section 4 / USD ~32k licences) ordered by
+    -- ImportLicenceNo has NO supporting index, so SQL materialised + sorted the whole
+    -- 7-table join against the 768k-row indexed view => the first page took >130s and
+    -- the grid showed "no data" (it was still loading). Ordering by il.Id lets the engine
+    -- seek the filtered rows and STOP after one page (verified ~0.4s vs >130s). (il.Id, c.Code)
+    -- is unique per (licence, currency) row, so paging stays deterministic.
+    ORDER BY il.Id, c.Code
     OFFSET @off ROWS FETCH NEXT @fetch ROWS ONLY
     OPTION (RECOMPILE);
 END

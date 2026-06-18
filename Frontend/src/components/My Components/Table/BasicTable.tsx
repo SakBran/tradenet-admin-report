@@ -208,6 +208,11 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   // Lazy/partial delivery: rows render from a fast page that skips the expensive
   // COUNT(*); the exact total loads separately and patches the pager when ready.
   const [exactTotalCount, setExactTotalCount] = useState<number | null>(null);
+  // Some reports (heavy drill lists) defer the per-currency footer to the lazy
+  // exact-count request so the first page paints immediately; capture it here and
+  // prefer it over the initial response's (absent) footer.
+  const [lazyCurrencyTotals, setLazyCurrencyTotals] =
+    useState<PaginationType<T>['currencyTotals']>(undefined);
 
   const shouldShowActions =
     showActions ??
@@ -273,6 +278,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   const filterSig = `${filterColumn}|${filterQuery}|${refreshKey}`;
   useEffect(() => {
     setExactTotalCount(null);
+    setLazyCurrencyTotals(undefined);
     countedFilterSig.current = null;
   }, [filterSig]);
 
@@ -308,6 +314,10 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
       .then((result) => {
         if (!cancelled && result) {
           setExactTotalCount(result.totalCount ?? null);
+          // Heavy drill lists defer the per-currency footer to this request.
+          if (result.currencyTotals) {
+            setLazyCurrencyTotals(result.currencyTotals);
+          }
         }
       })
       .catch(() => {
@@ -421,7 +431,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   // one "<CUR>: N licence(s)" + summed-value row per currency, then a grand
   // "Total: N licence(s)" row. Placement is config-driven (currencyTotalsColumns)
   // and falls back to the first text / first numeric column.
-  const currencyTotals = data.currencyTotals;
+  const currencyTotals = lazyCurrencyTotals ?? data.currencyTotals;
   const showCurrencyTotals =
     !loading &&
     (data.data?.length ?? 0) > 0 &&

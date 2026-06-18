@@ -33,6 +33,12 @@ export interface ReportColumnDrilldown {
   rowParams?: Record<string, string>;
   /** Params always applied on the target (e.g. { Type: 'Oversea' }). */
   staticParams?: Record<string, string | number>;
+  /**
+   * Open the target report in a NEW browser tab instead of navigating in place.
+   * The drill params ride in a `?drill=<json>` query string (router state does not
+   * survive a new-tab load); the target page reads + auto-applies them on mount.
+   */
+  openInNewTab?: boolean;
 }
 
 export interface ReportColumnConfig {
