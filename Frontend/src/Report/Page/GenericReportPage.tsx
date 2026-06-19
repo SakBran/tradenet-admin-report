@@ -486,7 +486,7 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
   const [form] = Form.useForm<FilterFormValues>();
   const navigate = useNavigate();
   const location = useLocation();
-  const lastDrillRef = useRef<Record<string, unknown> | undefined>(undefined);
+  const lastDrillRef = useRef<string | undefined>(undefined);
   const derivedFilterValues = useMemo(
     () => getDerivedFilterValues(config.controllerName, config.filters),
     [config.controllerName, config.filters]
@@ -746,6 +746,14 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
       Object.entries(drilldown.rowParams ?? {}).forEach(([target, rowKey]) => {
         params[target] = row[rowKey];
       });
+      if (drilldown.openInNewTab) {
+        // Router state does not survive window.open, so carry the params in the URL.
+        const url = `/Report/${drilldown.targetReportKey}?drill=${encodeURIComponent(
+          JSON.stringify(params)
+        )}`;
+        window.open(url, '_blank', 'noopener');
+        return;
+      }
       navigate(`/Report/${drilldown.targetReportKey}`, {
         state: { drillFilters: params },
       });
@@ -758,13 +766,31 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
   // request carries every drill param (even ones without a visible filter box,
   // e.g. SellerCountryId / CompanyRegistrationNo).
   useEffect(() => {
-    const drill = (
+    // Same-tab drills carry params in router state; new-tab drills (openInNewTab)
+    // carry them in the `?drill=<json>` query string since state is lost on a fresh load.
+    let drill = (
       location.state as { drillFilters?: Record<string, unknown> } | null
     )?.drillFilters;
-    if (!drill || drill === lastDrillRef.current) {
+    if (!drill) {
+      const raw = new URLSearchParams(location.search).get('drill');
+      if (raw) {
+        try {
+          drill = JSON.parse(raw) as Record<string, unknown>;
+        } catch {
+          drill = undefined;
+        }
+      }
+    }
+    if (!drill) {
       return;
     }
-    lastDrillRef.current = drill;
+    // Dedup by value (a URL-parsed object is a new reference each render, so identity
+    // comparison would re-apply forever).
+    const drillSig = JSON.stringify(drill);
+    if (drillSig === lastDrillRef.current) {
+      return;
+    }
+    lastDrillRef.current = drillSig;
 
     const formSeed: FilterFormValues = {};
     const dateRangeFilter = config.filters.find(

@@ -9139,6 +9139,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     showRowNumber: true,
     filters: importLicenceAmendFilters,
     reportSubtitle: importLicenceRangeSubtitle('List of Import Licence Report'),
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
     columns: [
       {
         key: 'Section',
@@ -9147,7 +9148,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
       },
       {
@@ -9315,6 +9316,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           targetReportKey: 'ImportLicenceDetailByLicenceReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportMethodId'],
           rowParams: { ExportImportSectionId: 'sectionId', Currency: 'currency' },
+          openInNewTab: true,
         },
       },
       {
@@ -9385,6 +9387,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     showRowNumber: true,
     filters: importLicenceExtensionFilters,
     reportSubtitle: importLicenceRangeSubtitle('List of Import Licence Report'),
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
     columns: [
       {
         key: 'hsCode',
@@ -9398,7 +9401,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
       },
       {

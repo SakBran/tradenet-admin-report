@@ -98,7 +98,15 @@ BEGIN
                 ELSE 'tmp.IssuedDate'
             END;
 
-        SET @Sql = N'
+        -- Build @Sql as nvarchar(max). A plain N'...' literal concatenated with the ORDER BY
+        -- variables is typed nvarchar(4000) and SILENTLY TRUNCATES once the text passes 4000
+        -- chars, chopping the trailing "tmp.DirectorSortOrder ... OPTION(RECOMPILE)" mid-token
+        -- and failing at runtime with "Invalid column name 'tm'". CONVERT keeps it max-typed.
+        -- Filter logic: the IssuedDate window applies to the plain Director-List browse; when a
+        -- Company Registration No is supplied the date predicate is skipped (and the indexed
+        -- reg-no filtered early) so the company is found regardless of issue date -- mirroring
+        -- the legacy date-independent "By Company Registration No" report.
+        SET @Sql = CONVERT(nvarchar(max), N'') + N'
             SELECT tmp.CompanyRegistrationNo, tmp.CompanyName, tmp.CompanyRegistrationDate, tmp.IssuedDate, tmp.EndDate,
                    tmp.BusinessType, tmp.LineofBusiness, tmp.UnitLevel, tmp.StreetNumberStreetName, tmp.QuarterCityTownship,
                    tmp.State, tmp.Country, tmp.PostalCode, tmp.DirectorName, tmp.DirectorNRC, tmp.DirectorPosition,
@@ -122,7 +130,8 @@ BEGIN
              INNER JOIN PaThaKaDirectors directors ON PaThaKa.Id = directors.PaThaKaId
              INNER JOIN BusinessType businessType ON PaThaKa.BusinessTypeId = businessType.Id
              INNER JOIN LineofBusiness lineofBusiness ON PaThaKa.LineofBusinessId = lineofBusiness.Id
-             WHERE (IssuedDate >= @FromDate AND IssuedDate <= @ToDate)) tmp
+             WHERE (@CompanyRegistrationNo = '''' OR CompanyRegistrationNo = @CompanyRegistrationNo)
+               AND (@CompanyRegistrationNo <> '''' OR (IssuedDate >= @FromDate AND IssuedDate <= @ToDate))) tmp
             -- Empty filter -> match all rows; non-empty -> exact match (NULL-safe short-circuit).
             -- BUGFIX: the source sp_DirectorListReport wrote the company filter as
             --   tmp.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '''' THEN CompanyRegistrationNo END)
@@ -134,7 +143,8 @@ BEGIN
               AND (@Name = '''' OR tmp.DirectorName = @Name)
               AND (@Nationality = '''' OR tmp.DirectorNationality = @Nationality)
               AND (@FilterNRCNo = '''' OR tmp.DirectorNRC = @FilterNRCNo)
-            ORDER BY ' + @OrderBy2 + N' ' + @Direction + N', tmp.DirectorSortOrder ' + @Direction + @Paging + N';';
+            ORDER BY ' + @OrderBy2 + N' ' + @Direction + N', tmp.DirectorSortOrder ' + @Direction + @Paging + N'
+            OPTION (RECOMPILE);';
 
         EXEC sp_executesql @Sql,
             N'@FromDate datetime, @ToDate datetime, @CompanyRegistrationNo nvarchar(20), @Name nvarchar(200),
