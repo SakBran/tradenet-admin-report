@@ -1,6 +1,6 @@
 # Wai Phyo Report DB Work Plan
 
-Updated: 2026-06-11
+Updated: 2026-06-17
 
 ## Scope After Meeting
 
@@ -31,13 +31,36 @@ Target:
 
 ## Current Summary Dashboard
 
-Last updated: 2026-06-11
+Last updated: 2026-06-18
+
+### Git Integration - 2026-06-22
+
+- Pulled and fast-forwarded `origin/main` to `cc4bfeb`.
+- Reapplied the local Wai Phyo report work after the pull; `reportConfigs.ts` merged automatically with no unresolved conflict markers.
+- Preserved the senior update from `a1c1bca`, including `openInNewTab: true` on the Import Licence detail drilldown.
+- Re-ran config syntax/static checks and targeted backend verification before commit and push.
 
 ### Next Target
 
-Next target: customer-complaint parity pass for Wai Phyo Export Licence reports.
+Next target: Wai Phyo customer-complaint parity batch, continue remaining HS Code/drilldown and any frontend retest failures.
 
-Reason: the same customer-complaint pass now needs to be applied to Export Licence reports. Per `AGENTS.md`, compare old Tradenet 2.0 Admin filters/columns before changing code.
+Reason: the sheet now marks many Wai Phyo reports as `OK` for data-show, but customer feedback still asks for report titles, totals, section-filter parity, dropdown changes, hidden columns, and drilldown behavior. Per `AGENTS.md`, each complaint report must be checked against old Tradenet 2.0 Admin before changing frontend/backend behavior.
+
+Current frontend target: Export Licence complaint group.
+
+Why: DB data-show was already fixed for the main Export Licence Wai Phyo reports. The remaining complaints are mostly frontend parity/customer-feedback issues: report subtitles, totals wiring, Export Licence section dropdowns, removing Sakhan from non-border reports, and adding Auto/None-Auto where the sheet asks for it.
+
+2026-06-18 restore note:
+
+- Before pulling senior changes, `Frontend/src/Report/config/reportConfigs.ts` was backed up to `Frontend/src/Report/config/reportConfigs.backup-20260618-203139.ts`.
+- After restoring/pulling the senior version, only the Wai Phyo/customer-complaint config blocks were restored from the backup.
+- Restored areas: HS Code complaint configs, voucher complaint configs, Export Licence action/new configs, Border Export Permit action/new configs, and Border Import Licence action/voucher/HS Code configs.
+- Extra fix after restore: `BorderImportLicenceVoucherReport` now has footer total wiring with `currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'Amount' }`.
+- Static complaint restore check passed after the merge.
+- `Frontend/src/Report/config/reportConfigs.ts` TypeScript transpile syntax check passed.
+- `dotnet build Backend/API.csproj --no-restore` passed with warnings only.
+- Targeted backend report tests passed: 178/178 for `ReportQueryTranslationTests`, `ReportControllerBranchDefaultsTests`, and `BorderImportLicenceParityTests`.
+- Full frontend `npm run build` is still blocked by the local dependency tree before app bundling: missing type definitions for `chai` and `deep-eql`.
 
 Completed Priority 1 API/controller retests:
 
@@ -66,6 +89,7 @@ Still pending from Priority 1: none.
 | Border Import Licence New Report | `dbo.sp_NewReport_pagination` | API/controller retest passed | 1,345 ms API | ToDate includes whole day; empty Auto means all; controller returns `totalCount=824`, `pageCount=20`. |
 | Export Licence By HS Code Report | `dbo.sp_HSCodeReport_pagination` | DB + API/controller retest passed | 1,192 ms DB fast page / 948 ms DB exact count / 1 focused test passed | Added `@IncludeTotalCount`; Export Licence branch can now skip `COUNT(*) OVER()` for fast-page requests; backend fetches `PageSize + 1` and returns estimated pagination when requested. |
 | Export Licence Total Value & Licences Report | `dbo.sp_ExportLicenceTotalValueReport_Fast_pagination` | DB + API/controller retest passed | 747 ms DB exact count / 1 focused test passed | Replaced the full detail-row aggregation path with a dedicated currency aggregate procedure that materializes filtered licence IDs before joining items. |
+| Border Export Licence Detail Report split work | `dbo.sp_BorderExportLicenceDetailReport_Pagination` | Dedicated proc deployed; real code-path smoke passed | 25.99s DB fast page / 1 focused test passed in 38s | Added a dedicated Border-only procedure file, routed `Type="Border"` through it, moved Port/Destination name resolution to cached C# lookup, restored expected result columns, and capped SQL memory grant to survive `RESOURCE_SEMAPHORE` pressure. |
 
 ### Not Done / Pending
 
@@ -79,10 +103,168 @@ Still pending from Priority 1: none.
 | Border Export Permit Actual Amendment Report | Valid no-data + supported parity fixes done | `TradeNetDB` has 0 approved Border Export Permit `Actual Amend` rows; section/title/extra HSCode fixed | Retest frontend after dependency install; no SQL fix unless source data is expected. |
 | Border Export Permit New Report (New Report) | Data-show + supported parity fixes done | Sakhan-specific DB search returns data; section/title/Auto filter/Auto column fixed | Currency-wise footer totals still pending. |
 | Export Licence Voucher Report | Data shows; item totals intentionally skipped for now | Currency/TotalAmount are blank in data-first mode | Revisit only after all tables show data. |
-| Export Licence New Report | Data shows | Performance can still be improved later | Revisit only if frontend still fails. |
-| Export Licence Amendment Report | DB data-show passed | If frontend still fails, the DB procedure is not the blocker | Retest API/frontend request payload. |
-| Export Licence Extension Report | DB data-show passed | If frontend still fails, the DB procedure is not the blocker | Retest API/frontend request payload. |
+| Export Licence New Report | Data shows + frontend complaint config updated | Performance can still be improved later | Retest frontend; Auto/None-Auto and no-Sakhan config now applied. |
+| Export Licence Amendment Report | DB data-show passed + frontend complaint config updated | If frontend still fails, the DB procedure is not the blocker | Retest frontend; totals, Export Section lookup, Auto/None-Auto, no-Sakhan config now applied. |
+| Export Licence Extension Report | DB data-show passed + frontend complaint config updated | If frontend still fails, the DB procedure is not the blocker | Retest frontend; Export Section lookup and no-Sakhan config now applied. |
 | Export Licence New Report quota | DB output fixed | Real quota source does not exist on `ExportLicence`; old procedure also did not select it | Retest frontend; quota should render blank instead of `N/A`. |
+| Border Export Licence Detail dedicated proc | Data-show passed; performance tuning still pending | One-day DB fast page now returns and the real backend code path passes, but the result is still above target and clean benchmarks are distorted by SQL memory pressure and long `KILLED/ROLLBACK` backlog | Re-test one-day / one-month / multi-year after server pressure clears, then tune only this dedicated proc toward the under-10-second target. |
+
+### Customer Complaint Frontend Pass - Export Licence - 2026-06-17
+
+Reference checked:
+
+- Old admin path: `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin`
+- Live Google Sheet public HTML view checked on 2026-06-17:
+  - `https://docs.google.com/spreadsheets/d/1paKyNjI_5bKekx9a7XZl3cNnfcrPk26NxjkkZ3sczSo/edit?gid=0#gid=0`
+  - Wai Phyo rows visible around Border Import Licence, Border Export Permit, and Export Licence sections.
+- Old Export Licence action report filters use From/To, Export Section, Company Registration No, readonly Company Name, and Remark where applicable.
+- Old Export Licence action reports do not use Sakhan because they are oversea Export Licence reports.
+- Customer sheet additionally asks for Auto/None-Auto on Export Licence Amendment and Export Licence New Report. That is a feedback-driven addition beyond the old filter form.
+
+Frontend changes applied in `Frontend/src/Report/config/reportConfigs.ts`:
+
+| Report | What changed | Status |
+|---|---|---|
+| Export Licence Actual Amendment Report | Added report subtitle, currency total footer wiring, Export Licence section lookup, readonly Company Name filter, removed Sakhan filter, removed visible `hsCode` column. | Config updated; frontend retest pending. |
+| Export Licence Amendment Report | Added report subtitle, currency total footer wiring, Export Licence section lookup, readonly Company Name filter, Auto/None-Auto filter, removed Sakhan filter, removed visible `hsCode` column. | Config updated; frontend retest pending. |
+| Export Licence Cancellation Report | Added report subtitle, currency total footer wiring, Export Licence section lookup, readonly Company Name filter, removed Sakhan filter, removed visible `hsCode` column. | Config updated; frontend retest pending. |
+| Export Licence Extension Report | Switched filters to Export Licence section lookup, readonly Company Name filter, and no Sakhan filter. Existing subtitle and currency total wiring kept. | Config updated; frontend retest pending. |
+| Export Licence New Report (New Report) | Added report subtitle, currency total footer wiring, Export Licence section lookup, readonly Company Name filter, Auto/None-Auto select filter, removed Sakhan filter. | Config updated; frontend retest pending. |
+
+Verification status:
+
+- No stored procedure or index changed in this frontend pass.
+- Static config check passed for the touched Export Licence reports: Sakhan filters are removed, Export Licence section filter wiring exists, and currency total wiring exists.
+- `npm run build -- --mode development` was attempted from `Frontend`; it failed before bundling because existing test files import `vitest`, but `Frontend/node_modules/vitest` is missing locally.
+
+### Live Sheet Follow-Up - 2026-06-17
+
+Source checked:
+
+- Google Sheet public HTML view, visible `External` tab.
+- Wai Phyo rows found:
+  - Border Import Licence: Amendment, Extension, Cancellation, By HS Code, Voucher, Actual Amendment, New Report.
+  - Border Export Permit: Amendment, Extension, Cancellation, By HS Code, Voucher, Actual Amendment, New Report.
+  - Export Licence: Amendment, Extension, Cancellation, By HS Code, Voucher, Actual Amendment, New Report.
+
+Scope rule:
+
+- Ko Htet-only rows remain out of scope unless reassigned.
+- Shared rows with Wai Phyo are in scope only where the complaint is for the Wai Phyo stored-procedure family.
+
+Current next checks:
+
+1. Add HS Code self-drilldown links where the sheet asks for HSCode click-through.
+2. Run static config checks after edits.
+3. Build remains blocked until `vitest` exists in `Frontend/node_modules`.
+
+HS Code changes applied:
+
+| Report | What changed | Status |
+|---|---|---|
+| Border Import Licence By HS Code Report | Added report subtitle, Import Licence section dropdown, Start/End filter dropdown, removed Company Name column, and mapped `ExportImportSectionId` through `BorderImportLicenceByHSCodeReportController`. | Config/backend updated; build/test pending. |
+| Border Export Permit By HS Code Report | Added Border Export Permit section dropdown and removed Company Name column. Existing Start/End dropdown and subtitle kept. | Config updated; build/test pending. |
+| Export Licence By HS Code Report | Added report subtitle, Export Licence section dropdown, Start/End filter dropdown, removed Company Name column, and removed Sakhan filter. | Config updated; build/test pending. |
+
+HS Code drilldown changes:
+
+- Border Import Licence, Border Export Permit, and Export Licence HS Code columns now drill into their own HS Code report with the clicked `hsCode` applied.
+- Drilldown carries the active date range, section, Filter By, and Sakhan where that report has Sakhan.
+- Static drilldown validation passed for Border Import Licence, Border Export Permit, Export Licence, and existing Border Export Licence HS Code reports: each target points to itself, `hsCode` is passed from the clicked row, and carried filters exist on the source report.
+
+Voucher follow-up change:
+
+- Shared voucher Apply Type filter now defaults to blank/all and includes an `--- All ---` option before New/Amend/Extension/Cancel/Actual Amend.
+- This is needed for the Export Licence Voucher complaint: data exists but blank Apply Type / Payment Type searches did not work from the frontend.
+- Border Export Permit Voucher Apply Type now also defaults to blank/all, and Payment Type now uses the shared Cash/MPU/Citizen Pay option list.
+
+Test status:
+
+- `dotnet build Backend/API.csproj` passed after the Border Import Licence HS Code controller change. Existing warnings remain; no errors.
+- `npm install` was attempted in `Frontend` to restore missing test dependencies, but it timed out after 2 minutes and `Frontend/node_modules/vitest` is still missing.
+- Frontend build is still blocked by missing local `vitest` dependency in `Frontend/node_modules`.
+
+### Complaint Verification Pass - 2026-06-17
+
+Goal:
+
+- Test whether the customer-complaint fixes work, not just whether code compiles.
+
+Planned checks:
+
+1. Restore frontend dependencies so `vitest` and TypeScript can run.
+2. Run targeted frontend report-config tests/static checks for:
+   - HS Code section filters, Start/End filter, Company Name removal, and drilldown metadata.
+   - Voucher blank/all Apply Type and Payment Type options.
+   - Export Licence action reports with no Sakhan filter and correct Export Licence section lookup.
+3. Run backend build after the Border Import Licence HS Code controller change.
+4. If the app can be started locally with available credentials/auth, do browser/runtime verification for the changed report pages.
+
+Results:
+
+- `npm install` failed because the existing Storybook dependencies conflict (`@storybook/addon-essentials@8.6.14` wants Storybook 8 while the project has Storybook 9).
+- `npm install --legacy-peer-deps` also failed with an npm internal `Exit handler never called` error.
+- `node_modules/vitest` exists after the partial install, but `node_modules/.bin/vitest` was not created, so `npm run test` cannot launch Vitest.
+- `npx vitest ...` failed because npm could not verify the registry certificate (`UNABLE_TO_VERIFY_LEAF_SIGNATURE`).
+- `npm run build` now gets past the old `vitest` missing error but fails on missing test type definitions for `chai` and `deep-eql`, confirming the frontend dependency tree is still incomplete.
+- `dotnet build Backend/API.csproj --no-restore` passed with 0 warnings and 0 errors.
+- Broad `dotnet test Backend.Tests/Backend.Tests.csproj --no-restore --filter "FullyQualifiedName~HSCode|FullyQualifiedName~Voucher|FullyQualifiedName~Report"` was attempted, but it is not a clean verification target for this work: it fails on existing suite issues such as missing stored procedures in the temporary test DB (`sp_ExtensionReport_pagination`, `sp_VoucherReport_pagination`, etc.) and unrelated controller fixture assumptions.
+- Targeted non-DB report tests passed: `dotnet test Backend.Tests/Backend.Tests.csproj --no-restore --filter "FullyQualifiedName~ReportQueryTranslationTests|FullyQualifiedName~ReportControllerBranchDefaultsTests|FullyQualifiedName~BorderImportLicenceParityTests"` passed 178/178.
+- Custom static complaint verification passed for the touched frontend config:
+  - HS Code reports have Start/End filter, no Company Name column, and self-drilldown.
+  - Export Licence HS Code has no Sakhan filter.
+  - Voucher reports have dynamic header resolver and `Amount` mapped for Total Amount.
+  - Shared voucher Apply Type supports blank/all.
+  - Export Licence action reports have no Sakhan filter and use Export Licence section wiring.
+
+### Customer Complaint Batch - 2026-06-17
+
+Source:
+
+- User pasted the Wai Phyo rows from the shared Google Sheet.
+- Sheet link supplied by user: `https://docs.google.com/spreadsheets/d/1paKyNjI_5bKekx9a7XZl3cNnfcrPk26NxjkkZ3sczSo/edit?gid=0#gid=0`
+- Work rule: update this markdown first, then fix one report at a time.
+- Parity rule: for each customer complaint, compare the new report against old Tradenet 2.0 Admin columns and filters before changing behavior.
+
+Out of scope unless the user explicitly reassigns it:
+
+| Report | Owner note | Reason |
+|---|---|---|
+| Border Import Licence Pending Report | Ko Htet | User said only Wai Phyo part; pending report row is Ko Htet-owned. |
+
+Wai Phyo complaint checklist:
+
+| Priority | Report | Procedure | Current sheet status | Customer complaint / remaining work | First action |
+|---|---|---|---|---|---|
+| P1 | Border Import Licence Voucher Report | `dbo.sp_VoucherReport` | OK / No data | Page still says no data in some case. | Compare old filter defaults, then retest DB/API payload with blank filters. |
+| P1 | Export Licence Voucher Report | `dbo.sp_VoucherReport` | OK / complaint says blank filters fail | Blank Apply Type / Payment Type should work; Commodity Type and Total Amount columns missing data; dynamic header labels wrong; no Sakhan dropdown. | Compare old voucher filters/columns, then fix frontend config and stored-procedure branch if needed. |
+| P1 | Border Export Permit Voucher Report | `dbo.sp_VoucherReport` | OK | Total Amount footer; dynamic header labels show `=Parameters!header2.Value`; section dropdown must be Export Permit only. | Compare old voucher RDLC/config, then fix frontend config first. |
+| P1 | Border Export Permit Actual Amendment Report | `dbo.sp_ActualAmendReport` | OK / Live no data | Live shows no data. | Confirm source rows in DB, then retest API with live-like date range. |
+| P2 | Border Import Licence Actual Amendment Report | `dbo.sp_ActualAmendReport` | OK | Report title, total no. of licence, currency-wise total value, Import Licence section dropdown. | Compare old Actual Amend columns/filters, then apply config/summary footer parity. |
+| P2 | Border Import Licence Extension Report | `dbo.sp_ExtensionReport` | OK | Report title, total no. of licence, currency-wise total value, Import Licence section dropdown. | Compare old Extension columns/filters, then apply config/summary footer parity. |
+| P2 | Border Import Licence Cancellation Report | `dbo.sp_CancelReport` | OK | Report title, total no. of licence, currency-wise total value, Import Licence section dropdown. | Compare old Cancel columns/filters, then apply config/summary footer parity. |
+| P2 | Border Export Permit Extension Report | `dbo.sp_ExtensionReport` | OK | Report title, total no. of licence, currency-wise total value, Export Permit section dropdown only. | Compare old Border Export Permit extension filters/columns. |
+| P2 | Border Export Permit Cancellation Report | `dbo.sp_CancelReport` | OK | Report title, total no. of licence, currency-wise total value, Export Permit section dropdown only. | Compare old Border Export Permit cancel filters/columns. |
+| P2 | Export Licence Amendment Report | `dbo.sp_AmendReport` | OK | Report title, totals, Export Licence section dropdown only, Auto/None-Auto dropdown, remove Sakhan dropdown. | Compare old Export Licence amend filters/columns and Import Permit reference. |
+| P2 | Export Licence Cancellation Report | `dbo.sp_CancelReport` | OK | Report title, totals, Export Licence section dropdown only, remove Sakhan dropdown. | Compare old Export Licence cancel filters/columns. |
+| P2 | Export Licence Actual Amendment Report | `dbo.sp_ActualAmendReport` | OK | Total amount, currency-wise total value, Export Licence section dropdown only, remove Sakhan dropdown. | Compare old Export Licence actual amend filters/columns. |
+| P2 | Export Licence New Report (New Report) | `dbo.sp_NewReport` | OK | Total amount, currency-wise total value, Export Licence section dropdown only, Auto/None-Auto dropdown, remove Sakhan dropdown. | Compare old Export Licence new filters/columns. |
+| P3 | Border Import Licence By HS Code Report | `dbo.sp_HSCodeReport` | OK | Report title, total no. of licence, remove Company Name column, Import Licence section dropdown, HSCode drilldown, Start/End filter. | Compare old HSCode RDLC/config and new drilldown route availability. |
+| P3 | Border Export Permit By HS Code Report | `dbo.sp_HSCodeReport` | OK | Report title, total no. of licence, remove Company Name column, section dropdown wording, HSCode drilldown, Start/End filter. | Compare old HSCode RDLC/config and new drilldown route availability. |
+| P3 | Export Licence By HS Code Report | `dbo.sp_HSCodeReport` | OK | Report title, total no. of licence, HSCode drilldown to detail page with total no. of licence, Export Licence section dropdown only. | Compare old HSCode RDLC/config and drilldown route. |
+| P3 | Border Export Permit Amendment Report | `dbo.sp_AmendReport` | OK | Live data did not show earlier; Export Permit section dropdown only. | Reconfirm data on current DB/API and old filter parity. |
+| P3 | Border Export Permit New Report (New Report) | `dbo.sp_NewReport` | OK | Totals, Export Permit section dropdown only, Sakhan-specific search, remove Auto filter. | Reconfirm current config after prior fix. |
+| P3 | Border Import Licence New Report (New Report) | `dbo.sp_NewReport` | OK | Sheet says ok. | No action unless frontend retest fails. |
+| P3 | Border Import Licence Amendment Report | `dbo.sp_AmendReport` | OK | No new complaint text in pasted row. | No action unless frontend retest fails. |
+| P3 | Export Licence Extension Report | `dbo.sp_ExtensionReport` | OK | Export Licence section dropdown only, remove Sakhan dropdown. | Compare old filters; likely frontend config only. |
+
+Working order:
+
+1. Fix data-show / blank-filter issues first.
+2. Then fix filter dropdown parity.
+3. Then fix visible columns / header labels.
+4. Then add totals / footer summaries where the current report framework supports it.
+5. Drilldown links are last because they may need routes/config beyond the table column change.
 
 ### Remaining Wai Phyo Work
 
@@ -118,6 +300,7 @@ Priority 3 - no-data validation:
 Applied to `TradeNetDB`:
 
 - `dbo.sp_ExportLicenceDetailReport_Pagination`
+- `dbo.sp_BorderExportLicenceDetailReport_Pagination`
 - `dbo.sp_ExportLicenceTotalValueReport_Fast_pagination`
 - `dbo.sp_AmendReport_pagination`
 - `dbo.sp_VoucherReport_pagination`
@@ -127,10 +310,14 @@ Applied to `TradeNetDB`:
 Index status:
 
 - Created and deployed `StoredProcedureMigrations/Indexes/ExportLicenceHSCodeReport_indexes.sql`.
+- Created and deployed `StoredProcedureMigrations/Indexes/BorderExportLicenceDetailReport_indexes.sql`.
 - New indexes:
   - `IX_ExportLicence_HSCodeReport_LicenceDate`
   - `IX_ExportLicenceItem_HSCodeReport_Licence`
   - `IX_AccountTransaction_ExportLicenceVoucher`
+  - `IX_BorderExportLicence_Report_NewDetail`
+  - `IX_BorderExportLicenceItem_Report_Licence`
+  - `IX_IndividualTrading_Report_TINNo`
 - Export Licence base date filter improved from timeout to 579 ms after the `ExportLicence` index.
 - Existing index hints were used where helpful, especially `AccountTransaction` index `NonClusteredIndex-AccountTransaction-125044`.
 
@@ -248,6 +435,400 @@ Pull rule:
 - If pull is blocked by local changes, stop and decide whether to stash or merge manually.
 
 ## Active Wai Phyo Task Tracker
+
+## Active Task Log - Border Import Licence Voucher Report Complaint
+
+Started: 2026-06-17
+
+Scope:
+
+- Owner: Wai Phyo
+- Procedure: `dbo.sp_VoucherReport_pagination`
+- Frontend config: `Frontend/src/Report/config/reportConfigs.ts`
+- Controller: `Backend/Controllers/Report/BorderImportLicenceVoucherReportController.cs`
+- Old admin reference:
+  - `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Views\Reports\BorderImportLicenceVoucherReport.cshtml`
+  - `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\ReportControl\VoucherReport.rdlc`
+  - `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Controllers\ReportsController.cs`
+
+Customer complaint:
+
+- Sheet says `OK / No data`.
+
+Old-vs-new parity findings before editing:
+
+| Area | Old Tradenet 2.0 Admin | New report before fix | Diff |
+|---|---|---|---|
+| Apply Type filter | Dropdown from `CommonRepository.GetApplyTypeList()` excluding Fine; default behaves like first value / New flow. | Plain text filter with default empty string. | Wrong control and default could send empty ApplyType. |
+| Payment Type filter | Dropdown from active payment types, with `--- All ---`. | Plain text filter with default empty string. | Wrong control; user can type values that do not match DB values. |
+| Import Section filter | Border Import Licence uses Import Licence sections where `IsBorder == true`. | Number filter without lookup. | Wrong UX and missing section options. |
+| Sakhan filter | Dropdown from Sakhan repository, with all option. | Number filter without lookup. | Wrong UX and missing Sakhan options. |
+| Company Name | Readonly company name field populated from Company Registration No. | Missing from this report config. | Missing old filter box field. |
+| Voucher header columns | RDLC uses `header2`/`header3`, resolved by controller to `Licence No` / `Licence Date` for New, and Amendment/Extension/Cancel/Actual Amendment labels for other apply types. | Table displayed literal `=Parameters!header2.Value` and `=Parameters!header3.Value`. | Visible wrong column titles. |
+| Licence value / Total amount mapping | Old RDLC `Lic Value` uses licence/item value and `Total Amount` uses voucher amount. | `Lic Value` pointed to voucher `amount`; `Total Amount` pointed to item `totalAmount`. | Values were swapped. |
+
+Fix applied:
+
+1. Added `borderImportLicenceVoucherFilters`.
+2. Switched Border Import Licence Voucher Report to:
+   - border import licence section lookup;
+   - dropdown Apply Type defaulting to `New`;
+   - dropdown Payment Type;
+   - readonly Company Name;
+   - Sakhan lookup;
+   - old-style voucher subtitle.
+3. Enabled `resolveImportLicenceVoucherColumns` so `header2` and `header3` labels render as real column names.
+4. Added `OriginalLicenceNo` with fallback to current `licenceNo`, matching the old RDLC first licence column behavior.
+5. Corrected value mappings:
+   - `LicValue` -> `totalAmount`
+   - `Total Amount` -> `amount`
+
+Verification:
+
+- Frontend build attempted:
+  - command: `npm run build`
+  - result: blocked before checking this config because local `node_modules` does not contain `vitest`, while test files import it.
+  - `npm ls vitest` shows the dependency is currently missing from the local install.
+- Backend focused test attempted:
+  - command: `dotnet test Backend.Tests/Backend.Tests.csproj --filter BorderImportLicenceVoucher --no-restore`
+  - result: no matching test exists.
+- Direct DB retest attempted:
+  - procedure: `dbo.sp_VoucherReport_pagination`
+  - form type: `Border Import Licence`
+  - date: `2023-07-13`
+  - apply type: `New`
+  - result: command timed out while the remote SQL Server was still under noisy load.
+  - follow-up `sys.dm_exec_requests` showed a long-running report select waiting on `ASYNC_NETWORK_IO`.
+
+Current status:
+
+- Frontend parity fix for the visible no-data/filter/header issue: done.
+- Clean DB/API retest: still pending because the remote SQL session is noisy.
+- Next action: retest frontend/API after dependencies are restored, then continue to Export Licence Voucher Report because it has the same blank-filter/data complaint.
+
+## Active Task Log - Export Licence Voucher Report Complaint
+
+Started: 2026-06-17
+
+Scope:
+
+- Owner: Wai Phyo
+- Procedure: `dbo.sp_VoucherReport_pagination`
+- Frontend config: `Frontend/src/Report/config/reportConfigs.ts`
+- Controller: `Backend/Controllers/Report/ExportLicenceVoucherReportController.cs`
+- Old admin reference:
+  - `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Views\Reports\ExportLicenceVoucherReport.cshtml`
+  - `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\ReportControl\VoucherReport.rdlc`
+  - `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Controllers\ReportsController.cs`
+
+Customer complaint:
+
+- Blank Apply Type / Payment Type search did not work.
+- Report title needed.
+- Total Amount should show and sum.
+- Commodity Type / Total Amount columns had missing data.
+- Apply Type and Payment Type must be dropdowns.
+- Export Licence section dropdown must show Export Licence sections only.
+- RDLC parameter labels were visible as table column titles.
+- Sakhan dropdown should not be shown.
+
+Old-vs-new parity findings before editing:
+
+| Area | Old Tradenet 2.0 Admin | New report before fix | Diff |
+|---|---|---|---|
+| Export Section filter | Dropdown using `GetAll(AppConfig.ExportLicence)` with `IsOversea == true`. | Number filter without lookup. | Wrong control/options. |
+| Apply Type filter | Dropdown from common apply type list excluding Fine. | Plain text with empty default. | Wrong control/default. |
+| Payment Type filter | Dropdown from active payment types with all option. | Plain text. | Wrong control/options. |
+| Company Name | Readonly company name populated from registration number. | Missing from filter list. | Missing old filter field. |
+| Sakhan | Not present in old Export Licence voucher report. | Present as number filter. | Extra wrong filter. |
+| Voucher dynamic headers | Old controller resolves `header2`/`header3` based on Apply Type. | Literal `=Parameters!header2.Value` and `=Parameters!header3.Value` could show. | Wrong visible column titles. |
+| Licence value / Total amount mapping | Old RDLC `Lic Value` uses licence/item value and `Total Amount` uses voucher amount. | `Lic Value` pointed to voucher `amount`; `Total Amount` pointed to item `totalAmount`. | Values were swapped. |
+
+Fix applied:
+
+1. Added `exportLicenceVoucherFilters`.
+2. Switched Export Licence Voucher Report to:
+   - Export Licence section lookup;
+   - dropdown Apply Type defaulting to `New`;
+   - dropdown Payment Type;
+   - Company Registration No + readonly Company Name;
+   - no Sakhan filter.
+3. Enabled `resolveImportLicenceVoucherColumns` for old RDLC `header2` / `header3` behavior.
+4. Added old-style report subtitle:
+   - `Export Licence Voucher List (From) To (To)`
+5. Corrected value mappings:
+   - `LicValue` -> `totalAmount`
+   - `Total Amount` -> `amount`
+6. Added footer placement config for voucher `Amount` total:
+   - `currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'Amount' }`
+
+Verification:
+
+- Frontend build is still blocked by missing local `vitest` dependency before this config can be fully typechecked.
+- DB/API retest not run cleanly yet because the previous remote SQL direct voucher test timed out and left a noisy session.
+
+Current status:
+
+- Frontend parity fix for filters/header/value mapping: done.
+- Clean DB/API retest: pending.
+- Next action: once local dependencies/remote DB are usable, retest `ExportLicenceVoucherReport` with default `ApplyType=New`, blank Payment Type, and blank Company Registration No.
+
+## Active Task Log - Border Export Permit Voucher Report Complaint
+
+Started: 2026-06-17
+
+Scope:
+
+- Owner: Wai Phyo
+- Procedure: `dbo.sp_VoucherReport_pagination`
+- Frontend config: `Frontend/src/Report/config/reportConfigs.ts`
+- Controller: `Backend/Controllers/Report/BorderExportPermitVoucherReportController.cs`
+- Old admin reference:
+  - `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Views\Reports\BorderExportPermitVoucherReport.cshtml`
+  - `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\ReportControl\BorderVoucherReport.rdlc`
+  - `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Controllers\ReportsController.cs`
+
+Customer complaint:
+
+- Report title needed.
+- Total Amount sum needed.
+- `=Parameters!header2.Value` and `=Parameters!header3.Value` were visible in column names.
+- Export Permit section dropdown must show only Export Permit sections.
+
+Old-vs-new parity findings before editing:
+
+| Area | Old Tradenet 2.0 Admin | New report before fix | Diff |
+|---|---|---|---|
+| Export Section filter | Border Export Permit uses Export Permit sections where `IsBorder == true`. | Already used `borderExportPermitSections`. | OK. |
+| Sakhan filter | Dropdown from Sakhan repository. | Number filter with no lookup. | Wrong UX/options. |
+| Company Name | Readonly company name populated from registration number. | Missing. | Missing old filter field. |
+| Voucher dynamic headers | Old controller resolves `header2`/`header3` based on Apply Type. | Config already had concrete `Licence No` / `Licence Date` and resolver enabled. | No code needed for header issue in current config. |
+| Total Amount mapping | Old voucher footer sums voucher `Amount`. | Total Amount column and footer placement pointed at `totalAmount` item/licence value. | Wrong value for voucher Total Amount. |
+
+Fix applied:
+
+1. Added readonly Company Name filter.
+2. Added Sakhan lookup to the Sakhan filter.
+3. Switched Total Amount column to voucher `amount`.
+4. Switched voucher footer placement to sum `Amount`.
+
+Verification:
+
+- Frontend build remains blocked by missing local `vitest` dependency.
+- DB/API retest pending; this change is config-only and uses existing backend fields.
+
+Current status:
+
+- Frontend parity fix for filters and total amount mapping: done.
+- Clean frontend/API retest: pending.
+
+## Active Task Log - Border Import Licence Actual / Extension / Cancellation Complaint
+
+Started: 2026-06-17
+
+Scope:
+
+- Owner: Wai Phyo
+- Procedures:
+  - `dbo.sp_ActualAmendReport_pagination`
+  - `dbo.sp_ExtensionReport_pagination`
+  - `dbo.sp_CancelReport_pagination`
+- Frontend config: `Frontend/src/Report/config/reportConfigs.ts`
+- Old admin reference:
+  - `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Views\Reports\BorderImportLicenceAmendReport.cshtml`
+  - `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Views\Reports\BorderImportLicenceExtensionReport.cshtml`
+  - `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Views\Reports\BorderImportLicenceCancelReport.cshtml`
+  - `D:\Job\admin\tradenet-2.0-admin\TradenetAdmin\Controllers\ReportsController.cs`
+
+Customer complaint:
+
+- Report title needed.
+- Total No of License needed.
+- Currency-wise Total Value needed.
+- Import Section dropdown must use Import Licence setup values.
+
+Old-vs-new parity findings before editing:
+
+| Area | Old Tradenet 2.0 Admin | New report before fix | Diff |
+|---|---|---|---|
+| Sakhan filter | Dropdown from Sakhan repository with all option. | Number filter without lookup. | Wrong UX/options. |
+| Import Section filter | Border Import Licence uses Import Licence sections where `IsBorder == true`. | Number filter without lookup. | Wrong UX/options. |
+| Company Name | Readonly company name populated from Company Registration No. | Missing from these action-report configs. | Missing old filter field. |
+| Currency totals | Extension had footer config; Actual Amendment and Cancellation were missing it. | Inconsistent footer config. | Missing currency-wise footer support for two reports. |
+| Report subtitle/title | Old RDLC uses a report title/subtitle line. | Extension had subtitle; Actual Amendment and Cancellation were missing subtitle. | Missing title/subtitle support. |
+
+Fix applied:
+
+1. Added shared `borderImportLicenceActionFilters`.
+2. Added shared `borderImportLicenceAmendActionFilters`.
+3. Updated Border Import Licence Actual Amendment, Amendment, Cancellation, and Extension to use:
+   - Sakhan lookup;
+   - Border Import Licence section lookup;
+   - Company Registration No;
+   - readonly Company Name.
+4. Added `currencyTotalsColumns` to Actual Amendment, Amendment, and Cancellation.
+5. Added old-style report subtitle to Actual Amendment, Amendment, and Cancellation.
+
+Verification:
+
+- Frontend build is still blocked by missing local `vitest`.
+- These are frontend config parity fixes using existing backend fields and existing totals framework.
+
+Current status:
+
+- Frontend filter/title/footer parity pass: done.
+- Clean frontend/API retest: pending.
+
+## Active Task Log - Border Export Licence Detail Dedicated Procedure
+
+Started: 2026-06-12
+
+Scope:
+
+- Owner: Wai Phyo
+- Original mixed procedure left untouched: `dbo.sp_ExportLicenceDetailReport_Pagination`
+- New dedicated procedure: `dbo.sp_BorderExportLicenceDetailReport_Pagination`
+- New SQL file: `StoredProcedureMigrations/sp_BorderExportLicenceDetailReport_pagination.sql`
+- New index file: `StoredProcedureMigrations/Indexes/BorderExportLicenceDetailReport_indexes.sql`
+- Backend route switch: `Backend/StoredProcedureToLinq/sp_ExportLicenceDetailReport_Fast.StoredProcedure.cs`
+
+What was changed:
+
+1. Added a dedicated Border-only stored procedure so Border Export Licence detail work no longer requires editing the mixed `Oversea/Border` procedure.
+2. Updated the C# wrapper so `request.Type == "Border"` uses the new dedicated procedure name.
+3. Updated the Border API paging path so Border requests now go through the stored-procedure paging branch instead of the old LINQ paging branch.
+4. Moved Port of Export / Destination Country display resolution out of SQL and back into cached C# lookup resolution for the Border stored-procedure path.
+5. Added a dedicated Border Export Licence detail index script.
+6. Deployed the new procedure and the narrowed index script to `TradeNetDB`.
+
+Current DB observations:
+
+- The procedure returns real data for Border Export Licence detail.
+- Clean timing comparison is currently unreliable because the SQL Server is under memory pressure.
+- During testing, `sys.dm_exec_requests` showed:
+  - many old sessions stuck in `KILLED/ROLLBACK`
+  - current report sessions waiting on `RESOURCE_SEMAPHORE`
+- Because of that, one-day tests that were previously around ~10-13 seconds in earlier checks later jumped to ~50-65 seconds while the server was under pressure.
+
+Tests already run:
+
+1. Original mixed procedure before the dedicated split:
+   - Procedure: `dbo.sp_ExportLicenceDetailReport_Pagination`
+   - Parameters:
+     - `@Type = N'Border'`
+     - `@FromDate = '2026-01-02'`
+     - `@ToDate = '2026-01-02'`
+     - `@PageIndex = 0`
+     - `@PageSize = 20`
+   - Result:
+     - returned real rows
+     - `IncludeTotalCount = 1`: about `65.03s`
+   - Earlier cleaner measurements from the same Border path before the DB got worse:
+     - one day + count: about `13.18s`
+     - one day fast page: about `10.17s`
+     - one month + count: about `34.52s`
+     - one month fast page: about `26.24s`
+     - wide multi-year range: timed out / did not finish in acceptable time
+
+2. New dedicated Border procedure after split:
+   - Procedure: `dbo.sp_BorderExportLicenceDetailReport_Pagination`
+   - Parameters:
+     - `@FromDate = '2026-01-02'`
+     - `@ToDate = '2026-01-02'`
+     - `@PageIndex = 0`
+     - `@PageSize = 20`
+   - Result:
+     - returned real rows
+     - `IncludeTotalCount = 1`: about `60.26s` on one run
+     - `IncludeTotalCount = 0`: about `57.80s` on one run
+   - Important note:
+     - these are not clean benchmark numbers because the server was under `RESOURCE_SEMAPHORE` pressure and had many old `KILLED/ROLLBACK` sessions still present
+
+3. Code-path retest after switching Border API paging to the dedicated stored procedure:
+   - Entry point:
+     - `sp_ExportLicenceDetailReport_Fast.CreatePagedResultAsync(...)`
+   - Behavior:
+     - Border requests now route to `CreateStoredProcedurePagedResultAsync(...)`
+   - Focused real-db smoke test:
+     - `Backend.Tests/BorderExportLicenceDetailReportStoredProcedureSmokeTests.cs`
+   - Test date:
+     - `2026-01-02`
+   - Result:
+     - test hit the dedicated stored-procedure code path
+     - test failed at about `31s` with SQL execution timeout
+   - Meaning:
+     - code routing is active
+     - DB execution is still the blocking factor
+
+4. Latest SQL simplification retest:
+   - Removed SQL-side XML string building for:
+     - Port of Export
+     - Destination Country
+   - These values are now resolved from cached lookup data in C#.
+   - One-day fast-page re-test:
+     - elapsed before failure: about `26.09s`
+     - still failed with `Msg 8645 ... timeout occurred while waiting for memory resources`
+
+5. Failed or blocked test attempts during rewrite:
+   - one rewrite shape failed with:
+     - `Ambiguous column name 'BorderExportLicenceId'`
+   - one rewrite shape failed with:
+     - `Invalid column name 'SortBorderExportLicenceId'`
+   - several runs failed with:
+     - `Msg 8645 ... timeout occurred while waiting for memory resources`
+   - one broad combined timing run hit the local command timeout at 10 minutes
+
+6. Latest successful retest after result-shape fix and memory-grant cap:
+   - SQL file redeployed:
+     - `StoredProcedureMigrations/sp_BorderExportLicenceDetailReport_pagination.sql`
+   - Backend wrapper update kept:
+     - `Backend/StoredProcedureToLinq/sp_ExportLicenceDetailReport_Fast.StoredProcedure.cs`
+   - Added back lightweight placeholder columns required by EF mapping:
+     - `PortofExport`
+     - `DestinationCountry`
+   - Added `MAX_GRANT_PERCENT = 5` on the dedicated Border procedure query options.
+   - Direct DB test:
+     - `@FromDate = '2026-01-02'`
+     - `@ToDate = '2026-01-02'`
+     - `@PageIndex = 0`
+     - `@PageSize = 20`
+     - `@IncludeTotalCount = 0`
+     - elapsed: `25.99s`
+     - returned rows successfully
+   - Real code-path smoke test:
+     - `dotnet test Backend.Tests/Backend.Tests.csproj --filter BorderExportLicenceDetailReportStoredProcedureSmokeTests --no-restore`
+     - result: passed
+     - duration: `38s` test time
+   - Meaning:
+     - the dedicated Border stored procedure now returns data through the actual backend paging path
+     - data-show is fixed for this dedicated path
+     - one-day timing is still above the preferred target and still affected by SQL Server pressure
+
+Interpretation of current tests:
+
+- Data path: confirmed working
+- Original Border path: confirmed slow
+- Dedicated Border path: structurally wired and deployed
+- Border code path now uses the dedicated stored procedure
+- Latest one-day direct DB retest returned in about `25.99s`
+- Latest real backend code-path smoke passed after the memory-grant cap was added
+- Current retests are still being distorted by DB memory pressure and old rollback backlog
+- Because the server state is noisy right now, we still cannot honestly call this a clean final performance benchmark
+
+Current status:
+
+- Structural split: done
+- Wrapper routing: done
+- Border API stored-procedure routing: done
+- DB deployment: done
+- Data-show through backend code path: done
+- Reliable performance validation: still pending until DB pressure clears
+
+Next action:
+
+1. Re-test the dedicated Border procedure after the `KILLED/ROLLBACK` backlog clears.
+2. Capture clean one-day / one-month / multi-year timings.
+3. Continue tuning only `dbo.sp_BorderExportLicenceDetailReport_Pagination` until one-day runs are comfortably under the target.
 
 ## Customer Complaint Intake - Export Licence - 2026-06-11
 

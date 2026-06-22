@@ -252,8 +252,11 @@ const importLicenceVoucherApplyTypeFilter: ReportFilterConfig = {
   name: 'ApplyType',
   label: 'Apply Type',
   type: 'select',
-  defaultValue: 'New',
-  options: registrationApplyTypeOptions,
+  defaultValue: '',
+  options: [
+    { label: '--- All ---', value: '' },
+    ...registrationApplyTypeOptions,
+  ],
 };
 
 const importLicenceVoucherPaymentTypeFilter: ReportFilterConfig = {
@@ -355,6 +358,58 @@ const exportLicenceTotalValueFilters: ReportFilterConfig[] = [
   },
 ];
 
+const exportLicenceSectionFilter: ReportFilterConfig = {
+  ...importLicenceSectionFilter,
+  label: 'Export Section',
+  lookupName: 'exportLicenceSections',
+};
+
+const exportLicenceVoucherFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceFormTypeFilter,
+  exportLicenceSectionFilter,
+  importLicenceVoucherApplyTypeFilter,
+  importLicenceVoucherPaymentTypeFilter,
+  importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
+];
+
+const exportLicenceAmendFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceFormTypeFilter,
+  exportLicenceSectionFilter,
+  importLicenceAmendRemarkFilter,
+  importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
+  importLicenceAutoFilter,
+];
+
+const exportLicenceActualAmendFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceFormTypeFilter,
+  exportLicenceSectionFilter,
+  importLicenceAmendRemarkFilter,
+  importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
+];
+
+const exportLicenceActionFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceFormTypeFilter,
+  exportLicenceSectionFilter,
+  importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
+];
+
+const exportLicenceNewFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceFormTypeFilter,
+  exportLicenceSectionFilter,
+  importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
+  importLicenceAutoFilter,
+];
+
 const importLicenceHSCodeFilters: ReportFilterConfig[] = [
   importLicenceDateRangeFilter,
   importLicenceFormTypeFilter,
@@ -428,6 +483,36 @@ const borderImportLicenceSakhanFilter: ReportFilterConfig = {
   defaultValue: 0,
   lookupName: 'sakhans',
 };
+
+const borderImportLicenceVoucherFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceFormTypeFilter,
+  borderImportLicenceSectionFilter,
+  importLicenceVoucherApplyTypeFilter,
+  importLicenceVoucherPaymentTypeFilter,
+  importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
+  borderImportLicenceSakhanFilter,
+];
+
+const borderImportLicenceActionFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceFormTypeFilter,
+  borderImportLicenceSakhanFilter,
+  borderImportLicenceSectionFilter,
+  importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
+];
+
+const borderImportLicenceAmendActionFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceFormTypeFilter,
+  borderImportLicenceSakhanFilter,
+  borderImportLicenceSectionFilter,
+  importLicenceAmendRemarkFilter,
+  importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
+];
 
 const borderExportLicenceMethodFilter: ReportFilterConfig = {
   ...exportLicenceMethodFilter,
@@ -2395,6 +2480,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        name: 'ExportImportSectionId',
+        label: 'Export Section',
+        type: 'number',
+        defaultValue: 0,
+        lookupName: 'borderExportPermitSections',
+      },
+      {
         name: 'FilterType',
         label: 'Filter By',
         type: 'select',
@@ -2422,6 +2514,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'hsCode',
         dataIndex: 'hsCode',
         title: 'HS Code',
+        drilldown: {
+          targetReportKey: 'BorderExportPermitByHSCodeReport',
+          carryFilters: ['FromDate', 'ToDate', 'ExportImportSectionId', 'FilterType', 'SakhanId'],
+          rowParams: { hsCode: 'hsCode' },
+        },
       },
       {
         key: 'Description',
@@ -2442,11 +2539,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'Currency',
         dataIndex: 'currency',
         title: 'Currency',
-      },
-      {
-        key: 'CompanyName',
-        dataIndex: 'companyName',
-        title: 'Company Name',
       },
     ],
   },
@@ -3324,7 +3416,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderExportPermitVoucherReport: {
     controllerName: 'BorderExportPermitVoucherReport',
-    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalAmount' },
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'Amount' },
     reportSubtitle: importLicenceRangeSubtitle('Border Export Permit Voucher List'),
     resolveColumns: resolveImportLicenceVoucherColumns,
     title: 'Border Export Permit Voucher Report',
@@ -3362,18 +3454,15 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Payment Type',
         type: 'select',
         defaultValue: '',
-        options: [
-          { label: 'All', value: '' },
-          { label: 'MPU', value: 'MPU' },
-          { label: 'Citizen Pay', value: 'Citizen Pay' },
-        ],
+        options: voucherPaymentTypeOptions,
       },
       {
         name: 'ApplyType',
         label: 'Apply Type',
         type: 'select',
-        defaultValue: 'New',
+        defaultValue: '',
         options: [
+          { label: '--- All ---', value: '' },
           { label: 'New', value: 'New' },
           { label: 'Amend', value: 'Amend' },
           { label: 'Extension', value: 'Extension' },
@@ -3389,10 +3478,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        ...importLicenceCompanyNameFilter,
+      },
+      {
         name: 'SakhanId',
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     columns: [
@@ -3455,8 +3548,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Commodity Type',
       },
       {
-        key: 'TotalAmount',
-        dataIndex: 'totalAmount',
+        key: 'Amount',
+        dataIndex: 'amount',
         title: 'Total Amount',
         dataType: 'number',
       },
@@ -3464,54 +3557,15 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderImportLicenceActualAmendmentReport: {
     controllerName: 'BorderImportLicenceActualAmendmentReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Licence Report'),
     title: 'Border Import Licence Actual Amendment Report',
     apiRoute: 'BorderImportLicenceActualAmendmentReport',
     excelRoute: 'BorderImportLicenceActualAmendmentReport/Excel',
     excelFileName: 'BorderImportLicenceActualAmendmentReport.xlsx',
     initialSortColumn: 'Date',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'AmendRemarkId',
-        label: 'Remark',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: borderImportLicenceAmendActionFilters,
     columns: [
       {
         key: 'Sakhan',
@@ -3581,54 +3635,15 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderImportLicenceAmendmentReport: {
     controllerName: 'BorderImportLicenceAmendmentReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Licence Report'),
     title: 'Border Import Licence Amendment Report',
     apiRoute: 'BorderImportLicenceAmendmentReport',
     excelRoute: 'BorderImportLicenceAmendmentReport/Excel',
     excelFileName: 'BorderImportLicenceAmendmentReport.xlsx',
     initialSortColumn: 'Date',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'AmendRemarkId',
-        label: 'Remark',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: borderImportLicenceAmendActionFilters,
     columns: [
       {
         key: 'Sakhan',
@@ -3698,6 +3713,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderImportLicenceByHSCodeReport: {
     controllerName: 'BorderImportLicenceByHSCodeReport',
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Licence By HS Code', true),
     title: 'Border Import Licence By HS Code Report',
     apiRoute: 'BorderImportLicenceByHSCodeReport',
     excelRoute: 'BorderImportLicenceByHSCodeReport/Excel',
@@ -3722,10 +3738,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        ...borderImportLicenceSectionFilter,
+      },
+      {
         name: 'FilterType',
         label: 'Filter By',
-        type: 'text',
-        defaultValue: '',
+        type: 'select',
+        defaultValue: 'Start',
+        options: [
+          { label: 'Start', value: 'Start' },
+          { label: 'End', value: 'End' },
+        ],
       },
       {
         name: 'hsCode',
@@ -3745,6 +3768,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'hsCode',
         dataIndex: 'hsCode',
         title: 'HS Code',
+        drilldown: {
+          targetReportKey: 'BorderImportLicenceByHSCodeReport',
+          carryFilters: ['FromDate', 'ToDate', 'ExportImportSectionId', 'FilterType', 'SakhanId'],
+          rowParams: { hsCode: 'hsCode' },
+        },
       },
       {
         key: 'Description',
@@ -3765,11 +3793,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'Currency',
         dataIndex: 'currency',
         title: 'Currency',
-      },
-      {
-        key: 'CompanyName',
-        dataIndex: 'companyName',
-        title: 'Company Name',
       },
     ],
   },
@@ -3874,48 +3897,15 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderImportLicenceCancellationReport: {
     controllerName: 'BorderImportLicenceCancellationReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Licence Report'),
     title: 'Border Import Licence Cancellation Report',
     apiRoute: 'BorderImportLicenceCancellationReport',
     excelRoute: 'BorderImportLicenceCancellationReport/Excel',
     excelFileName: 'BorderImportLicenceCancellationReport.xlsx',
     initialSortColumn: 'Date',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: borderImportLicenceActionFilters,
     columns: [
       {
         key: 'Sakhan',
@@ -4387,42 +4377,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'BorderImportLicenceExtensionReport.xlsx',
     initialSortColumn: 'Date',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: borderImportLicenceActionFilters,
     columns: [
       {
         key: 'Sakhan',
@@ -4716,65 +4671,22 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderImportLicenceVoucherReport: {
     controllerName: 'BorderImportLicenceVoucherReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'Amount' },
     title: 'Border Import Licence Voucher Report',
     apiRoute: 'BorderImportLicenceVoucherReport',
     excelRoute: 'BorderImportLicenceVoucherReport/Excel',
     excelFileName: 'BorderImportLicenceVoucherReport.xlsx',
     initialSortColumn: 'ApplicationNo',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'PaymentType',
-        label: 'Payment Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'ApplyType',
-        label: 'Apply Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: borderImportLicenceVoucherFilters,
+    reportSubtitle: importLicenceRangeSubtitle('Import Licence Voucher List'),
+    resolveColumns: resolveImportLicenceVoucherColumns,
     columns: [
       {
-        key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        key: 'OriginalLicenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
+        fallbackDataIndexes: ['licenceNo'],
       },
       {
         key: 'ApplicationDate',
@@ -4783,7 +4695,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataType: 'date',
       },
       {
-        key: 'ParametersHeader2Value',
+        key: 'LicenceNo',
         dataIndex: 'licenceNo',
         title: '=Parameters!header2.Value',
       },
@@ -4793,7 +4705,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Application No',
       },
       {
-        key: 'ParametersHeader3Value',
+        key: 'LicenceDate',
         dataIndex: 'sLicenceDate',
         title: '=Parameters!header3.Value',
       },
@@ -4809,7 +4721,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicValue',
-        dataIndex: 'amount',
+        dataIndex: 'totalAmount',
         title: 'Lic Value',
         dataType: 'number',
       },
@@ -4852,8 +4764,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataType: 'number',
       },
       {
-        key: 'TotalAmount',
-        dataIndex: 'totalAmount',
+        key: 'Amount',
+        dataIndex: 'amount',
         title: 'Total Amount',
         dataType: 'number',
       },
@@ -6485,54 +6397,15 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ExportLicenceActualAmendmentReport: {
     controllerName: 'ExportLicenceActualAmendmentReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Licence Report'),
     title: 'Export Licence Actual Amendment Report',
     apiRoute: 'ExportLicenceActualAmendmentReport',
     excelRoute: 'ExportLicenceActualAmendmentReport/Excel',
     excelFileName: 'ExportLicenceActualAmendmentReport.xlsx',
     initialSortColumn: 'Date',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Export Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'AmendRemarkId',
-        label: 'Remark',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: exportLicenceActualAmendFilters,
     columns: [
       {
         key: 'Section',
@@ -6581,11 +6454,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'Curency',
         dataIndex: 'currency',
         title: 'Curency',
-      },
-      {
-        key: 'hsCode',
-        dataIndex: 'hsCode',
-        title: 'hsCode',
       },
       {
         key: 'TotalValue',
@@ -6597,54 +6465,15 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ExportLicenceAmendmentReport: {
     controllerName: 'ExportLicenceAmendmentReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Licence Report'),
     title: 'Export Licence Amendment Report',
     apiRoute: 'ExportLicenceAmendmentReport',
     excelRoute: 'ExportLicenceAmendmentReport/Excel',
     excelFileName: 'ExportLicenceAmendmentReport.xlsx',
     initialSortColumn: 'Date',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Export Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'AmendRemarkId',
-        label: 'Remark',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: exportLicenceAmendFilters,
     columns: [
       {
         key: 'Section',
@@ -6695,11 +6524,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Curency',
       },
       {
-        key: 'hsCode',
-        dataIndex: 'hsCode',
-        title: 'hsCode',
-      },
-      {
         key: 'TotalValue',
         dataIndex: 'amount',
         title: 'Total Value',
@@ -6709,6 +6533,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ExportLicenceByHSCodeReport: {
     controllerName: 'ExportLicenceByHSCodeReport',
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Licence By HS Code', true),
     title: 'Export Licence By HS Code Report',
     apiRoute: 'ExportLicenceByHSCodeReport',
     excelRoute: 'ExportLicenceByHSCodeReport/Excel',
@@ -6734,10 +6559,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        ...exportLicenceSectionFilter,
+      },
+      {
         name: 'FilterType',
         label: 'Filter By',
-        type: 'text',
-        defaultValue: '',
+        type: 'select',
+        defaultValue: 'Start',
+        options: [
+          { label: 'Start', value: 'Start' },
+          { label: 'End', value: 'End' },
+        ],
       },
       {
         name: 'hsCode',
@@ -6745,18 +6577,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'text',
         defaultValue: '',
       },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
     ],
     columns: [
       {
         key: 'hsCode',
         dataIndex: 'hsCode',
         title: 'HS Code',
+        drilldown: {
+          targetReportKey: 'ExportLicenceByHSCodeReport',
+          carryFilters: ['FromDate', 'ToDate', 'ExportImportSectionId', 'FilterType'],
+          rowParams: { hsCode: 'hsCode' },
+        },
       },
       {
         key: 'Description',
@@ -6777,11 +6608,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'Currency',
         dataIndex: 'currency',
         title: 'Currency',
-      },
-      {
-        key: 'CompanyName',
-        dataIndex: 'companyName',
-        title: 'Company Name',
       },
     ],
   },
@@ -7000,54 +6826,16 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ExportLicenceCancellationReport: {
     controllerName: 'ExportLicenceCancellationReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Licence Report'),
     title: 'Export Licence Cancellation Report',
     apiRoute: 'ExportLicenceCancellationReport',
     excelRoute: 'ExportLicenceCancellationReport/Excel',
     excelFileName: 'ExportLicenceCancellationReport.xlsx',
     initialSortColumn: 'Date',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Export Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: exportLicenceActionFilters,
     columns: [
-      {
-        key: 'hsCode',
-        dataIndex: 'hsCode',
-        title: 'hsCode',
-      },
       {
         key: 'Section',
         dataIndex: 'sectionName',
@@ -7491,42 +7279,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ExportLicenceExtensionReport.xlsx',
     initialSortColumn: 'Date',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Export Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: exportLicenceActionFilters,
     columns: [
       {
         key: 'Section',
@@ -7586,54 +7339,15 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ExportLicenceNewReportNewReport: {
     controllerName: 'ExportLicenceNewReportNewReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Licence Report'),
     title: 'Export Licence New Report (New Report )',
     apiRoute: 'ExportLicenceNewReportNewReport',
     excelRoute: 'ExportLicenceNewReportNewReport/Excel',
     excelFileName: 'ExportLicenceNewReportNewReport.xlsx',
     initialSortColumn: 'Date',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Export Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'Auto',
-        label: 'Auto',
-        type: 'text',
-        defaultValue: '',
-      },
-    ],
+    filters: exportLicenceNewFilters,
     columns: [
       {
         key: 'Section',
@@ -7728,65 +7442,22 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ExportLicenceVoucherReport: {
     controllerName: 'ExportLicenceVoucherReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'Amount' },
+    resolveColumns: resolveImportLicenceVoucherColumns,
     title: 'Export Licence Voucher Report',
     apiRoute: 'ExportLicenceVoucherReport',
     excelRoute: 'ExportLicenceVoucherReport/Excel',
     excelFileName: 'ExportLicenceVoucherReport.xlsx',
     initialSortColumn: 'ApplicationNo',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Export Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'PaymentType',
-        label: 'Payment Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'ApplyType',
-        label: 'Apply Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: exportLicenceVoucherFilters,
+    reportSubtitle: importLicenceRangeSubtitle('Export Licence Voucher List'),
     columns: [
       {
-        key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        key: 'OriginalLicenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
+        fallbackDataIndexes: ['licenceNo'],
       },
       {
         key: 'ApplicationDate',
@@ -7795,7 +7466,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataType: 'date',
       },
       {
-        key: 'ParametersHeader2Value',
+        key: 'LicenceNo',
         dataIndex: 'licenceNo',
         title: '=Parameters!header2.Value',
       },
@@ -7805,7 +7476,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Application No',
       },
       {
-        key: 'ParametersHeader3Value',
+        key: 'LicenceDate',
         dataIndex: 'sLicenceDate',
         title: '=Parameters!header3.Value',
       },
@@ -7821,7 +7492,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicValue',
-        dataIndex: 'amount',
+        dataIndex: 'totalAmount',
         title: 'Lic Value',
         dataType: 'number',
       },
@@ -7852,8 +7523,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Commodity Type',
       },
       {
-        key: 'TotalAmount',
-        dataIndex: 'totalAmount',
+        key: 'Amount',
+        dataIndex: 'amount',
         title: 'Total Amount',
         dataType: 'number',
       },
