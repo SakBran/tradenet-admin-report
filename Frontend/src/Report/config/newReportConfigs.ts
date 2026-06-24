@@ -302,8 +302,8 @@ const voucherConfig = (
 // (order + header text). The row-number "No." column is provided by showRowNumber.
 // NRC ('NRC No', dataIndex nrcNo) is retained where the old report showed it (Wine)
 // or where the customer explicitly complained the NRC column was empty (Sale Center,
-// Show Room and its EV/EVCycle siblings); it is dropped where the old RDLC lacked it
-// and there was no NRC complaint (Duty Free, BSA, Whole Sale/Retail).
+// Show Room and its EV/EVCycle siblings, Duty Free); it is dropped where the old RDLC
+// lacked it and there was no NRC complaint (BSA, Whole Sale/Retail).
 const wineNrcColumn: ReportColumnConfig = { ...nrcColumn, title: 'NRC' };
 
 const wineDetailColumns = [
@@ -335,10 +335,16 @@ const wineVoucherColumns = [
   ...paymentColumns,
 ];
 
+// Name + NRC (dataIndex nrcNo) placed after Company Name, before Company Address —
+// mirroring the Sale Center / Show Room sibling layout. Re-added after a customer
+// complaint that the NRC column had no data; the backend already projects NRCNo
+// (Current/Old build logic in sp_DutyFreeShopReport).
 const dutyFreeDetailColumns = [
   companyColumns[0],
   column('DutyFreeShopNo', 'Duty Free Shop No'),
   companyColumns[1],
+  column('Name', 'Name'),
+  nrcColumn,
   companyColumns[2],
   addressColumn('DutyFreeShopAddress', 'Duty Free Shop Address', 'dutyFreeShop'),
   column('IssuedDate', 'Issued Date', 'date'),
@@ -349,6 +355,8 @@ const dutyFreeVoucherColumns = [
   column('Date', 'Date', 'date'),
   companyColumns[0],
   companyColumns[1],
+  column('Name', 'Name'),
+  nrcColumn,
   companyColumns[2],
   column('DutyFreeShopNo', 'Duty Free Shop No'),
   addressColumn('DutyFreeShopAddress', 'Duty Free Shop Address', 'dutyFreeShop'),
@@ -444,25 +452,32 @@ const showRoomVoucherColumns = [
 // column comes from showRowNumber. SDate/SFromDate/SToDate are the pre-formatted
 // (dd/m/yyyy, "-" for null) strings. OGADepartmentName/OGASectionName need an explicit
 // dataIndex: the API camelCases them to ogaDepartmentName/ogaSectionName (the leading
-// acronym is lowercased), which lowerFirst() would not produce. The Reference No cell
-// is the legacy "View Detail" drill into the recommendation's usage history.
+// acronym is lowercased), which lowerFirst() would not produce. The final "View Detail"
+// column is the legacy RDLC blue link that drills into the recommendation's usage history.
 const ogaRecommendationColumns: ReportColumnConfig[] = [
   column('SDate', 'Date'),
   { key: 'OGADepartmentName', dataIndex: 'ogaDepartmentName', title: 'Department' },
   { key: 'OGASectionName', dataIndex: 'ogaSectionName', title: 'Section' },
-  {
-    ...column('ReferenceNo', 'Reference No'),
-    drilldown: {
-      targetReportKey: 'OGARecommendationHistoryReport',
-      rowParams: { OGARecommendationId: 'id' },
-      openInNewTab: true,
-    },
-  },
+  column('ReferenceNo', 'Reference No'),
   column('SFromDate', 'From Date'),
   column('SToDate', 'To Date'),
   column('Allowance', 'Allowance'),
   column('Terminate', 'Terminate'),
   column('IsUsedOnce', 'Used Once'),
+  // Dedicated "View Detail" link (old RDLC's last column). Uses referenceNo as the
+  // cell value so the link renders, but shows the static "View Detail" text and
+  // carries the (unique) Reference No into the history report's search.
+  {
+    key: 'ViewDetail',
+    dataIndex: 'referenceNo',
+    title: 'View Detail',
+    drilldown: {
+      targetReportKey: 'OGARecommendationHistoryReport',
+      rowParams: { ReferenceNo: 'referenceNo' },
+      openInNewTab: true,
+      linkText: 'View Detail',
+    },
+  },
 ];
 
 // Drill target: a single recommendation's usage history (old OGARecommendationHistoryReport.rdlc).
@@ -654,7 +669,9 @@ export const newReportConfigs: Record<string, ReportPageConfig> = {
     [
       dateRangeFilter,
       // OGA Department / Section render as dropdowns (lookups resolve via lookupName);
-      // 0 = '--- All ---'. Section is NOT cascaded by Department (lists all sections).
+      // 0 = '--- All ---'. Section cascades from Department (dependsOn): selecting a
+      // department narrows the section list to that department's sections and resets
+      // the section, mirroring the legacy GetOGASectionList AJAX cascade.
       {
         name: 'OGADepartmentId',
         label: 'OGA Department',
@@ -668,6 +685,7 @@ export const newReportConfigs: Record<string, ReportPageConfig> = {
         type: 'number',
         defaultValue: 0,
         lookupName: 'ogaSections',
+        dependsOn: 'OGADepartmentId',
       },
       {
         name: 'ReferenceNo',
@@ -694,18 +712,19 @@ export const newReportConfigs: Record<string, ReportPageConfig> = {
     ],
     ogaRecommendationColumns,
     undefined,
-    ['Ministry of Commerce', 'Directorate of Trade'],
-    (filters) => `Recommendation Report ${dateRangeSubtitle(filters)}`
+    // Legacy visible title: "OGA Recommendation Report (FromDate) To (ToDate)".
+    ['OGA Recommendation Report'],
+    (filters) => dateRangeSubtitle(filters)
   ),
   // Drill target of the OGA list's "Reference No" cell — a recommendation's usage
-  // history (carries OGARecommendationId; opened in a new tab).
+  // history (searched by the human-readable Reference No; opened in a new tab).
   OGARecommendationHistoryReport: reportConfig(
     'OGARecommendationHistoryReport',
     'OGA Recommendation History',
     [
       {
-        name: 'OGARecommendationId',
-        label: 'OGA Recommendation Id',
+        name: 'ReferenceNo',
+        label: 'Reference No',
         type: 'text',
         defaultValue: '',
         required: true,

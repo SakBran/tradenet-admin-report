@@ -503,13 +503,19 @@ namespace Backend.Controllers
                 .Select(item => new ReportLookupOption(item.Id, item.Code, item.EnglishName ?? string.Empty))
                 .ToListAsync();
 
+        // Tagged with ParentId = OGADepartmentId so the OGA Recommendation report can
+        // cascade Section by the selected Department entirely on the client (one fetch),
+        // mirroring the legacy GetOGASectionList?ogaDepartmentId=... AJAX cascade.
         private Task<List<ReportLookupOption>> GetOgaSections() =>
             _context.Ogasections
                 .AsNoTracking()
                 .Where(item => item.IsActive && !item.IsDeleted)
                 .OrderBy(item => item.SortOrder)
                 .ThenBy(item => item.EnglishName)
-                .Select(item => new ReportLookupOption(item.Id, item.Code, item.EnglishName ?? string.Empty))
+                .Select(item => new ReportLookupOption(item.Id, item.Code, item.EnglishName ?? string.Empty)
+                {
+                    ParentId = item.OgadepartmentId
+                })
                 .ToListAsync();
 
         private Task<List<ReportLookupOption>> GetPaThaKaTypes() =>
@@ -547,6 +553,12 @@ namespace Backend.Controllers
     public sealed record ReportLookupOption(int Id, string Code, string Label)
     {
         public string? Value { get; init; }
+
+        /// <summary>
+        /// Optional parent id for cascading dropdowns (e.g. an OGA Section's
+        /// OGADepartmentId). Null for non-cascaded lookups.
+        /// </summary>
+        public int? ParentId { get; init; }
 
         public ReportLookupOption(int id, string code, string label, string? value)
             : this(id, code, label)

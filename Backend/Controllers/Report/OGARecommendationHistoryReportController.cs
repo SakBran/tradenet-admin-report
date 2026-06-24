@@ -15,7 +15,7 @@ namespace Backend.Controllers.Report
 {
     /// <summary>
     /// The legacy "View Detail" drill target of the OGA Recommendation list: the
-    /// usage history of a single recommendation (keyed by OGARecommendationId).
+    /// usage history of a single recommendation (searched by the human-readable ReferenceNo).
     /// </summary>
     [Authorize]
     [ApiController]
@@ -101,15 +101,15 @@ namespace Backend.Controllers.Report
                 return false;
             }
 
-            if (string.IsNullOrWhiteSpace(request.OGARecommendationId))
+            if (string.IsNullOrWhiteSpace(request.ReferenceNo))
             {
-                errorResult = BadRequest("OGARecommendationId is required.");
+                errorResult = BadRequest("ReferenceNo is required.");
                 return false;
             }
 
             reportRequest = new sp_OGARecommendationHistoryReportRequest
             {
-                OGARecommendationId = request.OGARecommendationId.Trim()
+                ReferenceNo = request.ReferenceNo.Trim()
             };
 
             return true;
@@ -118,6 +118,6 @@ namespace Backend.Controllers.Report
 
     public sealed class OGARecommendationHistoryReportRequest : ReportQueryRequest
     {
-        public string? OGARecommendationId { get; set; }
+        public string? ReferenceNo { get; set; }
     }
 }

@@ -64,6 +64,8 @@ interface LookupOption {
   code: string;
   label: string;
   value?: string | number;
+  /** Parent id for cascading lookups (e.g. an OGA Section's OGADepartmentId). */
+  parentId?: number;
 }
 
 interface LookupFilterConfig {
@@ -411,7 +413,10 @@ const toLookupSelectOptions = (
 const renderFilter = (
   filter: ReportFilterConfig,
   lookupOptions: Record<string, LookupOption[]>,
-  loadingLookupNames: Set<string>
+  loadingLookupNames: Set<string>,
+  // For a cascading (dependsOn) filter, the already-narrowed option list to use
+  // instead of the full lookup. Undefined for ordinary filters.
+  overrideOptions?: LookupOption[]
 ) => {
   const lookup = getLookupFilter(filter);
 
@@ -422,7 +427,7 @@ const renderFilter = (
         loading={loadingLookupNames.has(lookup.lookupName)}
         optionFilterProp="label"
         options={toLookupSelectOptions(
-          lookupOptions[lookup.lookupName],
+          overrideOptions ?? lookupOptions[lookup.lookupName],
           typeof filter.defaultValue === 'string' ? filter.defaultValue : 0
         )}
       />
@@ -524,6 +529,26 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
   const [loadingLookupNames, setLoadingLookupNames] = useState<Set<string>>(
     () => new Set()
   );
+  // Cascading filters (e.g. OGA Section depends on OGA Department): a dependent
+  // select only lists lookup options whose parentId matches the parent's value.
+  const dependentFilters = useMemo(
+    () => config.filters.filter((filter) => filter.dependsOn),
+    [config.filters]
+  );
+  const parentFilterNames = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          dependentFilters
+            .map((filter) => filter.dependsOn)
+            .filter((name): name is string => Boolean(name))
+        )
+      ),
+    [dependentFilters]
+  );
+  const [parentFilterValues, setParentFilterValues] = useState<
+    Record<string, unknown>
+  >({});
   const companyNameFilter = useMemo(
     () =>
       config.filters.find(
@@ -729,8 +754,62 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
   const resetFilters = () => {
     form.setFieldsValue(initialFormValues);
     setFilters(normalizeReportFilters(initialFormValues));
+    setParentFilterValues({});
     setHasAppliedFilters(false);
     setRefreshKey((current) => current + 1);
+  };
+
+  // When a parent filter (e.g. OGA Department) changes, reset its dependent
+  // children (e.g. OGA Section) and record the parent value so the child's
+  // option list re-narrows. setFieldValue does not re-trigger onValuesChange,
+  // so this cannot loop.
+  const handleValuesChange = (
+    changedValues: Partial<FilterFormValues>,
+    allValues: FilterFormValues
+  ) => {
+    const parentChanged = parentFilterNames.some((name) =>
+      Object.prototype.hasOwnProperty.call(changedValues, name)
+    );
+    if (!parentChanged) {
+      return;
+    }
+
+    dependentFilters.forEach((filter) => {
+      if (
+        filter.dependsOn &&
+        Object.prototype.hasOwnProperty.call(changedValues, filter.dependsOn)
+      ) {
+        form.setFieldValue(filter.name, filter.defaultValue ?? 0);
+      }
+    });
+
+    setParentFilterValues((current) => {
+      const next = { ...current };
+      parentFilterNames.forEach((name) => {
+        next[name] = (allValues as Record<string, unknown>)[name];
+      });
+      return next;
+    });
+  };
+
+  // Narrowed option list for a cascading filter (undefined for ordinary filters).
+  const getDependentLookupOptions = (
+    filter: ReportFilterConfig
+  ): LookupOption[] | undefined => {
+    if (!filter.dependsOn) {
+      return undefined;
+    }
+    const lookup = getLookupFilter(filter);
+    if (!lookup) {
+      return undefined;
+    }
+    const allOptions = lookupOptions[lookup.lookupName] ?? [];
+    const parentId = Number(parentFilterValues[filter.dependsOn]);
+    if (!parentId) {
+      // Parent unset ("All") → show every option.
+      return allOptions;
+    }
+    return allOptions.filter((option) => option.parentId === parentId);
   };
 
   // Drill-down: navigate to a target report carrying the clicked row's params
@@ -842,6 +921,7 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
             layout="vertical"
             initialValues={initialFormValues}
             onFinish={applyFilters}
+            onValuesChange={handleValuesChange}
           >
             <Row gutter={[16, 16]} align="bottom">
               {visibleFilters.map((filter) => (
@@ -860,7 +940,12 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
                         : undefined
                     }
                   >
-                    {renderFilter(filter, lookupOptions, loadingLookupNames)}
+                    {renderFilter(
+                      filter,
+                      lookupOptions,
+                      loadingLookupNames,
+                      getDependentLookupOptions(filter)
+                    )}
                   </Form.Item>
                 </Col>
               ))}

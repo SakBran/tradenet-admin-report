@@ -6,7 +6,9 @@ namespace API.StoredProcedureToLinq;
 
 public sealed class sp_OGARecommendationHistoryReportRequest
 {
-    public string OGARecommendationId { get; set; } = string.Empty;
+    // The human-readable recommendation Reference No (e.g. 001-005-0906202641893),
+    // not the internal GUID. ReferenceNo is unique on OGARecommendation.
+    public string ReferenceNo { get; set; } = string.Empty;
 }
 
 public sealed class sp_OGARecommendationHistoryReportResult
@@ -56,7 +58,7 @@ public static class sp_OGARecommendationHistoryReport
             join section in db.Ogasections on recommendation.OgasectionId equals section.Id
             join user in db.Users on history.MocuserId equals user.Id
             join licence in db.ExportLicences on history.LicencePermitId equals licence.Id
-            where history.OgarecommendationId == request.OGARecommendationId
+            where recommendation.ReferenceNo == request.ReferenceNo
                 && history.Type == "Export Licence"
             select new sp_OGARecommendationHistoryReportResult
             {
@@ -92,7 +94,7 @@ public static class sp_OGARecommendationHistoryReport
             join section in db.Ogasections on recommendation.OgasectionId equals section.Id
             join user in db.Users on history.MocuserId equals user.Id
             join licence in db.ImportLicences on history.LicencePermitId equals licence.Id
-            where history.OgarecommendationId == request.OGARecommendationId
+            where recommendation.ReferenceNo == request.ReferenceNo
                 && history.Type == "Import Licence"
             select new sp_OGARecommendationHistoryReportResult
             {
@@ -128,7 +130,7 @@ public static class sp_OGARecommendationHistoryReport
             join section in db.Ogasections on recommendation.OgasectionId equals section.Id
             join user in db.Users on history.MocuserId equals user.Id
             join permit in db.ExportPermits on history.LicencePermitId equals permit.Id
-            where history.OgarecommendationId == request.OGARecommendationId
+            where recommendation.ReferenceNo == request.ReferenceNo
                 && history.Type == "Export Permit"
             select new sp_OGARecommendationHistoryReportResult
             {
@@ -164,7 +166,7 @@ public static class sp_OGARecommendationHistoryReport
             join section in db.Ogasections on recommendation.OgasectionId equals section.Id
             join user in db.Users on history.MocuserId equals user.Id
             join permit in db.ImportPermits on history.LicencePermitId equals permit.Id
-            where history.OgarecommendationId == request.OGARecommendationId
+            where recommendation.ReferenceNo == request.ReferenceNo
                 && history.Type == "Import Permit"
             select new sp_OGARecommendationHistoryReportResult
             {
@@ -200,7 +202,7 @@ public static class sp_OGARecommendationHistoryReport
             join section in db.Ogasections on recommendation.OgasectionId equals section.Id
             join user in db.Users on history.MocuserId equals user.Id
             join licence in db.BorderExportLicences on history.LicencePermitId equals licence.Id
-            where history.OgarecommendationId == request.OGARecommendationId
+            where recommendation.ReferenceNo == request.ReferenceNo
                 && history.Type == "Border Export Licence"
             select new sp_OGARecommendationHistoryReportResult
             {
@@ -236,7 +238,7 @@ public static class sp_OGARecommendationHistoryReport
             join section in db.Ogasections on recommendation.OgasectionId equals section.Id
             join user in db.Users on history.MocuserId equals user.Id
             join licence in db.BorderImportLicences on history.LicencePermitId equals licence.Id
-            where history.OgarecommendationId == request.OGARecommendationId
+            where recommendation.ReferenceNo == request.ReferenceNo
                 && history.Type == "Border Import Licence"
             select new sp_OGARecommendationHistoryReportResult
             {
@@ -272,7 +274,7 @@ public static class sp_OGARecommendationHistoryReport
             join section in db.Ogasections on recommendation.OgasectionId equals section.Id
             join user in db.Users on history.MocuserId equals user.Id
             join permit in db.BorderExportPermits on history.LicencePermitId equals permit.Id
-            where history.OgarecommendationId == request.OGARecommendationId
+            where recommendation.ReferenceNo == request.ReferenceNo
                 && history.Type == "Border Export Permit"
             select new sp_OGARecommendationHistoryReportResult
             {
@@ -308,7 +310,7 @@ public static class sp_OGARecommendationHistoryReport
             join section in db.Ogasections on recommendation.OgasectionId equals section.Id
             join user in db.Users on history.MocuserId equals user.Id
             join permit in db.BorderImportPermits on history.LicencePermitId equals permit.Id
-            where history.OgarecommendationId == request.OGARecommendationId
+            where recommendation.ReferenceNo == request.ReferenceNo
                 && history.Type == "Border Import Permit"
             select new sp_OGARecommendationHistoryReportResult
             {

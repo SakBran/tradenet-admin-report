@@ -398,7 +398,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
             }
           }}
         >
-          {content}
+          {column.drilldown.linkText ?? content}
         </a>
       );
     }

@@ -39,6 +39,11 @@ export interface ReportColumnDrilldown {
    * survive a new-tab load); the target page reads + auto-applies them on mount.
    */
   openInNewTab?: boolean;
+  /**
+   * Static link label for the cell (e.g. 'View Detail'), instead of rendering the
+   * cell's own value as the link text. Mirrors the legacy RDLC "View Detail" column.
+   */
+  linkText?: string;
 }
 
 export interface ReportColumnConfig {
@@ -56,6 +61,13 @@ export interface ReportFilterConfig {
   type: ReportFilterType;
   lookupName?: string;
   lookupLabel?: string;
+  /**
+   * Name of a sibling filter this one cascades from. The dependent select only
+   * lists lookup options whose `parentId` equals the parent filter's value
+   * (e.g. OGA Section depends on OGA Department); selecting/clearing the parent
+   * resets this field. When the parent is unset ("All"), all options are shown.
+   */
+  dependsOn?: string;
   fromName?: string;
   toName?: string;
   fromLabel?: string;
