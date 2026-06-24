@@ -27,7 +27,9 @@ BEGIN
 
     DECLARE @ob nvarchar(400);
     IF @SortColumn IS NOT NULL AND @SortColumn IN (N'PaThaKaTypeId', N'PaThaKaTypeCode', N'PaThaKaTypeName', N'ExportImportSectionId', N'ExportImportMethodId', N'ExportImportIncotermId', N'SellerCountryId', N'SectionCode', N'SectionName', N'LicenceNo', N'LicenceDate', N'CompanyRegistrationNo', N'CompanyName', N'UnitLevel', N'StreetNumberStreetName', N'QuarterCityTownship', N'State', N'Country', N'PostalCode', N'SellerName', N'SellerAddress', N'SellerCountry', N'PortofDischarge', N'LastDate', N'MethodName', N'HSCode', N'HSDescription', N'Unit', N'Price', N'Quantity', N'Amount', N'Currency', N'Conditions', N'ApplicationNo', N'ApplicationDate', N'FESCNo', N'CommodityType', N'ApproveDate')
-        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir + N', [LicenceDate] ASC, [LicenceNo] ASC';
+        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir
+            + CASE WHEN @SortColumn = N'LicenceDate' THEN N'' ELSE N', [LicenceDate] ASC' END
+            + CASE WHEN @SortColumn = N'LicenceNo' THEN N'' ELSE N', [LicenceNo] ASC' END;
     ELSE
         SET @ob = N'[LicenceDate] ASC, [LicenceNo] ASC';
 

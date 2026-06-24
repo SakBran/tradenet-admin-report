@@ -264,7 +264,10 @@ const importLicenceVoucherPaymentTypeFilter: ReportFilterConfig = {
   label: 'Payment Type',
   type: 'select',
   defaultValue: '',
-  lookupName: 'paymentTypes',
+  // AccountTransaction.PaymentType stores the NAME (Cash/MPU/Citizen Pay), not the id.
+  // The 'paymentTypes' lookup sends the numeric id ("1"/"2"/...), which never matches
+  // the SP's `AccountTransaction.PaymentType = @PaymentType` filter -> no data.
+  options: voucherPaymentTypeOptions,
 };
 
 const importLicenceAmendFilters: ReportFilterConfig[] = [
@@ -5967,7 +5970,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         name: 'PaymentType',
         label: 'Payment Type',
         type: 'select',
-        lookupName: 'paymentTypes',
+        // Same fix as Import Licence Voucher: filter compares the PaymentType NAME,
+        // so the dropdown must send Cash/MPU/Citizen Pay, not the numeric lookup id.
+        options: voucherPaymentTypeOptions,
         defaultValue: '',
       },
       {
@@ -8738,6 +8743,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     showRowNumber: true,
     filters: importLicenceAmendFilters,
     reportSubtitle: importLicenceRangeSubtitle('List of Import Licence Report'),
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
     columns: [
       {
         key: 'Section',
@@ -8746,7 +8752,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
       },
       {
@@ -9668,6 +9674,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     showRowNumber: true,
     filters: importLicenceNewFilters,
     reportSubtitle: importLicenceRangeSubtitle('List of Import Licence Report'),
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
     columns: [
       {
         key: 'Section',

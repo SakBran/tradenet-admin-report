@@ -337,7 +337,10 @@ BEGIN
         N'Id', N'VoucherDate', N'PaymentDate', N'CompanyRegistrationNo', N'VoucherNo',
         N'CompanyName', N'TransactionTitle', N'Amount', N'AccountTitleCode',
         N'SortOrder', N'SakhanId', N'LocationCode', N'FormType')
-        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir + N', [PaymentDate] ASC, [SortOrder] ASC, [Id] ASC';
+        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir
+            + CASE WHEN @SortColumn = N'PaymentDate' THEN N'' ELSE N', [PaymentDate] ASC' END
+            + CASE WHEN @SortColumn = N'SortOrder' THEN N'' ELSE N', [SortOrder] ASC' END
+            + CASE WHEN @SortColumn = N'Id' THEN N'' ELSE N', [Id] ASC' END;
     ELSE
         SET @ob = N'[PaymentDate] ASC, [SortOrder] ASC, [Id] ASC';
 

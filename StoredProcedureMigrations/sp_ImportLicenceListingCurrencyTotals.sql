@@ -4,7 +4,9 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_ImportLicenceListingCurrencyTotals]
     @ToDate datetime = NULL,
     @ExportImportSectionId int = 0,
     @CompanyRegistrationNo nvarchar(50) = N'',
-    @AmendRemarkId int = 0
+    @AmendRemarkId int = 0,
+    @auto nvarchar(50) = N'',
+    @quota nvarchar(50) = N''
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -24,12 +26,15 @@ BEGIN
     -- Date predicate uses < DATEADD(day, 1, @ToDate) to mirror sp_AmendReport_pagination
     -- (inclusive of the whole @ToDate day) so the footer count matches the grid TotalCount.
     --
-    --   * New    -> sp_NewReport.ImportLicenceQuery (ApplyType='New'; New licences carry a
-    --              NULL AmendRemarkId, so NO AmendRemarkId predicate is applied).
-    --   * Amend  -> sp_AmendReport_pagination (ApplyType='Amend' + the AmendRemarkId CASE,
-    --              date predicate < DATEADD(day, 1, @ToDate)).
-    --   * Cancel -> sp_CancelReport_pagination (ApplyType='Cancel'; NO AmendRemarkId, and the
-    --              cancel grid proc uses <= @ToDate, NOT DATEADD -- mirror it exactly).
+    --   * New         -> sp_NewReport.ImportLicenceQuery (ApplyType='New'; New licences carry a
+    --                   NULL AmendRemarkId, so NO AmendRemarkId predicate is applied).
+    --   * Amend       -> sp_AmendReport_pagination (ApplyType='Amend' + the AmendRemarkId CASE,
+    --                   date predicate < DATEADD(day, 1, @ToDate)).
+    --   * Cancel      -> sp_CancelReport_pagination (ApplyType='Cancel'; NO AmendRemarkId, and the
+    --                   cancel grid proc uses <= @ToDate, NOT DATEADD -- mirror it exactly).
+    --   * ActualAmend -> sp_ActualAmendReport_pagination Import Licence branch (ApplyType='Actual Amend'
+    --                   -- note the SPACE -- + the AmendRemarkId CASE, date predicate
+    --                   < DATEADD(day, 1, @ToDate); identical to the Amend branch except the literal).
     -- OPTION (RECOMPILE) avoids the parameter-sniffing timeout the catch-all CASE
     -- predicates cause (see the pagination-count-recompile-timeout note).
 
@@ -79,8 +84,11 @@ BEGIN
         GROUP BY ISNULL(d.Currency, N'')
         OPTION (RECOMPILE);
     END
-    ELSE
+    ELSE IF @ApplyType = N'ActualAmend'
     BEGIN
+        -- Actual Amendment footer -> sp_ActualAmendReport_pagination Import Licence branch.
+        -- Identical to the Amend branch except ApplyType = 'Actual Amend' (note the SPACE).
+        -- The grid proc applies the AmendRemarkId CASE and < DATEADD(day, 1, @ToDate), so mirror both.
         SELECT ISNULL(d.Currency, N'') AS Currency, COUNT(*) AS NoOfLicences, ISNULL(SUM(d.Amount), 0) AS TotalValue
         FROM (
             SELECT
@@ -92,10 +100,42 @@ BEGIN
             FROM ImportLicence
                 INNER JOIN PaThaKa ON ImportLicence.PaThaKaId = PaThaKa.Id
                 INNER JOIN ExportImportSection section ON ImportLicence.ExportImportSectionId = section.Id
-            WHERE ApplyType = 'New' AND ImportLicence.Status = 'Approved'
+            WHERE ApplyType = 'Actual Amend' AND ImportLicence.Status = 'Approved'
                 AND (ImportLicence.CreatedDate >= @FromDate AND ImportLicence.CreatedDate < DATEADD(day, 1, @ToDate))
                 AND ImportLicence.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN ImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+                AND ImportLicence.AmendRemarkId = (CASE WHEN @AmendRemarkId = 0 THEN ImportLicence.AmendRemarkId ELSE @AmendRemarkId END)
+        ) d
+        GROUP BY ISNULL(d.Currency, N'')
+        OPTION (RECOMPILE);
+    END
+    ELSE
+    BEGIN
+        -- New listing footer -> sp_NewReport_pagination (ApplyType='New'). Two differences
+        -- from the Amend/ActualAmend/Cancel branches above, both required to line up with the New grid:
+        --   * Amount = (SELECT SUM(...))  -- the New grid sums ALL of a licence's items
+        --     (NOT TOP 1 like the others), so the per-currency "Total Value" equals the sum
+        --     of the displayed "Total Value" column.
+        --   * Date predicate is skipped when @CompanyRegistrationNo is supplied, and uses
+        --     <= @ToDate (NOT DATEADD) -- mirrors the New grid's reg-no date-skip exactly,
+        --     so "Total No of License" == the grid TotalCount in both browse and reg-no modes.
+        SELECT ISNULL(d.Currency, N'') AS Currency, COUNT(*) AS NoOfLicences, ISNULL(SUM(d.Amount), 0) AS TotalValue
+        FROM (
+            SELECT
+                (SELECT TOP 1 currency.Code FROM ImportLicenceItem
+                    INNER JOIN Currency currency ON ImportLicenceItem.CurrencyId = currency.Id
+                    WHERE ImportLicenceItem.ImportLicenceId = ImportLicence.Id) AS Currency,
+                (SELECT ISNULL(SUM(ImportLicenceItem.Amount), 0) FROM ImportLicenceItem
+                    WHERE ImportLicenceItem.ImportLicenceId = ImportLicence.Id) AS Amount
+            FROM ImportLicence
+                INNER JOIN PaThaKa ON ImportLicence.PaThaKaId = PaThaKa.Id
+                INNER JOIN ExportImportSection section ON ImportLicence.ExportImportSectionId = section.Id
+            WHERE ApplyType = 'New' AND ImportLicence.Status = 'Approved'
+                AND (@CompanyRegistrationNo <> '' OR (ImportLicence.CreatedDate >= @FromDate AND ImportLicence.CreatedDate <= @ToDate))
+                AND ImportLicence.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN ImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
+                AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+                AND (@auto = '' OR ImportLicence.auto = @auto)
+                AND (@quota = '' OR ImportLicence.quota = @quota)
         ) d
         GROUP BY ISNULL(d.Currency, N'')
         OPTION (RECOMPILE);

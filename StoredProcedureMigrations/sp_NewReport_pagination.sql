@@ -541,12 +541,20 @@ BorderImportPermit.Id AS __k_Id
     END
     ELSE
     BEGIN
+        -- Import Licence New listing. A "by Company Registration No" search must ignore the
+        -- date window: the page defaults the range to the current month, so a reg-no lookup
+        -- was returning only that month's licences (looked like "no data" to the customer).
+        -- When @CompanyRegistrationNo is supplied we skip the date predicate and match the
+        -- (indexed) reg-no exactly; when it is empty the date browse is unchanged. Both the
+        -- COUNT and the paged SELECT use the same predicate so TotalCount == rows shown.
+        -- (See key-search-trapped-behind-date-window. Comment kept OUT of the N'...' literal
+        --  to avoid the nvarchar(4000) dynamic-SQL truncation trap.)
         SET @cntpart = CASE WHEN @IncludeTotalCount = 1
             THEN N'DECLARE @__total int; SELECT @__total = COUNT(*) FROM ImportLicence
 		INNER JOIN PaThaKa ON ImportLicence.PaThaKaId = PaThaKa.Id
 		INNER JOIN ExportImportSection section ON ImportLicence.ExportImportSectionId = section.Id
 		WHERE ApplyType=''New'' AND ImportLicence.Status=''Approved''
-		AND (ImportLicence.CreatedDate>=@FromDate AND ImportLicence.CreatedDate<=@ToDate)
+		AND (@CompanyRegistrationNo<>'''' OR (ImportLicence.CreatedDate>=@FromDate AND ImportLicence.CreatedDate<=@ToDate))
 		AND ImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
 		AND (@auto='''' OR ImportLicence.auto=@auto)
@@ -584,7 +592,7 @@ ImportLicence.Id AS __k_Id
 		INNER JOIN PaThaKa ON ImportLicence.PaThaKaId = PaThaKa.Id
 		INNER JOIN ExportImportSection section ON ImportLicence.ExportImportSectionId = section.Id
 		WHERE ApplyType=''New'' AND ImportLicence.Status=''Approved''
-		AND (ImportLicence.CreatedDate>=@FromDate AND ImportLicence.CreatedDate<=@ToDate)
+		AND (@CompanyRegistrationNo<>'''' OR (ImportLicence.CreatedDate>=@FromDate AND ImportLicence.CreatedDate<=@ToDate))
 		AND ImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
 		AND (@auto='''' OR ImportLicence.auto=@auto)
