@@ -94,7 +94,10 @@ CAST(AccountTransaction.TotalAmount AS decimal(38,6)) Amount,
 PaymentType,
 ImportPermit.CommodityType,
 CAST(ImportPermit.ExchangeRate AS decimal(38,6)) ExchangeRate,
-CAST(ImportPermit.TotalCIF AS float) TotalCIF,
+-- Must be decimal(38,6) to match the C# sp_VoucherReportRow.TotalCIF (decimal?) and all
+-- other branch casts. AS float made EF GetDecimal throw InvalidCastException (Double to
+-- Decimal), returning HTTP 500 for the whole Import Permit Voucher report (no data).
+CAST(ImportPermit.TotalCIF AS decimal(38,6)) TotalCIF,
 ImportPermit.Id AS __k_Id
         FROM ImportPermit
 		INNER JOIN AccountTransaction ON ImportPermit.Id=AccountTransaction.TransactionId

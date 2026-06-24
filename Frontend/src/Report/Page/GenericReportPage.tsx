@@ -30,6 +30,7 @@ import {
   ReportFilterConfig,
   ReportPageConfig,
 } from '../config/reportTypes';
+import { filterOptionsByParent } from './filterCascade';
 
 type ExcelEnqueueResult = {
   status: 'Ready' | 'Queued' | 'Processing';
@@ -804,12 +805,10 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
       return undefined;
     }
     const allOptions = lookupOptions[lookup.lookupName] ?? [];
-    const parentId = Number(parentFilterValues[filter.dependsOn]);
-    if (!parentId) {
-      // Parent unset ("All") → show every option.
-      return allOptions;
-    }
-    return allOptions.filter((option) => option.parentId === parentId);
+    return filterOptionsByParent(
+      allOptions,
+      parentFilterValues[filter.dependsOn]
+    );
   };
 
   // Drill-down: navigate to a target report carrying the clicked row's params
