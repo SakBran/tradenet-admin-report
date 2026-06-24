@@ -1,6 +1,8 @@
 using API.DBContext;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
 
@@ -84,6 +86,29 @@ public static class sp_BusinessServiceAgencyReport
                 IssuedDate = agency.IssuedDate,
                 EndDate = agency.EndDate
             };
+    }
+
+    public static async Task<RegistrationSummaryRow> SummaryRowAsync(
+        TradeNetDbContext db,
+        sp_BusinessServiceAgencyReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var registrations = db.BusinessServiceAgencyRegistrations.Where(registration =>
+            registration.CreatedDate >= request.FromDate
+            && registration.CreatedDate <= request.ToDate
+            && registration.Status == Approved);
+
+        var newCount = await registrations.CountAsync(r => r.ApplyType == "New");
+        var cancelCount = await registrations.CountAsync(r => r.ApplyType == "Cancel");
+        var extensionCount = await registrations.CountAsync(r => r.ApplyType == "Extension");
+        var validCount = await db.BusinessServiceAgencies.CountAsync(c =>
+            c.EndDate > request.Date);
+        var invalidCount = await db.BusinessServiceAgencies.CountAsync(c =>
+            c.EndDate < request.Date);
+
+        return RegistrationSummaryRow.Of(newCount, cancelCount, extensionCount, validCount, invalidCount);
     }
 
     private static IQueryable<sp_BusinessServiceAgencyReportResult> SummaryQuery(

@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import {
   ReportColumnConfig,
   ReportFilterConfig,
@@ -65,6 +66,62 @@ const voucherFilters: ReportFilterConfig[] = [
   },
 ];
 
+// Form Type dropdowns. Values are the exact DB `RegistrationType` strings
+// (verified against TradeNetDB); '--- All ---' (value '') shows every sub-type
+// of that report's family.
+const formTypeFilter = (
+  options: { label: string; value: string }[]
+): ReportFilterConfig => ({
+  name: 'FormType',
+  label: 'Form Type',
+  type: 'select',
+  defaultValue: '',
+  options: [{ label: '--- All ---', value: '' }, ...options],
+});
+
+const showRoomFormTypeFilter = formTypeFilter([
+  {
+    label: 'Show Room for Brand New Motor Vehicles',
+    value: 'Show Room for Brand New Motor Vehicles',
+  },
+  {
+    label: 'Show Room for Machinery and Mechanical',
+    value: 'Show Room for Machinery and Mechanical',
+  },
+]);
+const saleCenterFormTypeFilter = formTypeFilter([
+  {
+    label: 'Sale Center for Motor Vehicles',
+    value: 'Sale Center for Motor Vehicles',
+  },
+  {
+    label: 'Sale Center for Commercial Vehicles',
+    value: 'Sale Center for Commercial Vehicles',
+  },
+]);
+const evShowRoomFormTypeFilter = formTypeFilter([
+  {
+    label: 'Show Room for Electric Vehicles',
+    value: 'Show Room for Electric Vehicles',
+  },
+]);
+const evCycleShowRoomFormTypeFilter = formTypeFilter([
+  {
+    label: 'Show Room for Electric Cycles',
+    value: 'Show Room for Electric Cycles',
+  },
+]);
+
+// Inserts the Form Type dropdown right after the date range (before ApplyType /
+// PaymentType), matching the legacy filter-form ordering.
+const withFormType = (
+  config: ReportPageConfig,
+  filter: ReportFilterConfig
+): ReportPageConfig => ({
+  ...config,
+  filters: [config.filters[0], filter, ...config.filters.slice(1)],
+});
+
 const lowerFirst = (value: string) =>
   value.length ? value[0].toLowerCase() + value.slice(1) : value;
 
@@ -96,22 +153,74 @@ const addressColumn = (
   ],
 });
 
+// The backend result property is `NRCNo`; ASP.NET's camelCase JSON policy emits
+// it as `nrcNo` (the leading acronym run is lowercased), NOT lowerFirst('NRCNo')
+// === 'nRCNo'. Pin the dataIndex to the serialized key so the column is populated.
+// (FL11/FL4/FL5NRCNo are unaffected — the digit breaks the acronym run.)
+const nrcColumn: ReportColumnConfig = { ...column('NRCNo', 'NRC No'), dataIndex: 'nrcNo' };
+
+// --- Legacy RDLC in-grid report header (centered lines above the grid) ---
+const formatLegacyReportDate = (value: unknown) => {
+  const parsed = dayjs(String(value ?? ''));
+  return parsed.isValid() ? parsed.format('DD/MM/YYYY') : String(value ?? '');
+};
+
+const dateRangeSubtitle = (filters: Record<string, unknown>) =>
+  `(${formatLegacyReportDate(filters.FromDate)}) To (${formatLegacyReportDate(filters.ToDate)})`;
+
+// FormType-driven reports (Show Room / Sale Center): prefix the selected sub-type
+// (blank when '--- All ---'), matching the legacy per-FormType report title.
+const formTypeSubtitle = (filters: Record<string, unknown>) => {
+  const formType = String(filters.FormType ?? '').trim();
+  return formType
+    ? `${formType} ${dateRangeSubtitle(filters)}`
+    : dateRangeSubtitle(filters);
+};
+
+type SubtitleFn = (filters: Record<string, unknown>) => string;
+
+const summaryHeading = (family: string) => [
+  'Statement of Registered',
+  `${family} at`,
+  'Ministry of Commerce',
+];
+const detailHeading = (family: string) => [
+  'Statement of Registered',
+  family,
+  'Ministry of Commerce',
+];
+// Voucher reports use the generic Directorate header (the family/sub-type appears
+// in the dynamic subtitle, matching the legacy RegistrationByVoucher RDLCs).
+const voucherHeading = (_family: string) => [
+  'Ministry of Commerce',
+  'Directorate of Trade',
+];
+
 const companyColumns = [
   column('CompanyRegistrationNo', 'Company Registration No'),
   column('CompanyName', 'Company Name'),
   addressColumn('CompanyAddress', 'Company Address'),
 ];
 
+// Legacy RDLC summary grid: a single row with six count columns. Maps to the
+// backend RegistrationSummaryRow (NewCount/CancelCount/ExtensionCount/ValidCount/
+// InvalidCount/TotalNumber). The date range that the old dynamic headers embedded
+// is shown in the report subtitle instead.
 const summaryColumns = [
-  column('ApplyType', 'Apply Type'),
-  column('ApplicationCount', 'Application Count', 'number'),
+  column('NewCount', 'Number of Register', 'number'),
+  column('CancelCount', 'Number of De-Register', 'number'),
+  column('ExtensionCount', 'Number of Extension', 'number'),
+  column('ValidCount', 'Total Number Still Valid', 'number'),
+  column('InvalidCount', 'Total Number Invalid', 'number'),
+  column('TotalNumber', 'Total Number', 'number'),
 ];
 
+// Legacy RDLC voucher tail order: Total Amount, then Payment Type, Voucher No, Voucher Date.
 const paymentColumns = [
+  column('TotalAmount', 'Total Amount', 'number'),
   column('PaymentType', 'Payment Type'),
   column('VoucherNo', 'Voucher No'),
   column('VoucherDate', 'Voucher Date', 'date'),
-  column('TotalAmount', 'Total Amount', 'number'),
 ];
 
 const reportConfig = (
@@ -119,7 +228,9 @@ const reportConfig = (
   title: string,
   filters: ReportFilterConfig[],
   columns: ReportColumnConfig[],
-  initialSortColumn?: string
+  initialSortColumn?: string,
+  reportHeading?: string[],
+  reportSubtitle?: SubtitleFn
 ): ReportPageConfig => ({
   controllerName,
   title,
@@ -130,130 +241,197 @@ const reportConfig = (
   showRowNumber: true,
   filters,
   columns,
+  reportHeading,
+  reportSubtitle,
 });
 
-const summaryConfig = (controllerName: string, title: string) =>
-  reportConfig(controllerName, title, [dateRangeFilter], summaryColumns);
+const summaryConfig = (
+  controllerName: string,
+  title: string,
+  family: string,
+  subtitle: SubtitleFn = dateRangeSubtitle
+): ReportPageConfig => ({
+  ...reportConfig(
+    controllerName,
+    title,
+    [dateRangeFilter],
+    summaryColumns,
+    undefined,
+    summaryHeading(family),
+    subtitle
+  ),
+  // The legacy summary is a single aggregate row — no row-number column.
+  showRowNumber: false,
+});
 
 const detailConfig = (
   controllerName: string,
   title: string,
-  columns: ReportColumnConfig[]
-) => reportConfig(controllerName, title, detailFilters, columns);
+  family: string,
+  columns: ReportColumnConfig[],
+  subtitle: SubtitleFn = dateRangeSubtitle
+) =>
+  reportConfig(
+    controllerName,
+    title,
+    detailFilters,
+    columns,
+    undefined,
+    detailHeading(family),
+    subtitle
+  );
 
 const voucherConfig = (
   controllerName: string,
   title: string,
-  columns: ReportColumnConfig[]
-) => reportConfig(controllerName, title, voucherFilters, columns, 'Date');
+  family: string,
+  columns: ReportColumnConfig[],
+  subtitle: SubtitleFn = dateRangeSubtitle
+) =>
+  reportConfig(
+    controllerName,
+    title,
+    voucherFilters,
+    columns,
+    'Date',
+    voucherHeading(family),
+    subtitle
+  );
+
+// Column sets trimmed to match the old Tradenet 2.0 RDLCs' DISPLAYED columns
+// (order + header text). The row-number "No." column is provided by showRowNumber.
+// NRC ('NRC No', dataIndex nrcNo) is retained where the old report showed it (Wine)
+// or where the customer explicitly complained the NRC column was empty (Sale Center,
+// Show Room and its EV/EVCycle siblings); it is dropped where the old RDLC lacked it
+// and there was no NRC complaint (Duty Free, BSA, Whole Sale/Retail).
+const wineNrcColumn: ReportColumnConfig = { ...nrcColumn, title: 'NRC' };
 
 const wineDetailColumns = [
   companyColumns[0],
-  column('WineImportationNo', 'Wine Importation No'),
-  ...companyColumns.slice(1),
-  column('Name', 'Name'),
-  column('NRCNo', 'NRC No'),
-  column('FL11Name', 'FL11 Name'),
-  column('FL11NRCNo', 'FL11 NRC No'),
-  column('FL4Name', 'FL4 Name'),
-  column('FL4NRCNo', 'FL4 NRC No'),
-  column('FL5Name', 'FL5 Name'),
-  column('FL5NRCNo', 'FL5 NRC No'),
-  column('WineType', 'Wine Type'),
+  column('WineImportationNo', 'Alcoholic Beverages Importation No'),
+  companyColumns[1],
+  companyColumns[2],
   column('IssuedDate', 'Issued Date', 'date'),
-  column('EndDate', 'End Date', 'date'),
+  column('EndDate', 'Valid Date', 'date'),
+  column('Name', 'Name'),
+  wineNrcColumn,
+  column('FL11Name', 'FL11 Name'),
+  column('FL11NRCNo', 'FL11 NRC'),
+  column('FL4Name', 'FL4 Name'),
+  column('FL4NRCNo', 'FL4 NRC'),
+  column('FL5Name', 'FL5 Name'),
+  column('FL5NRCNo', 'FL5 NRC'),
+  column('WineType', 'Type of Alcoholic Beverages'),
 ];
 
 const wineVoucherColumns = [
   column('Date', 'Date', 'date'),
-  ...wineDetailColumns.filter(
-    ({ key }) => key !== 'IssuedDate' && key !== 'EndDate'
-  ),
+  companyColumns[0],
+  companyColumns[1],
+  companyColumns[2],
+  column('WineImportationNo', 'Alcoholic Beverages Importation No'),
+  column('Name', 'Name'),
+  wineNrcColumn,
   ...paymentColumns,
 ];
 
 const dutyFreeDetailColumns = [
   companyColumns[0],
   column('DutyFreeShopNo', 'Duty Free Shop No'),
-  ...companyColumns.slice(1),
-  column('Name', 'Name'),
-  column('NRCNo', 'NRC No'),
+  companyColumns[1],
+  companyColumns[2],
   addressColumn('DutyFreeShopAddress', 'Duty Free Shop Address', 'dutyFreeShop'),
   column('IssuedDate', 'Issued Date', 'date'),
-  column('EndDate', 'End Date', 'date'),
+  column('EndDate', 'Valid Date', 'date'),
 ];
 
 const dutyFreeVoucherColumns = [
   column('Date', 'Date', 'date'),
-  ...dutyFreeDetailColumns.filter(
-    ({ key }) => key !== 'IssuedDate' && key !== 'EndDate'
-  ),
+  companyColumns[0],
+  companyColumns[1],
+  companyColumns[2],
+  column('DutyFreeShopNo', 'Duty Free Shop No'),
+  addressColumn('DutyFreeShopAddress', 'Duty Free Shop Address', 'dutyFreeShop'),
   ...paymentColumns,
 ];
 
 const reExportDetailColumns = [
   companyColumns[0],
   column('ReExportNo', 'Re-Export No'),
-  ...companyColumns.slice(1),
+  companyColumns[1],
+  companyColumns[2],
   addressColumn('ReExportAddress', 'Re-Export Address', 'reExport'),
   column('IssuedDate', 'Issued Date', 'date'),
-  column('EndDate', 'End Date', 'date'),
+  column('EndDate', 'Valid Date', 'date'),
 ];
 
 const businessServiceAgencyDetailColumns = [
   companyColumns[0],
-  column('BusinessServiceAgencyNo', 'Business Service Agency No'),
-  ...companyColumns.slice(1),
-  column('AuthorizeCompany', 'Authorize Company'),
+  column('BusinessServiceAgencyNo', 'Sa Ka No'),
+  companyColumns[1],
+  companyColumns[2],
+  column('AuthorizeCompany', 'Agent of Authorize Company'),
   column('IssuedDate', 'Issued Date', 'date'),
-  column('EndDate', 'End Date', 'date'),
+  column('EndDate', 'Valid Date', 'date'),
 ];
 
 const businessServiceAgencyVoucherColumns = [
   column('Date', 'Date', 'date'),
-  ...businessServiceAgencyDetailColumns.filter(
-    ({ key }) => key !== 'IssuedDate' && key !== 'EndDate'
-  ),
+  companyColumns[0],
+  companyColumns[1],
+  companyColumns[2],
+  column('BusinessServiceAgencyNo', 'BSA No'),
+  column('AuthorizeCompany', 'Agent of Authorize Company'),
   ...paymentColumns,
 ];
 
 const saleCenterDetailColumns = [
   companyColumns[0],
   column('SaleCenterNo', 'Sale Center No'),
-  ...companyColumns.slice(1),
+  column('BusinessServiceAgencyNo', 'BSA No'),
+  companyColumns[1],
   column('Name', 'Name'),
-  column('NRCNo', 'NRC No'),
-  column('BusinessServiceAgencyNo', 'Business Service Agency No'),
+  nrcColumn,
+  companyColumns[2],
   addressColumn('SaleCenterAddress', 'Sale Center Address', 'saleCenter'),
   column('IssuedDate', 'Issued Date', 'date'),
-  column('EndDate', 'End Date', 'date'),
+  column('EndDate', 'Valid Date', 'date'),
 ];
 
 const saleCenterVoucherColumns = [
   column('Date', 'Date', 'date'),
-  ...saleCenterDetailColumns.filter(
-    ({ key }) => key !== 'IssuedDate' && key !== 'EndDate'
-  ),
+  companyColumns[0],
+  companyColumns[1],
+  column('Name', 'Name'),
+  nrcColumn,
+  companyColumns[2],
+  column('SaleCenterNo', 'Sale Center No'),
+  addressColumn('SaleCenterAddress', 'Sale Center Address', 'saleCenter'),
   ...paymentColumns,
 ];
 
 const showRoomDetailColumns = [
   companyColumns[0],
   column('ShowRoomNo', 'Show Room No'),
-  ...companyColumns.slice(1),
+  column('BusinessServiceAgencyNo', 'BSA No'),
+  companyColumns[1],
   column('Name', 'Name'),
-  column('NRCNo', 'NRC No'),
-  column('BusinessServiceAgencyNo', 'Business Service Agency No'),
+  nrcColumn,
+  companyColumns[2],
   addressColumn('ShowRoomAddress', 'Show Room Address', 'showRoom'),
   column('IssuedDate', 'Issued Date', 'date'),
-  column('EndDate', 'End Date', 'date'),
+  column('EndDate', 'Valid Date', 'date'),
 ];
 
 const showRoomVoucherColumns = [
   column('Date', 'Date', 'date'),
-  ...showRoomDetailColumns.filter(
-    ({ key }) => key !== 'IssuedDate' && key !== 'EndDate'
-  ),
+  companyColumns[0],
+  companyColumns[1],
+  column('Name', 'Name'),
+  nrcColumn,
+  companyColumns[2],
+  column('ShowRoomNo', 'Show Room No'),
+  addressColumn('ShowRoomAddress', 'Show Room Address 1', 'showRoom'),
   addressColumn('ShowRoomAddress2', 'Show Room Address 2', 'showRoom', '2'),
   addressColumn('ShowRoomAddress3', 'Show Room Address 3', 'showRoom', '3'),
   addressColumn('ShowRoomAddress4', 'Show Room Address 4', 'showRoom', '4'),
@@ -261,146 +439,241 @@ const showRoomVoucherColumns = [
   ...paymentColumns,
 ];
 
-const ogaRecommendationColumns = [
-  column('Id', 'Id'),
+// List report columns matching the old OGARecommendationListReport.rdlc (the raw
+// Id / OGADepartmentId / OGASectionId fields are intentionally NOT shown). The "No."
+// column comes from showRowNumber. SDate/SFromDate/SToDate are the pre-formatted
+// (dd/m/yyyy, "-" for null) strings. OGADepartmentName/OGASectionName need an explicit
+// dataIndex: the API camelCases them to ogaDepartmentName/ogaSectionName (the leading
+// acronym is lowercased), which lowerFirst() would not produce. The Reference No cell
+// is the legacy "View Detail" drill into the recommendation's usage history.
+const ogaRecommendationColumns: ReportColumnConfig[] = [
   column('SDate', 'Date'),
-  column('CompanyRegistrationNo', 'Company Registration No'),
-  column('OGADepartmentId', 'OGA Department Id', 'number'),
-  column('OGASectionId', 'OGA Section Id', 'number'),
-  column('OGADepartmentName', 'OGA Department'),
-  column('OGASectionName', 'OGA Section'),
-  column('ReferenceNo', 'Reference No'),
-  column('FromDate', 'From Date', 'date'),
-  column('ToDate', 'To Date', 'date'),
+  { key: 'OGADepartmentName', dataIndex: 'ogaDepartmentName', title: 'Department' },
+  { key: 'OGASectionName', dataIndex: 'ogaSectionName', title: 'Section' },
+  {
+    ...column('ReferenceNo', 'Reference No'),
+    drilldown: {
+      targetReportKey: 'OGARecommendationHistoryReport',
+      rowParams: { OGARecommendationId: 'id' },
+      openInNewTab: true,
+    },
+  },
+  column('SFromDate', 'From Date'),
+  column('SToDate', 'To Date'),
   column('Allowance', 'Allowance'),
   column('Terminate', 'Terminate'),
-  column('IsUsedOnce', 'Is Used Once'),
+  column('IsUsedOnce', 'Used Once'),
+];
+
+// Drill target: a single recommendation's usage history (old OGARecommendationHistoryReport.rdlc).
+const ogaHistoryColumns = [
+  column('SDate', 'Date'),
+  column('LicenceNo', 'Licence No'),
+  column('Remark', 'Remark'),
+  column('Balance', 'Balance'),
+  column('FullName', 'Full Name'),
+  column('Position', 'Position'),
 ];
 
 export const newReportConfigs: Record<string, ReportPageConfig> = {
   AlcoholicBeveragesImportationSummaryReport: summaryConfig(
     'AlcoholicBeveragesImportationSummaryReport',
-    'Alcoholic Beverages Importation Summary Report'
+    'Alcoholic Beverages Importation Summary Report',
+    'Alcoholic Beverages Importation'
   ),
   AlcoholicBeveragesImportationDetailReport: detailConfig(
     'AlcoholicBeveragesImportationDetailReport',
     'Alcoholic Beverages Importation Detail Report',
+    'Alcoholic Beverages Importation',
     wineDetailColumns
   ),
   AlcoholicBeveragesImportationRegistrationByVoucher: voucherConfig(
     'AlcoholicBeveragesImportationRegistrationByVoucher',
     'Alcoholic Beverages Importation Registration By Voucher',
+    'Alcoholic Beverages Importation',
     wineVoucherColumns
   ),
   DutyFreeShopSummaryReport: summaryConfig(
     'DutyFreeShopSummaryReport',
-    'Duty Free Shop Summary Report'
+    'Duty Free Shop Summary Report',
+    'Duty Free Shop'
   ),
   DutyFreeShopDetailReport: detailConfig(
     'DutyFreeShopDetailReport',
     'Duty Free Shop Detail Report',
+    'Duty Free Shop',
     dutyFreeDetailColumns
   ),
   DutyFreeShopRegistrationByVoucher: voucherConfig(
     'DutyFreeShopRegistrationByVoucher',
     'Duty Free Shop Registration By Voucher',
+    'Duty Free Shop',
     dutyFreeVoucherColumns
   ),
   ReExportSummaryReport: summaryConfig(
     'ReExportSummaryReport',
-    'Re-Export Summary Report'
+    'Re-Export Summary Report',
+    'Re-Export'
   ),
   ReExportDetailReport: detailConfig(
     'ReExportDetailReport',
     'Re-Export Detail Report',
+    'Re-Export',
     reExportDetailColumns
   ),
   BusinessServiceAgencySummaryReport: summaryConfig(
     'BusinessServiceAgencySummaryReport',
-    'Business Service Agency Summary Report'
+    'Business Service Agency Summary Report',
+    'Business Representative'
   ),
   BusinessServiceAgencyDetailReport: detailConfig(
     'BusinessServiceAgencyDetailReport',
     'Business Service Agency Detail Report',
+    'Business Representative',
     businessServiceAgencyDetailColumns
   ),
   BusinessServiceAgencyRegistrationByVoucher: voucherConfig(
     'BusinessServiceAgencyRegistrationByVoucher',
     'Business Service Agency Registration By Voucher',
+    'Business Representative',
     businessServiceAgencyVoucherColumns
   ),
-  SaleCenterSummaryReport: summaryConfig(
-    'SaleCenterSummaryReport',
-    'Sale Center Summary Report'
+  SaleCenterSummaryReport: withFormType(
+    summaryConfig(
+      'SaleCenterSummaryReport',
+      'Sale Center Summary Report',
+      'Sale Center',
+      formTypeSubtitle
+    ),
+    saleCenterFormTypeFilter
   ),
-  SaleCenterDetailReport: detailConfig(
-    'SaleCenterDetailReport',
-    'Sale Center Detail Report',
-    saleCenterDetailColumns
+  SaleCenterDetailReport: withFormType(
+    detailConfig(
+      'SaleCenterDetailReport',
+      'Sale Center Detail Report',
+      'Sale Center',
+      saleCenterDetailColumns,
+      formTypeSubtitle
+    ),
+    saleCenterFormTypeFilter
   ),
-  SaleCenterRegistrationByVoucher: voucherConfig(
-    'SaleCenterRegistrationByVoucher',
-    'Sale Center Registration By Voucher',
-    saleCenterVoucherColumns
+  SaleCenterRegistrationByVoucher: withFormType(
+    voucherConfig(
+      'SaleCenterRegistrationByVoucher',
+      'Sale Center Registration By Voucher',
+      'Sale Center',
+      saleCenterVoucherColumns,
+      formTypeSubtitle
+    ),
+    saleCenterFormTypeFilter
   ),
-  ShowRoomSummaryReport: summaryConfig(
-    'ShowRoomSummaryReport',
-    'Show Room Summary Report'
+  ShowRoomSummaryReport: withFormType(
+    summaryConfig(
+      'ShowRoomSummaryReport',
+      'Show Room Summary Report',
+      'Show Room',
+      formTypeSubtitle
+    ),
+    showRoomFormTypeFilter
   ),
-  ShowRoomDetailReport: detailConfig(
-    'ShowRoomDetailReport',
-    'Show Room Detail Report',
-    showRoomDetailColumns
+  ShowRoomDetailReport: withFormType(
+    detailConfig(
+      'ShowRoomDetailReport',
+      'Show Room Detail Report',
+      'Show Room',
+      showRoomDetailColumns,
+      formTypeSubtitle
+    ),
+    showRoomFormTypeFilter
   ),
-  ShowRoomRegistrationByVoucher: voucherConfig(
-    'ShowRoomRegistrationByVoucher',
-    'Show Room Registration By Voucher',
-    showRoomVoucherColumns
+  ShowRoomRegistrationByVoucher: withFormType(
+    voucherConfig(
+      'ShowRoomRegistrationByVoucher',
+      'Show Room Registration By Voucher',
+      'Show Room',
+      showRoomVoucherColumns,
+      formTypeSubtitle
+    ),
+    showRoomFormTypeFilter
   ),
-  EVCycleShowRoomSummaryReport: summaryConfig(
-    'EVCycleShowRoomSummaryReport',
-    'EVCycle Show Room Summary Report'
+  EVCycleShowRoomSummaryReport: withFormType(
+    summaryConfig(
+      'EVCycleShowRoomSummaryReport',
+      'EVCycle Show Room Summary Report',
+      'Show Room for Electric Cycles'
+    ),
+    evCycleShowRoomFormTypeFilter
   ),
-  EVCycleShowRoomDetailReport: detailConfig(
-    'EVCycleShowRoomDetailReport',
-    'EVCycle Show Room Detail Report',
-    showRoomDetailColumns
+  EVCycleShowRoomDetailReport: withFormType(
+    detailConfig(
+      'EVCycleShowRoomDetailReport',
+      'EVCycle Show Room Detail Report',
+      'Show Room for Electric Cycles',
+      showRoomDetailColumns
+    ),
+    evCycleShowRoomFormTypeFilter
   ),
-  EVCycleShowRoomRegistrationByVoucher: voucherConfig(
-    'EVCycleShowRoomRegistrationByVoucher',
-    'EVCycle Show Room Registration By Voucher',
-    showRoomVoucherColumns
+  EVCycleShowRoomRegistrationByVoucher: withFormType(
+    voucherConfig(
+      'EVCycleShowRoomRegistrationByVoucher',
+      'EVCycle Show Room Registration By Voucher',
+      'Show Room for Electric Cycles',
+      showRoomVoucherColumns
+    ),
+    evCycleShowRoomFormTypeFilter
   ),
-  EVShowRoomSummaryReport: summaryConfig(
-    'EVShowRoomSummaryReport',
-    'EV Show Room Summary Report'
+  EVShowRoomSummaryReport: withFormType(
+    summaryConfig(
+      'EVShowRoomSummaryReport',
+      'EV Show Room Summary Report',
+      'Show Room for Electric Vehicles'
+    ),
+    evShowRoomFormTypeFilter
   ),
-  EVShowRoomDetailReport: detailConfig(
-    'EVShowRoomDetailReport',
-    'EV Show Room Detail Report',
-    showRoomDetailColumns
+  EVShowRoomDetailReport: withFormType(
+    detailConfig(
+      'EVShowRoomDetailReport',
+      'EV Show Room Detail Report',
+      'Show Room for Electric Vehicles',
+      showRoomDetailColumns
+    ),
+    evShowRoomFormTypeFilter
   ),
-  EVShowRoomRegistrationByVoucher: voucherConfig(
-    'EVShowRoomRegistrationByVoucher',
-    'EV Show Room Registration By Voucher',
-    showRoomVoucherColumns
+  EVShowRoomRegistrationByVoucher: withFormType(
+    voucherConfig(
+      'EVShowRoomRegistrationByVoucher',
+      'EV Show Room Registration By Voucher',
+      'Show Room for Electric Vehicles',
+      showRoomVoucherColumns
+    ),
+    evShowRoomFormTypeFilter
   ),
   OGARecommendationReport: reportConfig(
     'OGARecommendationReport',
     'OGA Recommendation Report',
     [
       dateRangeFilter,
+      // OGA Department / Section render as dropdowns (lookups resolve via lookupName);
+      // 0 = '--- All ---'. Section is NOT cascaded by Department (lists all sections).
       {
         name: 'OGADepartmentId',
         label: 'OGA Department',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'ogaDepartments',
       },
       {
         name: 'OGASectionId',
         label: 'OGA Section',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'ogaSections',
+      },
+      {
+        name: 'ReferenceNo',
+        label: 'Reference No',
+        type: 'text',
+        defaultValue: '',
       },
       {
         name: 'CompanyRegistrationNo',
@@ -409,12 +682,37 @@ export const newReportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
-        name: 'ReferenceNo',
-        label: 'Reference No',
-        type: 'text',
-        defaultValue: '',
+        name: 'FilterBy',
+        label: 'Filter By',
+        type: 'select',
+        defaultValue: 'List',
+        options: [
+          { label: 'List', value: 'List' },
+          { label: 'Group By', value: 'GroupBy' },
+        ],
       },
     ],
-    ogaRecommendationColumns
+    ogaRecommendationColumns,
+    undefined,
+    ['Ministry of Commerce', 'Directorate of Trade'],
+    (filters) => `Recommendation Report ${dateRangeSubtitle(filters)}`
+  ),
+  // Drill target of the OGA list's "Reference No" cell — a recommendation's usage
+  // history (carries OGARecommendationId; opened in a new tab).
+  OGARecommendationHistoryReport: reportConfig(
+    'OGARecommendationHistoryReport',
+    'OGA Recommendation History',
+    [
+      {
+        name: 'OGARecommendationId',
+        label: 'OGA Recommendation Id',
+        type: 'text',
+        defaultValue: '',
+        required: true,
+      },
+    ],
+    ogaHistoryColumns,
+    undefined,
+    ['Ministry of Commerce', 'Directorate of Trade']
   ),
 };

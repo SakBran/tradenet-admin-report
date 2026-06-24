@@ -123,7 +123,8 @@ namespace Backend.Controllers.Report
                 OGADepartmentId = request.OGADepartmentId,
                 OGASectionId = request.OGASectionId,
                 CompanyRegistrationNo = request.CompanyRegistrationNo?.Trim() ?? string.Empty,
-                ReferenceNo = request.ReferenceNo?.Trim() ?? string.Empty
+                ReferenceNo = request.ReferenceNo?.Trim() ?? string.Empty,
+                FilterBy = string.IsNullOrWhiteSpace(request.FilterBy) ? "List" : request.FilterBy.Trim()
             };
 
             return true;
@@ -138,5 +139,6 @@ namespace Backend.Controllers.Report
         public int OGASectionId { get; set; }
         public string? CompanyRegistrationNo { get; set; }
         public string? ReferenceNo { get; set; }
+        public string? FilterBy { get; set; }
     }
 }

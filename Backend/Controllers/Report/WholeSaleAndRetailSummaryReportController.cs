@@ -32,7 +32,7 @@ namespace Backend.Controllers.Report
         }
 
         [HttpPost]
-        public async Task<ActionResult<ApiResult<sp_WholeSaleRetailReportResult>>> Post(
+        public async Task<ActionResult<ApiResult<RegistrationSummaryRow>>> Post(
             [FromBody] WholeSaleAndRetailSummaryReportRequest? request)
         {
             if (!TryCreateReportRequest(request, out var reportRequest, out var errorResult))
@@ -40,8 +40,9 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var query = sp_WholeSaleRetailReport.Query(_context, reportRequest!);
-            var result = await ReportQueryService.CreatePagedResultAsync(query, request!);
+            var row = await sp_WholeSaleRetailReport.SummaryRowAsync(_context, reportRequest!);
+            var result = ApiResult<RegistrationSummaryRow>.CreatePageFromRows(
+                new List<RegistrationSummaryRow> { row }, 1, 0, Math.Max(request!.PageSize, 1));
 
             return Ok(result);
         }
@@ -78,11 +79,8 @@ namespace Backend.Controllers.Report
             CancellationToken cancellationToken)
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
-            var query = sp_WholeSaleRetailReport.Query(_context, procedureRequest!);
-            await foreach (var chunk in query.AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
-            {
-                sink.Append(chunk);
-            }
+            var row = await sp_WholeSaleRetailReport.SummaryRowAsync(_context, procedureRequest!);
+            sink.Append(new[] { row });
         }
 
         private bool TryCreateReportRequest(

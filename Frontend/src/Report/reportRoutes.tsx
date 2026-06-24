@@ -157,6 +157,7 @@ import EVShowRoomSummaryReport from './Page/EVShowRoomSummaryReport';
 import EVShowRoomDetailReport from './Page/EVShowRoomDetailReport';
 import EVShowRoomRegistrationByVoucher from './Page/EVShowRoomRegistrationByVoucher';
 import OGARecommendationReport from './Page/OGARecommendationReport';
+import OGARecommendationHistoryReport from './Page/OGARecommendationHistoryReport';
 import ExportsDrive from './Page/ExportsDrive';
 
 export const reportRoutes = [
@@ -320,4 +321,8 @@ export const reportRoutes = [
   { path: 'EVShowRoomDetailReport', element: <EVShowRoomDetailReport /> },
   { path: 'EVShowRoomRegistrationByVoucher', element: <EVShowRoomRegistrationByVoucher /> },
   { path: 'OGARecommendationReport', element: <OGARecommendationReport /> },
+  {
+    path: 'OGARecommendationHistoryReport',
+    element: <OGARecommendationHistoryReport />,
+  },
 ];

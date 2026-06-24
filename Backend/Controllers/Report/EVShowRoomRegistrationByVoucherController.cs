@@ -20,7 +20,6 @@ namespace Backend.Controllers.Report
     public class EVShowRoomRegistrationByVoucherController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "EVShowRoomRegistrationByVoucher";
-        private const string RegistrationType = "Show Room for Electric Vehicles";
 
         private readonly TradeNetDbContext _context;
         private readonly IExcelExportJobService _excelExportJobs;
@@ -123,7 +122,7 @@ namespace Backend.Controllers.Report
                 ToDate = request.ToDate,
                 PaymentType = request.PaymentType?.Trim() ?? string.Empty,
                 ApplyType = request.ApplyType?.Trim() ?? string.Empty,
-                RegistrationType = RegistrationType
+                AllowedFormTypes = sp_EVShowRoomReport.ResolveFormTypes(request.FormType)
             };
 
             return true;
@@ -136,5 +135,6 @@ namespace Backend.Controllers.Report
         public DateTime ToDate { get; set; }
         public string? ApplyType { get; set; }
         public string? PaymentType { get; set; }
+        public string? FormType { get; set; }
     }
 }

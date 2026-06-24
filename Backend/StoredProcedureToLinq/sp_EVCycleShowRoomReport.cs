@@ -1,8 +1,11 @@
 using API.DBContext;
 using API.Model.TradeNet;
+using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
 
@@ -14,6 +17,7 @@ public sealed class sp_EVCycleShowRoomReportRequest
     public string ApplyType { get; set; } = string.Empty;
     public string FormType { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;
+    public List<string> AllowedFormTypes { get; set; } = new();
 }
 
 public sealed class sp_EVCycleShowRoomReportResult
@@ -51,6 +55,42 @@ public static class sp_EVCycleShowRoomReport
     private const string CurrentNrcType = "Current";
     private const string OldNrcType = "Old";
 
+    public static readonly string[] FormTypes = { "Show Room for Electric Cycles" };
+
+    public static List<string> ResolveFormTypes(string? submitted)
+    {
+        var value = submitted?.Trim();
+        return !string.IsNullOrEmpty(value) && FormTypes.Contains(value)
+            ? new List<string> { value }
+            : new List<string>(FormTypes);
+    }
+
+    public static async Task<RegistrationSummaryRow> SummaryRowAsync(
+        TradeNetDbContext db,
+        sp_EVCycleShowRoomReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var registrations = db.EvcycleShowRoomRegistrations.Where(registration =>
+            registration.CreatedDate >= request.FromDate
+            && registration.CreatedDate <= request.ToDate
+            && registration.Status == Approved
+            && request.AllowedFormTypes.Contains(registration.RegistrationType));
+
+        var newCount = await registrations.CountAsync(r => r.ApplyType == "New");
+        var cancelCount = await registrations.CountAsync(r => r.ApplyType == "Cancel");
+        var extensionCount = await registrations.CountAsync(r => r.ApplyType == "Extension");
+        var validCount = await db.EvcycleShowRooms.CountAsync(showRoom =>
+            showRoom.EndDate > request.Date
+            && request.AllowedFormTypes.Contains(showRoom.RegistrationType));
+        var invalidCount = await db.EvcycleShowRooms.CountAsync(showRoom =>
+            showRoom.EndDate < request.Date
+            && request.AllowedFormTypes.Contains(showRoom.RegistrationType));
+
+        return RegistrationSummaryRow.Of(newCount, cancelCount, extensionCount, validCount, invalidCount);
+    }
+
     public static IQueryable<sp_EVCycleShowRoomReportResult> Query(
         TradeNetDbContext db,
         sp_EVCycleShowRoomReportRequest request)
@@ -87,7 +127,7 @@ public static class sp_EVCycleShowRoomReport
                    .DefaultIfEmpty()
                where registration.ApplyType == request.ApplyType
                    && registration.Status == Approved
-                   && showRoom.RegistrationType == request.FormType
+                   && request.AllowedFormTypes.Contains(showRoom.RegistrationType)
                    && registration.CreatedDate >= request.FromDate
                    && registration.CreatedDate <= request.ToDate
                select new sp_EVCycleShowRoomReportResult
@@ -131,7 +171,7 @@ public static class sp_EVCycleShowRoomReport
                     && registration.CreatedDate <= request.ToDate
                     && registration.ApplyType == "New"
                     && registration.Status == Approved
-                    && registration.RegistrationType == request.FormType)
+                    && request.AllowedFormTypes.Contains(registration.RegistrationType))
                 .Select(_ => 1), "New")
             .Concat(GroupedSummaryRow(db.EvcycleShowRoomRegistrations
                 .Where(registration =>
@@ -139,7 +179,7 @@ public static class sp_EVCycleShowRoomReport
                     && registration.CreatedDate <= request.ToDate
                     && registration.ApplyType == "Cancel"
                     && registration.Status == Approved
-                    && registration.RegistrationType == request.FormType)
+                    && request.AllowedFormTypes.Contains(registration.RegistrationType))
                 .Select(_ => 1), "Cancel"))
             .Concat(CountSummaryRow(db.EvcycleShowRoomRegistrations
                 .Where(registration =>
@@ -147,17 +187,17 @@ public static class sp_EVCycleShowRoomReport
                     && registration.CreatedDate <= request.ToDate
                     && registration.ApplyType == "Extension"
                     && registration.Status == Approved
-                    && registration.RegistrationType == request.FormType)
+                    && request.AllowedFormTypes.Contains(registration.RegistrationType))
                 .Select(_ => 1), "Extension"))
             .Concat(CountSummaryRow(db.EvcycleShowRooms
                 .Where(showRoom =>
                     showRoom.EndDate > request.Date
-                    && showRoom.RegistrationType == request.FormType)
+                    && request.AllowedFormTypes.Contains(showRoom.RegistrationType))
                 .Select(_ => 1), Valid))
             .Concat(CountSummaryRow(db.EvcycleShowRooms
                 .Where(showRoom =>
                     showRoom.EndDate < request.Date
-                    && showRoom.RegistrationType == request.FormType)
+                    && request.AllowedFormTypes.Contains(showRoom.RegistrationType))
                 .Select(_ => 1), Invalid));
     }
 
@@ -204,7 +244,7 @@ public static class sp_EVCycleShowRoomReport
                from nrcPrefixCode in db.NrcprefixCodes
                    .Where(prefixCode => showRoom.NrcprefixCodeId == prefixCode.Id)
                    .DefaultIfEmpty()
-               where showRoom.RegistrationType == request.FormType
+               where request.AllowedFormTypes.Contains(showRoom.RegistrationType)
                select new sp_EVCycleShowRoomReportResult
                {
                    CompanyRegistrationNo = paThaKa.CompanyRegistrationNo,

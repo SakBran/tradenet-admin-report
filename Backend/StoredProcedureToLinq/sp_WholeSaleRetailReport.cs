@@ -1,8 +1,10 @@
 using API.DBContext;
 using API.Model.TradeNet;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
 
@@ -45,6 +47,36 @@ public static class sp_WholeSaleRetailReport
     private const string Summary = "Summary";
     private const string Valid = "Valid";
     private const string Invalid = "Invalid";
+
+    /// <summary>
+    /// Builds the single legacy-style summary row (six count columns) for the
+    /// Summary report, replacing the old multi-row ApplyType listing.
+    /// </summary>
+    public static async Task<RegistrationSummaryRow> SummaryRowAsync(
+        TradeNetDbContext db,
+        sp_WholeSaleRetailReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var registrations = db.WholeSaleRetailRegistrations.Where(registration =>
+            registration.CreatedDate >= request.FromDate
+            && registration.CreatedDate <= request.ToDate
+            && registration.Status == Approved
+            && registration.RegistrationType == request.FormType);
+
+        var newCount = await registrations.CountAsync(r => r.ApplyType == "New");
+        var cancelCount = await registrations.CountAsync(r => r.ApplyType == "Cancel");
+        var extensionCount = await registrations.CountAsync(r => r.ApplyType == "Extension");
+        var validCount = await db.WholeSaleRetails.CountAsync(wholeSaleRetail =>
+            wholeSaleRetail.EndDate > request.Date
+            && wholeSaleRetail.RegistrationType == request.FormType);
+        var invalidCount = await db.WholeSaleRetails.CountAsync(wholeSaleRetail =>
+            wholeSaleRetail.EndDate < request.Date
+            && wholeSaleRetail.RegistrationType == request.FormType);
+
+        return RegistrationSummaryRow.Of(newCount, cancelCount, extensionCount, validCount, invalidCount);
+    }
 
     public static IQueryable<sp_WholeSaleRetailReportResult> Query(
         TradeNetDbContext db,

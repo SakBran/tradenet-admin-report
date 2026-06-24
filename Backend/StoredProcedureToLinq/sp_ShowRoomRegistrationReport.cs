@@ -1,5 +1,6 @@
 using API.DBContext;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace API.StoredProcedureToLinq;
@@ -11,6 +12,10 @@ public sealed class sp_ShowRoomRegistrationReportRequest
     public string PaymentType { get; set; } = string.Empty;
     public string ApplyType { get; set; } = string.Empty;
     public string RegistrationType { get; set; } = string.Empty;
+
+    /// <summary>RegistrationType (Form Type) values to include; one when a specific
+    /// Form Type is chosen, the family's full set when '--- All ---'.</summary>
+    public List<string> AllowedFormTypes { get; set; } = new();
 }
 
 public sealed class sp_ShowRoomRegistrationReportResult
@@ -95,7 +100,7 @@ public static class sp_ShowRoomRegistrationReport
                    && (request.PaymentType == string.Empty || accountTransaction.PaymentType == request.PaymentType)
                    && registration.CreatedDate >= request.FromDate
                    && registration.CreatedDate <= request.ToDate
-                   && registration.RegistrationType == request.RegistrationType
+                   && request.AllowedFormTypes.Contains(registration.RegistrationType)
                select new sp_ShowRoomRegistrationReportResult
                {
                    Date = registration.CreatedDate,

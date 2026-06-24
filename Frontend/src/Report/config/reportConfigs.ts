@@ -594,6 +594,13 @@ const reportDateRangeSubtitle =
     return `${label} (${fromDate}) To (${toDate})`;
   };
 
+// Legacy registration-report header: a static centered title block + a trailing
+// date-range line (the old RDLC's header1/header2 parameter line).
+const registrationDateRangeSubtitle = (filters: Record<string, unknown>) =>
+  `(${formatLegacyReportDate(filters.FromDate)}) To (${formatLegacyReportDate(
+    filters.ToDate
+  )})`;
+
 const resolveImportLicenceVoucherColumns = (
   filters: Record<string, unknown>,
   columns: ReportColumnConfig[]
@@ -12453,7 +12460,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'WholeSaleSummaryReport',
     excelRoute: 'WholeSaleSummaryReport/Excel',
     excelFileName: 'WholeSaleSummaryReport.xlsx',
-    showRowNumber: true,
+    reportHeading: ['Statement of Registered', 'Whole Sale at', 'Ministry of Commerce'],
+    reportSubtitle: registrationDateRangeSubtitle,
+    showRowNumber: false,
     filters: [
       {
         name: 'dateRange',
@@ -12467,13 +12476,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
     ],
     columns: [
-      { key: 'ApplyType', dataIndex: 'applyType', title: 'Apply Type' },
-      {
-        key: 'ApplicationCount',
-        dataIndex: 'applicationCount',
-        title: 'Application Count',
-        dataType: 'number',
-      },
+      { key: 'NewCount', dataIndex: 'newCount', title: 'Number of Register', dataType: 'number' },
+      { key: 'CancelCount', dataIndex: 'cancelCount', title: 'Number of De-Register', dataType: 'number' },
+      { key: 'ExtensionCount', dataIndex: 'extensionCount', title: 'Number of Extension', dataType: 'number' },
+      { key: 'ValidCount', dataIndex: 'validCount', title: 'Total Number Still Valid', dataType: 'number' },
+      { key: 'InvalidCount', dataIndex: 'invalidCount', title: 'Total Number Invalid', dataType: 'number' },
+      { key: 'TotalNumber', dataIndex: 'totalNumber', title: 'Total Number', dataType: 'number' },
     ],
   },
   WholeSaleDetailReport: {
@@ -12482,6 +12490,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'WholeSaleDetailReport',
     excelRoute: 'WholeSaleDetailReport/Excel',
     excelFileName: 'WholeSaleDetailReport.xlsx',
+    reportHeading: ['Statement of Registered', 'Whole Sale', 'Ministry of Commerce'],
+    reportSubtitle: registrationDateRangeSubtitle,
     showRowNumber: true,
     filters: [
       {
@@ -12511,7 +12521,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'WholeSaleRetailNo',
         dataIndex: 'wholeSaleRetailNo',
-        title: 'Whole Sale Retail No',
+        title: 'Whole Sale No',
       },
       { key: 'CompanyName', dataIndex: 'companyName', title: 'Company Name' },
       {
@@ -12530,7 +12540,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'WholeSaleRetailAddress',
         dataIndex: 'wholeSaleRetailAddress',
-        title: 'Whole Sale Retail Address',
+        title: 'Whole Sale Address',
         fallbackDataIndexes: [
           'wholeSaleRetailUnitLevel',
           'wholeSaleRetailStreetNumberStreetName',
@@ -12549,7 +12559,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'EndDate',
         dataIndex: 'endDate',
-        title: 'End Date',
+        title: 'Valid Date',
         dataType: 'date',
       },
     ],
@@ -12560,6 +12570,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'WholeSaleRegistrationByVoucher',
     excelRoute: 'WholeSaleRegistrationByVoucher/Excel',
     excelFileName: 'WholeSaleRegistrationByVoucher.xlsx',
+    reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
+    reportSubtitle: registrationDateRangeSubtitle,
     initialSortColumn: 'Date',
     showRowNumber: true,
     filters: [
@@ -12612,17 +12624,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'WholeSaleRetailNo',
         dataIndex: 'wholeSaleRetailNo',
-        title: 'Whole Sale Retail No',
-      },
-      {
-        key: 'WholeSalRetailName',
-        dataIndex: 'wholeSalRetailName',
-        title: 'Whole Sale Retail Name',
+        title: 'Whole Sale No',
       },
       {
         key: 'WholeSaleRetailAddress',
         dataIndex: 'wholeSaleRetailAddress',
-        title: 'Whole Sale Retail Address',
+        title: 'Whole Sale Address',
         fallbackDataIndexes: [
           'wholeSaleRetailUnitLevel',
           'wholeSaleRetailStreetNumberStreetName',
@@ -12631,6 +12638,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           'wholeSaleRetailCountry',
           'wholeSaleRetailPostalCode',
         ],
+      },
+      {
+        key: 'TotalAmount',
+        dataIndex: 'totalAmount',
+        title: 'Total Amount',
+        dataType: 'number',
       },
       {
         key: 'PaymentType',
@@ -12644,12 +12657,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Voucher Date',
         dataType: 'date',
       },
-      {
-        key: 'TotalAmount',
-        dataIndex: 'totalAmount',
-        title: 'Total Amount',
-        dataType: 'number',
-      },
     ],
   },
   RetailSummaryReport: {
@@ -12658,7 +12665,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'RetailSummaryReport',
     excelRoute: 'RetailSummaryReport/Excel',
     excelFileName: 'RetailSummaryReport.xlsx',
-    showRowNumber: true,
+    reportHeading: ['Statement of Registered', 'Retail at', 'Ministry of Commerce'],
+    reportSubtitle: registrationDateRangeSubtitle,
+    showRowNumber: false,
     filters: [
       {
         name: 'dateRange',
@@ -12672,13 +12681,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
     ],
     columns: [
-      { key: 'ApplyType', dataIndex: 'applyType', title: 'Apply Type' },
-      {
-        key: 'ApplicationCount',
-        dataIndex: 'applicationCount',
-        title: 'Application Count',
-        dataType: 'number',
-      },
+      { key: 'NewCount', dataIndex: 'newCount', title: 'Number of Register', dataType: 'number' },
+      { key: 'CancelCount', dataIndex: 'cancelCount', title: 'Number of De-Register', dataType: 'number' },
+      { key: 'ExtensionCount', dataIndex: 'extensionCount', title: 'Number of Extension', dataType: 'number' },
+      { key: 'ValidCount', dataIndex: 'validCount', title: 'Total Number Still Valid', dataType: 'number' },
+      { key: 'InvalidCount', dataIndex: 'invalidCount', title: 'Total Number Invalid', dataType: 'number' },
+      { key: 'TotalNumber', dataIndex: 'totalNumber', title: 'Total Number', dataType: 'number' },
     ],
   },
   RetailDetailReport: {
@@ -12687,6 +12695,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'RetailDetailReport',
     excelRoute: 'RetailDetailReport/Excel',
     excelFileName: 'RetailDetailReport.xlsx',
+    reportHeading: ['Statement of Registered', 'Retail', 'Ministry of Commerce'],
+    reportSubtitle: registrationDateRangeSubtitle,
     showRowNumber: true,
     filters: [
       {
@@ -12716,7 +12726,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'WholeSaleRetailNo',
         dataIndex: 'wholeSaleRetailNo',
-        title: 'Whole Sale Retail No',
+        title: 'Retail No',
       },
       { key: 'CompanyName', dataIndex: 'companyName', title: 'Company Name' },
       {
@@ -12735,7 +12745,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'WholeSaleRetailAddress',
         dataIndex: 'wholeSaleRetailAddress',
-        title: 'Whole Sale Retail Address',
+        title: 'Retail Address',
         fallbackDataIndexes: [
           'wholeSaleRetailUnitLevel',
           'wholeSaleRetailStreetNumberStreetName',
@@ -12754,7 +12764,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'EndDate',
         dataIndex: 'endDate',
-        title: 'End Date',
+        title: 'Valid Date',
         dataType: 'date',
       },
     ],
@@ -12765,6 +12775,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'RetailRegistrationByVoucher',
     excelRoute: 'RetailRegistrationByVoucher/Excel',
     excelFileName: 'RetailRegistrationByVoucher.xlsx',
+    reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
+    reportSubtitle: registrationDateRangeSubtitle,
     initialSortColumn: 'Date',
     showRowNumber: true,
     filters: [
@@ -12817,17 +12829,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'WholeSaleRetailNo',
         dataIndex: 'wholeSaleRetailNo',
-        title: 'Whole Sale Retail No',
-      },
-      {
-        key: 'WholeSalRetailName',
-        dataIndex: 'wholeSalRetailName',
-        title: 'Whole Sale Retail Name',
+        title: 'Retail No',
       },
       {
         key: 'WholeSaleRetailAddress',
         dataIndex: 'wholeSaleRetailAddress',
-        title: 'Whole Sale Retail Address',
+        title: 'Retail Address',
         fallbackDataIndexes: [
           'wholeSaleRetailUnitLevel',
           'wholeSaleRetailStreetNumberStreetName',
@@ -12836,6 +12843,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           'wholeSaleRetailCountry',
           'wholeSaleRetailPostalCode',
         ],
+      },
+      {
+        key: 'TotalAmount',
+        dataIndex: 'totalAmount',
+        title: 'Total Amount',
+        dataType: 'number',
       },
       {
         key: 'PaymentType',
@@ -12849,12 +12862,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Voucher Date',
         dataType: 'date',
       },
-      {
-        key: 'TotalAmount',
-        dataIndex: 'totalAmount',
-        title: 'Total Amount',
-        dataType: 'number',
-      },
     ],
   },
   WholeSaleAndRetailSummaryReport: {
@@ -12863,7 +12870,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'WholeSaleAndRetailSummaryReport',
     excelRoute: 'WholeSaleAndRetailSummaryReport/Excel',
     excelFileName: 'WholeSaleAndRetailSummaryReport.xlsx',
-    showRowNumber: true,
+    reportHeading: ['Statement of Registered', 'Whole Sale & Retail at', 'Ministry of Commerce'],
+    reportSubtitle: registrationDateRangeSubtitle,
+    showRowNumber: false,
     filters: [
       {
         name: 'dateRange',
@@ -12877,13 +12886,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
     ],
     columns: [
-      { key: 'ApplyType', dataIndex: 'applyType', title: 'Apply Type' },
-      {
-        key: 'ApplicationCount',
-        dataIndex: 'applicationCount',
-        title: 'Application Count',
-        dataType: 'number',
-      },
+      { key: 'NewCount', dataIndex: 'newCount', title: 'Number of Register', dataType: 'number' },
+      { key: 'CancelCount', dataIndex: 'cancelCount', title: 'Number of De-Register', dataType: 'number' },
+      { key: 'ExtensionCount', dataIndex: 'extensionCount', title: 'Number of Extension', dataType: 'number' },
+      { key: 'ValidCount', dataIndex: 'validCount', title: 'Total Number Still Valid', dataType: 'number' },
+      { key: 'InvalidCount', dataIndex: 'invalidCount', title: 'Total Number Invalid', dataType: 'number' },
+      { key: 'TotalNumber', dataIndex: 'totalNumber', title: 'Total Number', dataType: 'number' },
     ],
   },
   WholeSaleAndRetailDetailReport: {
@@ -12892,6 +12900,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'WholeSaleAndRetailDetailReport',
     excelRoute: 'WholeSaleAndRetailDetailReport/Excel',
     excelFileName: 'WholeSaleAndRetailDetailReport.xlsx',
+    reportHeading: ['Statement of Registered', 'Whole Sale & Retail', 'Ministry of Commerce'],
+    reportSubtitle: registrationDateRangeSubtitle,
     showRowNumber: true,
     filters: [
       {
@@ -12921,7 +12931,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'WholeSaleRetailNo',
         dataIndex: 'wholeSaleRetailNo',
-        title: 'Whole Sale Retail No',
+        title: 'Whole Sale & Retail No',
       },
       { key: 'CompanyName', dataIndex: 'companyName', title: 'Company Name' },
       {
@@ -12940,7 +12950,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'WholeSaleRetailAddress',
         dataIndex: 'wholeSaleRetailAddress',
-        title: 'Whole Sale Retail Address',
+        title: 'Whole Sale & Retail Address',
         fallbackDataIndexes: [
           'wholeSaleRetailUnitLevel',
           'wholeSaleRetailStreetNumberStreetName',
@@ -12959,7 +12969,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'EndDate',
         dataIndex: 'endDate',
-        title: 'End Date',
+        title: 'Valid Date',
         dataType: 'date',
       },
     ],
@@ -12970,6 +12980,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'WholeSaleAndRetailRegistrationByVoucher',
     excelRoute: 'WholeSaleAndRetailRegistrationByVoucher/Excel',
     excelFileName: 'WholeSaleAndRetailRegistrationByVoucher.xlsx',
+    reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
+    reportSubtitle: registrationDateRangeSubtitle,
     initialSortColumn: 'Date',
     showRowNumber: true,
     filters: [
@@ -13022,17 +13034,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'WholeSaleRetailNo',
         dataIndex: 'wholeSaleRetailNo',
-        title: 'Whole Sale Retail No',
-      },
-      {
-        key: 'WholeSalRetailName',
-        dataIndex: 'wholeSalRetailName',
-        title: 'Whole Sale Retail Name',
+        title: 'Whole Sale & Retail No',
       },
       {
         key: 'WholeSaleRetailAddress',
         dataIndex: 'wholeSaleRetailAddress',
-        title: 'Whole Sale Retail Address',
+        title: 'Whole Sale & Retail Address',
         fallbackDataIndexes: [
           'wholeSaleRetailUnitLevel',
           'wholeSaleRetailStreetNumberStreetName',
@@ -13041,6 +13048,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           'wholeSaleRetailCountry',
           'wholeSaleRetailPostalCode',
         ],
+      },
+      {
+        key: 'TotalAmount',
+        dataIndex: 'totalAmount',
+        title: 'Total Amount',
+        dataType: 'number',
       },
       {
         key: 'PaymentType',
@@ -13053,12 +13066,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'voucherDate',
         title: 'Voucher Date',
         dataType: 'date',
-      },
-      {
-        key: 'TotalAmount',
-        dataIndex: 'totalAmount',
-        title: 'Total Amount',
-        dataType: 'number',
       },
     ],
   },
