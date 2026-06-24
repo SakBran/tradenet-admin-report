@@ -36,7 +36,7 @@ namespace Backend.Controllers.Report
         }
 
         [HttpPost]
-        public async Task<ActionResult<ApiResult<sp_WineImportationReportResult>>> Post(
+        public async Task<ActionResult<ApiResult<RegistrationSummaryRow>>> Post(
             [FromBody] AlcoholicBeveragesImportationSummaryReportRequest? request)
         {
             if (!TryCreateReportRequest(request, out var reportRequest, out var errorResult))
@@ -44,12 +44,9 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var result = await sp_WineImportationReport_Fast.CreatePagedResultAsync(
-                _context,
-                _cache,
-                reportRequest!,
-                request!);
-
+            var row = await sp_WineImportationReport_Fast.SummaryRowAsync(_context, reportRequest!);
+            var result = ApiResult<RegistrationSummaryRow>.CreatePageFromRows(
+                new List<RegistrationSummaryRow> { row }, 1, 0, Math.Max(request!.PageSize, 1));
             return Ok(result);
         }
 
@@ -86,11 +83,8 @@ namespace Backend.Controllers.Report
             CancellationToken cancellationToken)
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
-            await foreach (var chunk in sp_WineImportationReport_Fast.StreamResolvedChunksAsync(
-                _context, _cache, procedureRequest!, chunkSize, cancellationToken))
-            {
-                sink.Append(chunk);
-            }
+            var row = await sp_WineImportationReport_Fast.SummaryRowAsync(_context, procedureRequest!);
+            sink.Append(new[] { row });
         }
 
         private bool TryCreateReportRequest(

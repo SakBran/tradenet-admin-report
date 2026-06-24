@@ -19,7 +19,6 @@ namespace Backend.Controllers.Report
     [Route("api/[controller]")]
     public class EVCycleShowRoomDetailReportController : ControllerBase, IStreamingExcelReport
     {
-        private const string FormType = "Show Room for Electric Cycles";
         private const string ReportKey = "EVCycleShowRoomDetailReport";
 
         private readonly TradeNetDbContext _context;
@@ -123,7 +122,7 @@ namespace Backend.Controllers.Report
                 ToDate = request.ToDate,
                 Date = request.ToDate.Date,
                 ApplyType = request.ApplyType?.Trim() ?? string.Empty,
-                FormType = FormType,
+                AllowedFormTypes = sp_EVCycleShowRoomReport.ResolveFormTypes(request.FormType),
                 Type = "Detail"
             };
 
@@ -136,5 +135,6 @@ namespace Backend.Controllers.Report
         public DateTime FromDate { get; set; }
         public DateTime ToDate { get; set; }
         public string? ApplyType { get; set; }
+        public string? FormType { get; set; }
     }
 }

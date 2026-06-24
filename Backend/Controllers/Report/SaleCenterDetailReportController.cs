@@ -20,7 +20,6 @@ namespace Backend.Controllers.Report
     public class SaleCenterDetailReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "SaleCenterDetailReport";
-        private const string FormType = "Sale Center for Motor Vehicles";
 
         private readonly TradeNetDbContext _context;
         private readonly IExcelExportJobService _excelExportJobs;
@@ -123,7 +122,7 @@ namespace Backend.Controllers.Report
                 ToDate = request.ToDate,
                 Date = request.ToDate.Date,
                 ApplyType = request.ApplyType?.Trim() ?? string.Empty,
-                FormType = FormType,
+                AllowedFormTypes = sp_SaleCenterReport.ResolveFormTypes(request.FormType),
                 Type = "Detail"
             };
 
@@ -136,5 +135,6 @@ namespace Backend.Controllers.Report
         public DateTime FromDate { get; set; }
         public DateTime ToDate { get; set; }
         public string? ApplyType { get; set; }
+        public string? FormType { get; set; }
     }
 }

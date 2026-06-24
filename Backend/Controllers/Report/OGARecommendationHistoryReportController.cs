@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,39 +13,43 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Controllers.Report
 {
+    /// <summary>
+    /// The legacy "View Detail" drill target of the OGA Recommendation list: the
+    /// usage history of a single recommendation (keyed by OGARecommendationId).
+    /// </summary>
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class SaleCenterRegistrationByVoucherController : ControllerBase, IStreamingExcelReport
+    public class OGARecommendationHistoryReportController : ControllerBase, IStreamingExcelReport
     {
-        private const string ReportKey = "SaleCenterRegistrationByVoucher";
+        private const string ReportKey = "OGARecommendationHistoryReport";
 
         private readonly TradeNetDbContext _context;
         private readonly IExcelExportJobService _excelExportJobs;
 
-        public SaleCenterRegistrationByVoucherController(TradeNetDbContext context, IExcelExportJobService excelExportJobs)
+        public OGARecommendationHistoryReportController(TradeNetDbContext context, IExcelExportJobService excelExportJobs)
         {
             _context = context;
             _excelExportJobs = excelExportJobs;
         }
 
         [HttpPost]
-        public async Task<ActionResult<ApiResult<sp_SaleCenterRegistrationReportResult>>> Post(
-            [FromBody] SaleCenterRegistrationByVoucherRequest? request)
+        public async Task<ActionResult<ApiResult<sp_OGARecommendationHistoryReportResult>>> Post(
+            [FromBody] OGARecommendationHistoryReportRequest? request)
         {
             if (!TryCreateReportRequest(request, out var reportRequest, out var errorResult))
             {
                 return errorResult!;
             }
 
-            var query = sp_SaleCenterRegistrationReport.Query(_context, reportRequest!);
+            var query = sp_OGARecommendationHistoryReport.Query(_context, reportRequest!);
             var result = await ReportQueryService.CreatePagedResultAsync(query, request!);
 
             return Ok(result);
         }
 
         [HttpPost("Excel")]
-        public async Task<IActionResult> Excel([FromBody] SaleCenterRegistrationByVoucherRequest? request)
+        public async Task<IActionResult> Excel([FromBody] OGARecommendationHistoryReportRequest? request)
         {
             if (!TryCreateReportRequest(request, out _, out var errorResult))
             {
@@ -56,28 +59,28 @@ namespace Backend.Controllers.Report
             var result = await _excelExportJobs.EnqueueAsync(
                 ReportKey,
                 request!,
-                request!.ToDate,
+                DateTime.UtcNow,
                 User.FindFirst(ClaimTypes.Name)?.Value);
 
             return Ok(result);
         }
 
         // --- Async Excel export streaming (used by the background queue worker) ---
-        public string ExcelWorksheetTitle => "Sale Center Registration By Voucher";
-        public Type ExcelRequestType => typeof(SaleCenterRegistrationByVoucherRequest);
+        public string ExcelWorksheetTitle => "OGA Recommendation History Report";
+        public Type ExcelRequestType => typeof(OGARecommendationHistoryReportRequest);
 
         [NonAction]
         public Task WriteRowsAsync(object request, IExcelRowSink sink, int chunkSize, CancellationToken cancellationToken)
-            => WriteRowsAsync((SaleCenterRegistrationByVoucherRequest)request, sink, chunkSize, cancellationToken);
+            => WriteRowsAsync((OGARecommendationHistoryReportRequest)request, sink, chunkSize, cancellationToken);
 
         private async Task WriteRowsAsync(
-            SaleCenterRegistrationByVoucherRequest request,
+            OGARecommendationHistoryReportRequest request,
             IExcelRowSink sink,
             int chunkSize,
             CancellationToken cancellationToken)
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
-            var query = sp_SaleCenterRegistrationReport.Query(_context, procedureRequest!);
+            var query = sp_OGARecommendationHistoryReport.Query(_context, procedureRequest!);
             await foreach (var chunk in query.AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
             {
                 sink.Append(chunk);
@@ -85,8 +88,8 @@ namespace Backend.Controllers.Report
         }
 
         private bool TryCreateReportRequest(
-            SaleCenterRegistrationByVoucherRequest? request,
-            out sp_SaleCenterRegistrationReportRequest? reportRequest,
+            OGARecommendationHistoryReportRequest? request,
+            out sp_OGARecommendationHistoryReportRequest? reportRequest,
             out ActionResult? errorResult)
         {
             reportRequest = null;
@@ -98,43 +101,23 @@ namespace Backend.Controllers.Report
                 return false;
             }
 
-            if (request.FromDate == default)
+            if (string.IsNullOrWhiteSpace(request.OGARecommendationId))
             {
-                errorResult = BadRequest("FromDate is required.");
+                errorResult = BadRequest("OGARecommendationId is required.");
                 return false;
             }
 
-            if (request.ToDate == default)
+            reportRequest = new sp_OGARecommendationHistoryReportRequest
             {
-                errorResult = BadRequest("ToDate is required.");
-                return false;
-            }
-
-            if (request.ToDate < request.FromDate)
-            {
-                errorResult = BadRequest("ToDate must be greater than or equal to FromDate.");
-                return false;
-            }
-
-            reportRequest = new sp_SaleCenterRegistrationReportRequest
-            {
-                FromDate = request.FromDate,
-                ToDate = request.ToDate,
-                PaymentType = request.PaymentType?.Trim() ?? string.Empty,
-                ApplyType = request.ApplyType?.Trim() ?? string.Empty,
-                AllowedFormTypes = sp_SaleCenterReport.ResolveFormTypes(request.FormType)
+                OGARecommendationId = request.OGARecommendationId.Trim()
             };
 
             return true;
         }
     }
 
-    public sealed class SaleCenterRegistrationByVoucherRequest : ReportQueryRequest
+    public sealed class OGARecommendationHistoryReportRequest : ReportQueryRequest
     {
-        public DateTime FromDate { get; set; }
-        public DateTime ToDate { get; set; }
-        public string? ApplyType { get; set; }
-        public string? PaymentType { get; set; }
-        public string? FormType { get; set; }
+        public string? OGARecommendationId { get; set; }
     }
 }
