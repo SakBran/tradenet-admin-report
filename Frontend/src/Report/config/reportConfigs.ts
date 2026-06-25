@@ -8651,7 +8651,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           { label: 'Extension', value: 'Extension' },
           { label: 'Cancel', value: 'Cancel' },
           { label: 'Actual Amend', value: 'Actual Amend' },
-          { label: 'De-Cancel', value: 'De-Cancel' },
         ],
       },
       {
