@@ -39,7 +39,9 @@ BEGIN
         N'BuyerCountry', N'MethodName', N'ConsignedCountry', N'CountryofOrigin',
         N'PortofDischarge', N'Currency', N'Price', N'Quantity', N'Amount'
     )
-        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir + N', [LicenceDate] ASC, [LicenceNo] ASC';
+        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir
+            + CASE WHEN @SortColumn = N'LicenceDate' THEN N'' ELSE N', [LicenceDate] ASC' END
+            + CASE WHEN @SortColumn = N'LicenceNo' THEN N'' ELSE N', [LicenceNo] ASC' END;
     ELSE
         SET @ob = N'[LicenceDate] ASC, [LicenceNo] ASC';
 

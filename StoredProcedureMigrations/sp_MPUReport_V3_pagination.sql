@@ -25,7 +25,10 @@ BEGIN
         N'ApplicationNo', N'MerchantId', N'AccountNo', N'InvoiceNo', N'ApprovalCode',
         N'TransactionRefNo', N'TransactionAmount', N'MOCAmount', N'IMAmount', N'MPUAmount',
         N'AmountDiff', N'FormType', N'ApplyType', N'VoucherNo', N'TotalAmount', N'PaymentDate')
-        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir + N', [TransactionId] ASC, [TransactionDateTime] ASC, [Id] ASC';
+        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir
+            + CASE WHEN @SortColumn = N'TransactionId' THEN N'' ELSE N', [TransactionId] ASC' END
+            + CASE WHEN @SortColumn = N'TransactionDateTime' THEN N'' ELSE N', [TransactionDateTime] ASC' END
+            + CASE WHEN @SortColumn = N'Id' THEN N'' ELSE N', [Id] ASC' END;
     ELSE
         SET @ob = N'[TransactionId] ASC, [TransactionDateTime] ASC, [Id] ASC';
 

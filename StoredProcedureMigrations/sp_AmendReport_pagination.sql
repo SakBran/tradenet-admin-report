@@ -24,11 +24,9 @@ BEGIN
 
     DECLARE @ob nvarchar(400);
     IF @SortColumn IS NOT NULL AND @SortColumn IN (N'Date', N'SectionCode', N'SectionName', N'OldLicenceNo', N'LicenceNo', N'sDate', N'CompanyRegistrationNo', N'CompanyName', N'UnitLevel', N'StreetNumberStreetName', N'QuarterCityTownship', N'State', N'Country', N'PostalCode')
-    BEGIN
-        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir;
-        IF @SortColumn <> N'Date' SET @ob += N', [Date] ASC';
-        IF @SortColumn <> N'LicenceNo' SET @ob += N', [LicenceNo] ASC';
-    END
+        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir
+            + CASE WHEN @SortColumn = N'Date' THEN N'' ELSE N', [Date] ASC' END
+            + CASE WHEN @SortColumn = N'LicenceNo' THEN N'' ELSE N', [LicenceNo] ASC' END;
     ELSE
         SET @ob = N'[Date] ASC, [LicenceNo] ASC';
 

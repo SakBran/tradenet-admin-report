@@ -165,3 +165,5 @@ Backend/appsettings.json
 
 # Generated Excel exports (async export queue)
 Backend/App_Data/**/*.xlsx
+
+.deploy

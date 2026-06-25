@@ -21,7 +21,9 @@ BEGIN
 
     DECLARE @ob nvarchar(400);
     IF @SortColumn IS NOT NULL AND @SortColumn IN (N'Status', N'ApplyType', N'ApplicationDate', N'ApplicationNo', N'SectionCode', N'SectionName', N'CompanyRegistrationNo', N'CompanyName', N'CommodityType')
-        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir + N', [ApplicationDate] ASC, [ApplicationNo] ASC';
+        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir
+            + CASE WHEN @SortColumn = N'ApplicationDate' THEN N'' ELSE N', [ApplicationDate] ASC' END
+            + CASE WHEN @SortColumn = N'ApplicationNo' THEN N'' ELSE N', [ApplicationNo] ASC' END;
     ELSE
         SET @ob = N'[ApplicationDate] ASC, [ApplicationNo] ASC';
 

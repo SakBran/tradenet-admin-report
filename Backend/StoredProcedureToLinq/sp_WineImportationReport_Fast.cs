@@ -233,6 +233,29 @@ public static class sp_WineImportationReport_Fast
                };
     }
 
+    public static async Task<RegistrationSummaryRow> SummaryRowAsync(
+        TradeNetDbContext db,
+        sp_WineImportationReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var registrations = db.WineImportationRegistrations.AsNoTracking().Where(registration =>
+            registration.CreatedDate >= request.FromDate
+            && registration.CreatedDate <= request.ToDate
+            && registration.Status == Approved);
+
+        var newCount = await registrations.CountAsync(r => r.ApplyType == "New");
+        var cancelCount = await registrations.CountAsync(r => r.ApplyType == "Cancel");
+        var extensionCount = await registrations.CountAsync(r => r.ApplyType == "Extension");
+        var validCount = await db.WineImportations.AsNoTracking()
+            .CountAsync(c => c.EndDate > request.Date);
+        var invalidCount = await db.WineImportations.AsNoTracking()
+            .CountAsync(c => c.EndDate < request.Date);
+
+        return RegistrationSummaryRow.Of(newCount, cancelCount, extensionCount, validCount, invalidCount);
+    }
+
     private static IEnumerable<WineImportationFastRow> SummaryRows(
         TradeNetDbContext db,
         sp_WineImportationReportRequest request)

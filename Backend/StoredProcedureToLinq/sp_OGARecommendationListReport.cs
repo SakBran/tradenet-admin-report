@@ -12,6 +12,10 @@ public sealed class sp_OGARecommendationListReportRequest
     public int OGASectionId { get; set; }
     public string CompanyRegistrationNo { get; set; } = string.Empty;
     public string ReferenceNo { get; set; } = string.Empty;
+
+    /// <summary>"List" (sorted by date) or "GroupBy" (sorted by Department then Section,
+    /// mirroring the legacy OGARecommendationGroupByReport.rdlc grouping).</summary>
+    public string FilterBy { get; set; } = "List";
 }
 
 public sealed class sp_OGARecommendationListReportResult
@@ -42,7 +46,7 @@ public static class sp_OGARecommendationListReport
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
-        return
+        var rows =
             from recommendation in db.Ogarecommendations
             join paThaKa in db.PaThaKas on recommendation.PaThaKaId equals paThaKa.Id
             join department in db.Ogadepartments on recommendation.OgadepartmentId equals department.Id
@@ -53,40 +57,54 @@ public static class sp_OGARecommendationListReport
                 && (request.OGASectionId == 0 || recommendation.OgasectionId == request.OGASectionId)
                 && (request.CompanyRegistrationNo == string.Empty || paThaKa.CompanyRegistrationNo == request.CompanyRegistrationNo)
                 && (request.ReferenceNo == string.Empty || recommendation.ReferenceNo == request.ReferenceNo)
-            orderby recommendation.CreatedDate, department.SortOrder, section.SortOrder
-            select new sp_OGARecommendationListReportResult
-            {
-                Id = recommendation.Id,
-                SDate = recommendation.CreatedDate.Day.ToString()
+            select new { recommendation, paThaKa, department, section };
+
+        // "List" sorts by date (legacy OGARecommendationListReport.rdlc); "GroupBy"
+        // sorts by Department then Section (legacy OGARecommendationGroupByReport.rdlc,
+        // which groups by Department -> Section over the same data).
+        var ordered = request.FilterBy == "GroupBy"
+            ? rows
+                .OrderBy(x => x.department.SortOrder)
+                .ThenBy(x => x.section.SortOrder)
+                .ThenBy(x => x.recommendation.CreatedDate)
+            : rows
+                .OrderBy(x => x.recommendation.CreatedDate)
+                .ThenBy(x => x.department.SortOrder)
+                .ThenBy(x => x.section.SortOrder);
+
+        return ordered.Select(x => new sp_OGARecommendationListReportResult
+        {
+            Id = x.recommendation.Id,
+            SDate = x.recommendation.CreatedDate.Day.ToString()
+                + "/"
+                + x.recommendation.CreatedDate.Month.ToString()
+                + "/"
+                + x.recommendation.CreatedDate.Year.ToString(),
+            CompanyRegistrationNo = x.paThaKa.CompanyRegistrationNo,
+            OGADepartmentId = x.recommendation.OgadepartmentId,
+            OGASectionId = x.recommendation.OgasectionId,
+            OGADepartmentName = x.department.EnglishName,
+            OGASectionName = x.section.EnglishName,
+            ReferenceNo = x.recommendation.ReferenceNo,
+            FromDate = x.recommendation.FromDate,
+            ToDate = x.recommendation.ToDate,
+            SFromDate = x.recommendation.FromDate == null
+                ? "-"
+                : x.recommendation.FromDate.Value.Day.ToString()
                     + "/"
-                    + recommendation.CreatedDate.Month.ToString()
+                    + x.recommendation.FromDate.Value.Month.ToString()
                     + "/"
-                    + recommendation.CreatedDate.Year.ToString(),
-                CompanyRegistrationNo = paThaKa.CompanyRegistrationNo,
-                OGADepartmentId = recommendation.OgadepartmentId,
-                OGASectionId = recommendation.OgasectionId,
-                OGADepartmentName = department.EnglishName,
-                OGASectionName = section.EnglishName,
-                ReferenceNo = recommendation.ReferenceNo,
-                FromDate = recommendation.FromDate,
-                ToDate = recommendation.ToDate,
-                SFromDate = recommendation.FromDate == null
-                    ? "-"
-                    : recommendation.FromDate.Value.Day.ToString()
-                        + "/"
-                        + recommendation.FromDate.Value.Month.ToString()
-                        + "/"
-                        + recommendation.FromDate.Value.Year.ToString(),
-                SToDate = recommendation.ToDate == null
-                    ? "-"
-                    : recommendation.ToDate.Value.Day.ToString()
-                        + "/"
-                        + recommendation.ToDate.Value.Month.ToString()
-                        + "/"
-                        + recommendation.ToDate.Value.Year.ToString(),
-                Allowance = recommendation.Allowance,
-                Terminate = recommendation.IsClosed ? "Yes" : "No",
-                IsUsedOnce = recommendation.IsUsedOnce ? "Yes" : "No"
-            };
+                    + x.recommendation.FromDate.Value.Year.ToString(),
+            SToDate = x.recommendation.ToDate == null
+                ? "-"
+                : x.recommendation.ToDate.Value.Day.ToString()
+                    + "/"
+                    + x.recommendation.ToDate.Value.Month.ToString()
+                    + "/"
+                    + x.recommendation.ToDate.Value.Year.ToString(),
+            Allowance = x.recommendation.Allowance,
+            Terminate = x.recommendation.IsClosed ? "Yes" : "No",
+            IsUsedOnce = x.recommendation.IsUsedOnce ? "Yes" : "No"
+        });
     }
 }

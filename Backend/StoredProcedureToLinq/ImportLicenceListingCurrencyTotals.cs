@@ -20,11 +20,13 @@ public sealed class ImportLicenceListingCurrencyTotalRow
 /// Currency-grouped summary footer for the Import Licence New / Amendment listing
 /// reports (legacy AmendReport.rdlc "Currency" group: per-currency licence count +
 /// summed value, plus a grand total). The proc's filtering and per-licence projection
-/// (TOP 1 item currency + TOP 1 item amount) mirror the grid query
-/// (<c>sp_AmendReport_pagination</c> / <c>sp_AmendReport</c>) so the footer lines up with
-/// the rows shown:
-///   * Amend -> sp_AmendReport_pagination (ApplyType='Amend' + AmendRemarkId)
-///   * New   -> sp_NewReport.ImportLicenceQuery (ApplyType='New', no AmendRemarkId)
+/// (TOP 1 item currency + TOP 1 item amount) mirror the grid query so the footer lines up
+/// with the rows shown. <c>applyType</c> selects the branch in
+/// <c>dbo.sp_ImportLicenceListingCurrencyTotals</c>:
+///   * "Amend"       -> sp_AmendReport_pagination (ApplyType='Amend' + AmendRemarkId)
+///   * "Cancel"      -> sp_CancelReport_pagination (ApplyType='Cancel', no AmendRemarkId, &lt;= ToDate)
+///   * "ActualAmend" -> sp_ActualAmendReport_pagination (ApplyType='Actual Amend' + AmendRemarkId)
+///   * "New" (else)  -> sp_NewReport.ImportLicenceQuery (ApplyType='New', no AmendRemarkId)
 /// </summary>
 public static class ImportLicenceListingCurrencyTotals
 {
@@ -36,10 +38,15 @@ public static class ImportLicenceListingCurrencyTotals
         DateTime toDate,
         int exportImportSectionId,
         string? companyRegistrationNo,
-        int amendRemarkId)
+        int amendRemarkId,
+        string? auto = null,
+        string? quota = null)
     {
         ArgumentNullException.ThrowIfNull(db);
 
+        // @auto / @quota are only used by the New branch (the New grid filters on them); the
+        // Amend / ActualAmend / Cancel branches have no such grid filter, so those callers
+        // leave them at '' and the proc ignores them.
         var parameters = new[]
         {
             new SqlParameter("@ApplyType", applyType ?? string.Empty),
@@ -48,11 +55,13 @@ public static class ImportLicenceListingCurrencyTotals
             new SqlParameter("@ExportImportSectionId", exportImportSectionId),
             new SqlParameter("@CompanyRegistrationNo", companyRegistrationNo ?? string.Empty),
             new SqlParameter("@AmendRemarkId", amendRemarkId),
+            new SqlParameter("@auto", auto ?? string.Empty),
+            new SqlParameter("@quota", quota ?? string.Empty),
         };
 
         const string sql =
             "EXEC dbo.sp_ImportLicenceListingCurrencyTotals @ApplyType, @FromDate, @ToDate, " +
-            "@ExportImportSectionId, @CompanyRegistrationNo, @AmendRemarkId";
+            "@ExportImportSectionId, @CompanyRegistrationNo, @AmendRemarkId, @auto, @quota";
 
         return RunAsync(db, sql, parameters);
     }

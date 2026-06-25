@@ -17,6 +17,7 @@ public sealed class sp_ExportPermitDetailReportRequest
     public int BuyerCountryId { get; set; }
     public string CompanyRegistrationNo { get; set; } = string.Empty;
     public int SakhanId { get; set; }
+    public string HSCode { get; set; } = string.Empty;
 }
 
 public class sp_ExportPermitDetailReportResult

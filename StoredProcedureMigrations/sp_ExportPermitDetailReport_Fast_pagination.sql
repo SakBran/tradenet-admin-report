@@ -35,7 +35,9 @@ BEGIN
         N'QuarterCityTownship', N'State', N'Country', N'PostalCode', N'ConsigneeName', N'ConsigneeAddress', N'BuyerCountry', N'PortofExport', N'PortofDischarge',
         N'DestinationCountry', N'LastDate', N'ConsignedCountry', N'CountryofOrigin', N'HSCode', N'HSDescription', N'Unit', N'Price', N'Quantity', N'Amount',
         N'Currency', N'NRCNo', N'PermitType', N'Conditions', N'ApproveDate')
-        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir + N', [LicenceDate] ASC, [LicenceNo] ASC';
+        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir
+            + CASE WHEN @SortColumn = N'LicenceDate' THEN N'' ELSE N', [LicenceDate] ASC' END
+            + CASE WHEN @SortColumn = N'LicenceNo' THEN N'' ELSE N', [LicenceNo] ASC' END;
     ELSE
         SET @ob = N'[LicenceDate] ASC, [LicenceNo] ASC';
 

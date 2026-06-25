@@ -19,7 +19,6 @@ namespace Backend.Controllers.Report
     [Route("api/[controller]")]
     public class EVCycleShowRoomSummaryReportController : ControllerBase, IStreamingExcelReport
     {
-        private const string FormType = "Show Room for Electric Cycles";
         private const string ReportKey = "EVCycleShowRoomSummaryReport";
 
         private readonly TradeNetDbContext _context;
@@ -32,7 +31,7 @@ namespace Backend.Controllers.Report
         }
 
         [HttpPost]
-        public async Task<ActionResult<ApiResult<sp_EVCycleShowRoomReportResult>>> Post(
+        public async Task<ActionResult<ApiResult<RegistrationSummaryRow>>> Post(
             [FromBody] EVCycleShowRoomSummaryReportRequest? request)
         {
             if (!TryCreateReportRequest(request, out var reportRequest, out var errorResult))
@@ -40,9 +39,9 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var query = sp_EVCycleShowRoomReport.Query(_context, reportRequest!);
-            var result = await ReportQueryService.CreatePagedResultAsync(query, request!);
-
+            var row = await sp_EVCycleShowRoomReport.SummaryRowAsync(_context, reportRequest!);
+            var result = ApiResult<RegistrationSummaryRow>.CreatePageFromRows(
+                new List<RegistrationSummaryRow> { row }, 1, 0, Math.Max(request!.PageSize, 1));
             return Ok(result);
         }
 
@@ -78,11 +77,8 @@ namespace Backend.Controllers.Report
             CancellationToken cancellationToken)
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
-            var query = sp_EVCycleShowRoomReport.Query(_context, procedureRequest!);
-            await foreach (var chunk in query.AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
-            {
-                sink.Append(chunk);
-            }
+            var row = await sp_EVCycleShowRoomReport.SummaryRowAsync(_context, procedureRequest!);
+            sink.Append(new[] { row });
         }
 
         private bool TryCreateReportRequest(
@@ -123,7 +119,7 @@ namespace Backend.Controllers.Report
                 ToDate = request.ToDate,
                 Date = request.ToDate.Date,
                 ApplyType = string.Empty,
-                FormType = FormType,
+                AllowedFormTypes = sp_EVCycleShowRoomReport.ResolveFormTypes(request.FormType),
                 Type = "Summary"
             };
 
@@ -135,5 +131,6 @@ namespace Backend.Controllers.Report
     {
         public DateTime FromDate { get; set; }
         public DateTime ToDate { get; set; }
+        public string? FormType { get; set; }
     }
 }

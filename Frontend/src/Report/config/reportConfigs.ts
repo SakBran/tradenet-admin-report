@@ -264,7 +264,10 @@ const importLicenceVoucherPaymentTypeFilter: ReportFilterConfig = {
   label: 'Payment Type',
   type: 'select',
   defaultValue: '',
-  lookupName: 'paymentTypes',
+  // AccountTransaction.PaymentType stores the NAME (Cash/MPU/Citizen Pay), not the id.
+  // The 'paymentTypes' lookup sends the numeric id ("1"/"2"/...), which never matches
+  // the SP's `AccountTransaction.PaymentType = @PaymentType` filter -> no data.
+  options: voucherPaymentTypeOptions,
 };
 
 const importLicenceAmendFilters: ReportFilterConfig[] = [
@@ -614,6 +617,13 @@ const reportDateRangeSubtitle =
     return `${label} (${fromDate}) To (${toDate})`;
   };
 
+// Legacy registration-report header: a static centered title block + a trailing
+// date-range line (the old RDLC's header1/header2 parameter line).
+const registrationDateRangeSubtitle = (filters: Record<string, unknown>) =>
+  `(${formatLegacyReportDate(filters.FromDate)}) To (${formatLegacyReportDate(
+    filters.ToDate
+  )})`;
+
 const resolveImportLicenceVoucherColumns = (
   filters: Record<string, unknown>,
   columns: ReportColumnConfig[]
@@ -818,9 +828,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -938,9 +948,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -1013,6 +1023,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'hsCode',
         dataIndex: 'hsCode',
         title: 'HS Code',
+        drilldown: {
+          targetReportKey: 'BorderExportLicenceDetailReport',
+          carryFilters: ['FromDate', 'ToDate', 'ExportImportSectionId', 'SakhanId'],
+          rowParams: { hsCode: 'hsCode' },
+          openInNewTab: true,
+        },
       },
       {
         key: 'Description',
@@ -1163,12 +1179,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ...borderExportLicenceMethodFilter,
       },
       {
-        ...borderExportLicenceIncotermFilter,
-      },
-      {
-        ...exportLicenceBuyerCountryFilter,
-      },
-      {
         name: 'CompanyRegistrationNo',
         label: 'Company Registration No',
         type: 'text',
@@ -1192,6 +1202,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           targetReportKey: 'BorderExportLicenceDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId'],
           rowParams: { ExportImportSectionId: 'sectionId' },
+          openInNewTab: true,
         },
       },
       {
@@ -1213,7 +1224,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderExportLicenceBySellerCountryReport: {
     controllerName: 'BorderExportLicenceBySellerCountryReport',
-    title: 'Border Export Licence By Seller Country Report',
+    title: 'Border Export Licence By Buyer Country Report',
     apiRoute: 'BorderExportLicenceBySellerCountryReport',
     excelRoute: 'BorderExportLicenceBySellerCountryReport/Excel',
     excelFileName: 'BorderExportLicenceBySellerCountryReport.xlsx',
@@ -1248,9 +1259,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ...borderExportLicenceMethodFilter,
       },
       {
-        ...borderExportLicenceIncotermFilter,
-      },
-      {
         ...exportLicenceBuyerCountryFilter,
       },
       {
@@ -1277,6 +1285,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           targetReportKey: 'BorderExportLicenceDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId', 'SakhanId'],
           rowParams: { BuyerCountryId: 'countryId' },
+          openInNewTab: true,
         },
       },
       {
@@ -1398,9 +1407,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -1452,12 +1461,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ...borderExportLicenceMethodFilter,
       },
       {
-        ...borderExportLicenceIncotermFilter,
-      },
-      {
-        ...exportLicenceBuyerCountryFilter,
-      },
-      {
         name: 'CompanyRegistrationNo',
         label: 'Company Registration No',
         type: 'text',
@@ -1481,6 +1484,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           targetReportKey: 'BorderExportLicenceDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId', 'SakhanId'],
           rowParams: { CompanyRegistrationNo: 'companyRegistrationNo' },
+          openInNewTab: true,
         },
       },
       {
@@ -1532,15 +1536,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'number',
         defaultValue: 0,
         lookupName: 'borderExportLicenceSections',
-      },
-      {
-        ...borderExportLicenceMethodFilter,
-      },
-      {
-        ...borderExportLicenceIncotermFilter,
-      },
-      {
-        ...exportLicenceBuyerCountryFilter,
       },
       {
         name: 'CompanyRegistrationNo',
@@ -1632,9 +1627,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ...borderExportLicenceIncotermFilter,
       },
       {
-        ...exportLicenceBuyerCountryFilter,
-      },
-      {
         name: 'CompanyRegistrationNo',
         label: 'Company Registration No',
         type: 'text',
@@ -1646,6 +1638,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'number',
         defaultValue: 0,
         lookupName: 'sakhans',
+      },
+      {
+        name: 'hsCode',
+        label: 'HS Code',
+        type: 'text',
+        defaultValue: '',
       },
     ],
     reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licences By Detail', true),
@@ -1908,9 +1906,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -2017,9 +2015,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -2054,12 +2052,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         required: true,
       },
       {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
         name: 'PaThaKaTypeId',
         label: 'EIR Card Type',
         type: 'number',
@@ -2072,33 +2064,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'number',
         defaultValue: 0,
         lookupName: 'borderExportLicenceSections',
-      },
-      {
-        name: 'ExportImportMethodId',
-        label: 'Method of export',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Method of export According to Incoterms',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'BuyerCountryId',
-        label: 'Buyer Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        ...importLicenceCompanyNameFilter,
       },
       {
         name: 'SakhanId',
@@ -2378,9 +2343,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'hsCode',
@@ -2502,9 +2467,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -2913,9 +2878,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -3407,9 +3372,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -3507,9 +3472,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -3721,9 +3686,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'hsCode',
@@ -3799,9 +3764,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'hsCode',
@@ -4084,9 +4049,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -4556,9 +4521,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -4658,9 +4623,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -4760,9 +4725,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Additional Description',
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -5006,9 +4971,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'hsCode',
@@ -5130,9 +5095,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'hsCode',
@@ -5539,9 +5504,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -6017,9 +5982,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -6120,9 +6085,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -6170,7 +6135,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         name: 'PaymentType',
         label: 'Payment Type',
         type: 'select',
-        lookupName: 'paymentTypes',
+        // Same fix as Import Licence Voucher: filter compares the PaymentType NAME,
+        // so the dropdown must send Cash/MPU/Citizen Pay, not the numeric lookup id.
+        options: voucherPaymentTypeOptions,
         defaultValue: '',
       },
       {
@@ -6658,9 +6625,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -6726,9 +6693,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -7108,9 +7075,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -7553,9 +7520,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -7611,9 +7578,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -7850,9 +7817,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'HSCode',
+        dataIndex: 'hsCode',
+        title: 'HS Code',
+      },
+      {
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -7954,9 +7926,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -8014,6 +7986,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'hsCode',
         dataIndex: 'hsCode',
         title: 'HS Code',
+        drilldown: {
+          targetReportKey: 'ExportPermitDetailReport',
+          carryFilters: ['FromDate', 'ToDate'],
+          rowParams: { hsCode: 'hsCode' },
+          openInNewTab: true,
+        },
       },
       {
         key: 'Description',
@@ -8058,12 +8036,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         required: true,
       },
       {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
         name: 'PaThaKaTypeId',
         label: 'EIR Card Type',
         type: 'number',
@@ -8076,18 +8048,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
         lookupName: 'exportPermitSections',
       },
-      {
-        name: 'BuyerCountryId',
-        label: 'Buyer Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
     ],
     columns: [
       {
@@ -8098,6 +8058,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           targetReportKey: 'ExportPermitDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId'],
           rowParams: { ExportImportSectionId: 'exportImportSectionId' },
+          openInNewTab: true,
         },
       },
       {
@@ -8120,7 +8081,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   ExportPermitBySellerCountryReport: {
     controllerName: 'ExportPermitBySellerCountryReport',
     reportSubtitle: importLicenceRangeSubtitle('List of Export Permit By Buyer Country', true),
-    title: 'Export Permit By Seller Country Report',
+    title: 'Export Permit By Buyer Country Report',
     apiRoute: 'ExportPermitBySellerCountryReport',
     excelRoute: 'ExportPermitBySellerCountryReport/Excel',
     excelFileName: 'ExportPermitBySellerCountryReport.xlsx',
@@ -8136,12 +8097,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         fromLabel: 'From Date',
         toLabel: 'To Date',
         required: true,
-      },
-      {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
       },
       {
         name: 'PaThaKaTypeId',
@@ -8162,12 +8117,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'number',
         defaultValue: 0,
       },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
     ],
     columns: [
       {
@@ -8178,6 +8127,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           targetReportKey: 'ExportPermitDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId'],
           rowParams: { BuyerCountryId: 'countryId' },
+          openInNewTab: true,
         },
       },
       {
@@ -8283,9 +8233,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'HSCode',
+        dataIndex: 'hsCode',
+        title: 'HS Code',
+      },
+      {
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -8321,12 +8276,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         required: true,
       },
       {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
         name: 'PaThaKaTypeId',
         label: 'EIR Card Type',
         type: 'number',
@@ -8339,12 +8288,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
         lookupName: 'exportPermitSections',
       },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
     ],
     columns: [
       {
@@ -8353,8 +8296,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Company Name',
         drilldown: {
           targetReportKey: 'ExportPermitDetailReport',
-          carryFilters: ['FromDate', 'ToDate', 'Type', 'PaThaKaTypeId', 'ExportImportSectionId'],
+          carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId'],
           rowParams: { CompanyRegistrationNo: 'companyRegistrationNo' },
+          openInNewTab: true,
         },
       },
       {
@@ -8498,6 +8442,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'CompanyRegistrationNo',
         label: 'Company Registration No',
+        type: 'text',
+        defaultValue: '',
+      },
+      {
+        name: 'hsCode',
+        label: 'HS Code',
         type: 'text',
         defaultValue: '',
       },
@@ -8729,9 +8679,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -8817,9 +8767,19 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'CommodityType',
+        dataIndex: 'commodityType',
+        title: 'Commodity Type',
+      },
+      {
+        key: 'HSCode',
+        dataIndex: 'hsCode',
+        title: 'HS Code',
+      },
+      {
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -8874,7 +8834,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           { label: 'Extension', value: 'Extension' },
           { label: 'Cancel', value: 'Cancel' },
           { label: 'Actual Amend', value: 'Actual Amend' },
-          { label: 'De-Cancel', value: 'De-Cancel' },
         ],
       },
       {
@@ -8966,6 +8925,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     showRowNumber: true,
     filters: importLicenceAmendFilters,
     reportSubtitle: importLicenceRangeSubtitle('List of Import Licence Report'),
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
     columns: [
       {
         key: 'Section',
@@ -8974,7 +8934,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
       },
       {
@@ -9011,9 +8971,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'hsCode',
@@ -9084,9 +9044,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'hsCode',
@@ -9337,9 +9297,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -9874,9 +9834,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -9896,6 +9856,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     showRowNumber: true,
     filters: importLicenceNewFilters,
     reportSubtitle: importLicenceRangeSubtitle('List of Import Licence Report'),
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
     columns: [
       {
         key: 'Section',
@@ -9931,9 +9892,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -10026,9 +9987,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Additional Description',
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -10254,9 +10215,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'hsCode',
@@ -10364,9 +10325,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'hsCode',
@@ -10693,9 +10654,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -11121,9 +11082,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -11210,9 +11171,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -12674,7 +12635,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'WholeSaleSummaryReport',
     excelRoute: 'WholeSaleSummaryReport/Excel',
     excelFileName: 'WholeSaleSummaryReport.xlsx',
-    showRowNumber: true,
+    reportHeading: ['Statement of Registered', 'Whole Sale at', 'Ministry of Commerce'],
+    reportSubtitle: registrationDateRangeSubtitle,
+    showRowNumber: false,
     filters: [
       {
         name: 'dateRange',
@@ -12688,13 +12651,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
     ],
     columns: [
-      { key: 'ApplyType', dataIndex: 'applyType', title: 'Apply Type' },
-      {
-        key: 'ApplicationCount',
-        dataIndex: 'applicationCount',
-        title: 'Application Count',
-        dataType: 'number',
-      },
+      { key: 'NewCount', dataIndex: 'newCount', title: 'Number of Register', dataType: 'number' },
+      { key: 'CancelCount', dataIndex: 'cancelCount', title: 'Number of De-Register', dataType: 'number' },
+      { key: 'ExtensionCount', dataIndex: 'extensionCount', title: 'Number of Extension', dataType: 'number' },
+      { key: 'ValidCount', dataIndex: 'validCount', title: 'Total Number Still Valid', dataType: 'number' },
+      { key: 'InvalidCount', dataIndex: 'invalidCount', title: 'Total Number Invalid', dataType: 'number' },
+      { key: 'TotalNumber', dataIndex: 'totalNumber', title: 'Total Number', dataType: 'number' },
     ],
   },
   WholeSaleDetailReport: {
@@ -12703,6 +12665,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'WholeSaleDetailReport',
     excelRoute: 'WholeSaleDetailReport/Excel',
     excelFileName: 'WholeSaleDetailReport.xlsx',
+    reportHeading: ['Statement of Registered', 'Whole Sale', 'Ministry of Commerce'],
+    reportSubtitle: registrationDateRangeSubtitle,
     showRowNumber: true,
     filters: [
       {
@@ -12732,7 +12696,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'WholeSaleRetailNo',
         dataIndex: 'wholeSaleRetailNo',
-        title: 'Whole Sale Retail No',
+        title: 'Whole Sale No',
       },
       { key: 'CompanyName', dataIndex: 'companyName', title: 'Company Name' },
       {
@@ -12751,7 +12715,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'WholeSaleRetailAddress',
         dataIndex: 'wholeSaleRetailAddress',
-        title: 'Whole Sale Retail Address',
+        title: 'Whole Sale Address',
         fallbackDataIndexes: [
           'wholeSaleRetailUnitLevel',
           'wholeSaleRetailStreetNumberStreetName',
@@ -12770,7 +12734,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'EndDate',
         dataIndex: 'endDate',
-        title: 'End Date',
+        title: 'Valid Date',
         dataType: 'date',
       },
     ],
@@ -12781,6 +12745,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'WholeSaleRegistrationByVoucher',
     excelRoute: 'WholeSaleRegistrationByVoucher/Excel',
     excelFileName: 'WholeSaleRegistrationByVoucher.xlsx',
+    reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
+    reportSubtitle: registrationDateRangeSubtitle,
     initialSortColumn: 'Date',
     showRowNumber: true,
     filters: [
@@ -12833,17 +12799,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'WholeSaleRetailNo',
         dataIndex: 'wholeSaleRetailNo',
-        title: 'Whole Sale Retail No',
-      },
-      {
-        key: 'WholeSalRetailName',
-        dataIndex: 'wholeSalRetailName',
-        title: 'Whole Sale Retail Name',
+        title: 'Whole Sale No',
       },
       {
         key: 'WholeSaleRetailAddress',
         dataIndex: 'wholeSaleRetailAddress',
-        title: 'Whole Sale Retail Address',
+        title: 'Whole Sale Address',
         fallbackDataIndexes: [
           'wholeSaleRetailUnitLevel',
           'wholeSaleRetailStreetNumberStreetName',
@@ -12852,6 +12813,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           'wholeSaleRetailCountry',
           'wholeSaleRetailPostalCode',
         ],
+      },
+      {
+        key: 'TotalAmount',
+        dataIndex: 'totalAmount',
+        title: 'Total Amount',
+        dataType: 'number',
       },
       {
         key: 'PaymentType',
@@ -12865,12 +12832,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Voucher Date',
         dataType: 'date',
       },
-      {
-        key: 'TotalAmount',
-        dataIndex: 'totalAmount',
-        title: 'Total Amount',
-        dataType: 'number',
-      },
     ],
   },
   RetailSummaryReport: {
@@ -12879,7 +12840,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'RetailSummaryReport',
     excelRoute: 'RetailSummaryReport/Excel',
     excelFileName: 'RetailSummaryReport.xlsx',
-    showRowNumber: true,
+    reportHeading: ['Statement of Registered', 'Retail at', 'Ministry of Commerce'],
+    reportSubtitle: registrationDateRangeSubtitle,
+    showRowNumber: false,
     filters: [
       {
         name: 'dateRange',
@@ -12893,13 +12856,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
     ],
     columns: [
-      { key: 'ApplyType', dataIndex: 'applyType', title: 'Apply Type' },
-      {
-        key: 'ApplicationCount',
-        dataIndex: 'applicationCount',
-        title: 'Application Count',
-        dataType: 'number',
-      },
+      { key: 'NewCount', dataIndex: 'newCount', title: 'Number of Register', dataType: 'number' },
+      { key: 'CancelCount', dataIndex: 'cancelCount', title: 'Number of De-Register', dataType: 'number' },
+      { key: 'ExtensionCount', dataIndex: 'extensionCount', title: 'Number of Extension', dataType: 'number' },
+      { key: 'ValidCount', dataIndex: 'validCount', title: 'Total Number Still Valid', dataType: 'number' },
+      { key: 'InvalidCount', dataIndex: 'invalidCount', title: 'Total Number Invalid', dataType: 'number' },
+      { key: 'TotalNumber', dataIndex: 'totalNumber', title: 'Total Number', dataType: 'number' },
     ],
   },
   RetailDetailReport: {
@@ -12908,6 +12870,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'RetailDetailReport',
     excelRoute: 'RetailDetailReport/Excel',
     excelFileName: 'RetailDetailReport.xlsx',
+    reportHeading: ['Statement of Registered', 'Retail', 'Ministry of Commerce'],
+    reportSubtitle: registrationDateRangeSubtitle,
     showRowNumber: true,
     filters: [
       {
@@ -12937,7 +12901,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'WholeSaleRetailNo',
         dataIndex: 'wholeSaleRetailNo',
-        title: 'Whole Sale Retail No',
+        title: 'Retail No',
       },
       { key: 'CompanyName', dataIndex: 'companyName', title: 'Company Name' },
       {
@@ -12956,7 +12920,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'WholeSaleRetailAddress',
         dataIndex: 'wholeSaleRetailAddress',
-        title: 'Whole Sale Retail Address',
+        title: 'Retail Address',
         fallbackDataIndexes: [
           'wholeSaleRetailUnitLevel',
           'wholeSaleRetailStreetNumberStreetName',
@@ -12975,7 +12939,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'EndDate',
         dataIndex: 'endDate',
-        title: 'End Date',
+        title: 'Valid Date',
         dataType: 'date',
       },
     ],
@@ -12986,6 +12950,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'RetailRegistrationByVoucher',
     excelRoute: 'RetailRegistrationByVoucher/Excel',
     excelFileName: 'RetailRegistrationByVoucher.xlsx',
+    reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
+    reportSubtitle: registrationDateRangeSubtitle,
     initialSortColumn: 'Date',
     showRowNumber: true,
     filters: [
@@ -13038,17 +13004,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'WholeSaleRetailNo',
         dataIndex: 'wholeSaleRetailNo',
-        title: 'Whole Sale Retail No',
-      },
-      {
-        key: 'WholeSalRetailName',
-        dataIndex: 'wholeSalRetailName',
-        title: 'Whole Sale Retail Name',
+        title: 'Retail No',
       },
       {
         key: 'WholeSaleRetailAddress',
         dataIndex: 'wholeSaleRetailAddress',
-        title: 'Whole Sale Retail Address',
+        title: 'Retail Address',
         fallbackDataIndexes: [
           'wholeSaleRetailUnitLevel',
           'wholeSaleRetailStreetNumberStreetName',
@@ -13057,6 +13018,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           'wholeSaleRetailCountry',
           'wholeSaleRetailPostalCode',
         ],
+      },
+      {
+        key: 'TotalAmount',
+        dataIndex: 'totalAmount',
+        title: 'Total Amount',
+        dataType: 'number',
       },
       {
         key: 'PaymentType',
@@ -13070,12 +13037,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Voucher Date',
         dataType: 'date',
       },
-      {
-        key: 'TotalAmount',
-        dataIndex: 'totalAmount',
-        title: 'Total Amount',
-        dataType: 'number',
-      },
     ],
   },
   WholeSaleAndRetailSummaryReport: {
@@ -13084,7 +13045,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'WholeSaleAndRetailSummaryReport',
     excelRoute: 'WholeSaleAndRetailSummaryReport/Excel',
     excelFileName: 'WholeSaleAndRetailSummaryReport.xlsx',
-    showRowNumber: true,
+    reportHeading: ['Statement of Registered', 'Whole Sale & Retail at', 'Ministry of Commerce'],
+    reportSubtitle: registrationDateRangeSubtitle,
+    showRowNumber: false,
     filters: [
       {
         name: 'dateRange',
@@ -13098,13 +13061,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
     ],
     columns: [
-      { key: 'ApplyType', dataIndex: 'applyType', title: 'Apply Type' },
-      {
-        key: 'ApplicationCount',
-        dataIndex: 'applicationCount',
-        title: 'Application Count',
-        dataType: 'number',
-      },
+      { key: 'NewCount', dataIndex: 'newCount', title: 'Number of Register', dataType: 'number' },
+      { key: 'CancelCount', dataIndex: 'cancelCount', title: 'Number of De-Register', dataType: 'number' },
+      { key: 'ExtensionCount', dataIndex: 'extensionCount', title: 'Number of Extension', dataType: 'number' },
+      { key: 'ValidCount', dataIndex: 'validCount', title: 'Total Number Still Valid', dataType: 'number' },
+      { key: 'InvalidCount', dataIndex: 'invalidCount', title: 'Total Number Invalid', dataType: 'number' },
+      { key: 'TotalNumber', dataIndex: 'totalNumber', title: 'Total Number', dataType: 'number' },
     ],
   },
   WholeSaleAndRetailDetailReport: {
@@ -13113,6 +13075,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'WholeSaleAndRetailDetailReport',
     excelRoute: 'WholeSaleAndRetailDetailReport/Excel',
     excelFileName: 'WholeSaleAndRetailDetailReport.xlsx',
+    reportHeading: ['Statement of Registered', 'Whole Sale & Retail', 'Ministry of Commerce'],
+    reportSubtitle: registrationDateRangeSubtitle,
     showRowNumber: true,
     filters: [
       {
@@ -13142,7 +13106,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'WholeSaleRetailNo',
         dataIndex: 'wholeSaleRetailNo',
-        title: 'Whole Sale Retail No',
+        title: 'Whole Sale & Retail No',
       },
       { key: 'CompanyName', dataIndex: 'companyName', title: 'Company Name' },
       {
@@ -13161,7 +13125,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'WholeSaleRetailAddress',
         dataIndex: 'wholeSaleRetailAddress',
-        title: 'Whole Sale Retail Address',
+        title: 'Whole Sale & Retail Address',
         fallbackDataIndexes: [
           'wholeSaleRetailUnitLevel',
           'wholeSaleRetailStreetNumberStreetName',
@@ -13180,7 +13144,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'EndDate',
         dataIndex: 'endDate',
-        title: 'End Date',
+        title: 'Valid Date',
         dataType: 'date',
       },
     ],
@@ -13191,6 +13155,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'WholeSaleAndRetailRegistrationByVoucher',
     excelRoute: 'WholeSaleAndRetailRegistrationByVoucher/Excel',
     excelFileName: 'WholeSaleAndRetailRegistrationByVoucher.xlsx',
+    reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
+    reportSubtitle: registrationDateRangeSubtitle,
     initialSortColumn: 'Date',
     showRowNumber: true,
     filters: [
@@ -13243,17 +13209,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'WholeSaleRetailNo',
         dataIndex: 'wholeSaleRetailNo',
-        title: 'Whole Sale Retail No',
-      },
-      {
-        key: 'WholeSalRetailName',
-        dataIndex: 'wholeSalRetailName',
-        title: 'Whole Sale Retail Name',
+        title: 'Whole Sale & Retail No',
       },
       {
         key: 'WholeSaleRetailAddress',
         dataIndex: 'wholeSaleRetailAddress',
-        title: 'Whole Sale Retail Address',
+        title: 'Whole Sale & Retail Address',
         fallbackDataIndexes: [
           'wholeSaleRetailUnitLevel',
           'wholeSaleRetailStreetNumberStreetName',
@@ -13262,6 +13223,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           'wholeSaleRetailCountry',
           'wholeSaleRetailPostalCode',
         ],
+      },
+      {
+        key: 'TotalAmount',
+        dataIndex: 'totalAmount',
+        title: 'Total Amount',
+        dataType: 'number',
       },
       {
         key: 'PaymentType',
@@ -13274,12 +13241,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'voucherDate',
         title: 'Voucher Date',
         dataType: 'date',
-      },
-      {
-        key: 'TotalAmount',
-        dataIndex: 'totalAmount',
-        title: 'Total Amount',
-        dataType: 'number',
       },
     ],
   },

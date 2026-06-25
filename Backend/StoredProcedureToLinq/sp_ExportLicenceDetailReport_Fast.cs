@@ -402,6 +402,7 @@ public static partial class sp_ExportLicenceDetailReport_Fast
             join paThaKa in db.PaThaKas.AsNoTracking() on licence.PaThaKaId equals paThaKa.Id
             join paThaKaType in db.PaThaKaTypes.AsNoTracking() on paThaKa.PaThaKaTypeId equals paThaKaType.Id
             join item in db.BorderExportLicenceItems.AsNoTracking() on licence.Id equals item.BorderExportLicenceId
+            join hsCode in db.Hscodes.AsNoTracking() on item.HscodeId equals hsCode.Id
             where request.Type == "Border"
                 && licence.ApplyType == New
                 && licence.Status == Approved
@@ -415,6 +416,7 @@ public static partial class sp_ExportLicenceDetailReport_Fast
                 && (request.ExportImportIncotermId == 0 || licence.ExportImportIncotermId == request.ExportImportIncotermId)
                 && (request.BuyerCountryId == 0 || licence.BuyerCountryId == request.BuyerCountryId)
                 && (request.SakhanId == 0 || licence.SakhanId == request.SakhanId)
+                && (request.HSCode == string.Empty || hsCode.Code == request.HSCode)
             select new ExportLicenceDetailRowKey
             {
                 ItemUniqueId = item.UniqueId,
@@ -432,6 +434,7 @@ public static partial class sp_ExportLicenceDetailReport_Fast
             join individualTrading in db.IndividualTradings.AsNoTracking() on licence.IndividualTradingId equals individualTrading.Id
             join paThaKaType in db.PaThaKaTypes.AsNoTracking() on individualTrading.PaThaKaTypeId equals paThaKaType.Id
             join item in db.BorderExportLicenceItems.AsNoTracking() on licence.Id equals item.BorderExportLicenceId
+            join hsCode in db.Hscodes.AsNoTracking() on item.HscodeId equals hsCode.Id
             where request.Type == "Border"
                 && licence.ApplyType == New
                 && licence.Status == Approved
@@ -445,6 +448,7 @@ public static partial class sp_ExportLicenceDetailReport_Fast
                 && (request.ExportImportIncotermId == 0 || licence.ExportImportIncotermId == request.ExportImportIncotermId)
                 && (request.BuyerCountryId == 0 || licence.BuyerCountryId == request.BuyerCountryId)
                 && (request.SakhanId == 0 || licence.SakhanId == request.SakhanId)
+                && (request.HSCode == string.Empty || hsCode.Code == request.HSCode)
             select new ExportLicenceDetailRowKey
             {
                 ItemUniqueId = item.UniqueId,
@@ -565,6 +569,7 @@ public static partial class sp_ExportLicenceDetailReport_Fast
                 && (request.ExportImportIncotermId == 0 || licence.ExportImportIncotermId == request.ExportImportIncotermId)
                 && (request.BuyerCountryId == 0 || licence.BuyerCountryId == request.BuyerCountryId)
                 && (request.SakhanId == 0 || licence.SakhanId == request.SakhanId)
+                && (request.HSCode == string.Empty || hsCode.Code == request.HSCode)
             select new ExportLicenceDetailFastRow
             {
                 ItemUniqueId = item.UniqueId,
@@ -648,6 +653,7 @@ public static partial class sp_ExportLicenceDetailReport_Fast
                 && (request.ExportImportIncotermId == 0 || licence.ExportImportIncotermId == request.ExportImportIncotermId)
                 && (request.BuyerCountryId == 0 || licence.BuyerCountryId == request.BuyerCountryId)
                 && (request.SakhanId == 0 || licence.SakhanId == request.SakhanId)
+                && (request.HSCode == string.Empty || hsCode.Code == request.HSCode)
             select new ExportLicenceDetailFastRow
             {
                 ItemUniqueId = item.UniqueId,

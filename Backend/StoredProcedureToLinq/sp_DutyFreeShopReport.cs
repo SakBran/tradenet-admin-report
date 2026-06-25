@@ -1,8 +1,10 @@
 using API.DBContext;
 using API.Model.TradeNet;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
 
@@ -111,6 +113,27 @@ public static class sp_DutyFreeShopReport
                    IssuedDate = dutyFreeShop.IssuedDate,
                    EndDate = dutyFreeShop.EndDate
                };
+    }
+
+    public static async Task<RegistrationSummaryRow> SummaryRowAsync(
+        TradeNetDbContext db,
+        sp_DutyFreeShopReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var registrations = db.DutyFreeShopRegistrations.Where(registration =>
+            registration.CreatedDate >= request.FromDate
+            && registration.CreatedDate <= request.ToDate
+            && registration.Status == Approved);
+
+        var newCount = await registrations.CountAsync(r => r.ApplyType == "New");
+        var cancelCount = await registrations.CountAsync(r => r.ApplyType == "Cancel");
+        var extensionCount = await registrations.CountAsync(r => r.ApplyType == "Extension");
+        var validCount = await db.DutyFreeShops.CountAsync(c => c.EndDate > request.Date);
+        var invalidCount = await db.DutyFreeShops.CountAsync(c => c.EndDate < request.Date);
+
+        return RegistrationSummaryRow.Of(newCount, cancelCount, extensionCount, validCount, invalidCount);
     }
 
     private static IQueryable<sp_DutyFreeShopReportResult> SummaryQuery(

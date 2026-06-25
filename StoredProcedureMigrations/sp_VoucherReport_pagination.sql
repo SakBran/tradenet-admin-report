@@ -39,11 +39,9 @@ BEGIN
 
     DECLARE @ob nvarchar(400);
     IF @SortColumn IS NOT NULL AND @SortColumn IN (N'ApplicationNo', N'ApplicationDate', N'ApprovedUser', N'Date', N'sDate', N'SectionCode', N'ApplyType', N'OldLicenceNo', N'LicenceNo', N'LicenceDate', N'sLicenceDate', N'CompanyRegistrationNo', N'CompanyName', N'VoucherNo', N'VoucherDate', N'sVoucherDate', N'Amount', N'PaymentType', N'CommodityType', N'ExchangeRate', N'TotalCIF')
-    BEGIN
-        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir;
-        IF @SortColumn <> N'ApplicationNo' SET @ob += N', [ApplicationNo] ASC';
-        IF @SortColumn <> N'LicenceNo' SET @ob += N', [LicenceNo] ASC';
-    END
+        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir
+            + CASE WHEN @SortColumn = N'ApplicationNo' THEN N'' ELSE N', [ApplicationNo] ASC' END
+            + CASE WHEN @SortColumn = N'LicenceNo' THEN N'' ELSE N', [LicenceNo] ASC' END;
     ELSE
         SET @ob = N'[ApplicationNo] ASC, [LicenceNo] ASC';
 
@@ -96,7 +94,10 @@ CAST(AccountTransaction.TotalAmount AS decimal(38,6)) Amount,
 PaymentType,
 ImportPermit.CommodityType,
 CAST(ImportPermit.ExchangeRate AS decimal(38,6)) ExchangeRate,
-CAST(ImportPermit.TotalCIF AS float) TotalCIF,
+-- Must be decimal(38,6) to match the C# sp_VoucherReportRow.TotalCIF (decimal?) and all
+-- other branch casts. AS float made EF GetDecimal throw InvalidCastException (Double to
+-- Decimal), returning HTTP 500 for the whole Import Permit Voucher report (no data).
+CAST(ImportPermit.TotalCIF AS decimal(38,6)) TotalCIF,
 ImportPermit.Id AS __k_Id
         FROM ImportPermit
 		INNER JOIN AccountTransaction ON ImportPermit.Id=AccountTransaction.TransactionId

@@ -312,6 +312,7 @@ public static class sp_ExportPermitDetailReport_Fast
                 && (request.PaThaKaTypeId == 0 || paThaKaType.Id == request.PaThaKaTypeId)
                 && (request.ExportImportSectionId == 0 || permit.ExportImportSectionId == request.ExportImportSectionId)
                 && (request.BuyerCountryId == 0 || permit.BuyerCountryId == request.BuyerCountryId)
+                && (request.HSCode == string.Empty || hsCode.Code == request.HSCode)
             select new ExportPermitDetailFastRow
             {
                 PaThaKaTypeId = paThaKaType.Id,
@@ -390,6 +391,7 @@ public static class sp_ExportPermitDetailReport_Fast
                 && (request.ExportImportSectionId == 0 || permit.ExportImportSectionId == request.ExportImportSectionId)
                 && (request.BuyerCountryId == 0 || permit.BuyerCountryId == request.BuyerCountryId)
                 && (request.SakhanId == 0 || permit.SakhanId == request.SakhanId)
+                && (request.HSCode == string.Empty || hsCode.Code == request.HSCode)
             select new ExportPermitDetailFastRow
             {
                 PaThaKaTypeId = paThaKaType.Id,

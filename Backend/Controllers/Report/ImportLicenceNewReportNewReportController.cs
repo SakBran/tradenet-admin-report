@@ -66,6 +66,17 @@ namespace Backend.Controllers.Report
                     data, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
 
+            if (data.Count > 0)
+            {
+                // Legacy NewLicenceReport.rdlc "Currency" group footer: per-currency licence
+                // count + summed value, plus the grand "Total: N licence(s)". New licences carry
+                // no amend remark, so amendRemarkId: 0 (the proc's New branch ignores it).
+                result.CurrencyTotals = await ImportLicenceListingCurrencyTotals.ExecuteAsync(
+                    _context, "New", procedureRequest!.FromDate, procedureRequest.ToDate,
+                    procedureRequest.ExportImportSectionId, procedureRequest.CompanyRegistrationNo,
+                    amendRemarkId: 0, auto: procedureRequest.Auto, quota: procedureRequest.Quota);
+            }
+
             return Ok(result);
         }
 
