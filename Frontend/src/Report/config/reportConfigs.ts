@@ -7634,6 +7634,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
+        key: 'HSCode',
+        dataIndex: 'hsCode',
+        title: 'HS Code',
+      },
+      {
         key: 'Curency',
         dataIndex: 'currency',
         title: 'Curency',
@@ -7798,6 +7803,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'hsCode',
         dataIndex: 'hsCode',
         title: 'HS Code',
+        drilldown: {
+          targetReportKey: 'ExportPermitDetailReport',
+          carryFilters: ['FromDate', 'ToDate'],
+          rowParams: { hsCode: 'hsCode' },
+          openInNewTab: true,
+        },
       },
       {
         key: 'Description',
@@ -7842,12 +7853,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         required: true,
       },
       {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
         name: 'PaThaKaTypeId',
         label: 'EIR Card Type',
         type: 'number',
@@ -7860,18 +7865,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
         lookupName: 'exportPermitSections',
       },
-      {
-        name: 'BuyerCountryId',
-        label: 'Buyer Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
     ],
     columns: [
       {
@@ -7882,6 +7875,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           targetReportKey: 'ExportPermitDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId'],
           rowParams: { ExportImportSectionId: 'exportImportSectionId' },
+          openInNewTab: true,
         },
       },
       {
@@ -7904,7 +7898,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   ExportPermitBySellerCountryReport: {
     controllerName: 'ExportPermitBySellerCountryReport',
     reportSubtitle: importLicenceRangeSubtitle('List of Export Permit By Buyer Country', true),
-    title: 'Export Permit By Seller Country Report',
+    title: 'Export Permit By Buyer Country Report',
     apiRoute: 'ExportPermitBySellerCountryReport',
     excelRoute: 'ExportPermitBySellerCountryReport/Excel',
     excelFileName: 'ExportPermitBySellerCountryReport.xlsx',
@@ -7920,12 +7914,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         fromLabel: 'From Date',
         toLabel: 'To Date',
         required: true,
-      },
-      {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
       },
       {
         name: 'PaThaKaTypeId',
@@ -7946,12 +7934,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'number',
         defaultValue: 0,
       },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
     ],
     columns: [
       {
@@ -7962,6 +7944,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           targetReportKey: 'ExportPermitDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId'],
           rowParams: { BuyerCountryId: 'countryId' },
+          openInNewTab: true,
         },
       },
       {
@@ -8067,6 +8050,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
+        key: 'HSCode',
+        dataIndex: 'hsCode',
+        title: 'HS Code',
+      },
+      {
         key: 'Curency',
         dataIndex: 'currency',
         title: 'Curency',
@@ -8105,12 +8093,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         required: true,
       },
       {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
         name: 'PaThaKaTypeId',
         label: 'EIR Card Type',
         type: 'number',
@@ -8123,12 +8105,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
         lookupName: 'exportPermitSections',
       },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
     ],
     columns: [
       {
@@ -8137,8 +8113,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Company Name',
         drilldown: {
           targetReportKey: 'ExportPermitDetailReport',
-          carryFilters: ['FromDate', 'ToDate', 'Type', 'PaThaKaTypeId', 'ExportImportSectionId'],
+          carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId'],
           rowParams: { CompanyRegistrationNo: 'companyRegistrationNo' },
+          openInNewTab: true,
         },
       },
       {
@@ -8282,6 +8259,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         name: 'CompanyRegistrationNo',
         label: 'Company Registration No',
+        type: 'text',
+        defaultValue: '',
+      },
+      {
+        name: 'hsCode',
+        label: 'HS Code',
         type: 'text',
         defaultValue: '',
       },
@@ -8599,6 +8582,16 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           'country',
           'postalCode',
         ],
+      },
+      {
+        key: 'CommodityType',
+        dataIndex: 'commodityType',
+        title: 'Commodity Type',
+      },
+      {
+        key: 'HSCode',
+        dataIndex: 'hsCode',
+        title: 'HS Code',
       },
       {
         key: 'Curency',

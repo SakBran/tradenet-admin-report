@@ -103,8 +103,8 @@ ImportPermit.Id AS __k_Id
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END) OPTION (RECOMPILE); '
             ELSE N'DECLARE @__total int = NULL; ' END;
 
-        -- ExportPermit has no auto/quota columns and the original sp_NewReport leaves
-        -- auto/quota/CommodityType unselected for Export Permit; emit them as NULL.
+        -- ExportPermit has no auto/quota columns; emit those as NULL. CommodityType is a
+        -- real ExportPermit column (surfaced on the Export Permit New report) so select it.
         SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM ExportPermitItem
 		INNER JOIN Currency currency ON ExportPermitItem.CurrencyId = currency.Id
 		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id) Currency,
@@ -130,7 +130,7 @@ Country,
 PostalCode,
 CAST(NULL AS nvarchar(50)) auto,
 CAST(NULL AS nvarchar(50)) quota,
-CAST(NULL AS nvarchar(max)) CommodityType,
+ExportPermit.CommodityType,
 ExportPermit.Id AS __k_Id
         FROM ExportPermit
 		INNER JOIN PaThaKa ON ExportPermit.PaThaKaId = PaThaKa.Id
