@@ -8,8 +8,22 @@ namespace API.Service.ExcelExport
     {
         public const string SectionName = "ExcelExport";
 
-        /// <summary>Folder where generated .xlsx files live. Outside wwwroot (downloads are auth-gated).</summary>
-        public string StorageRoot { get; set; } = "App_Data/ExcelExports";
+        /// <summary>
+        /// Storage backend for generated files: "Local" (default — disk under <see cref="StorageRoot"/>)
+        /// or "Ftp" (upload to an FTP server, see <see cref="Ftp"/>). Case-insensitive.
+        /// </summary>
+        public string Storage { get; set; } = "Local";
+
+        /// <summary>
+        /// Folder where generated .xlsx files live (outside wwwroot — downloads are auth-gated).
+        /// Used only when <see cref="Storage"/> is "Local".
+        /// Empty/whitespace → a per-OS system temp folder (always writable by the published process);
+        /// an absolute path is used as-is; a relative path is resolved under ContentRootPath.
+        /// </summary>
+        public string StorageRoot { get; set; } = "";
+
+        /// <summary>FTP connection settings, used only when <see cref="Storage"/> is "Ftp".</summary>
+        public ExcelExportFtpOptions Ftp { get; set; } = new();
 
         /// <summary>Rows fetched + written per chunk to keep memory flat.</summary>
         public int ChunkSize { get; set; } = 5000;

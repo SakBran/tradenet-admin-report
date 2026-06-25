@@ -135,12 +135,17 @@ namespace API.Service.ExcelExport
             CancellationToken stoppingToken)
         {
             var registry = services.GetRequiredService<ExcelReportJobRegistry>();
-            var fileStore = services.GetRequiredService<IExcelExportFileStore>();
-
-            var relativePath = fileStore.BuildRelativePath(job.FileName);
+            IExcelExportFileStore? fileStore = null;
+            string? relativePath = null;
 
             try
             {
+                // Resolve the file store and target path inside the try so any storage error
+                // (bad/non-writable path, permission denied) becomes a clean per-job failure
+                // with a readable ErrorMessage, never a silent loop stuck in "Processing".
+                fileStore = services.GetRequiredService<IExcelExportFileStore>();
+                relativePath = fileStore.BuildRelativePath(job.FileName);
+
                 if (!registry.TryGet(job.ReportKey, out var handler))
                 {
                     throw new InvalidOperationException($"No handler for report key '{job.ReportKey}'.");
@@ -154,6 +159,10 @@ namespace API.Service.ExcelExport
                     await handler.GenerateAsync(context);
                     sheetCount = context.SheetCount ?? 0;
                     rowCount = context.RowCount ?? 0;
+
+                    // Publish now that generation succeeded. Staged backends (FTP) upload here;
+                    // the local-disk backend writes in place and doesn't implement ICommittableStream.
+                    (fileStream as ICommittableStream)?.Commit();
                 }
 
                 var size = fileStore.GetSize(relativePath);
@@ -179,8 +188,8 @@ namespace API.Service.ExcelExport
             }
             catch (Exception ex) when (ex is not OperationCanceledException || !stoppingToken.IsCancellationRequested)
             {
-                // Clean up any partial file.
-                try { fileStore.Delete(relativePath); } catch { /* best effort */ }
+                // Clean up any partial file. fileStore may be null if resolution itself failed.
+                try { fileStore?.Delete(relativePath); } catch { /* best effort */ }
 
                 var willRetry = job.AttemptCount < _options.MaxAttempts;
                 var status = willRetry ? ExcelExportJobStatus.Queued : ExcelExportJobStatus.Failed;

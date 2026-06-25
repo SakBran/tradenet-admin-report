@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace API.Service.ExcelExport
@@ -28,13 +29,39 @@ namespace API.Service.ExcelExport
     {
         private readonly string _root;
 
-        public ExcelExportFileStore(IOptions<ExcelExportOptions> options, IWebHostEnvironment env)
+        public ExcelExportFileStore(
+            IOptions<ExcelExportOptions> options,
+            IWebHostEnvironment env,
+            ILogger<ExcelExportFileStore> logger)
         {
             var configured = options.Value.StorageRoot;
-            _root = Path.IsPathRooted(configured)
-                ? configured
-                : Path.Combine(env.ContentRootPath, configured);
-            Directory.CreateDirectory(_root);
+
+            string resolved;
+            if (string.IsNullOrWhiteSpace(configured))
+            {
+                // No explicit config: use a per-OS temp location the published process can
+                // always write to. Avoids writing inside the deployed app folder, which on a
+                // network share / under IIS is typically not writable by the app-pool identity.
+                resolved = Path.Combine(Path.GetTempPath(), "TradenetAdminReport", "ExcelExports");
+            }
+            else if (Path.IsPathRooted(configured))
+            {
+                resolved = configured;
+            }
+            else
+            {
+                resolved = Path.Combine(env.ContentRootPath, configured);
+            }
+
+            // Normalize so the path uses a single, consistent separator. The FullPath() guard
+            // compares the (normalized) candidate against _root with StartsWith, so a raw _root
+            // with mixed separators (e.g. "P:\app\App_Data/ExcelExports" on Windows) would make
+            // every write fail with "escapes the storage root". GetFullPath fixes that.
+            _root = Path.GetFullPath(resolved);
+
+            // Created lazily on first write (see OpenWrite), so a non-writable path surfaces as a
+            // clean per-job failure inside the worker's try/catch rather than crashing construction.
+            logger.LogInformation("Excel export storage root resolved to {StorageRoot}.", _root);
         }
 
         public string BuildRelativePath(string fileName)
@@ -79,9 +106,14 @@ namespace API.Service.ExcelExport
 
         private string FullPath(string relativePath)
         {
-            // Guard against path traversal in stored relative paths.
+            // Guard against path traversal in stored relative paths. Compare against _root with a
+            // trailing separator so (a) separators match (_root is normalized in the ctor) and
+            // (b) a sibling folder sharing the prefix (e.g. "...ExcelExports2") can't slip through.
             var full = Path.GetFullPath(Path.Combine(_root, relativePath));
-            if (!full.StartsWith(_root, StringComparison.Ordinal))
+            var rootWithSep = _root.EndsWith(Path.DirectorySeparatorChar)
+                ? _root
+                : _root + Path.DirectorySeparatorChar;
+            if (!full.StartsWith(rootWithSep, StringComparison.Ordinal))
             {
                 throw new InvalidOperationException("Resolved export path escapes the storage root.");
             }

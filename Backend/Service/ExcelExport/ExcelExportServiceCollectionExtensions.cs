@@ -19,7 +19,16 @@ namespace API.Service.ExcelExport
         {
             services.Configure<ExcelExportOptions>(configuration.GetSection(ExcelExportOptions.SectionName));
 
-            services.AddSingleton<IExcelExportFileStore, ExcelExportFileStore>();
+            // Storage backend: "Ftp" uploads to an FTP server; anything else (default) writes to disk.
+            var storage = configuration[$"{ExcelExportOptions.SectionName}:Storage"];
+            if (string.Equals(storage, "Ftp", StringComparison.OrdinalIgnoreCase))
+            {
+                services.AddSingleton<IExcelExportFileStore, FtpExcelExportFileStore>();
+            }
+            else
+            {
+                services.AddSingleton<IExcelExportFileStore, ExcelExportFileStore>();
+            }
             services.AddSingleton<ExcelReportJobRegistry>();
             services.AddScoped<IExcelExportJobService, ExcelExportJobService>();
 

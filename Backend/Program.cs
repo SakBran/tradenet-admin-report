@@ -103,6 +103,10 @@ public class Program
 
         var app = builder.Build();
 
+        // Resolve the export file store eagerly so the resolved storage root is logged at startup
+        // (it's I/O-free now), making it easy to verify the path right after a deploy.
+        app.Services.GetRequiredService<API.Service.ExcelExport.IExcelExportFileStore>();
+
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
