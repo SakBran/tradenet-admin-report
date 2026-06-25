@@ -402,7 +402,7 @@ BorderExportLicence.Id AS __k_Id
         IF @IncludeTotalCount = 1
         BEGIN
             SELECT @ComputedTotal = COUNT(*) FROM (
-                SELECT BorderImportLicence.Id FROM AccountTransaction WITH (INDEX([NonClusteredIndex-AccountTransaction-125044]))
+                SELECT BorderImportLicence.Id FROM AccountTransaction WITH (INDEX([IX_AccountTransaction_BorderImportLicenceVoucher]))
                 INNER JOIN BorderImportLicence ON BorderImportLicence.Id=AccountTransaction.TransactionId
                 INNER JOIN PaThaKa ON BorderImportLicence.PaThaKaId=PaThaKa.Id
                 WHERE AccountTransaction.IsPayment=1
@@ -415,7 +415,7 @@ BorderExportLicence.Id AS __k_Id
                 AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
                 AND BorderImportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportLicence.SakhanId ELSE @SakhanId END)
                 UNION ALL
-                SELECT BorderImportLicence.Id FROM AccountTransaction WITH (INDEX([NonClusteredIndex-AccountTransaction-125044]))
+                SELECT BorderImportLicence.Id FROM AccountTransaction WITH (INDEX([IX_AccountTransaction_BorderImportLicenceVoucher]))
                 INNER JOIN BorderImportLicence ON BorderImportLicence.Id=AccountTransaction.TransactionId
                 INNER JOIN IndividualTrading ON BorderImportLicence.IndividualTradingId=IndividualTrading.Id
                 WHERE AccountTransaction.IsPayment=1
@@ -432,12 +432,7 @@ BorderExportLicence.Id AS __k_Id
 
         SET @cntpart = N'DECLARE @__total int = @ComputedTotal; ';
 
-        SET @sql = @cntpart + N'SELECT pg.*,
-        (SELECT top 1 currency.Code FROM BorderImportLicenceItem
-		INNER JOIN Currency currency ON BorderImportLicenceItem.CurrencyId = currency.Id
-		WHERE BorderImportLicenceItem.BorderImportLicenceId=pg.__k_Id) Currency,
-        (SELECT SUM(BorderImportLicenceItem.Amount) FROM BorderImportLicenceItem
-		WHERE BorderImportLicenceItem.BorderImportLicenceId=pg.__k_Id) TotalAmount, @__total AS TotalCount
+        SET @sql = @cntpart + N'SELECT pg.*, itemAgg.Currency, itemAgg.TotalAmount, @__total AS TotalCount
     FROM (
         SELECT * FROM (
         SELECT BorderImportLicence.ApplicationNo,
@@ -466,7 +461,7 @@ sakhan.Code SakhanCode,
 sakhan.Name SakhanName,
 BorderImportLicence.Id AS __k_Id
         FROM BorderImportLicence
-		INNER JOIN AccountTransaction WITH (INDEX([NonClusteredIndex-AccountTransaction-125044])) ON BorderImportLicence.Id=AccountTransaction.TransactionId
+		INNER JOIN AccountTransaction WITH (INDEX([IX_AccountTransaction_BorderImportLicenceVoucher])) ON BorderImportLicence.Id=AccountTransaction.TransactionId
 		INNER JOIN PaThaKa ON BorderImportLicence.PaThaKaId=PaThaKa.Id
 		INNER JOIN ExportImportSection section ON BorderImportLicence.ExportImportSectionId = section.Id
 		INNER JOIN Sakhan sakhan ON BorderImportLicence.SakhanId = sakhan.Id
@@ -507,7 +502,7 @@ sakhan.Code SakhanCode,
 sakhan.Name SakhanName,
 BorderImportLicence.Id AS __k_Id
         FROM BorderImportLicence
-		INNER JOIN AccountTransaction WITH (INDEX([NonClusteredIndex-AccountTransaction-125044])) ON BorderImportLicence.Id=AccountTransaction.TransactionId
+		INNER JOIN AccountTransaction WITH (INDEX([IX_AccountTransaction_BorderImportLicenceVoucher])) ON BorderImportLicence.Id=AccountTransaction.TransactionId
 		INNER JOIN IndividualTrading ON BorderImportLicence.IndividualTradingId=IndividualTrading.Id
 		INNER JOIN ExportImportSection section ON BorderImportLicence.ExportImportSectionId = section.Id
 		INNER JOIN Sakhan sakhan ON BorderImportLicence.SakhanId = sakhan.Id
@@ -524,6 +519,14 @@ BorderImportLicence.Id AS __k_Id
         ) u
         ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
     ) pg
+    OUTER APPLY (
+        SELECT
+            MIN(currency.Code) AS Currency,
+            SUM(item.Amount) AS TotalAmount
+        FROM BorderImportLicenceItem item WITH (INDEX([IX_BorderImportLicenceItem_VoucherReport]))
+        INNER JOIN Currency currency ON item.CurrencyId = currency.Id
+        WHERE item.BorderImportLicenceId = pg.__k_Id
+    ) itemAgg
     ORDER BY ' + @ob + N'
     OPTION (RECOMPILE, MAXDOP 1);';
     END

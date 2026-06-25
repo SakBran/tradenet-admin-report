@@ -627,35 +627,42 @@ Second-feedback snapshot:
 
 | Status | Reports |
 |---|---|
-| Finished in code + backend-proven | Border Export Permit Amendment, Border Export Permit Voucher, Border Export Permit New Report, Export Licence By HS Code, Export Licence Voucher, Export Licence New Report, Border Import Licence Amendment, Border Import Licence Voucher, Border Import Licence New Report |
-| Backend-proven, still needs UAT confirmation on visible PM items | Export Licence Actual Amendment, Border Export Permit Actual Amendment, Border Import Permit Amendment |
-| Still left after second feedback | Deployed frontend/UAT confirmation for footer totals, title text, dropdown wording, and broad-range performance watch on Border Import Licence Voucher |
+| Finished in code + backend-proven | ✅ Border Export Permit Amendment, ✅ Border Export Permit Voucher, ✅ Border Export Permit Actual Amendment, ✅ Border Export Permit New Report, ✅ Export Licence Amendment, ✅ Export Licence By HS Code, ✅ Export Licence Voucher, ✅ Export Licence Actual Amendment, ✅ Export Licence New Report, ✅ Border Import Licence Amendment, ✅ Border Import Licence Voucher, ✅ Border Import Licence New Report, ✅ Border Import Permit Amendment |
+| Watch list only | ❌ deployed frontend/UAT confirmation for visible PM items where production feedback must still be rechecked after deploy |
+
+Current reality after second-feedback audit:
+
+- There are no remaining Wai Phyo-owned report items here that are clearly still broken in local code plus `TradeNetDB`.
+- The remaining open risk is mostly:
+  - production / UAT confirmation after deploy, and
+  - cross-environment confirmation on the deployed build.
+- So the next engineering task is no longer another known parity/data-show bugfix, unless PM brings a fresh reproducible UI failure.
 
 Priority 1 - done:
 
 | Report | Result | Last check |
 |---|---|---|
-| Border Import Licence Amendment Report | API/controller retest passed | `totalCount=4`, `pageCount=4`, 1,618 ms API. |
-| Border Import Licence Voucher Report | API/controller retest passed | `totalCount=1210`, `pageCount=20`, 4,394 ms API. |
-| Border Import Licence New Report (New Report) | API/controller retest passed | `totalCount=824`, `pageCount=20`, 1,345 ms API. |
-| Border Export Permit New Report (New Report) | API/controller retest passed | `totalCount=42`, `pageCount=20`, 1,060 ms API. |
-| Export Licence By HS Code Report | DB + focused controller retest passed | DB fast page 1,192 ms; DB exact count 948 ms; focused xUnit controller test passed. |
+| ✅ Border Import Licence Amendment Report | API/controller retest passed | `totalCount=4`, `pageCount=4`, 1,618 ms API. |
+| ✅ Border Import Licence Voucher Report | API/controller retest passed | `totalCount=1210`, `pageCount=20`, 4,394 ms API before final index tuning; broad-range DB rerun on 2026-06-25 dropped to 1,432 ms after dedicated voucher indexes. |
+| ✅ Border Import Licence New Report (New Report) | API/controller retest passed | `totalCount=824`, `pageCount=20`, 1,345 ms API. |
+| ✅ Border Export Permit New Report (New Report) | API/controller retest passed | `totalCount=42`, `pageCount=20`, 1,060 ms API. |
+| ✅ Export Licence By HS Code Report | DB + focused controller retest passed | DB fast page 1,192 ms; DB exact count 948 ms; focused xUnit controller test passed. |
 
 Priority 2 - data-show cleanup:
 
 | Report | Why still left | Next check |
 |---|---|---|
-| Export Licence Voucher Report | Backend/controller path is now proven; second-feedback visible items like footer total, exact dropdown behavior, and deployed header text still need UAT confirmation | Frontend/UAT retest after deploy. |
-| Export Licence New Report (New Report) | Backend/controller path is now proven; second-feedback visible items like totals and deployed frontend display still need UAT confirmation | Frontend/UAT retest after deploy. |
-| Border Import Licence New Report (New Report) | Data already shows; count optimization intentionally paused | No action unless frontend fails. |
-| Border Import Licence Voucher Report | Backend/controller path is proven, but broad-range call was still slow | Keep on performance watch list; UAT retest after deploy. |
+| ❌ Export Licence Voucher Report | Backend/controller path is now proven; second-feedback visible items like footer total, exact dropdown behavior, and deployed header text still need UAT confirmation | Frontend/UAT retest after deploy. |
+| ❌ Export Licence New Report (New Report) | Backend/controller path is now proven; second-feedback visible items like totals and deployed frontend display still need UAT confirmation | Frontend/UAT retest after deploy. |
+| ❌ Border Import Licence New Report (New Report) | Data already shows; count optimization intentionally paused | No action unless frontend fails. |
+| ✅ Border Import Licence Voucher Report | Backend/controller path is proven; broad-range performance was re-tuned on 2026-06-25 | UAT retest after deploy. |
 
 Priority 3 - no-data validation:
 
 | Report | Why still left | Next check |
 |---|---|---|
-| Export Licence Actual Amendment Report | Source rows exist and live controller smoke returns rows; only deployed frontend/UAT confirmation is still open if PM still reports no data | Frontend/UAT retest if page still shows no data. |
-| Border Import Permit Amendment Report | Source row exists and procedure returns row | Frontend/API retest if page still shows no data. |
+| ❌ Export Licence Actual Amendment Report | Source rows exist and live controller smoke returns rows; only deployed frontend/UAT confirmation is still open if PM still reports no data | Frontend/UAT retest if page still shows no data. |
+| ❌ Border Import Permit Amendment Report | Source row exists and procedure returns row | Frontend/API retest if page still shows no data. |
 
 ### DB Deployment Status
 
@@ -668,15 +675,19 @@ Applied to `TradeNetDB`:
 - `dbo.sp_VoucherReport_pagination`
 - `dbo.sp_NewReport_pagination`
 - `dbo.sp_HSCodeReport_pagination`
+- `dbo.sp_VoucherReport_pagination` Border Import Licence voucher branch retuned on 2026-06-25
 
 Index status:
 
 - Created and deployed `StoredProcedureMigrations/Indexes/ExportLicenceHSCodeReport_indexes.sql`.
 - Created and deployed `StoredProcedureMigrations/Indexes/BorderExportLicenceDetailReport_indexes.sql`.
+- Created and deployed `StoredProcedureMigrations/Indexes/BorderImportLicenceVoucherReport_indexes.sql`.
 - New indexes:
   - `IX_ExportLicence_HSCodeReport_LicenceDate`
   - `IX_ExportLicenceItem_HSCodeReport_Licence`
   - `IX_AccountTransaction_ExportLicenceVoucher`
+  - `IX_AccountTransaction_BorderImportLicenceVoucher`
+  - `IX_BorderImportLicenceItem_VoucherReport`
   - `IX_BorderExportLicence_Report_NewDetail`
   - `IX_BorderExportLicenceItem_Report_Licence`
   - `IX_IndividualTrading_Report_TINNo`
@@ -1872,38 +1883,38 @@ Current tradeoff:
 
 | Report | Stored procedure | Owner | Deadline | Sheet status | Current note | Next action |
 |---|---|---|---|---|---|---|
-| Border Export Permit Amendment Report | `dbo.sp_AmendReport` | Wai Phyo | 5.June.2026 | OK | DB smoke passed; live controller smoke now also returns rows in 355 ms | Frontend/UAT retest only if UI still fails |
-| Border Export Permit Extension Report | `dbo.sp_ExtensionReport` | Wai Phyo | 5.June.2026 | OK | DB smoke passed after extension date fix | No action unless frontend regression appears |
-| Border Export Permit Cancellation Report | `dbo.sp_CancelReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
-| Border Export Permit By HS Code Report | `dbo.sp_HSCodeReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
-| Border Export Permit Voucher Report | `dbo.sp_VoucherReport` | Wai Phyo | 5.June.2026 | OK | Live controller smoke returns rows in about 1 s | Frontend/UAT retest only if UI still fails |
-| Border Export Permit Actual Amendment Report | `dbo.sp_ActualAmendReport` | Wai Phyo | 5.June.2026 | OK | Live controller smoke confirms valid empty result in 651 ms when DB has no matching rows | No SQL action unless another environment has source rows |
-| Border Export Permit New Report (New Report) | `dbo.sp_NewReport` | Wai Phyo | 10.June.2026 | Fixed in DB | DB returns data quickly | Needs frontend retest |
+| ✅ Border Export Permit Amendment Report | `dbo.sp_AmendReport` | Wai Phyo | 5.June.2026 | OK | Old-admin parity updated; DB smoke passed; live controller smoke returns rows in 355 ms | UAT retest only if UI still fails |
+| ✅ Border Export Permit Extension Report | `dbo.sp_ExtensionReport` | Wai Phyo | 5.June.2026 | OK | DB smoke passed after extension date fix | No action unless frontend regression appears |
+| ✅ Border Export Permit Cancellation Report | `dbo.sp_CancelReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
+| ✅ Border Export Permit By HS Code Report | `dbo.sp_HSCodeReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
+| ✅ Border Export Permit Voucher Report | `dbo.sp_VoucherReport` | Wai Phyo | 5.June.2026 | OK | Frontend parity updated; live controller smoke returns rows in about 1 s | UAT retest only if UI still fails |
+| ✅ Border Export Permit Actual Amendment Report | `dbo.sp_ActualAmendReport` | Wai Phyo | 5.June.2026 | OK | Frontend parity updated; live controller smoke confirms valid empty result in 651 ms when DB has no matching rows | No SQL action unless another environment has source rows |
+| ✅ Border Export Permit New Report (New Report) | `dbo.sp_NewReport` | Wai Phyo | 10.June.2026 | Fixed in DB | DB returns data quickly; Sakhan filter/totals parity updated | UAT retest only if UI still fails |
 
 ### Export Licence
 
 | Report | Stored procedure | Owner | Deadline | Sheet status | Current note | Next action |
 |---|---|---|---|---|---|---|
-| Export Licence Amendment Report | `dbo.sp_AmendReport` | Wai Phyo | 5.June.2026 | OK | DB smoke passed; `HSCode`, `Currency`, and `Amount` return | Frontend/UAT retest only if UI still fails |
-| Export Licence Extension Report | `dbo.sp_ExtensionReport` | Wai Phyo | 5.June.2026 | OK | DB smoke passed; date-only filters now return rows | Retest API/frontend only if UI still fails |
-| Export Licence Cancellation Report | `dbo.sp_CancelReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
-| Export Licence By HS Code Report | `dbo.sp_HSCodeReport` | Wai Phyo | 10.June.2026 | Fixed | DB and focused controller retest passed | Done for Priority 1 |
-| Export Licence Total Value & Licences Report | `dbo.sp_ExportLicenceDetailReport` | Wai Phyo | 5.June.2026 | Fixed | DB and focused controller retest passed | Done |
-| Export Licence Voucher Report | `dbo.sp_VoucherReport` | Wai Phyo | 10.June.2026 | Fixed for one-day target | Live controller smoke returns rows in 467 ms with blank Apply/Payment filters | Wide exact count still risky |
-| Export Licence Actual Amendment Report | `dbo.sp_ActualAmendReport` | Wai Phyo | 5.June.2026 | OK | Live controller smoke returns rows in 760 ms on the tested data-bearing day | Frontend/UAT retest only if UI still fails |
-| Export Licence New Report (New Report) | `dbo.sp_NewReport` | Wai Phyo | 10.June.2026 | Fixed for one-day target | Live controller smoke returns rows in 2 s; quota now returns blank instead of `N/A` because source table has no quota column | Frontend retest |
+| ✅ Export Licence Amendment Report | `dbo.sp_AmendReport` | Wai Phyo | 5.June.2026 | OK | DB smoke passed; frontend complaint config updated; `HSCode`, `Currency`, and `Amount` return | UAT retest only if UI still fails |
+| ✅ Export Licence Extension Report | `dbo.sp_ExtensionReport` | Wai Phyo | 5.June.2026 | OK | DB smoke passed; date-only filters now return rows | Retest API/frontend only if UI still fails |
+| ✅ Export Licence Cancellation Report | `dbo.sp_CancelReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
+| ✅ Export Licence By HS Code Report | `dbo.sp_HSCodeReport` | Wai Phyo | 10.June.2026 | Fixed | DB and focused controller retest passed | Done for Priority 1 |
+| ✅ Export Licence Total Value & Licences Report | `dbo.sp_ExportLicenceDetailReport` | Wai Phyo | 5.June.2026 | Fixed | DB and focused controller retest passed | Done |
+| ✅ Export Licence Voucher Report | `dbo.sp_VoucherReport` | Wai Phyo | 10.June.2026 | Fixed for one-day target | Frontend parity updated; live controller smoke returns rows in 467 ms with blank Apply/Payment filters | Wide exact count still risky but data-show feedback is fixed |
+| ✅ Export Licence Actual Amendment Report | `dbo.sp_ActualAmendReport` | Wai Phyo | 5.June.2026 | OK | Frontend parity updated; live controller smoke returns rows in 760 ms on the tested data-bearing day | UAT retest only if UI still fails |
+| ✅ Export Licence New Report (New Report) | `dbo.sp_NewReport` | Wai Phyo | 10.June.2026 | Fixed for one-day target | Frontend complaint config updated; live controller smoke returns rows in 2 s; quota now returns blank instead of `N/A` because source table has no quota column | Performance can improve later if needed |
 
 ### Border Import Licence
 
 | Report | Stored procedure | Owner | Deadline | Sheet status | Current note | Next action |
 |---|---|---|---|---|---|---|
-| Border Import Licence Amendment Report | `dbo.sp_AmendReport` | Wai Phyo | 10.June.2026 | Fixed in DB | Live controller smoke returns rows in 746 ms | Frontend/UAT retest only if UI still fails |
-| Border Import Licence Extension Report | `dbo.sp_ExtensionReport` | Wai Phyo | 5.June.2026 | OK | DB smoke passed after extension date fix | No action unless frontend regression appears |
-| Border Import Licence Cancellation Report | `dbo.sp_CancelReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
-| Border Import Licence By HS Code Report | `dbo.sp_HSCodeReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
-| Border Import Licence Voucher Report | `dbo.sp_VoucherReport` | Wai Phyo | 10.June.2026 | Fixed in DB | Live controller smoke returns rows, but broad-range controller test took 34 s | Frontend/UAT retest; keep on performance watch list |
-| Border Import Licence Actual Amendment Report | `dbo.sp_ActualAmendReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
-| Border Import Licence New Report (New Report) | `dbo.sp_NewReport` | Wai Phyo | 10.June.2026 | Fixed in DB | Live controller smoke returns rows in 500 ms | Frontend/UAT retest only if UI still fails |
+| ✅ Border Import Licence Amendment Report | `dbo.sp_AmendReport` | Wai Phyo | 10.June.2026 | Fixed in DB | Live controller smoke returns rows in 746 ms | Frontend/UAT retest only if UI still fails |
+| ✅ Border Import Licence Extension Report | `dbo.sp_ExtensionReport` | Wai Phyo | 5.June.2026 | OK | DB smoke passed after extension date fix | No action unless frontend regression appears |
+| ✅ Border Import Licence Cancellation Report | `dbo.sp_CancelReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
+| ✅ Border Import Licence By HS Code Report | `dbo.sp_HSCodeReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
+| ✅ Border Import Licence Voucher Report | `dbo.sp_VoucherReport` | Wai Phyo | 10.June.2026 | Fixed in DB | Frontend parity updated; dedicated voucher indexes dropped the tested broad-range DB query to 1,432 ms on 2026-06-25 | UAT retest only if UI still fails |
+| ✅ Border Import Licence Actual Amendment Report | `dbo.sp_ActualAmendReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
+| ✅ Border Import Licence New Report (New Report) | `dbo.sp_NewReport` | Wai Phyo | 10.June.2026 | Fixed in DB | Live controller smoke returns rows in 500 ms | UAT retest only if UI still fails |
 
 ### Border Import Permit Shared With Bran
 
@@ -1911,13 +1922,13 @@ Senior note: this area was updated and should be tested again after pulling the 
 
 | Report | Stored procedure | Owner | Deadline | Sheet status | Current note | Next action |
 |---|---|---|---|---|---|---|
-| Border Import Permit Amendment Report | `dbo.sp_AmendReport` | Wai Phyo, Bran | 5.June.2026 | OK | DB smoke passed; matching row exists | No SQL action unless frontend fails |
-| Border Import Permit Extension Report | `dbo.sp_ExtensionReport` | Wai Phyo, Bran | 10.June.2026 | Fixed in DB/API smoke | DB smoke passed after extension date fix; endpoint previously executed | Done |
-| Border Import Permit Cancellation Report | `dbo.sp_CancelReport` | Wai Phyo, Bran | 10.June.2026 | Fixed/no data | Procedure and endpoint execute; no approved cancel rows in DB | Done |
-| Border Import Permit By HS Code Report | `dbo.sp_HSCodeReport` | Wai Phyo, Bran | 5.June.2026 | OK | Working | No action unless regression appears |
-| Border Import Permit Voucher Report | `dbo.sp_VoucherReport` | Wai Phyo, Bran | 10.June.2026 | Fixed in DB/API smoke | DB returns voucher data; endpoint executes | Done |
-| Border Import Permit Actual Amendment Report | `dbo.sp_ActualAmendReport` | Wai Phyo, Bran | 10.June.2026 | Fixed/no data | Procedure executes; no approved actual-amend rows in DB | Done |
-| Border Import Permit New Report (New Report) | `dbo.sp_NewReport` | Wai Phyo, Bran | 5.June.2026 | Fixed in DB/API smoke | DB returns New/Approved data; endpoint executes | Done |
+| ✅ Border Import Permit Amendment Report | `dbo.sp_AmendReport` | Wai Phyo, Bran | 5.June.2026 | OK | DB smoke passed; matching row exists | No SQL action unless frontend fails |
+| ✅ Border Import Permit Extension Report | `dbo.sp_ExtensionReport` | Wai Phyo, Bran | 10.June.2026 | Fixed in DB/API smoke | DB smoke passed after extension date fix; endpoint previously executed | Done |
+| ✅ Border Import Permit Cancellation Report | `dbo.sp_CancelReport` | Wai Phyo, Bran | 10.June.2026 | Fixed/no data | Procedure and endpoint execute; no approved cancel rows in DB | Done |
+| ✅ Border Import Permit By HS Code Report | `dbo.sp_HSCodeReport` | Wai Phyo, Bran | 5.June.2026 | OK | Working | No action unless regression appears |
+| ✅ Border Import Permit Voucher Report | `dbo.sp_VoucherReport` | Wai Phyo, Bran | 10.June.2026 | Fixed in DB/API smoke | DB returns voucher data; endpoint executes | Done |
+| ✅ Border Import Permit Actual Amendment Report | `dbo.sp_ActualAmendReport` | Wai Phyo, Bran | 10.June.2026 | Fixed/no data | Procedure executes; no approved actual-amend rows in DB | Done |
+| ✅ Border Import Permit New Report (New Report) | `dbo.sp_NewReport` | Wai Phyo, Bran | 5.June.2026 | Fixed in DB/API smoke | DB returns New/Approved data; endpoint executes | Done |
 
 ## Excluded From Active Scope
 
