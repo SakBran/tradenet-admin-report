@@ -800,9 +800,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -916,9 +916,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -982,6 +982,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licences By HS Code', true),
@@ -990,6 +991,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'hsCode',
         dataIndex: 'hsCode',
         title: 'HS Code',
+        drilldown: {
+          targetReportKey: 'BorderExportLicenceDetailReport',
+          carryFilters: ['FromDate', 'ToDate', 'ExportImportSectionId', 'SakhanId'],
+          rowParams: { hsCode: 'hsCode' },
+          openInNewTab: true,
+        },
       },
       {
         key: 'Description',
@@ -1140,12 +1147,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ...borderExportLicenceMethodFilter,
       },
       {
-        ...borderExportLicenceIncotermFilter,
-      },
-      {
-        ...exportLicenceBuyerCountryFilter,
-      },
-      {
         name: 'CompanyRegistrationNo',
         label: 'Company Registration No',
         type: 'text',
@@ -1169,6 +1170,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           targetReportKey: 'BorderExportLicenceDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId'],
           rowParams: { ExportImportSectionId: 'sectionId' },
+          openInNewTab: true,
         },
       },
       {
@@ -1190,7 +1192,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderExportLicenceBySellerCountryReport: {
     controllerName: 'BorderExportLicenceBySellerCountryReport',
-    title: 'Border Export Licence By Seller Country Report',
+    title: 'Border Export Licence By Buyer Country Report',
     apiRoute: 'BorderExportLicenceBySellerCountryReport',
     excelRoute: 'BorderExportLicenceBySellerCountryReport/Excel',
     excelFileName: 'BorderExportLicenceBySellerCountryReport.xlsx',
@@ -1225,9 +1227,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ...borderExportLicenceMethodFilter,
       },
       {
-        ...borderExportLicenceIncotermFilter,
-      },
-      {
         ...exportLicenceBuyerCountryFilter,
       },
       {
@@ -1254,6 +1253,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           targetReportKey: 'BorderExportLicenceDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId', 'SakhanId'],
           rowParams: { BuyerCountryId: 'countryId' },
+          openInNewTab: true,
         },
       },
       {
@@ -1317,6 +1317,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licence Report'),
@@ -1371,9 +1372,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -1425,12 +1426,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ...borderExportLicenceMethodFilter,
       },
       {
-        ...borderExportLicenceIncotermFilter,
-      },
-      {
-        ...exportLicenceBuyerCountryFilter,
-      },
-      {
         name: 'CompanyRegistrationNo',
         label: 'Company Registration No',
         type: 'text',
@@ -1454,6 +1449,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           targetReportKey: 'BorderExportLicenceDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId', 'SakhanId'],
           rowParams: { CompanyRegistrationNo: 'companyRegistrationNo' },
+          openInNewTab: true,
         },
       },
       {
@@ -1505,15 +1501,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'number',
         defaultValue: 0,
         lookupName: 'borderExportLicenceSections',
-      },
-      {
-        ...borderExportLicenceMethodFilter,
-      },
-      {
-        ...borderExportLicenceIncotermFilter,
-      },
-      {
-        ...exportLicenceBuyerCountryFilter,
       },
       {
         name: 'CompanyRegistrationNo',
@@ -1605,9 +1592,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ...borderExportLicenceIncotermFilter,
       },
       {
-        ...exportLicenceBuyerCountryFilter,
-      },
-      {
         name: 'CompanyRegistrationNo',
         label: 'Company Registration No',
         type: 'text',
@@ -1619,6 +1603,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'number',
         defaultValue: 0,
         lookupName: 'sakhans',
+      },
+      {
+        name: 'hsCode',
+        label: 'HS Code',
+        type: 'text',
+        defaultValue: '',
       },
     ],
     reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licences By Detail', true),
@@ -1877,9 +1867,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -1982,9 +1972,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -2019,12 +2009,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         required: true,
       },
       {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
         name: 'PaThaKaTypeId',
         label: 'EIR Card Type',
         type: 'number',
@@ -2039,34 +2023,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         lookupName: 'borderExportLicenceSections',
       },
       {
-        name: 'ExportImportMethodId',
-        label: 'Method of export',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'ExportImportIncotermId',
-        label: 'Method of export According to Incoterms',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'BuyerCountryId',
-        label: 'Buyer Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
         name: 'SakhanId',
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     reportSubtitle: importLicenceRangeSubtitle('Border Export Licences Total Value & Licences'),
@@ -2331,9 +2292,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'hsCode',
@@ -2451,9 +2412,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -2821,9 +2782,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -3313,9 +3274,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -3412,9 +3373,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -3626,9 +3587,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'hsCode',
@@ -3704,9 +3665,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'hsCode',
@@ -3966,9 +3927,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -4438,9 +4399,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -4540,9 +4501,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -4642,9 +4603,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Additional Description',
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -4882,9 +4843,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'hsCode',
@@ -5000,9 +4961,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'hsCode',
@@ -5358,9 +5319,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -5832,9 +5793,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -5929,9 +5890,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -6463,9 +6424,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -6531,9 +6492,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -6892,9 +6853,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -7337,9 +7298,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -7395,9 +7356,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -7639,9 +7600,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'HS Code',
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -7743,9 +7704,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -8055,9 +8016,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'HS Code',
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -8496,9 +8457,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -8594,9 +8555,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'HS Code',
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -8788,9 +8749,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'hsCode',
@@ -8861,9 +8822,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'hsCode',
@@ -9114,9 +9075,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -9651,9 +9612,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -9709,9 +9670,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -9804,9 +9765,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Additional Description',
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -10032,9 +9993,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'hsCode',
@@ -10142,9 +10103,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'hsCode',
@@ -10471,9 +10432,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -10899,9 +10860,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',
@@ -10988,9 +10949,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'Curency',
+        key: 'Currency',
         dataIndex: 'currency',
-        title: 'Curency',
+        title: 'Currency',
       },
       {
         key: 'TotalValue',

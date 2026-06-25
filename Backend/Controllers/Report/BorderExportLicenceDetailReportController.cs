@@ -127,6 +127,7 @@ namespace Backend.Controllers.Report
                 BuyerCountryId = request.BuyerCountryId,
                 CompanyRegistrationNo = request.CompanyRegistrationNo,
                 SakhanId = request.SakhanId,
+                HSCode = request.HSCode,
             };
 
             return true;
@@ -145,6 +146,7 @@ namespace Backend.Controllers.Report
         public int BuyerCountryId { get; set; }
         public string CompanyRegistrationNo { get; set; } = string.Empty;
         public int SakhanId { get; set; }
+        public string HSCode { get; set; } = string.Empty;
     }
 }
 
