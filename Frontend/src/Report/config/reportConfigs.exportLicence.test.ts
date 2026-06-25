@@ -218,4 +218,136 @@ describe('Export Licence report configs', () => {
       valueColumnKey: 'Value',
     });
   });
+
+  it('action reports keep the old oversea filter shape and do not expose Sakhan', () => {
+    const expected = {
+      ExportLicenceActualAmendmentReport: [
+        'dateRange',
+        'FormType',
+        'ExportImportSectionId',
+        'AmendRemarkId',
+        'CompanyRegistrationNo',
+        'CompanyName',
+      ],
+      ExportLicenceAmendmentReport: [
+        'dateRange',
+        'FormType',
+        'ExportImportSectionId',
+        'AmendRemarkId',
+        'CompanyRegistrationNo',
+        'CompanyName',
+        'Auto',
+      ],
+      ExportLicenceCancellationReport: [
+        'dateRange',
+        'FormType',
+        'ExportImportSectionId',
+        'CompanyRegistrationNo',
+        'CompanyName',
+      ],
+      ExportLicenceExtensionReport: [
+        'dateRange',
+        'FormType',
+        'ExportImportSectionId',
+        'CompanyRegistrationNo',
+        'CompanyName',
+      ],
+      ExportLicenceNewReportNewReport: [
+        'dateRange',
+        'FormType',
+        'ExportImportSectionId',
+        'CompanyRegistrationNo',
+        'CompanyName',
+        'Auto',
+      ],
+      ExportLicenceVoucherReport: [
+        'dateRange',
+        'FormType',
+        'ExportImportSectionId',
+        'ApplyType',
+        'PaymentType',
+        'CompanyRegistrationNo',
+        'CompanyName',
+      ],
+    } as const;
+
+    for (const [key, filters] of Object.entries(expected)) {
+      const cfg = reportConfigs[key];
+      expect(cfg.filters.map((filter) => filter.name), key).toEqual(filters);
+      expect(cfg.filters.some((filter) => filter.name === 'SakhanId'), `${key} should not expose Sakhan`).toBe(false);
+      expect(
+        cfg.filters.find((filter) => filter.name === 'ExportImportSectionId')?.lookupName,
+        `${key} should use Export Licence sections`
+      ).toBe('exportLicenceSections');
+      expect(
+        cfg.filters.find((filter) => filter.name === 'CompanyName')?.type,
+        `${key} should keep readonly company name lookup`
+      ).toBe('readonlyText');
+    }
+  });
+
+  it('action report subtitles keep the legacy Export Licence wording', () => {
+    const sample = { FromDate: '2026-02-01', ToDate: '2026-02-03' };
+
+    expect(
+      reportConfigs.ExportLicenceActualAmendmentReport.reportSubtitle?.(sample)
+    ).toBe('List of Export Licence Report From (01/02/2026) To (03/02/2026)');
+    expect(
+      reportConfigs.ExportLicenceAmendmentReport.reportSubtitle?.(sample)
+    ).toBe('List of Export Licence Report From (01/02/2026) To (03/02/2026)');
+    expect(
+      reportConfigs.ExportLicenceCancellationReport.reportSubtitle?.(sample)
+    ).toBe('List of Export Licence Report From (01/02/2026) To (03/02/2026)');
+    expect(
+      reportConfigs.ExportLicenceExtensionReport.reportSubtitle?.(sample)
+    ).toBe('List of Export Licence Report From (01/02/2026) To (03/02/2026)');
+    expect(
+      reportConfigs.ExportLicenceNewReportNewReport.reportSubtitle?.(sample)
+    ).toBe('List of Export Licence Report From (01/02/2026) To (03/02/2026)');
+    expect(
+      reportConfigs.ExportLicenceVoucherReport.reportSubtitle?.(sample)
+    ).toBe('Export Licence Voucher List (01/02/2026) To (03/02/2026)');
+  });
+
+  it('action reports hide the old HSCode column where the old RDLC did not show it', () => {
+    for (const key of [
+      'ExportLicenceActualAmendmentReport',
+      'ExportLicenceAmendmentReport',
+      'ExportLicenceCancellationReport',
+    ]) {
+      expect(
+        reportConfigs[key].columns.some((column) => column.dataIndex === 'hsCode'),
+        `${key} should not show hsCode`
+      ).toBe(false);
+    }
+  });
+
+  it('voucher keeps dynamic licence headers and no Sakhan filter', () => {
+    const cfg = reportConfigs.ExportLicenceVoucherReport;
+    const resolvedForAmend = cfg.resolveColumns?.(
+      { ApplyType: 'Amend' },
+      cfg.columns
+    ) ?? cfg.columns;
+    const resolvedForCancel = cfg.resolveColumns?.(
+      { ApplyType: 'Cancel' },
+      cfg.columns
+    ) ?? cfg.columns;
+
+    expect(cfg.filters.some((filter) => filter.name === 'SakhanId')).toBe(false);
+    expect(
+      cfg.filters.find((filter) => filter.name === 'PaymentType')?.lookupName
+    ).toBe('paymentTypes');
+    expect(
+      resolvedForAmend.find((column) => column.key === 'LicenceNo')?.title
+    ).toBe('Amendment No');
+    expect(
+      resolvedForAmend.find((column) => column.key === 'LicenceDate')?.title
+    ).toBe('Amendment Date');
+    expect(
+      resolvedForCancel.find((column) => column.key === 'LicenceNo')?.title
+    ).toBe('Cancellation No');
+    expect(
+      resolvedForCancel.find((column) => column.key === 'LicenceDate')?.title
+    ).toBe('Cancellation Date');
+  });
 });

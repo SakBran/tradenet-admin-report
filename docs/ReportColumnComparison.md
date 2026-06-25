@@ -1273,3 +1273,24 @@ Extra in new (12): `No`, `Date`, `Company Registration No`, `Company Name`, `Com
 - `WineImportationRegistrationByVoucherReport.rdlc`
 - `WineImportationSummaryReport.rdlc`
 
+## Wai Phyo Recheck Against Old Admin - 2026-06-22
+
+The following current-config differences were verified directly against the old Tradenet 2.0 report views and RDLC files. Generated row-number headers (`No`, `No.`, `Sr.No.`) are treated as equivalent.
+
+| Report | Verified current difference |
+|---|---|
+| Border Import Licence By HS Code | Old `Company Name` column is intentionally removed by newer customer feedback. |
+| Border Import Licence New Report | Missing old readonly Company Name filter; new has an Auto filter not present in old admin. |
+| Border Export Permit Actual Amendment | Missing old readonly Company Name filter; `HS Code` header differs from old `HSCode`. |
+| Border Export Permit Amendment | Missing old readonly Company Name filter and old HSCode column. |
+| Border Export Permit Cancellation | Missing old readonly Company Name filter; `HS Code` header differs from old `HSCode`. |
+| Border Export Permit Extension | Missing old readonly Company Name filter. |
+| Border Export Permit By HS Code | Old `Company Name` column is intentionally removed by newer customer feedback. |
+| Border Export Permit New Report | Missing old readonly Company Name filter and old `auto` output column. |
+| Export Licence Actual Amendment | Missing old HSCode column. |
+| Export Licence Amendment | Missing old HSCode column; adds feedback-requested Auto/None-Auto filter absent from old admin. |
+| Export Licence Cancellation | Missing old HSCode column. |
+| Export Licence By HS Code | Old `Company Name` column is intentionally removed by newer customer feedback. |
+| Export Licence New Report | Adds feedback-requested Auto/None-Auto filter absent from old admin. |
+
+Reports verified with matching old filters and visible columns: Border Import Licence Actual Amendment, Amendment, Cancellation, Extension, and Voucher; Border Export Permit Voucher at runtime; Export Licence Extension and Voucher at runtime.

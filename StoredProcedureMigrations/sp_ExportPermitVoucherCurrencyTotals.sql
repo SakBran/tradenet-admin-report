@@ -49,7 +49,8 @@ BEGIN
                 INNER JOIN Users ON Users.Id = BorderExportPermit.ApproveUserId
             WHERE AccountTransaction.IsPayment = 1
                 AND AccountTransaction.TransactionFormType = N'Border Export Permit'
-                AND (AccountTransaction.PaymentDate >= @FromDate AND AccountTransaction.PaymentDate <= @ToDate)
+                AND ((@FromDate IS NULL) OR AccountTransaction.PaymentDate >= @FromDate)
+                AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate < DATEADD(day, 1, @ToDate))
                 AND BorderExportPermit.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN BorderExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND AccountTransaction.PaymentType = (CASE WHEN @PaymentType = '' THEN AccountTransaction.PaymentType ELSE @PaymentType END)
                 AND BorderExportPermit.ApplyType = @ApplyType AND BorderExportPermit.Status = 'Approved'

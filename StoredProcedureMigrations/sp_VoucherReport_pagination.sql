@@ -39,7 +39,11 @@ BEGIN
 
     DECLARE @ob nvarchar(400);
     IF @SortColumn IS NOT NULL AND @SortColumn IN (N'ApplicationNo', N'ApplicationDate', N'ApprovedUser', N'Date', N'sDate', N'SectionCode', N'ApplyType', N'OldLicenceNo', N'LicenceNo', N'LicenceDate', N'sLicenceDate', N'CompanyRegistrationNo', N'CompanyName', N'VoucherNo', N'VoucherDate', N'sVoucherDate', N'Amount', N'PaymentType', N'CommodityType', N'ExchangeRate', N'TotalCIF')
-        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir + N', [ApplicationNo] ASC, [LicenceNo] ASC';
+    BEGIN
+        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir;
+        IF @SortColumn <> N'ApplicationNo' SET @ob += N', [ApplicationNo] ASC';
+        IF @SortColumn <> N'LicenceNo' SET @ob += N', [LicenceNo] ASC';
+    END
     ELSE
         SET @ob = N'[ApplicationNo] ASC, [LicenceNo] ASC';
 
@@ -209,12 +213,12 @@ ExportPermit.Id AS __k_Id
 		AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
 		AND ExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
-		AND ApplyType=@ApplyType AND ExportLicence.Status=''Approved''
+		AND (@ApplyType='''' OR ApplyType=@ApplyType) AND ExportLicence.Status=''Approved''
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END) OPTION (RECOMPILE, MAXDOP 1); '
             ELSE N'DECLARE @__total int = NULL; ' END;
 
-        -- Data-first path: avoid item-total lookups so the voucher table can load.
-        SET @sql = @cntpart + N'SELECT pg.*, CAST(NULL AS nvarchar(50)) AS Currency, CAST(NULL AS decimal(38,6)) AS TotalAmount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
+        -- Resolve item values after paging so the report shows data without scanning item totals for every matching licence.
+        SET @sql = @cntpart + N'SELECT pg.*, itemCurrency.Currency, itemTotal.TotalAmount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
     FROM (
         SELECT ExportLicence.ApplicationNo,
 ExportLicence.ApplicationDate,
@@ -249,10 +253,21 @@ ExportLicence.Id AS __k_Id
 		AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
 		AND ExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
-		AND ApplyType=@ApplyType AND ExportLicence.Status=''Approved''
-		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+		AND (@ApplyType='''' OR ApplyType=@ApplyType) AND ExportLicence.Status=''Approved''
+        AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
         ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
     ) pg
+    OUTER APPLY (
+        SELECT TOP 1 currency.Code AS Currency
+        FROM ExportLicenceItem
+        INNER JOIN Currency currency ON ExportLicenceItem.CurrencyId = currency.Id
+        WHERE ExportLicenceItem.ExportLicenceId = pg.__k_Id
+    ) itemCurrency
+    OUTER APPLY (
+        SELECT SUM(CAST(ExportLicenceItem.Amount AS decimal(38,6))) AS TotalAmount
+        FROM ExportLicenceItem
+        WHERE ExportLicenceItem.ExportLicenceId = pg.__k_Id
+    ) itemTotal
     ORDER BY ' + @ob + N'
     OPTION (RECOMPILE, MAXDOP 1);';
     END
@@ -522,7 +537,8 @@ BorderImportLicence.Id AS __k_Id
 		INNER JOIN Users ON Users.Id = BorderExportPermit.ApproveUserId
 		WHERE IsPayment=1
 		AND AccountTransaction.TransactionFormType=''Border Export Permit''
-		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
+		AND ((@FromDate IS NULL) OR AccountTransaction.PaymentDate>=@FromDate)
+		AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate<DATEADD(day, 1, @ToDate))
 		AND BorderExportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
 		AND ApplyType=@ApplyType AND BorderExportPermit.Status=''Approved''
@@ -570,7 +586,8 @@ BorderExportPermit.Id AS __k_Id
 		INNER JOIN Users ON Users.Id = BorderExportPermit.ApproveUserId
 		WHERE IsPayment=1
 		AND AccountTransaction.TransactionFormType=''Border Export Permit''
-		AND (AccountTransaction.PaymentDate>=@FromDate AND AccountTransaction.PaymentDate<=@ToDate)
+		AND ((@FromDate IS NULL) OR AccountTransaction.PaymentDate>=@FromDate)
+		AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate<DATEADD(day, 1, @ToDate))
 		AND BorderExportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
 		AND ApplyType=@ApplyType AND BorderExportPermit.Status=''Approved''

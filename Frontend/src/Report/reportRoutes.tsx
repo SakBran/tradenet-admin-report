@@ -16,6 +16,7 @@ import BorderExportLicenceVoucherReport from './Page/BorderExportLicenceVoucherR
 import BorderExportPermitActualAmendmentReport from './Page/BorderExportPermitActualAmendmentReport';
 import BorderExportPermitAmendmentReport from './Page/BorderExportPermitAmendmentReport';
 import BorderExportPermitByHSCodeReport from './Page/BorderExportPermitByHSCodeReport';
+import BorderExportPermitHSCodeDetailReport from './Page/BorderExportPermitHSCodeDetailReport';
 import BorderExportPermitBySectionReport from './Page/BorderExportPermitBySectionReport';
 import BorderExportPermitBySellerCountryReport from './Page/BorderExportPermitBySellerCountryReport';
 import BorderExportPermitCancellationReport from './Page/BorderExportPermitCancellationReport';
@@ -28,6 +29,7 @@ import BorderExportPermitVoucherReport from './Page/BorderExportPermitVoucherRep
 import BorderImportLicenceActualAmendmentReport from './Page/BorderImportLicenceActualAmendmentReport';
 import BorderImportLicenceAmendmentReport from './Page/BorderImportLicenceAmendmentReport';
 import BorderImportLicenceByHSCodeReport from './Page/BorderImportLicenceByHSCodeReport';
+import BorderImportLicenceHSCodeDetailReport from './Page/BorderImportLicenceHSCodeDetailReport';
 import BorderImportLicenceByMethodReport from './Page/BorderImportLicenceByMethodReport';
 import BorderImportLicenceBySectionReport from './Page/BorderImportLicenceBySectionReport';
 import BorderImportLicenceBySellerCountryReport from './Page/BorderImportLicenceBySellerCountryReport';
@@ -44,6 +46,7 @@ import BorderImportLicenceVoucherReport from './Page/BorderImportLicenceVoucherR
 import BorderImportPermitActualAmendmentReport from './Page/BorderImportPermitActualAmendmentReport';
 import BorderImportPermitAmendmentReport from './Page/BorderImportPermitAmendmentReport';
 import BorderImportPermitByHSCodeReport from './Page/BorderImportPermitByHSCodeReport';
+import BorderImportPermitHSCodeDetailReport from './Page/BorderImportPermitHSCodeDetailReport';
 import BorderImportPermitBySectionReport from './Page/BorderImportPermitBySectionReport';
 import BorderImportPermitBySellerCountryReport from './Page/BorderImportPermitBySellerCountryReport';
 import BorderImportPermitCancellationReport from './Page/BorderImportPermitCancellationReport';
@@ -60,6 +63,7 @@ import EIRCardBindReport from './Page/EIRCardBindReport';
 import ExportLicenceActualAmendmentReport from './Page/ExportLicenceActualAmendmentReport';
 import ExportLicenceAmendmentReport from './Page/ExportLicenceAmendmentReport';
 import ExportLicenceByHSCodeReport from './Page/ExportLicenceByHSCodeReport';
+import ExportLicenceHSCodeDetailReport from './Page/ExportLicenceHSCodeDetailReport';
 import ExportLicenceByMethodReport from './Page/ExportLicenceByMethodReport';
 import ExportLicenceBySectionReport from './Page/ExportLicenceBySectionReport';
 import ExportLicenceBySellerCountryReport from './Page/ExportLicenceBySellerCountryReport';
@@ -179,6 +183,7 @@ export const reportRoutes = [
   { path: 'BorderExportPermitActualAmendmentReport', element: <BorderExportPermitActualAmendmentReport /> },
   { path: 'BorderExportPermitAmendmentReport', element: <BorderExportPermitAmendmentReport /> },
   { path: 'BorderExportPermitByHSCodeReport', element: <BorderExportPermitByHSCodeReport /> },
+  { path: 'BorderExportPermitHSCodeDetailReport', element: <BorderExportPermitHSCodeDetailReport /> },
   { path: 'BorderExportPermitBySectionReport', element: <BorderExportPermitBySectionReport /> },
   { path: 'BorderExportPermitBySellerCountryReport', element: <BorderExportPermitBySellerCountryReport /> },
   { path: 'BorderExportPermitCancellationReport', element: <BorderExportPermitCancellationReport /> },
@@ -191,6 +196,7 @@ export const reportRoutes = [
   { path: 'BorderImportLicenceActualAmendmentReport', element: <BorderImportLicenceActualAmendmentReport /> },
   { path: 'BorderImportLicenceAmendmentReport', element: <BorderImportLicenceAmendmentReport /> },
   { path: 'BorderImportLicenceByHSCodeReport', element: <BorderImportLicenceByHSCodeReport /> },
+  { path: 'BorderImportLicenceHSCodeDetailReport', element: <BorderImportLicenceHSCodeDetailReport /> },
   { path: 'BorderImportLicenceByMethodReport', element: <BorderImportLicenceByMethodReport /> },
   { path: 'BorderImportLicenceBySectionReport', element: <BorderImportLicenceBySectionReport /> },
   { path: 'BorderImportLicenceBySellerCountryReport', element: <BorderImportLicenceBySellerCountryReport /> },
@@ -207,6 +213,7 @@ export const reportRoutes = [
   { path: 'BorderImportPermitActualAmendmentReport', element: <BorderImportPermitActualAmendmentReport /> },
   { path: 'BorderImportPermitAmendmentReport', element: <BorderImportPermitAmendmentReport /> },
   { path: 'BorderImportPermitByHSCodeReport', element: <BorderImportPermitByHSCodeReport /> },
+  { path: 'BorderImportPermitHSCodeDetailReport', element: <BorderImportPermitHSCodeDetailReport /> },
   { path: 'BorderImportPermitBySectionReport', element: <BorderImportPermitBySectionReport /> },
   { path: 'BorderImportPermitBySellerCountryReport', element: <BorderImportPermitBySellerCountryReport /> },
   { path: 'BorderImportPermitCancellationReport', element: <BorderImportPermitCancellationReport /> },
@@ -223,6 +230,7 @@ export const reportRoutes = [
   { path: 'ExportLicenceActualAmendmentReport', element: <ExportLicenceActualAmendmentReport /> },
   { path: 'ExportLicenceAmendmentReport', element: <ExportLicenceAmendmentReport /> },
   { path: 'ExportLicenceByHSCodeReport', element: <ExportLicenceByHSCodeReport /> },
+  { path: 'ExportLicenceHSCodeDetailReport', element: <ExportLicenceHSCodeDetailReport /> },
   { path: 'ExportLicenceByMethodReport', element: <ExportLicenceByMethodReport /> },
   { path: 'ExportLicenceBySectionReport', element: <ExportLicenceBySectionReport /> },
   { path: 'ExportLicenceBySellerCountryReport', element: <ExportLicenceBySellerCountryReport /> },

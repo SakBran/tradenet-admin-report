@@ -46,11 +46,13 @@ namespace Backend.Controllers.Report
             var sortColumn = string.IsNullOrWhiteSpace(request.SortColumn) ? null : request.SortColumn;
             var sortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? null : request.SortOrder;
 
+            var includeTotalCount = false;
+
             var rows = await sp_VoucherReport.ExecuteAsync(
-                _context, procedureRequest!, sortColumn, sortOrder, pageIndex, pageSize, request.IncludeTotalCount);
+                _context, procedureRequest!, sortColumn, sortOrder, pageIndex, pageSize, includeTotalCount);
             var data = rows.Select(row => row.ToResult()).ToList();
 
-            var result = request.IncludeTotalCount
+            var result = includeTotalCount
                 ? ApiResult<sp_VoucherReportResult>.CreatePageFromRows(
                     data, rows.Count > 0 ? (rows[0].TotalCount ?? 0) : 0, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery)

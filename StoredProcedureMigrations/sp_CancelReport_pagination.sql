@@ -23,7 +23,11 @@ BEGIN
 
     DECLARE @ob nvarchar(400);
     IF @SortColumn IS NOT NULL AND @SortColumn IN (N'Date', N'SectionCode', N'SectionName', N'OldLicenceNo', N'LicenceNo', N'sDate', N'CompanyRegistrationNo', N'CompanyName', N'UnitLevel', N'StreetNumberStreetName', N'QuarterCityTownship', N'State', N'Country', N'PostalCode', N'Remark')
-        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir + N', [Date] ASC, [LicenceNo] ASC';
+    BEGIN
+        SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir;
+        IF @SortColumn <> N'Date' SET @ob += N', [Date] ASC';
+        IF @SortColumn <> N'LicenceNo' SET @ob += N', [LicenceNo] ASC';
+    END
     ELSE
         SET @ob = N'[Date] ASC, [LicenceNo] ASC';
 
@@ -384,7 +388,8 @@ BorderImportLicence.Id AS __k_Id
 		INNER JOIN ExportImportSection section ON BorderExportPermit.ExportImportSectionId = section.Id
 		INNER JOIN Sakhan sakhan ON BorderExportPermit.SakhanId = sakhan.Id
 		WHERE ApplyType=''Cancel'' AND BorderExportPermit.Status=''Approved''
-		AND (BorderExportPermit.CreatedDate>=@FromDate AND BorderExportPermit.CreatedDate<=@ToDate)
+		AND ((@FromDate IS NULL) OR BorderExportPermit.CreatedDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR BorderExportPermit.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
 		AND BorderExportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
 		AND BorderExportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderExportPermit.SakhanId ELSE @SakhanId END) OPTION (RECOMPILE); '
@@ -423,7 +428,8 @@ BorderExportPermit.Id AS __k_Id
 		INNER JOIN ExportImportSection section ON BorderExportPermit.ExportImportSectionId = section.Id
 		INNER JOIN Sakhan sakhan ON BorderExportPermit.SakhanId = sakhan.Id
 		WHERE ApplyType=''Cancel'' AND BorderExportPermit.Status=''Approved''
-		AND (BorderExportPermit.CreatedDate>=@FromDate AND BorderExportPermit.CreatedDate<=@ToDate)
+		AND ((@FromDate IS NULL) OR BorderExportPermit.CreatedDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR BorderExportPermit.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
 		AND BorderExportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
 		AND BorderExportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderExportPermit.SakhanId ELSE @SakhanId END)
@@ -441,7 +447,8 @@ BorderExportPermit.Id AS __k_Id
 		INNER JOIN ExportImportSection section ON BorderImportPermit.ExportImportSectionId = section.Id
 		INNER JOIN Sakhan sakhan ON BorderImportPermit.SakhanId = sakhan.Id
 		WHERE ApplyType=''Cancel'' AND BorderImportPermit.Status=''Approved''
-		AND (BorderImportPermit.CreatedDate>=@FromDate AND BorderImportPermit.CreatedDate<=@ToDate)
+		AND ((@FromDate IS NULL) OR BorderImportPermit.CreatedDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR BorderImportPermit.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
 		AND BorderImportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
 		AND BorderImportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportPermit.SakhanId ELSE @SakhanId END)
@@ -482,7 +489,8 @@ BorderImportPermit.Id AS __k_Id
 		INNER JOIN ExportImportSection section ON BorderImportPermit.ExportImportSectionId = section.Id
 		INNER JOIN Sakhan sakhan ON BorderImportPermit.SakhanId = sakhan.Id
 		WHERE ApplyType=''Cancel'' AND BorderImportPermit.Status=''Approved''
-		AND (BorderImportPermit.CreatedDate>=@FromDate AND BorderImportPermit.CreatedDate<=@ToDate)
+		AND ((@FromDate IS NULL) OR BorderImportPermit.CreatedDate >= @FromDate)
+		AND ((@ToDate IS NULL) OR BorderImportPermit.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
 		AND BorderImportPermit.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
 		AND BorderImportPermit.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportPermit.SakhanId ELSE @SakhanId END)

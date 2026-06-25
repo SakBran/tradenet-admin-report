@@ -418,6 +418,29 @@ const importLicenceHSCodeFilters: ReportFilterConfig[] = [
   importLicenceHSCodeFilter,
 ];
 
+const hsCodeDetailColumns: ReportColumnConfig[] = [
+  {
+    key: 'hsCode',
+    dataIndex: 'hsCode',
+    title: 'HS Code',
+  },
+  {
+    key: 'Description',
+    dataIndex: 'hsDescription',
+    title: 'Description',
+  },
+  {
+    key: 'CompanyName',
+    dataIndex: 'companyName',
+    title: 'Company Name',
+  },
+  {
+    key: 'NoOfLicences',
+    dataIndex: 'noOfLicences',
+    title: 'No of Licences',
+  },
+];
+
 const importLicenceNewFilters: ReportFilterConfig[] = [
   importLicenceDateRangeFilter,
   importLicenceFormTypeFilter,
@@ -644,6 +667,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     columns: [
@@ -732,10 +756,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        ...importLicenceCompanyNameFilter,
+      },
+      {
         name: 'SakhanId',
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licence Report'),
@@ -848,10 +876,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        ...importLicenceCompanyNameFilter,
+      },
+      {
         name: 'SakhanId',
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licence Report'),
@@ -972,6 +1004,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licences By HS Code', true),
@@ -1303,10 +1336,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        ...importLicenceCompanyNameFilter,
+      },
+      {
         name: 'SakhanId',
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licence Report'),
@@ -1809,10 +1846,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        ...importLicenceCompanyNameFilter,
+      },
+      {
         name: 'SakhanId',
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licence Report'),
@@ -1919,10 +1960,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        ...importLicenceCompanyNameFilter,
+      },
+      {
         name: 'SakhanId',
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
       {
         name: 'Auto',
@@ -2053,10 +2098,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        ...importLicenceCompanyNameFilter,
+      },
+      {
         name: 'SakhanId',
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     reportSubtitle: importLicenceRangeSubtitle('Border Export Licences Total Value & Licences'),
@@ -2144,10 +2193,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        ...importLicenceCompanyNameFilter,
+      },
+      {
         name: 'SakhanId',
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     reportSubtitle: importLicenceRangeSubtitle('Border Export Licence Voucher List'),
@@ -2265,10 +2318,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        ...importLicenceCompanyNameFilter,
+      },
+      {
         name: 'SakhanId',
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     columns: [
@@ -2385,10 +2442,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        ...importLicenceCompanyNameFilter,
+      },
+      {
         name: 'SakhanId',
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     columns: [
@@ -2507,6 +2568,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     columns: [
@@ -2515,7 +2577,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'hsCode',
         title: 'HS Code',
         drilldown: {
-          targetReportKey: 'BorderExportPermitByHSCodeReport',
+          targetReportKey: 'BorderExportPermitHSCodeDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'ExportImportSectionId', 'FilterType', 'SakhanId'],
           rowParams: { hsCode: 'hsCode' },
         },
@@ -2541,6 +2603,37 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Currency',
       },
     ],
+  },
+  BorderExportPermitHSCodeDetailReport: {
+    controllerName: 'BorderExportPermitByHSCodeReport',
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permit By HS Code', true),
+    title: 'HS Code Detail Report',
+    apiRoute: 'BorderExportPermitByHSCodeReport',
+    excelRoute: 'BorderExportPermitByHSCodeReport/Excel',
+    excelFileName: 'BorderExportPermitHSCodeDetailReport.xlsx',
+    initialSortColumn: 'hsCode',
+    showRowNumber: true,
+    filters: [
+      importLicenceDateRangeFilter,
+      importLicenceFormTypeFilter,
+      {
+        name: 'ExportImportSectionId',
+        label: 'Export Section',
+        type: 'number',
+        defaultValue: 0,
+        lookupName: 'borderExportPermitSections',
+      },
+      importLicenceFilterTypeFilter,
+      importLicenceHSCodeFilter,
+      {
+        name: 'SakhanId',
+        label: 'Sakhan',
+        type: 'number',
+        defaultValue: 0,
+        lookupName: 'sakhans',
+      },
+    ],
+    columns: hsCodeDetailColumns,
   },
   BorderExportPermitBySectionReport: {
     controllerName: 'BorderExportPermitBySectionReport',
@@ -2594,10 +2687,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        ...importLicenceCompanyNameFilter,
+      },
+      {
         name: 'SakhanId',
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     columns: [
@@ -2680,10 +2777,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        ...importLicenceCompanyNameFilter,
+      },
+      {
         name: 'SakhanId',
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     columns: [
@@ -2759,6 +2860,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     columns: [
@@ -2889,6 +2991,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     columns: [
@@ -2975,6 +3078,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     columns: [
@@ -3355,6 +3459,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'text',
         defaultValue: '',
       },
+      importLicenceCompanyNameFilter,
       {
         name: 'SakhanId',
         label: 'Sakhan',
@@ -3761,6 +3866,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     columns: [
@@ -3769,7 +3875,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'hsCode',
         title: 'HS Code',
         drilldown: {
-          targetReportKey: 'BorderImportLicenceByHSCodeReport',
+          targetReportKey: 'BorderImportLicenceHSCodeDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'ExportImportSectionId', 'FilterType', 'SakhanId'],
           rowParams: { hsCode: 'hsCode' },
         },
@@ -3795,6 +3901,28 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Currency',
       },
     ],
+  },
+  BorderImportLicenceHSCodeDetailReport: {
+    controllerName: 'BorderImportLicenceByHSCodeReport',
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Licence By HS Code', true),
+    title: 'HS Code Detail Report',
+    apiRoute: 'BorderImportLicenceByHSCodeReport',
+    excelRoute: 'BorderImportLicenceByHSCodeReport/Excel',
+    excelFileName: 'BorderImportLicenceHSCodeDetailReport.xlsx',
+    initialSortColumn: 'hsCode',
+    showRowNumber: true,
+    filters: [
+      importLicenceDateRangeFilter,
+      importLicenceFormTypeFilter,
+      {
+        ...borderImportLicenceSectionFilter,
+        label: 'Import Section',
+      },
+      importLicenceFilterTypeFilter,
+      importLicenceHSCodeFilter,
+      borderImportLicenceSakhanFilter,
+    ],
+    columns: hsCodeDetailColumns,
   },
   BorderImportLicenceByMethodReport: {
     controllerName: 'BorderImportLicenceByMethodReport',
@@ -4778,6 +4906,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderImportPermitActualAmendmentReport: {
     controllerName: 'BorderImportPermitActualAmendmentReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Permit Report'),
     title: 'Border Import Permit Actual Amendment Report',
     apiRoute: 'BorderImportPermitActualAmendmentReport',
     excelRoute: 'BorderImportPermitActualAmendmentReport/Excel',
@@ -4821,10 +4951,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        ...importLicenceCompanyNameFilter,
+      },
+      {
         name: 'SakhanId',
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     columns: [
@@ -4896,6 +5030,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderImportPermitAmendmentReport: {
     controllerName: 'BorderImportPermitAmendmentReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Permit Report'),
     title: 'Border Import Permit Amendment Report',
     apiRoute: 'BorderImportPermitAmendmentReport',
     excelRoute: 'BorderImportPermitAmendmentReport/Excel',
@@ -4939,10 +5075,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        ...importLicenceCompanyNameFilter,
+      },
+      {
         name: 'SakhanId',
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     columns: [
@@ -5014,6 +5154,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderImportPermitByHSCodeReport: {
     controllerName: 'BorderImportPermitByHSCodeReport',
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Permit By HS Code', true),
     title: 'Border Import Permit By HS Code Report',
     apiRoute: 'BorderImportPermitByHSCodeReport',
     excelRoute: 'BorderImportPermitByHSCodeReport/Excel',
@@ -5038,6 +5179,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        name: 'ExportImportSectionId',
+        label: 'Import Section',
+        type: 'number',
+        defaultValue: 0,
+        lookupName: 'borderImportPermitSections',
+      },
+      {
         name: 'FilterType',
         label: 'Filter By',
         type: 'select',
@@ -5058,6 +5206,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     columns: [
@@ -5065,6 +5214,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'hsCode',
         dataIndex: 'hsCode',
         title: 'HS Code',
+        drilldown: {
+          targetReportKey: 'BorderImportPermitHSCodeDetailReport',
+          carryFilters: ['FromDate', 'ToDate', 'ExportImportSectionId', 'FilterType', 'SakhanId'],
+          rowParams: { hsCode: 'hsCode' },
+        },
       },
       {
         key: 'Description',
@@ -5092,6 +5246,37 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Company Name',
       },
     ],
+  },
+  BorderImportPermitHSCodeDetailReport: {
+    controllerName: 'BorderImportPermitByHSCodeReport',
+    title: 'HS Code Detail Report',
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Permit By HS Code', true),
+    apiRoute: 'BorderImportPermitByHSCodeReport',
+    excelRoute: 'BorderImportPermitByHSCodeReport/Excel',
+    excelFileName: 'BorderImportPermitHSCodeDetailReport.xlsx',
+    initialSortColumn: 'hsCode',
+    showRowNumber: true,
+    filters: [
+      importLicenceDateRangeFilter,
+      importLicenceFormTypeFilter,
+      {
+        name: 'ExportImportSectionId',
+        label: 'Import Section',
+        type: 'number',
+        defaultValue: 0,
+        lookupName: 'borderImportPermitSections',
+      },
+      importLicenceFilterTypeFilter,
+      importLicenceHSCodeFilter,
+      {
+        name: 'SakhanId',
+        label: 'Sakhan',
+        type: 'number',
+        defaultValue: 0,
+        lookupName: 'sakhans',
+      },
+    ],
+    columns: hsCodeDetailColumns,
   },
   BorderImportPermitBySectionReport: {
     controllerName: 'BorderImportPermitBySectionReport',
@@ -5255,6 +5440,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderImportPermitCancellationReport: {
     controllerName: 'BorderImportPermitCancellationReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Permit Report'),
     title: 'Border Import Permit Cancellation Report',
     apiRoute: 'BorderImportPermitCancellationReport',
     excelRoute: 'BorderImportPermitCancellationReport/Excel',
@@ -5292,10 +5479,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        ...importLicenceCompanyNameFilter,
+      },
+      {
         name: 'SakhanId',
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     columns: [
@@ -5766,10 +5957,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        ...importLicenceCompanyNameFilter,
+      },
+      {
         name: 'SakhanId',
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     columns: [
@@ -5836,6 +6031,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderImportPermitNewReportNewReport: {
     controllerName: 'BorderImportPermitNewReportNewReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Permit Report'),
     title: 'Border Import Permit New Report (New Report )',
     apiRoute: 'BorderImportPermitNewReportNewReport',
     excelRoute: 'BorderImportPermitNewReportNewReport/Excel',
@@ -5873,10 +6070,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        ...importLicenceCompanyNameFilter,
+      },
+      {
         name: 'SakhanId',
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     columns: [
@@ -5933,6 +6134,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderImportPermitVoucherReport: {
     controllerName: 'BorderImportPermitVoucherReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'Amount' },
+    reportSubtitle: importLicenceRangeSubtitle('Border Import Permit Voucher List'),
     title: 'Border Import Permit Voucher Report',
     apiRoute: 'BorderImportPermitVoucherReport',
     excelRoute: 'BorderImportPermitVoucherReport/Excel',
@@ -5989,10 +6192,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        ...importLicenceCompanyNameFilter,
+      },
+      {
         name: 'SakhanId',
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     columns: [
@@ -6584,7 +6791,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'hsCode',
         title: 'HS Code',
         drilldown: {
-          targetReportKey: 'ExportLicenceByHSCodeReport',
+          targetReportKey: 'ExportLicenceHSCodeDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'ExportImportSectionId', 'FilterType'],
           rowParams: { hsCode: 'hsCode' },
         },
@@ -6610,6 +6817,27 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Currency',
       },
     ],
+  },
+  ExportLicenceHSCodeDetailReport: {
+    controllerName: 'ExportLicenceByHSCodeReport',
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Licence By HS Code', true),
+    title: 'HS Code Detail Report',
+    apiRoute: 'ExportLicenceByHSCodeReport',
+    excelRoute: 'ExportLicenceByHSCodeReport/Excel',
+    excelFileName: 'ExportLicenceHSCodeDetailReport.xlsx',
+    initialSortColumn: 'hsCode',
+    showRowNumber: true,
+    filters: [
+      {
+        ...importLicenceDateRangeFilter,
+        defaultDateRangeMonths: 3,
+      },
+      importLicenceFormTypeFilter,
+      exportLicenceSectionFilter,
+      importLicenceFilterTypeFilter,
+      importLicenceHSCodeFilter,
+    ],
+    columns: hsCodeDetailColumns,
   },
   ExportLicenceByMethodReport: {
     controllerName: 'ExportLicenceByMethodReport',
