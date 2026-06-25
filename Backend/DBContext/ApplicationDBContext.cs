@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore;
 using API.Model;
+using API.Model.Activity;
 using API.Model.ExcelExport;
 using Backend.Model;
 
@@ -20,6 +21,7 @@ namespace API.DBContext
         public DbSet<SystemSetting> SystemSetting { get; set; }
         public DbSet<ChatModel> ChatModels { get; set; }
         public DbSet<ExcelExportJob> ExcelExportJobs { get; set; }
+        public DbSet<ActivityLog> ActivityLogs { get; set; }
 
 
 
@@ -58,6 +60,27 @@ namespace API.DBContext
                 entity.HasIndex(e => new { e.Status, e.CreatedAtUtc });
                 // Cleanup sweep.
                 entity.HasIndex(e => e.ExpiresAtUtc);
+            });
+
+            modelBuilder.Entity<ActivityLog>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.UserId).HasMaxLength(450);
+                entity.Property(e => e.UserName).HasMaxLength(256);
+                entity.Property(e => e.Source).HasMaxLength(16).IsRequired();
+                entity.Property(e => e.EventType).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.IpAddress).HasMaxLength(64);
+                entity.Property(e => e.UserAgent).HasMaxLength(512);
+                entity.Property(e => e.HttpMethod).HasMaxLength(16);
+                entity.Property(e => e.Path).HasMaxLength(512).IsRequired();
+                entity.Property(e => e.QueryString).HasMaxLength(1024);
+                // DetailsJson is unbounded (nvarchar(max)) — request bodies vary in size.
+                // Time-ordered browsing (newest first) is the default admin view.
+                entity.HasIndex(e => e.TimestampUtc);
+                // Per-user history, newest first.
+                entity.HasIndex(e => new { e.UserId, e.TimestampUtc });
+                // Filter by event type.
+                entity.HasIndex(e => e.EventType);
             });
         }
     }

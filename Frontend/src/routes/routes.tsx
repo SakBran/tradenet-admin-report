@@ -17,6 +17,7 @@ import { DashboardLayout, GuestLayout } from '../layouts';
 import React, { ReactNode, useEffect } from 'react';
 import UserPage from '../pages/User/UserPage.tsx';
 import UserList from '../pages/User/UserList.tsx';
+import ActivityLogList from '../pages/ActivityLog/ActivityLogList.tsx';
 import ProtectedRoute from './ProtectedRoute.tsx';
 import TimelinePage from '../pages/Timeline/Timeline.tsx';
 import Certificate from '../pages/certificate/Certificate.tsx';
@@ -154,6 +155,22 @@ const router = createBrowserRouter([
           {
             path: 'Detail/:id',
             element: <UserPage />,
+          },
+        ],
+      },
+
+      {
+        path: `/ActivityLog`,
+        element: (
+          <PageWrapper>
+            <DashboardLayout />
+          </PageWrapper>
+        ),
+        errorElement: <ErrorPage />,
+        children: [
+          {
+            path: 'List',
+            element: <ActivityLogList />,
           },
         ],
       },

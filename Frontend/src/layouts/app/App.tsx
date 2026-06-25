@@ -33,6 +33,8 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../redux/store.ts';
 import AuthContext from '../../context/AuthContext.tsx';
 import axiosInstance from '../../services/AxiosInstance.ts';
+import { trackEvent } from '../../services/ActivityTracker.ts';
+import { reportConfigs } from '../../Report/config/reportConfigs.ts';
 const { Content } = Layout;
 const SIDE_NAV_WIDTH = 320;
 
@@ -72,11 +74,13 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
       label: 'logout',
       icon: <LogoutOutlined />,
       danger: true,
-      onClick: () => {
+      onClick: async () => {
         message.open({
           type: 'loading',
           content: 'signing you out',
         });
+        // Record the logout while the token is still present, then sign out.
+        await trackEvent({ eventType: 'Logout' });
         auth?.logout();
         navigate(PATH_AUTH.signin, { replace: true });
       },
@@ -86,6 +90,26 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   useEffect(() => {
     setCollapsed(isMobile);
   }, [isMobile]);
+
+  // Track in-app navigation (route changes) for the activity log. API-backed
+  // actions (searches, exports, drill-downs) are already captured server-side;
+  // this fills in page views, which make no API call of their own.
+  useEffect(() => {
+    const path = location.pathname;
+    const segments = path.split('/').filter(Boolean);
+    const reportKey = segments[0] === 'Report' ? segments[1] : undefined;
+    const reportTitle = reportKey
+      ? (reportConfigs as Record<string, { title?: string }>)[reportKey]?.title
+      : undefined;
+
+    trackEvent({
+      eventType: 'Navigation',
+      path,
+      details: reportKey
+        ? { report: reportKey, title: reportTitle }
+        : undefined,
+    });
+  }, [location.pathname]);
 
   useEffect(() => {
     window.addEventListener('scroll', () => {

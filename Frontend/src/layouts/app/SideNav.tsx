@@ -1,7 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, {
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { ConfigProvider, Layout, Menu, MenuProps, SiderProps } from 'antd';
+import { HistoryOutlined } from '@ant-design/icons';
 import { Logo } from '../../components';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { PATH_DASHBOARD } from '../../constants';
 import { COLOR } from '../../App.tsx';
 import { useMediaQuery } from 'react-responsive';
@@ -10,11 +17,11 @@ import {
   reportCategoryKeys,
   reportNavItems,
 } from '../../Report/reportNavItems.tsx';
+import AuthContext from '../../context/AuthContext.tsx';
 import './SideNav.css';
 
 const { Sider } = Layout;
 
-const items: MenuProps['items'] = reportNavItems;
 const rootSubmenuKeys = reportCategoryKeys;
 
 type SideNavProps = SiderProps & {
@@ -27,6 +34,22 @@ const SideNav = ({ setCollapse, className, ...others }: SideNavProps) => {
   const [openKeys, setOpenKeys] = useState(['']);
   const [current, setCurrent] = useState('');
   const isMobile = useMediaQuery({ maxWidth: 769 });
+  const auth = useContext(AuthContext);
+
+  // The activity-log view is admin-only; show its menu entry just for admins.
+  const items = useMemo<MenuProps['items']>(() => {
+    if (auth?.user?.permission === 'Admin') {
+      return [
+        {
+          key: 'activity-log',
+          icon: <HistoryOutlined />,
+          label: <Link to="/ActivityLog/List">Activity Log</Link>,
+        },
+        ...reportNavItems,
+      ];
+    }
+    return reportNavItems;
+  }, [auth?.user?.permission]);
 
   const onClick: MenuProps['onClick'] = (e) => {
     console.log('click ', e);

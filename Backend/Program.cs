@@ -1,6 +1,8 @@
 using API.DBContext;
 using API.Interface;
+using API.Middleware;
 using API.Service;
+using API.Service.Activity;
 using API.Service.ExcelExport;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -100,6 +102,8 @@ public class Program
         builder.Services.AddScoped(typeof(ICommonService<>), typeof(CommonService<>));
         // Async Excel export queue: jobs in TemplateDB, files on disk, background worker.
         builder.Services.AddExcelExportQueue(builder.Configuration);
+        // User-activity audit log: in-memory queue + background batch writer + retention cleanup (TemplateDB).
+        builder.Services.AddActivityLogging(builder.Configuration);
 
         var app = builder.Build();
 
@@ -176,6 +180,9 @@ public class Program
         });
         app.UseAuthentication();
         app.UseAuthorization();
+        // Capture user activity after auth (so claims + forwarded IP are set) and before
+        // the endpoints run. Non-blocking: entries are queued and written by a background worker.
+        app.UseMiddleware<ActivityLoggingMiddleware>();
         app.MapControllers();
         app.UseStaticFiles();
         app.Run();
