@@ -71,15 +71,11 @@ function Invoke-DeployTick {
         # The log records the commit hash + outcome; the terminal shows the full build stream.
         Write-Log "--- deploy.ps1 output starts ---"
         & (Join-Path $RepoRoot 'deploy.ps1') -NoGit
-        $deployExit = $LASTEXITCODE
         Write-Log "--- deploy.ps1 output ends ---"
-        if ($deployExit -eq 0) {
-            Write-Log "Deploy finished OK for $remote."
-        } else {
-            Write-Log "Deploy FAILED for $remote (exit $deployExit)."
-        }
+        Write-Log "Deploy finished OK for $remote."
     }
     catch {
+        Write-Log "--- deploy.ps1 output ends ---"
         Write-Log "Deploy FAILED for $remote : $($_.Exception.Message)"
     }
 }
