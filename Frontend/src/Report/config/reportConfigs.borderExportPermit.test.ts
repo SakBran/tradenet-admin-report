@@ -268,6 +268,11 @@ describe('Border Export Permit report configs', () => {
   });
 
   it('Detail report column bindings match backend API field names', () => {
+    expect(reportConfigs.BorderExportPermitDetailReport.currencyTotalsColumns).toEqual({
+      labelColumnKey: 'PermitNo',
+      valueColumnKey: 'Value',
+    });
+
     expect(
       reportConfigs.BorderExportPermitDetailReport.columns.map((column) => column.dataIndex)
     ).toEqual([

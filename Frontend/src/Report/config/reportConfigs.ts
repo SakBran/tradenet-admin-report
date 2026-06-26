@@ -3079,6 +3079,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderExportPermitDetailReport: {
     controllerName: 'BorderExportPermitDetailReport',
+    currencyTotalsColumns: { labelColumnKey: 'PermitNo', valueColumnKey: 'Value' },
     reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permit By Detail', true),
     title: 'Border Export Permit Detail Report',
     apiRoute: 'BorderExportPermitDetailReport',

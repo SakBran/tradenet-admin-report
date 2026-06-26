@@ -48,6 +48,28 @@ public sealed class BorderExportPermitDailyDetailContractTests
     }
 
     [Fact]
+    public void Detail_report_adds_currency_totals_on_lazy_exact_count_request()
+    {
+        var controller = File.ReadAllText(Path.Combine(
+            RepositoryRoot,
+            "Backend",
+            "Controllers",
+            "Report",
+            "BorderExportPermitDetailReportController.cs"));
+        var source = File.ReadAllText(Path.Combine(
+            RepositoryRoot,
+            "Backend",
+            "StoredProcedureToLinq",
+            "sp_ExportPermitDetailReport.cs"));
+
+        Assert.Contains("request!.IncludeTotalCount && result.Data.Count > 0", controller);
+        Assert.Contains("CreateBorderCurrencyTotalsAsync", controller);
+        Assert.Contains("COUNT(DISTINCT BorderExportPermit.ExportPermitNo) AS NoOfLicences", source);
+        Assert.Contains("SUM(BorderExportPermitItem.Amount) AS TotalValue", source);
+        Assert.Contains("GROUP BY currency.Code", source);
+    }
+
+    [Fact]
     public void Daily_report_uses_sql_aggregate_path_with_column_totals()
     {
         var controller = File.ReadAllText(Path.Combine(

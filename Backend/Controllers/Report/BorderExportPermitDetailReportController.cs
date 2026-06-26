@@ -41,6 +41,11 @@ namespace Backend.Controllers.Report
             }
 
             var result = await sp_ExportPermitDetailReport.CreatePagedResultAsync(_context, procedureRequest!, request!);
+            if (request!.IncludeTotalCount && result.Data.Count > 0)
+            {
+                result.CurrencyTotals = await sp_ExportPermitDetailReport.CreateBorderCurrencyTotalsAsync(
+                    _context, procedureRequest!);
+            }
 
             return Ok(result);
         }
