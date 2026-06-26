@@ -20,11 +20,19 @@ double-click again to restart).
 [CmdletBinding()]
 param(
     [string]$Branch = 'main',
-    [string]$RepoRoot = (Split-Path -Parent $PSScriptRoot),
+    [string]$RepoRoot,
     [int]$IntervalMinutes = 5,
     [switch]$Loop,
     [string]$LogFile = (Join-Path $env:ProgramData 'TradeNetDeploy\auto-deploy.log')
 )
+
+# Resolve the repo root (this script lives in <repo>\tools). Done HERE, not as a param default,
+# because $PSScriptRoot is not reliably populated while param defaults are evaluated.
+if (-not $RepoRoot) {
+    $scriptDir = $PSScriptRoot
+    if (-not $scriptDir) { $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path }
+    $RepoRoot = Split-Path -Parent $scriptDir
+}
 
 # git writes progress to stderr; leave EAP at Continue so that is not treated as a terminating
 # error. deploy.ps1 throws on its own failures (it sets 'Stop' internally), caught below.
