@@ -70,7 +70,11 @@ function Invoke-DeployTick {
         # -NoGit: we already synced. deploy.ps1 uses its default P: targets, which resolve because
         # this runs in your mapped interactive session. *>&1 captures its Write-Host output to the log.
         & (Join-Path $RepoRoot 'deploy.ps1') -NoGit *>&1 |
-            ForEach-Object { Add-Content -LiteralPath $LogFile -Value ('    {0}' -f $_) }
+            ForEach-Object {
+                $line = '    {0}' -f $_
+                Write-Host $line
+                Add-Content -LiteralPath $LogFile -Value $line
+            }
         Write-Log "Deploy finished OK for $remote."
     }
     catch {
