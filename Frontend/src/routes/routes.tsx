@@ -13,7 +13,7 @@ import {
   VerifyEmailPage,
   WelcomePage,
 } from '../pages';
-import { DashboardLayout, GuestLayout } from '../layouts';
+import { DashboardLayout } from '../layouts';
 import React, { ReactNode, useEffect } from 'react';
 import UserPage from '../pages/User/UserPage.tsx';
 import UserList from '../pages/User/UserList.tsx';
@@ -58,15 +58,7 @@ const PageWrapper = ({ children }: PageProps) => {
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <PageWrapper children={<GuestLayout />} />,
-    errorElement: <ErrorPage />,
-    children: [
-      {
-        index: true,
-        path: '',
-        element: <Navigate to="/auth/signin" replace />,
-      },
-    ],
+    element: <Navigate to="/auth/signin" replace />,
   },
   {
     path: '/auth',
