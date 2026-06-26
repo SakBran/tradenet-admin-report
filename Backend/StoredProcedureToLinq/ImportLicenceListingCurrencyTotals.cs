@@ -66,6 +66,35 @@ public static class ImportLicenceListingCurrencyTotals
         return RunAsync(db, sql, parameters);
     }
 
+    /// <summary>Voucher report footer (<c>dbo.sp_ImportLicenceVoucherCurrencyTotals</c>).</summary>
+    public static Task<ReportCurrencyTotalsSummary> ExecuteVoucherAsync(
+        TradeNetDbContext db,
+        DateTime fromDate,
+        DateTime toDate,
+        int exportImportSectionId,
+        string? paymentType,
+        string? applyType,
+        string? companyRegistrationNo)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+
+        var parameters = new[]
+        {
+            new SqlParameter("@FromDate", fromDate),
+            new SqlParameter("@ToDate", toDate),
+            new SqlParameter("@ExportImportSectionId", exportImportSectionId),
+            new SqlParameter("@PaymentType", paymentType ?? string.Empty),
+            new SqlParameter("@ApplyType", applyType ?? string.Empty),
+            new SqlParameter("@CompanyRegistrationNo", companyRegistrationNo ?? string.Empty),
+        };
+
+        const string sql =
+            "EXEC dbo.sp_ImportLicenceVoucherCurrencyTotals @FromDate, @ToDate, " +
+            "@ExportImportSectionId, @PaymentType, @ApplyType, @CompanyRegistrationNo";
+
+        return RunAsync(db, sql, parameters);
+    }
+
     private static async Task<ReportCurrencyTotalsSummary> RunAsync(
         TradeNetDbContext db,
         string sql,

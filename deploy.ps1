@@ -247,6 +247,15 @@ finally {
 if (-not $NoFrontend) {
     $frontendDir = Join-Path $root 'Frontend'
     Set-Location $frontendDir
+
+    # Vite bakes VITE_* from the environment into the bundle at build time (Frontend/src/config.ts
+    # reads them, falling back to localhost only when unset). Default to the UAT API here so both
+    # manual (deploy.bat) and automated (auto-deploy-watch.ps1) runs build the right URLs without
+    # duplicating the values. An externally-set VITE_* (e.g. for a different environment) wins.
+    if (-not $env:VITE_BASE_URL)  { $env:VITE_BASE_URL = 'https://reportuatapi.myanmartradenet.com/api/' }
+    if (-not $env:VITE_IMAGE_URL) { $env:VITE_IMAGE_URL = 'https://reportuatapi.myanmartradenet.com/Image/' }
+    if (-not $env:VITE_QR_URL)    { $env:VITE_QR_URL = 'https://uatapi.ecomreg.gov.mm/QR/' }
+
     Invoke-NativeCommand 'Installing Frontend dependencies...' { npm install --legacy-peer-deps }
     Invoke-NativeCommand 'Building Frontend...' { npm run build }
 

@@ -79,6 +79,13 @@ namespace Backend.Controllers.Report
                         ["amount"] = decimal.Round(amountTotal.Value, 0),
                     };
                 }
+
+                // Per-currency footer (No of Licences + Total Value), mirroring the Import
+                // Permit Voucher report. Degrades to an empty footer if the proc isn't deployed.
+                result.CurrencyTotals = await ImportLicenceListingCurrencyTotals.ExecuteVoucherAsync(
+                    _context, procedureRequest!.FromDate, procedureRequest.ToDate,
+                    procedureRequest.ExportImportSectionId, procedureRequest.PaymentType,
+                    procedureRequest.ApplyType, procedureRequest.CompanyRegistrationNo);
             }
 
             return Ok(result);
