@@ -45,7 +45,7 @@ BEGIN
 
     IF @Type = 'Oversea'
     BEGIN
-        SET @sql = N'DECLARE @__total int = NULL; '
+        SET @sql = CAST(N'DECLARE @__total int = 0; ' AS nvarchar(max))
             + CASE WHEN @IncludeTotalCount = 1 THEN N'SELECT @__total = COUNT(*) FROM ExportPermit
   INNER JOIN PaThaKa ON PaThaKa.Id = ExportPermit.PaThaKaId
   INNER JOIN ExportPermitItem ON ExportPermit.Id = ExportPermitItem.ExportPermitId
@@ -115,7 +115,7 @@ PermitType,ExportPermit.Remark Conditions,ExportPermit.ApproveDate
     END
     ELSE IF @Type = 'Border'
     BEGIN
-        SET @sql = N'DECLARE @__total int = NULL; '
+        SET @sql = CAST(N'DECLARE @__total int = 0; ' AS nvarchar(max))
             + CASE WHEN @IncludeTotalCount = 1 THEN N'SELECT @__total = COUNT(*) FROM BorderExportPermit
   INNER JOIN PaThaKa ON PaThaKa.Id = BorderExportPermit.PaThaKaId
   INNER JOIN BorderExportPermitItem ON BorderExportPermit.Id = BorderExportPermitItem.BorderExportPermitId

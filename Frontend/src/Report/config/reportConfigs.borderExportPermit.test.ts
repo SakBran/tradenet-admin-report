@@ -168,4 +168,134 @@ describe('Border Export Permit report configs', () => {
       rowParams: { hsCode: 'hsCode' },
     });
   });
+
+  it('Section, Buyer Country, and Company List drilldowns open Detail in a new tab', () => {
+    expect(
+      reportConfigs.BorderExportPermitBySectionReport.columns.find(
+        (column) => column.key === 'Section'
+      )?.drilldown
+    ).toMatchObject({
+      targetReportKey: 'BorderExportPermitDetailReport',
+      rowParams: { ExportImportSectionId: 'sectionId' },
+      openInNewTab: true,
+    });
+
+    expect(
+      reportConfigs.BorderExportPermitBySellerCountryReport.columns.find(
+        (column) => column.key === 'Country'
+      )?.drilldown
+    ).toMatchObject({
+      targetReportKey: 'BorderExportPermitDetailReport',
+      rowParams: { BuyerCountryId: 'countryId' },
+      openInNewTab: true,
+    });
+
+    expect(
+      reportConfigs.BorderExportPermitCompanyListReport.columns.find(
+        (column) => column.key === 'CompanyName'
+      )?.drilldown
+    ).toMatchObject({
+      targetReportKey: 'BorderExportPermitDetailReport',
+      rowParams: { CompanyRegistrationNo: 'companyRegistrationNo' },
+      openInNewTab: true,
+    });
+  });
+
+  it('Daily and Detail reports match old-admin Border Export Permit filter boxes', () => {
+    for (const key of [
+      'BorderExportPermitDailyReportNewPermitReport',
+      'BorderExportPermitDetailReport',
+    ]) {
+      const cfg = reportConfigs[key];
+
+      expect(cfg.filters.map((filter) => filter.name), key).toEqual([
+        'dateRange',
+        'PaThaKaTypeId',
+        'ExportImportSectionId',
+        'SakhanId',
+      ]);
+      expect(cfg.filters.find((filter) => filter.name === 'dateRange')?.defaultDateRangeMonths).toBe(
+        3
+      );
+      expect(cfg.filters.find((filter) => filter.name === 'PaThaKaTypeId')?.lookupName).toBe(
+        'paThaKaTypes'
+      );
+      expect(
+        cfg.filters.find((filter) => filter.name === 'ExportImportSectionId')?.lookupName
+      ).toBe('borderExportPermitSections');
+      expect(cfg.filters.find((filter) => filter.name === 'SakhanId')?.lookupName).toBe(
+        'sakhans'
+      );
+    }
+  });
+
+  it('Daily and Detail columns match old RDLC column headers', () => {
+    expect(
+      reportConfigs.BorderExportPermitDailyReportNewPermitReport.columns.map(
+        (column) => column.title
+      )
+    ).toEqual(['Date', 'No of Licences', 'Total Value', 'Currency', 'Total USD Value']);
+
+    expect(
+      reportConfigs.BorderExportPermitDetailReport.columns.map((column) => column.title)
+    ).toEqual([
+      'Section',
+      'Permit No',
+      'Permit Date',
+      'Company Registration No',
+      'Company Name',
+      'Company Address',
+      'Union Citizenship No',
+      'Consignee Name',
+      'Consignee Address',
+      'Buyer Country',
+      'Place/Port of Export',
+      'Place/Port of Discharge',
+      'Last Date',
+      'Country of Orign',
+      'Consigned Country',
+      'Country of Destination',
+      'Type of Permit',
+      'HSCode',
+      'Decription',
+      'A/U',
+      'Price',
+      'Qty',
+      'Value',
+      'Currency',
+      'Conditions',
+    ]);
+  });
+
+  it('Detail report column bindings match backend API field names', () => {
+    expect(
+      reportConfigs.BorderExportPermitDetailReport.columns.map((column) => column.dataIndex)
+    ).toEqual([
+      'sectionName',
+      'licenceNo',
+      'licenceDate',
+      'companyRegistrationNo',
+      'companyName',
+      'companyAddress',
+      'nrcNo',
+      'consigneeName',
+      'consigneeAddress',
+      'buyerCountry',
+      'portofExport',
+      'portofDischarge',
+      'lastDate',
+      'countryofOrigin',
+      'consignedCountry',
+      'destinationCountry',
+      'permitType',
+      'hsCode',
+      'hsDescription',
+      'unit',
+      'price',
+      'quantity',
+      'amount',
+      'currency',
+      'conditions',
+    ]);
+  });
 });

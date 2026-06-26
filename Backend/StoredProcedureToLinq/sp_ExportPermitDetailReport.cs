@@ -1,8 +1,10 @@
 using API.DBContext;
+using API.Model;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
@@ -71,12 +73,65 @@ public sealed class sp_ExportPermitDetailReportRow : sp_ExportPermitDetailReport
 
 public static class sp_ExportPermitDetailReport
 {
+    private const int DefaultPageSize = 10;
+    private const int MaxPageSize = 1000;
+
+    public static async Task<ApiResult<sp_ExportPermitDetailReportResult>> CreatePagedResultAsync(
+        TradeNetDbContext db,
+        sp_ExportPermitDetailReportRequest request,
+        ReportQueryRequest pagingRequest)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(pagingRequest);
+
+        var pageIndex = Math.Max(0, pagingRequest.PageIndex);
+        var pageSize = pagingRequest.PageSize <= 0
+            ? DefaultPageSize
+            : Math.Min(pagingRequest.PageSize, MaxPageSize);
+
+        var rows = await ExecuteAsync(
+            db,
+            request,
+            pageIndex,
+            pageSize,
+            pagingRequest.IncludeTotalCount,
+            pagingRequest.SortColumn,
+            pagingRequest.SortOrder);
+
+        var data = rows.Cast<sp_ExportPermitDetailReportResult>().ToList();
+
+        if (pagingRequest.IncludeTotalCount)
+        {
+            return ApiResult<sp_ExportPermitDetailReportResult>.CreatePageFromRows(
+                data,
+                rows.Count > 0 ? rows[0].TotalCount : 0,
+                pageIndex,
+                pageSize,
+                pagingRequest.SortColumn,
+                pagingRequest.SortOrder,
+                pagingRequest.FilterColumn,
+                pagingRequest.FilterQuery);
+        }
+
+        return ApiResult<sp_ExportPermitDetailReportResult>.CreateFastPageFromRows(
+            data,
+            pageIndex,
+            pageSize,
+            pagingRequest.SortColumn,
+            pagingRequest.SortOrder,
+            pagingRequest.FilterColumn,
+            pagingRequest.FilterQuery);
+    }
+
     public static async Task<List<sp_ExportPermitDetailReportRow>> ExecuteAsync(
         TradeNetDbContext db,
         sp_ExportPermitDetailReportRequest request,
         int pageIndex,
         int pageSize,
-        bool includeTotalCount)
+        bool includeTotalCount,
+        string? sortColumn = null,
+        string? sortOrder = null)
     {
         var sql = "EXEC dbo.sp_ExportPermitDetailReport_Fast_pagination "
             + "@Type, @FromDate, @ToDate, @PaThaKaTypeId, @ExportImportSectionId, @BuyerCountryId, @CompanyRegistrationNo, @SakhanId, "
@@ -92,8 +147,8 @@ public static class sp_ExportPermitDetailReport
             new SqlParameter("@BuyerCountryId", request.BuyerCountryId),
             new SqlParameter("@CompanyRegistrationNo", request.CompanyRegistrationNo),
             new SqlParameter("@SakhanId", request.SakhanId),
-            new SqlParameter("@SortColumn", DBNull.Value),
-            new SqlParameter("@SortOrder", DBNull.Value),
+            new SqlParameter("@SortColumn", (object?)sortColumn ?? DBNull.Value),
+            new SqlParameter("@SortOrder", (object?)sortOrder ?? DBNull.Value),
             new SqlParameter("@PageIndex", pageIndex),
             new SqlParameter("@PageSize", pageSize),
             new SqlParameter("@IncludeTotalCount", includeTotalCount),
