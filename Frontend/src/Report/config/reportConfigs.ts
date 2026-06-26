@@ -259,6 +259,20 @@ const importLicenceVoucherApplyTypeFilter: ReportFilterConfig = {
   ],
 };
 
+// The Import Licence Voucher report routes to the proc's strict-ApplyType (ELSE) branch of
+// sp_VoucherReport_pagination, which has no `@ApplyType='' OR ...` all-pass guard -> an empty
+// Apply Type ("--- All ---") returns 0 rows. Its columns also carry dynamic per-ApplyType
+// headers (header2/header3), which assume a single selected type. So default to 'New' with no
+// "--- All ---", mirroring the Import Permit Voucher report. The shared filter above keeps
+// "--- All ---" for the Export/Border voucher reports, whose proc branches DO have the guard.
+const importLicenceVoucherApplyTypeFilterNew: ReportFilterConfig = {
+  name: 'ApplyType',
+  label: 'Apply Type',
+  type: 'select',
+  defaultValue: 'New',
+  options: [...registrationApplyTypeOptions],
+};
+
 const importLicenceVoucherPaymentTypeFilter: ReportFilterConfig = {
   name: 'PaymentType',
   label: 'Payment Type',
@@ -464,7 +478,7 @@ const importLicenceVoucherFilters: ReportFilterConfig[] = [
   importLicenceDateRangeFilter,
   importLicenceFormTypeFilter,
   importLicenceSectionFilter,
-  importLicenceVoucherApplyTypeFilter,
+  importLicenceVoucherApplyTypeFilterNew,
   importLicenceVoucherPaymentTypeFilter,
   importLicenceCompanyRegistrationNoFilter,
   importLicenceCompanyNameFilter,
@@ -10045,6 +10059,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ImportLicenceVoucherReport: {
     controllerName: 'ImportLicenceVoucherReport',
+    reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'LicValue' },
     title: 'Import Licence Voucher Report',
     apiRoute: 'ImportLicenceVoucherReport',
     excelRoute: 'ImportLicenceVoucherReport/Excel',
