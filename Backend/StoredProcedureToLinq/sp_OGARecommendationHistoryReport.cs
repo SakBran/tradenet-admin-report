@@ -25,6 +25,9 @@ public sealed class sp_OGARecommendationHistoryReportResult
     public string ReferenceNo { get; set; } = null!;
     public string? OGADepartmentName { get; set; }
     public string? OGASectionName { get; set; }
+    // Populated only in the recommendation Info row (Type == "Info"); null on history rows.
+    public string? SarNo { get; set; }
+    public string? Allowance { get; set; }
 }
 
 public static class sp_OGARecommendationHistoryReport
@@ -36,7 +39,11 @@ public static class sp_OGARecommendationHistoryReport
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
-        return ExportLicenceRows(db, request)
+        // RecommendationInfoRow always returns 1 row (even when there are 0 history
+        // records), so the page is never completely empty. Its CreatedDate is null,
+        // which the two-key sort puts first.
+        return RecommendationInfoRow(db, request)
+            .Concat(ExportLicenceRows(db, request))
             .Concat(ImportLicenceRows(db, request))
             .Concat(ExportPermitRows(db, request))
             .Concat(ImportPermitRows(db, request))
@@ -44,7 +51,42 @@ public static class sp_OGARecommendationHistoryReport
             .Concat(BorderImportLicenceRows(db, request))
             .Concat(BorderExportPermitRows(db, request))
             .Concat(BorderImportPermitRows(db, request))
-            .OrderBy(row => row.CreatedDate);
+            .OrderBy(row => row.CreatedDate.HasValue ? 1 : 0)
+            .ThenBy(row => row.CreatedDate);
+    }
+
+    private static IQueryable<sp_OGARecommendationHistoryReportResult> RecommendationInfoRow(
+        TradeNetDbContext db,
+        sp_OGARecommendationHistoryReportRequest request)
+    {
+        return
+            from recommendation in db.Ogarecommendations
+            join department in db.Ogadepartments
+                on recommendation.OgadepartmentId equals department.Id into deptJoin
+            from department in deptJoin.DefaultIfEmpty()
+            join section in db.Ogasections
+                on recommendation.OgasectionId equals section.Id into secJoin
+            from section in secJoin.DefaultIfEmpty()
+            where recommendation.ReferenceNo == request.ReferenceNo
+            select new sp_OGARecommendationHistoryReportResult
+            {
+                Id = recommendation.Id,
+                SDate = recommendation.SarDate.Day.ToString()
+                    + "/" + recommendation.SarDate.Month.ToString()
+                    + "/" + recommendation.SarDate.Year.ToString(),
+                LicenceNo = "",
+                Type = "Info",
+                Remark = "",
+                Balance = "",
+                FullName = "",
+                Position = "",
+                CreatedDate = null,
+                ReferenceNo = recommendation.ReferenceNo,
+                OGADepartmentName = department == null ? null : department.EnglishName,
+                OGASectionName = section == null ? null : section.EnglishName,
+                SarNo = recommendation.SarNo,
+                Allowance = recommendation.Allowance,
+            };
     }
 
     private static IQueryable<sp_OGARecommendationHistoryReportResult> ExportLicenceRows(
@@ -79,7 +121,9 @@ public static class sp_OGARecommendationHistoryReport
                 CreatedDate = history.CreatedDate,
                 ReferenceNo = recommendation.ReferenceNo,
                 OGADepartmentName = department.EnglishName,
-                OGASectionName = section.EnglishName
+                OGASectionName = section.EnglishName,
+                SarNo = (string?)null,
+                Allowance = (string?)null,
             };
     }
 
@@ -115,7 +159,9 @@ public static class sp_OGARecommendationHistoryReport
                 CreatedDate = history.CreatedDate,
                 ReferenceNo = recommendation.ReferenceNo,
                 OGADepartmentName = department.EnglishName,
-                OGASectionName = section.EnglishName
+                OGASectionName = section.EnglishName,
+                SarNo = (string?)null,
+                Allowance = (string?)null,
             };
     }
 
@@ -151,7 +197,9 @@ public static class sp_OGARecommendationHistoryReport
                 CreatedDate = history.CreatedDate,
                 ReferenceNo = recommendation.ReferenceNo,
                 OGADepartmentName = department.EnglishName,
-                OGASectionName = section.EnglishName
+                OGASectionName = section.EnglishName,
+                SarNo = (string?)null,
+                Allowance = (string?)null,
             };
     }
 
@@ -187,7 +235,9 @@ public static class sp_OGARecommendationHistoryReport
                 CreatedDate = history.CreatedDate,
                 ReferenceNo = recommendation.ReferenceNo,
                 OGADepartmentName = department.EnglishName,
-                OGASectionName = section.EnglishName
+                OGASectionName = section.EnglishName,
+                SarNo = (string?)null,
+                Allowance = (string?)null,
             };
     }
 
@@ -223,7 +273,9 @@ public static class sp_OGARecommendationHistoryReport
                 CreatedDate = history.CreatedDate,
                 ReferenceNo = recommendation.ReferenceNo,
                 OGADepartmentName = department.EnglishName,
-                OGASectionName = section.EnglishName
+                OGASectionName = section.EnglishName,
+                SarNo = (string?)null,
+                Allowance = (string?)null,
             };
     }
 
@@ -259,7 +311,9 @@ public static class sp_OGARecommendationHistoryReport
                 CreatedDate = history.CreatedDate,
                 ReferenceNo = recommendation.ReferenceNo,
                 OGADepartmentName = department.EnglishName,
-                OGASectionName = section.EnglishName
+                OGASectionName = section.EnglishName,
+                SarNo = (string?)null,
+                Allowance = (string?)null,
             };
     }
 
@@ -295,7 +349,9 @@ public static class sp_OGARecommendationHistoryReport
                 CreatedDate = history.CreatedDate,
                 ReferenceNo = recommendation.ReferenceNo,
                 OGADepartmentName = department.EnglishName,
-                OGASectionName = section.EnglishName
+                OGASectionName = section.EnglishName,
+                SarNo = (string?)null,
+                Allowance = (string?)null,
             };
     }
 
@@ -331,7 +387,9 @@ public static class sp_OGARecommendationHistoryReport
                 CreatedDate = history.CreatedDate,
                 ReferenceNo = recommendation.ReferenceNo,
                 OGADepartmentName = department.EnglishName,
-                OGASectionName = section.EnglishName
+                OGASectionName = section.EnglishName,
+                SarNo = (string?)null,
+                Allowance = (string?)null,
             };
     }
 }

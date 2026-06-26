@@ -481,8 +481,12 @@ const ogaRecommendationColumns: ReportColumnConfig[] = [
 ];
 
 // Drill target: a single recommendation's usage history (old OGARecommendationHistoryReport.rdlc).
+// Row 1 is always the recommendation info (SarNo/Allowance populated, LicenceNo/Remark/etc. empty).
+// Subsequent rows are usage history (LicenceNo/Remark/Balance/FullName/Position populated).
 const ogaHistoryColumns = [
   column('SDate', 'Date'),
+  { key: 'SarNo', dataIndex: 'sarNo', title: 'Letter No' },
+  { key: 'Allowance', dataIndex: 'allowance', title: 'Allowance' },
   column('LicenceNo', 'Licence No'),
   column('Remark', 'Remark'),
   column('Balance', 'Balance'),
