@@ -1,0 +1,63 @@
+name: Deploy to UAT
+
+# Push-to-deploy for UAT. Runs on a SELF-HOSTED runner installed on the UAT server
+# (dev_vm3), so it can write to the IIS site folders directly. No VPN/RDP needed once set up.
+#
+# One-time setup on the server (see plan / DeploymentGuide):
+#   1. Install the self-hosted runner as a Windows service with labels: self-hosted, windows, uat
+#   2. Install .NET 8 SDK, Node.js LTS, and git on the server.
+#   3. Set these repository Variables (Settings -> Secrets and variables -> Actions -> Variables):
+#        UAT_BACKEND_PATH   e.g. C:\inetpub\tradenet-admin-backend   (real IIS physical path)
+#        UAT_FRONTEND_PATH  e.g. C:\inetpub\tradenenet-admin-frontend
+#        UAT_HEALTH_URL     (optional) e.g. https://reportuatapi.myanmartradenet.com/health
+#   4. The server's appsettings.json stays put; the build strips it so it is never overwritten.
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [uat]
+
+# Never run two deploys at once on the single self-hosted runner.
+concurrency:
+  group: deploy-uat
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, windows, uat]
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate runner configuration
+        shell: pwsh
+        run: |
+          if (-not '${{ vars.UAT_BACKEND_PATH }}' -or -not '${{ vars.UAT_FRONTEND_PATH }}') {
+            Write-Error "Missing repository Variables. Set UAT_BACKEND_PATH and UAT_FRONTEND_PATH (Settings -> Secrets and variables -> Actions -> Variables) to the IIS site physical paths from 'Get-Website | Select name, physicalPath'."
+            exit 1
+          }
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build, publish, and deploy (with graceful app_offline + health check)
+        shell: pwsh
+        env:
+          # Vite reads VITE_* from the environment at build time (config.ts falls back to
+          # localhost only when these are absent). This replaces the old config.ts source rewrite.
+          VITE_BASE_URL: https://reportuatapi.myanmartradenet.com/api/
+          VITE_IMAGE_URL: https://reportuatapi.myanmartradenet.com/Image/
+          VITE_QR_URL: https://uatapi.ecomreg.gov.mm/QR/
+        run: >
+          ./deploy.ps1 -NoGit
+          -BackendTarget '${{ vars.UAT_BACKEND_PATH }}'
+          -FrontendTarget '${{ vars.UAT_FRONTEND_PATH }}'
+          -HealthUrl '${{ vars.UAT_HEALTH_URL }}'

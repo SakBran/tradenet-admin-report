@@ -184,6 +184,9 @@ public class Program
         // the endpoints run. Non-blocking: entries are queued and written by a background worker.
         app.UseMiddleware<ActivityLoggingMiddleware>();
         app.MapControllers();
+        // Lightweight, anonymous liveness probe used by deploy.ps1 / CI to confirm the app
+        // restarted successfully after a deployment. Must not require auth or hit the database.
+        app.MapGet("/health", () => "ok").AllowAnonymous();
         app.UseStaticFiles();
         app.Run();
     }
