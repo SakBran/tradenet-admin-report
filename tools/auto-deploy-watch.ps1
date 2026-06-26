@@ -1,58 +1,45 @@
 <#
 .SYNOPSIS
-Poll the GitHub 'main' branch and deploy to UAT when it has new commits.
+Watch the GitHub 'main' branch and auto-deploy to UAT when it changes.
 
 .DESCRIPTION
-Runs UNATTENDED on the Build Server via a Windows Scheduled Task (e.g. repeat every 5 minutes).
-Each tick it does a cheap `git fetch`; if the local checkout is behind origin/main it hard-resets
-to origin/main and runs deploy.ps1 (build + graceful app_offline copy + health check). When nothing
-changed it exits quietly so the log only records real deploys. A lock file stops a slow deploy from
-overlapping the next tick.
+Run this once in your RDP session on the Build Server (easiest: double-click auto-deploy.bat in
+the repo root). Every few minutes it checks origin/main; when new commits appear it pulls them and
+runs deploy.ps1 (build + graceful app_offline copy + health check).
 
-It calls deploy.ps1 DIRECTLY (never deploy.bat) because deploy.bat ends with `pause`, which would
-hang a non-interactive task forever.
-
-.NOTES
-Pass the real UNC share paths for -BackendTarget / -FrontendTarget. A task set to "run whether
-logged on or not" has NO mapped P: drive (drive maps are per-interactive-session), so the P:
-paths used for manual runs will not resolve here. Get the UNC with: (Get-PSDrive P).DisplayRoot
+Because it runs in YOUR interactive session, the P: share is already mapped and your git
+credentials are already available - so there is no scheduled task, no stored password, and no admin
+needed. It keeps running after you disconnect RDP; it stops only when you sign out (just
+double-click again to restart).
 
 .EXAMPLE
-Scheduled Task action:
-  powershell -NoProfile -ExecutionPolicy Bypass -File "C:\repo\tools\auto-deploy-watch.ps1" `
-    -BackendTarget "\\UATSRV\WEBSITES\tradenet-admin-backend" `
-    -FrontendTarget "\\UATSRV\WEBSITES\tradenenet-admin-frontend"
+  .\tools\auto-deploy-watch.ps1 -Loop     # keep watching (what auto-deploy.bat runs)
+  .\tools\auto-deploy-watch.ps1           # check once and exit
 #>
 
 [CmdletBinding()]
 param(
     [string]$Branch = 'main',
-
-    # Repo checkout to deploy from. Defaults to the repo this script lives in (tools\..).
-    [string]$RepoRoot = (Split-Path -Parent $PSScriptRoot),
-
-    # UNC targets on the UAT file share. REPLACE the server name with the real one (see .NOTES),
-    # or override these from the Scheduled Task action.
-    [string]$BackendTarget = '\\UAT-SERVER\WEBSITES\tradenet-admin-backend',
-    [string]$FrontendTarget = '\\UAT-SERVER\WEBSITES\tradenenet-admin-frontend',
-
-    [string]$HealthUrl = 'https://reportuatapi.myanmartradenet.com/health',
-
-    # Stable, account-independent location so the log is in the same place no matter which
-    # account the Scheduled Task runs as (a task's %TEMP% is not your interactive one).
+    [string]$RepoRoot,
+    [int]$IntervalMinutes = 5,
+    [switch]$Loop,
     [string]$LogFile = (Join-Path $env:ProgramData 'TradeNetDeploy\auto-deploy.log')
 )
 
-# Ensure the state directory exists before the lock/log are touched.
-$stateDir = Split-Path -Parent $LogFile
-if (-not (Test-Path -LiteralPath $stateDir)) {
-    New-Item -ItemType Directory -Force -Path $stateDir | Out-Null
+# Resolve the repo root (this script lives in <repo>\tools). Done HERE, not as a param default,
+# because $PSScriptRoot is not reliably populated while param defaults are evaluated.
+if (-not $RepoRoot) {
+    $scriptDir = $PSScriptRoot
+    if (-not $scriptDir) { $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path }
+    $RepoRoot = Split-Path -Parent $scriptDir
 }
 
-# Native git writes progress to stderr; leave EAP at Continue so that is not mistaken for a
-# terminating error. We gate on $LASTEXITCODE for git, and deploy.ps1 throws on its own failures
-# (it sets its own 'Stop' internally), which the try/catch below catches regardless.
+# git writes progress to stderr; leave EAP at Continue so that is not treated as a terminating
+# error. deploy.ps1 throws on its own failures (it sets 'Stop' internally), caught below.
 $ErrorActionPreference = 'Continue'
+
+$stateDir = Split-Path -Parent $LogFile
+if (-not (Test-Path -LiteralPath $stateDir)) { New-Item -ItemType Directory -Force -Path $stateDir | Out-Null }
 
 function Write-Log {
     param([string]$Message)
@@ -61,53 +48,28 @@ function Write-Log {
     Add-Content -LiteralPath $LogFile -Value $line
 }
 
-# --- single-instance lock: a slow deploy must not overlap the next scheduled tick ---
-$lockFile = Join-Path $stateDir 'auto-deploy.lock'
-$lockStream = $null
-try {
-    $lockStream = [System.IO.File]::Open($lockFile, 'OpenOrCreate', 'ReadWrite', 'None')
-}
-catch {
-    # Another instance holds the lock - a previous deploy is still running. Skip quietly.
-    return
-}
-
-try {
+function Invoke-DeployTick {
     if (-not (Test-Path -LiteralPath (Join-Path $RepoRoot '.git'))) {
-        Write-Log "RepoRoot '$RepoRoot' is not a git checkout. Aborting."
+        Write-Log "RepoRoot '$RepoRoot' is not a git checkout. Skipping."
         return
     }
     Set-Location $RepoRoot
 
     git fetch origin $Branch 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        Write-Log "git fetch failed (exit $LASTEXITCODE). Skipping this tick."
-        return
-    }
+    if ($LASTEXITCODE -ne 0) { Write-Log "git fetch failed (exit $LASTEXITCODE). Skipping this tick."; return }
 
-    $local = (git rev-parse HEAD).Trim()
+    $local  = (git rev-parse HEAD).Trim()
     $remote = (git rev-parse "origin/$Branch").Trim()
+    if ($local -eq $remote) { return }   # nothing new - stay quiet so the log only holds real deploys
 
-    if ($local -eq $remote) {
-        # Up to date - nothing to do. Stay quiet so the log only contains real deploys.
-        return
-    }
-
-    Write-Log "Change detected on '$Branch': $local -> $remote. Starting deploy."
-
+    Write-Log "Change detected on '$Branch': $local -> $remote. Deploying."
     git reset --hard "origin/$Branch" 2>&1 | ForEach-Object { Write-Log "git: $_" }
-    if ($LASTEXITCODE -ne 0) {
-        Write-Log "git reset --hard failed (exit $LASTEXITCODE). Aborting deploy."
-        return
-    }
+    if ($LASTEXITCODE -ne 0) { Write-Log "git reset --hard failed (exit $LASTEXITCODE). Aborting deploy."; return }
 
-    $deployScript = Join-Path $RepoRoot 'deploy.ps1'
-    Write-Log "Running deploy.ps1 -> backend '$BackendTarget'"
     try {
-        # *>&1 captures Write-Host/Warning/etc. from deploy.ps1 (PS 5.0+ routes Write-Host through
-        # the information stream). A failure inside deploy.ps1 throws and is caught below; deploy.ps1's
-        # own finally still removes app_offline.htm so the site is never left offline.
-        & $deployScript -NoGit -BackendTarget $BackendTarget -FrontendTarget $FrontendTarget -HealthUrl $HealthUrl *>&1 |
+        # -NoGit: we already synced. deploy.ps1 uses its default P: targets, which resolve because
+        # this runs in your mapped interactive session. *>&1 captures its Write-Host output to the log.
+        & (Join-Path $RepoRoot 'deploy.ps1') -NoGit *>&1 |
             ForEach-Object { Add-Content -LiteralPath $LogFile -Value ('    {0}' -f $_) }
         Write-Log "Deploy finished OK for $remote."
     }
@@ -115,13 +77,14 @@ try {
         Write-Log "Deploy FAILED for $remote : $($_.Exception.Message)"
     }
 }
-catch {
-    Write-Log "Unhandled error: $($_.Exception.Message)"
-}
-finally {
-    if ($lockStream) {
-        $lockStream.Close()
-        $lockStream.Dispose()
-        Remove-Item -LiteralPath $lockFile -Force -ErrorAction SilentlyContinue
+
+if ($Loop) {
+    Write-Log "Watcher started (checking '$Branch' every $IntervalMinutes min). Leave this window open. Ctrl+C to stop."
+    while ($true) {
+        Invoke-DeployTick
+        Start-Sleep -Seconds ($IntervalMinutes * 60)
     }
+}
+else {
+    Invoke-DeployTick
 }
