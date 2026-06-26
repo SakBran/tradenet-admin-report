@@ -67,15 +67,17 @@ function Invoke-DeployTick {
     if ($LASTEXITCODE -ne 0) { Write-Log "git reset --hard failed (exit $LASTEXITCODE). Aborting deploy."; return }
 
     try {
-        # -NoGit: we already synced. deploy.ps1 uses its default P: targets, which resolve because
-        # this runs in your mapped interactive session. *>&1 captures its Write-Host output to the log.
-        & (Join-Path $RepoRoot 'deploy.ps1') -NoGit *>&1 |
-            ForEach-Object {
-                $line = '    {0}' -f $_
-                Write-Host $line
-                Add-Content -LiteralPath $LogFile -Value $line
-            }
-        Write-Log "Deploy finished OK for $remote."
+        # Run deploy.ps1 with inherited console so dotnet/npm/robocopy output is visible live.
+        # The log records the commit hash + outcome; the terminal shows the full build stream.
+        Write-Log "--- deploy.ps1 output starts ---"
+        & (Join-Path $RepoRoot 'deploy.ps1') -NoGit
+        $deployExit = $LASTEXITCODE
+        Write-Log "--- deploy.ps1 output ends ---"
+        if ($deployExit -eq 0) {
+            Write-Log "Deploy finished OK for $remote."
+        } else {
+            Write-Log "Deploy FAILED for $remote (exit $deployExit)."
+        }
     }
     catch {
         Write-Log "Deploy FAILED for $remote : $($_.Exception.Message)"
