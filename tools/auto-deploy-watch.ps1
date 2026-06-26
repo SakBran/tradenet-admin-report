@@ -21,7 +21,7 @@ double-click again to restart).
 param(
     [string]$Branch = 'main',
     [string]$RepoRoot,
-    [int]$IntervalMinutes = 5,
+    [int]$IntervalSeconds = 5,
     [switch]$Loop,
     [string]$LogFile = (Join-Path $env:ProgramData 'TradeNetDeploy\auto-deploy.log')
 )
@@ -79,10 +79,10 @@ function Invoke-DeployTick {
 }
 
 if ($Loop) {
-    Write-Log "Watcher started (checking '$Branch' every $IntervalMinutes min). Leave this window open. Ctrl+C to stop."
+    Write-Log "Watcher started (checking '$Branch' every $IntervalSeconds s). Leave this window open. Ctrl+C to stop."
     while ($true) {
         Invoke-DeployTick
-        Start-Sleep -Seconds ($IntervalMinutes * 60)
+        Start-Sleep -Seconds $IntervalSeconds
     }
 }
 else {
