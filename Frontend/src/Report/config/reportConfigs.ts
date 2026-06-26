@@ -2671,6 +2671,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           targetReportKey: 'BorderExportPermitDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'Type', 'PaThaKaTypeId'],
           rowParams: { ExportImportSectionId: 'sectionId' },
+          openInNewTab: true,
         },
       },
       {
@@ -2761,6 +2762,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           targetReportKey: 'BorderExportPermitDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId', 'SakhanId'],
           rowParams: { BuyerCountryId: 'countryId' },
+          openInNewTab: true,
         },
       },
       {
@@ -2968,6 +2970,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           targetReportKey: 'BorderExportPermitDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId', 'SakhanId'],
           rowParams: { CompanyRegistrationNo: 'companyRegistrationNo' },
+          openInNewTab: true,
         },
       },
       {
@@ -3005,19 +3008,15 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         toName: 'ToDate',
         fromLabel: 'From Date',
         toLabel: 'To Date',
+        defaultDateRangeMonths: 3,
         required: true,
-      },
-      {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
       },
       {
         name: 'PaThaKaTypeId',
         label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'paThaKaTypes',
       },
       {
         name: 'ExportImportSectionId',
@@ -3025,18 +3024,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'number',
         defaultValue: 0,
         lookupName: 'borderExportPermitSections',
-      },
-      {
-        name: 'BuyerCountryId',
-        label: 'Buyer Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
       },
       {
         name: 'SakhanId',
@@ -3094,19 +3081,15 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         toName: 'ToDate',
         fromLabel: 'From Date',
         toLabel: 'To Date',
+        defaultDateRangeMonths: 3,
         required: true,
-      },
-      {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
       },
       {
         name: 'PaThaKaTypeId',
         label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'paThaKaTypes',
       },
       {
         name: 'ExportImportSectionId',
@@ -3116,22 +3099,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         lookupName: 'borderExportPermitSections',
       },
       {
-        name: 'BuyerCountryId',
-        label: 'Buyer Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
         name: 'SakhanId',
         label: 'Sakhan',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'sakhans',
       },
     ],
     columns: [
