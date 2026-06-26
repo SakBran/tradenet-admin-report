@@ -155,6 +155,24 @@ The following Border Export Permit summary links now open the Detail report in a
 
 Each link still carries the selected filter/date values and the clicked row parameter to `BorderExportPermitDetailReport`.
 
+## Detail Currency Totals Footer
+
+Border Export Permit Detail Report now uses the existing currency footer flow used by Import Licence detail-style reports:
+
+- Backend computes totals only on the lazy exact-count request, so the first page still loads quickly.
+- Licence count is `COUNT(DISTINCT BorderExportPermit.ExportPermitNo)` grouped by currency.
+- Value is `SUM(BorderExportPermitItem.Amount)` grouped by currency.
+- Frontend renders licence counts under `Permit No`.
+- Frontend renders currency values under `Value`.
+
+Smoke result for the current default 3-month range:
+
+- `Rows=3`
+- `TotalCount=3`
+- `CurrencyLines=1`
+- `GrandLicences=2`
+- `USD:2:3000.0000`
+
 ## Files Changed
 
 - `Frontend/src/Report/config/reportConfigs.ts`

@@ -71,6 +71,13 @@ public sealed class sp_ExportPermitDetailReportRow : sp_ExportPermitDetailReport
     public int TotalCount { get; set; }
 }
 
+public sealed class ExportPermitDetailCurrencyTotalRow
+{
+    public string? Currency { get; set; }
+    public int NoOfLicences { get; set; }
+    public decimal TotalValue { get; set; }
+}
+
 public static class sp_ExportPermitDetailReport
 {
     private const int DefaultPageSize = 10;
@@ -156,5 +163,77 @@ public static class sp_ExportPermitDetailReport
 
         return await db.Database.SqlQueryRaw<sp_ExportPermitDetailReportRow>(sql, parameters)
             .ToListAsync();
+    }
+
+    public static async Task<ReportCurrencyTotalsSummary?> CreateBorderCurrencyTotalsAsync(
+        TradeNetDbContext db,
+        sp_ExportPermitDetailReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (!string.Equals(request.Type, "Border", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        const string sql = """
+            SELECT
+                currency.Code AS Currency,
+                COUNT(DISTINCT BorderExportPermit.ExportPermitNo) AS NoOfLicences,
+                SUM(BorderExportPermitItem.Amount) AS TotalValue
+            FROM BorderExportPermit
+            INNER JOIN PaThaKa ON PaThaKa.Id = BorderExportPermit.PaThaKaId
+            INNER JOIN PaThaKaType paThaKaType ON PaThaKa.PaThaKaTypeId = paThaKaType.Id
+            INNER JOIN BorderExportPermitItem ON BorderExportPermit.Id = BorderExportPermitItem.BorderExportPermitId
+            INNER JOIN Currency currency ON BorderExportPermitItem.CurrencyId = currency.Id
+            WHERE BorderExportPermit.ApplyType = 'New'
+              AND BorderExportPermit.Status = 'Approved'
+              AND ((@FromDate IS NULL) OR BorderExportPermit.CreatedDate >= @FromDate)
+              AND ((@ToDate IS NULL) OR BorderExportPermit.CreatedDate < DATEADD(day, 1, @ToDate))
+              AND (@CompanyRegistrationNo = '' OR PaThaKa.CompanyRegistrationNo = @CompanyRegistrationNo)
+              AND (@PaThaKaTypeId = 0 OR PaThaKa.PaThaKaTypeId = @PaThaKaTypeId)
+              AND (@ExportImportSectionId = 0 OR BorderExportPermit.ExportImportSectionId = @ExportImportSectionId)
+              AND (@BuyerCountryId = 0 OR BorderExportPermit.BuyerCountryId = @BuyerCountryId)
+              AND (@SakhanId = 0 OR BorderExportPermit.SakhanId = @SakhanId)
+            GROUP BY currency.Code
+            """;
+
+        var parameters = new[]
+        {
+            new SqlParameter("@FromDate", request.FromDate),
+            new SqlParameter("@ToDate", request.ToDate),
+            new SqlParameter("@PaThaKaTypeId", request.PaThaKaTypeId),
+            new SqlParameter("@ExportImportSectionId", request.ExportImportSectionId),
+            new SqlParameter("@BuyerCountryId", request.BuyerCountryId),
+            new SqlParameter("@CompanyRegistrationNo", request.CompanyRegistrationNo ?? string.Empty),
+            new SqlParameter("@SakhanId", request.SakhanId),
+        };
+
+        var rows = await db.Database
+            .SqlQueryRaw<ExportPermitDetailCurrencyTotalRow>(sql, parameters)
+            .ToListAsync();
+
+        if (rows.Count == 0)
+        {
+            return null;
+        }
+
+        var currencies = rows
+            .OrderByDescending(row => row.NoOfLicences)
+            .ThenBy(row => row.Currency, StringComparer.OrdinalIgnoreCase)
+            .Select(row => new ReportCurrencyTotal
+            {
+                Currency = row.Currency ?? string.Empty,
+                NoOfLicences = row.NoOfLicences,
+                TotalValue = row.TotalValue,
+            })
+            .ToList();
+
+        return new ReportCurrencyTotalsSummary
+        {
+            Currencies = currencies,
+            GrandTotalLicences = currencies.Sum(currency => currency.NoOfLicences),
+        };
     }
 }
