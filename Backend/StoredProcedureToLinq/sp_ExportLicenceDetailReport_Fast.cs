@@ -219,18 +219,19 @@ public static partial class sp_ExportLicenceDetailReport_Fast
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
-        var byCurrency = (await GetTotalValueAggregateRowsAsync(db, request))
-            .Select(row => new TotalValueByCurrencyRow
-            {
-                Currency = row.Currency ?? string.Empty,
-                TotalValue = row.TotalValue ?? 0m,
-            })
-            .ToList();
-
+        List<TotalValueByCurrencyRow> byCurrency;
         List<TotalLicencesByPaThaKaTypeRow> byPaThaKaType;
 
         if (request.Type == "Oversea")
         {
+            byCurrency = (await GetTotalValueAggregateRowsAsync(db, request))
+                .Select(row => new TotalValueByCurrencyRow
+                {
+                    Currency = row.Currency ?? string.Empty,
+                    TotalValue = row.TotalValue ?? 0m,
+                })
+                .ToList();
+
             byPaThaKaType = await (
                 from licence in db.ExportLicences.AsNoTracking()
                 join paThaKa in db.PaThaKas.AsNoTracking() on licence.PaThaKaId equals paThaKa.Id
@@ -259,6 +260,16 @@ public static partial class sp_ExportLicenceDetailReport_Fast
         else
         {
             var rows = await Rows(db, request).ToListAsync();
+
+            byCurrency = rows
+                .GroupBy(row => row.Currency)
+                .Select(group => new TotalValueByCurrencyRow
+                {
+                    Currency  = group.Key ?? string.Empty,
+                    TotalValue = group.Sum(row => row.Amount),
+                })
+                .ToList();
+
             byPaThaKaType = rows
                 .GroupBy(row => row.PaThaKaTypeName)
                 .Select(group => new TotalLicencesByPaThaKaTypeRow
