@@ -3904,6 +3904,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'Method',
         dataIndex: 'methodName',
         title: 'Method',
+        drilldown: {
+          targetReportKey: 'BorderImportLicenceDetailReport',
+          carryFilters: [
+            'FromDate',
+            'ToDate',
+            'SakhanId',
+            'PaThaKaTypeId',
+            'ExportImportSectionId',
+          ],
+          rowParams: { ExportImportMethodId: 'methodId', Currency: 'currency' },
+        },
       },
       {
         key: 'NoOfLicences',
@@ -3937,6 +3948,18 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'Section',
         dataIndex: 'sectionName',
         title: 'Section',
+        drilldown: {
+          targetReportKey: 'BorderImportLicenceDetailReport',
+          carryFilters: [
+            'FromDate',
+            'ToDate',
+            'SakhanId',
+            'PaThaKaTypeId',
+            'ExportImportMethodId',
+          ],
+          rowParams: { ExportImportSectionId: 'sectionId', Currency: 'currency' },
+          openInNewTab: true,
+        },
       },
       {
         key: 'NoOfLicences',
@@ -3970,6 +3993,18 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'Country',
         dataIndex: 'country',
         title: 'Country',
+        drilldown: {
+          targetReportKey: 'BorderImportLicenceDetailReport',
+          carryFilters: [
+            'FromDate',
+            'ToDate',
+            'SakhanId',
+            'PaThaKaTypeId',
+            'ExportImportSectionId',
+            'ExportImportMethodId',
+          ],
+          rowParams: { SellerCountryId: 'countryId', Currency: 'currency' },
+        },
       },
       {
         key: 'NoOfLicences',
@@ -4086,6 +4121,18 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyName',
         dataIndex: 'companyName',
         title: 'Company Name',
+        drilldown: {
+          targetReportKey: 'BorderImportLicenceDetailReport',
+          carryFilters: [
+            'FromDate',
+            'ToDate',
+            'SakhanId',
+            'PaThaKaTypeId',
+            'ExportImportSectionId',
+            'ExportImportMethodId',
+          ],
+          rowParams: { CompanyRegistrationNo: 'companyRegistrationNo', Currency: 'currency' },
+        },
       },
       {
         key: 'NoOfLicences',

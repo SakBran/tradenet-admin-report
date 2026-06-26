@@ -250,4 +250,73 @@ describe('Border Import Licence report configs', () => {
       rowParams: { hsCode: 'hsCode' },
     });
   });
+
+  it('summary reports link to Border Import Licence detail like Import Licence references', () => {
+    expect(
+      reportConfigs.BorderImportLicenceBySectionReport.columns.find(
+        (column) => column.key === 'Section'
+      )?.drilldown
+    ).toEqual({
+      targetReportKey: 'BorderImportLicenceDetailReport',
+      carryFilters: [
+        'FromDate',
+        'ToDate',
+        'SakhanId',
+        'PaThaKaTypeId',
+        'ExportImportMethodId',
+      ],
+      rowParams: { ExportImportSectionId: 'sectionId', Currency: 'currency' },
+      openInNewTab: true,
+    });
+
+    expect(
+      reportConfigs.BorderImportLicenceByMethodReport.columns.find(
+        (column) => column.key === 'Method'
+      )?.drilldown
+    ).toEqual({
+      targetReportKey: 'BorderImportLicenceDetailReport',
+      carryFilters: [
+        'FromDate',
+        'ToDate',
+        'SakhanId',
+        'PaThaKaTypeId',
+        'ExportImportSectionId',
+      ],
+      rowParams: { ExportImportMethodId: 'methodId', Currency: 'currency' },
+    });
+
+    expect(
+      reportConfigs.BorderImportLicenceBySellerCountryReport.columns.find(
+        (column) => column.key === 'Country'
+      )?.drilldown
+    ).toEqual({
+      targetReportKey: 'BorderImportLicenceDetailReport',
+      carryFilters: [
+        'FromDate',
+        'ToDate',
+        'SakhanId',
+        'PaThaKaTypeId',
+        'ExportImportSectionId',
+        'ExportImportMethodId',
+      ],
+      rowParams: { SellerCountryId: 'countryId', Currency: 'currency' },
+    });
+
+    expect(
+      reportConfigs.BorderImportLicenceCompanyListReport.columns.find(
+        (column) => column.key === 'CompanyName'
+      )?.drilldown
+    ).toEqual({
+      targetReportKey: 'BorderImportLicenceDetailReport',
+      carryFilters: [
+        'FromDate',
+        'ToDate',
+        'SakhanId',
+        'PaThaKaTypeId',
+        'ExportImportSectionId',
+        'ExportImportMethodId',
+      ],
+      rowParams: { CompanyRegistrationNo: 'companyRegistrationNo', Currency: 'currency' },
+    });
+  });
 });
