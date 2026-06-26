@@ -38,8 +38,16 @@ param(
 
     [string]$HealthUrl = 'https://reportuatapi.myanmartradenet.com/health',
 
-    [string]$LogFile = (Join-Path $env:TEMP 'tradenet-auto-deploy.log')
+    # Stable, account-independent location so the log is in the same place no matter which
+    # account the Scheduled Task runs as (a task's %TEMP% is not your interactive one).
+    [string]$LogFile = (Join-Path $env:ProgramData 'TradeNetDeploy\auto-deploy.log')
 )
+
+# Ensure the state directory exists before the lock/log are touched.
+$stateDir = Split-Path -Parent $LogFile
+if (-not (Test-Path -LiteralPath $stateDir)) {
+    New-Item -ItemType Directory -Force -Path $stateDir | Out-Null
+}
 
 # Native git writes progress to stderr; leave EAP at Continue so that is not mistaken for a
 # terminating error. We gate on $LASTEXITCODE for git, and deploy.ps1 throws on its own failures
@@ -54,7 +62,7 @@ function Write-Log {
 }
 
 # --- single-instance lock: a slow deploy must not overlap the next scheduled tick ---
-$lockFile = Join-Path $env:TEMP 'tradenet-auto-deploy.lock'
+$lockFile = Join-Path $stateDir 'auto-deploy.lock'
 $lockStream = $null
 try {
     $lockStream = [System.IO.File]::Open($lockFile, 'OpenOrCreate', 'ReadWrite', 'None')
