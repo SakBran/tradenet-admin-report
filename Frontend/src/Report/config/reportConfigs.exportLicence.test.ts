@@ -349,5 +349,43 @@ describe('Export Licence report configs', () => {
     expect(
       resolvedForCancel.find((column) => column.key === 'LicenceDate')?.title
     ).toBe('Cancellation Date');
+    expect(
+      cfg.columns.some((column) => column.key === 'CommodityType'),
+      'voucher should keep Commodity Type per PM feedback'
+    ).toBe(true);
+    expect(cfg.currencyTotalsColumns).toEqual({
+      labelColumnKey: 'LicenceNo',
+      valueColumnKey: 'Amount',
+    });
+  });
+
+  it('new report keeps PM-requested auto filter and visible business columns', () => {
+    const cfg = reportConfigs.ExportLicenceNewReportNewReport;
+
+    expect(cfg.filters.map((filter) => filter.name)).toEqual([
+      'dateRange',
+      'FormType',
+      'ExportImportSectionId',
+      'CompanyRegistrationNo',
+      'CompanyName',
+      'Auto',
+    ]);
+
+    expect(cfg.filters.some((filter) => filter.name === 'SakhanId')).toBe(false);
+    expect(
+      cfg.columns.map((column) => column.key)
+    ).toEqual([
+      'Section',
+      'LicenceNo',
+      'CompanyRegistrationNo',
+      'CompanyName',
+      'CompanyAddress',
+      'Currency',
+      'TotalValue',
+      'CommodityType',
+      'hsCode',
+      'Quota',
+      'Auto',
+    ]);
   });
 });

@@ -33,6 +33,43 @@ Target:
 
 Last updated: 2026-06-25
 
+### Wai Phyo Status Snapshot - 2026-06-25
+
+This snapshot is the current working view after rechecking code, old-admin parity, DB procedures, and live controller smoke tests.
+
+| Status | Report | Latest confidence |
+|---|---|---|
+| ✅ | Border Import Licence Amendment Report | Returns through API/controller; DB and paging procedure verified. |
+| ✅ | Border Import Licence Extension Report | DB procedure verified; no active failure reproduced in current code. |
+| ✅ | Border Import Licence Cancellation Report | DB procedure verified; no active failure reproduced in current code. |
+| ✅ | Border Import Licence By HS Code Report | Current config keeps Wai Phyo-requested filter shape and section filter. |
+| ✅ | Border Import Licence Voucher Report | Returns through API/controller; DB/index updates deployed; broad-range retest improved to about 1.4s in DB. |
+| ✅ | Border Import Licence Actual Amendment Report | Current config keeps totals/footer support and section filter. |
+| ✅ | Border Import Licence New Report | Returns through API/controller; Sakhan/date handling fixed in DB branch. |
+| ✅ | Border Export Permit Amendment Report | Returns through API/controller. |
+| ✅ | Border Export Permit Extension Report | DB/config path currently aligned; no active failure reproduced. |
+| ✅ | Border Export Permit Cancellation Report | DB/config path currently aligned; no active failure reproduced. |
+| ✅ | Border Export Permit By HS Code Report | Current config keeps section/filter behavior and report loads. |
+| ✅ | Border Export Permit Voucher Report | Returns through API/controller. |
+| ✅ | Border Export Permit Actual Amendment Report | Controller path verified; current DB result is valid empty data, not a load failure. |
+| ✅ | Border Export Permit New Report | Sakhan footer/date issue fixed in DB totals path and redeployed. |
+| ✅ | Export Licence Amendment Report | Current config keeps PM-requested Auto filter and no Sakhan; prior backend path already verified. |
+| ✅ | Export Licence Extension Report | Current config keeps Export Licence sections and no Sakhan. |
+| ✅ | Export Licence Cancellation Report | Current config keeps totals/footer support and no Sakhan. |
+| ✅ | Export Licence By HS Code Report | Fast-page and exact-count path fixed; backend/controller test already passed. |
+| ✅ | Export Licence Voucher Report | Returns through API/controller with blank Apply/Payment filters; dynamic headers/columns preserved. |
+| ✅ | Export Licence Actual Amendment Report | Returns through API/controller. |
+| ✅ | Export Licence New Report | Returns through API/controller; quota kept blank-safe because source table has no real quota column. |
+| ❌ | Remaining open item | Frontend UAT-only complaints still need manual browser/UAT confirmation for visible titles, totals text, and drilldown behavior after deploy. |
+
+### Live Smoke Retest - 2026-06-25
+
+- Re-ran `ExportLicenceWaiPhyoLiveDbSmokeTests`: `3/3` passed.
+- Re-ran `BorderImportLicenceWaiPhyoLiveDbSmokeTests`: `3/3` passed.
+- Re-ran `BorderExportPermitWaiPhyoLiveDbSmokeTests`: `3/3` passed.
+- One rerun initially hit a local `API.dll` file-lock during build; rerunning with `--no-build` passed cleanly.
+- Frontend config regression test file was extended, but local `vitest` execution is currently blocked because frontend dependencies are not installed in this checkout.
+
 ### PM Sheet Feedback Triage - 2026-06-25
 
 Source checked:
@@ -1285,12 +1322,12 @@ Implementation applied:
 - Export Licence Voucher:
   - Added old RDLC-style subtitle.
   - Added dynamic voucher header resolver so `=Parameters!header2.Value` / `=Parameters!header3.Value` no longer render as literal column names.
-  - Removed extra Application Date and Commodity Type columns because `VoucherReport.rdlc` does not include them.
+  - Kept the PM-requested visible `Commodity Type` / `Total Amount` behavior while preserving the old dynamic voucher header behavior and dropdown filters.
   - Converted Payment Type and Apply Type to dropdowns.
 - Export Licence New Report:
   - Added old RDLC-style subtitle.
-  - Removed Auto filter/column.
-  - Removed Commodity Type, HSCode, and Quota columns because `NewLicenceReport.rdlc` does not include them. This fixes the quota `N/A` complaint by restoring old-report column parity instead of inventing a DB value.
+  - Kept the PM-requested `Auto / None-Auto` filter.
+  - Kept the visible `Commodity Type`, `HSCode`, and `Quota` columns where the newer feedback still expects them, but fixed quota so it renders blank instead of `N/A` when the source table has no quota field.
 - Export Licence Total Value & Licences:
   - Added old RDLC-style subtitle.
   - Added `exportLicenceSections` lookup.
@@ -1900,7 +1937,7 @@ Current tradeoff:
 | ✅ Export Licence Cancellation Report | `dbo.sp_CancelReport` | Wai Phyo | 5.June.2026 | OK | Working | No action unless regression appears |
 | ✅ Export Licence By HS Code Report | `dbo.sp_HSCodeReport` | Wai Phyo | 10.June.2026 | Fixed | DB and focused controller retest passed | Done for Priority 1 |
 | ✅ Export Licence Total Value & Licences Report | `dbo.sp_ExportLicenceDetailReport` | Wai Phyo | 5.June.2026 | Fixed | DB and focused controller retest passed | Done |
-| ✅ Export Licence Voucher Report | `dbo.sp_VoucherReport` | Wai Phyo | 10.June.2026 | Fixed for one-day target | Frontend parity updated; live controller smoke returns rows in 467 ms with blank Apply/Payment filters | Wide exact count still risky but data-show feedback is fixed |
+| ✅ Export Licence Voucher Report | `dbo.sp_VoucherReport` | Wai Phyo | 10.June.2026 | Fixed for one-day target | Frontend parity updated; shared resolver/footer wiring confirms dynamic voucher headers and total placement; live controller smoke returns rows in 467 ms with blank Apply/Payment filters | Wide exact count still risky but data-show feedback is fixed |
 | ✅ Export Licence Actual Amendment Report | `dbo.sp_ActualAmendReport` | Wai Phyo | 5.June.2026 | OK | Frontend parity updated; live controller smoke returns rows in 760 ms on the tested data-bearing day | UAT retest only if UI still fails |
 | ✅ Export Licence New Report (New Report) | `dbo.sp_NewReport` | Wai Phyo | 10.June.2026 | Fixed for one-day target | Frontend complaint config updated; live controller smoke returns rows in 2 s; quota now returns blank instead of `N/A` because source table has no quota column | Performance can improve later if needed |
 
@@ -2530,6 +2567,147 @@ Result:
   - Elapsed: 737 ms.
 
 Status: fixed in DB. Needs frontend/API retest.
+
+## Localhost Browser UAT - 2026-06-25
+
+Context:
+
+- In-app browser session on `http://localhost:5173` was logged in successfully.
+- These checks are localhost UI checks, not just DB/API smoke tests.
+- Goal: confirm whether the visible PM/customer-complaint behavior now works in the actual report pages.
+
+Verified in browser:
+
+| Report | Browser test | Result |
+|---|---|---|
+| Export Licence Voucher Report | Set `FromDate=2023-04-03`, `ToDate=2023-04-03`, left Apply Type blank, left Payment Type blank, clicked `Filter`. | ✅ Page loaded rows on localhost. Pager showed `1-2 of 2 total`. Dynamic voucher headers rendered as `Licence No` / `Licence Date` instead of raw `=Parameters!header2.Value` / `=Parameters!header3.Value`. `Commodity Type` and `Total Amount` columns were visibly populated. |
+| Export Licence New Report (New Report) | Set `FromDate=2023-04-03`, `ToDate=2023-04-03`, clicked `Filter`. | ✅ Page loaded rows on localhost. Pager showed `1-2 of 2 total`. `quota` rendered as blank instead of `N/A`, which matches the current blank-safe backend behavior because the live source table has no real quota column. |
+| Border Export Permit Actual Amendment Report | Set `FromDate=2023-01-01`, `ToDate=2026-06-30`, clicked `Filter`. | ✅ Page did not fail. It showed `No data` with `0-0 of 0 total`, which matches the DB/source-row audit that this branch currently has no approved `Actual Amend` source rows in `TradeNetDB`. |
+| Export Licence Actual Amendment Report | Set `FromDate=2026-04-01`, `ToDate=2026-04-01`, clicked `Filter`. | ⚠️ Page loaded rows on localhost and pager showed `1-2 of 2 total`, but the visible row values for `Currency` and `Total Value` still rendered as `N/A`. This is now a visible UI/data-mapping follow-up to inspect, not a load failure. |
+| Border Export Permit New Report (New Report) | Set `FromDate=2023-01-01`, `ToDate=2026-06-30`, clicked `Filter` with blank other filters. | ✅ Page loaded rows on localhost. Pager showed `1-10 of 42 total`. The visible filter box did not show an `Auto` filter, which matches the intended Wai Phyo fix for this report. |
+| Border Import Licence Voucher Report | Set `FromDate=2023-07-13`, `ToDate=2023-07-13`, clicked `Filter`. | ✅ Page eventually loaded rows on localhost after a longer wait. Final pager showed `1-10 of 2085 total`. This confirms the page is not stuck or failing now, but it remains slower than the other Wai Phyo pages in browser UAT. |
+| Border Import Licence Actual Amendment Report | Set `FromDate=2023-01-01`, `ToDate=2026-06-30`, clicked `Filter`. | ✅ Page eventually loaded rows on localhost. Final pager showed `1-10 of 1553 total`. No frontend load failure reproduced. |
+| Border Export Permit Voucher Report | Set `FromDate=2023-01-01`, `ToDate=2026-06-30`, clicked `Filter`. | ✅ Page loaded rows on localhost. Pager showed `1-10 of 42 total`. Dynamic voucher headers were already resolved and `Total Amount` values were visible in the first page rows. |
+| Export Licence Amendment Report | Set `FromDate=2023-04-03`, `ToDate=2023-04-03`, clicked `Filter`. | ✅ Page loaded rows on localhost. Pager showed `1-3 of 3 total`. `Currency` and `Total Value` were visibly populated on the returned rows. |
+| Export Licence Extension Report | Set `FromDate=2023-04-03`, `ToDate=2023-04-03`, clicked `Filter`. | ⚠️ Page did not fail, but the tested one-day range showed `No data` with `0-0 of 0 total`. This needs to be treated as date-range-specific no-data unless PM reports a matching range that should return rows. |
+| Export Licence Cancellation Report | Set `FromDate=2023-04-03`, `ToDate=2023-04-03`, clicked `Filter`. | ✅ Page loaded rows on localhost. Pager showed `1-3 of 3 total`. `Currency` and `Total Value` were visibly populated on the returned rows. |
+| Export Licence By HS Code Report | Tried a localhost browser retest on `2023-04-03`. | ⚠️ Inputs held the correct dates, but this page kept its initial `Set filters, then click Filter to load the report.` state in the in-app browser despite repeated automated filter clicks. This did not reproduce a backend failure, but it also is not yet a clean browser confirmation. Keep as browser-UAT pending. |
+| Export Licence Actual Amendment Report | Rechecked localhost on `2026-04-01`. | ⚠️ Same result as before: rows load and pager shows `1-2 of 2 total`, but visible row values for `Currency` and `Total Value` still render as `N/A`. This matches the direct DB procedure output for the tested rows, which returned `NULL` for those fields. |
+| Border Export Permit Amendment Report | Set `FromDate=2023-01-01`, `ToDate=2026-06-30`, clicked `Filter`. | ✅ Page loaded rows on localhost. Pager showed `1-2 of 2 total`. `Currency` and `Total Value` were visibly populated on the returned rows. |
+| Border Export Permit Extension Report | Tried localhost browser retest with wide date range. | ⚠️ The page did not fail, but the in-app browser kept it at the initial `Set filters, then click Filter to load the report.` state even after programmatic filter attempts. Keep as browser-UAT pending rather than marking it failed. |
+| Border Import Licence Amendment Report | Tried localhost browser retest next. | ⚠️ No frontend load failure reproduced, but the browser run landed on a `No data` result for the visible current date range on screen. This should be treated as date-range-specific browser evidence only, not as a confirmed regression, because the in-app date control did not preserve the intended wide range cleanly. |
+| Border Import Licence New Report (New Report) | Tried localhost browser retest next. | ⚠️ Same browser limitation as the extension page: the in-app run stayed on the initial `Set filters, then click Filter to load the report.` prompt despite programmatic filter attempts. Keep as browser-UAT pending. |
+| Border Export Permit Cancellation Report | Tried localhost browser retest with wide date range. | ⚠️ Same in-app-browser limitation pattern: filled values were visible, but the page remained on the initial `Set filters, then click Filter to load the report.` state instead of producing a clean result. Keep as browser-UAT pending, not backend-failed. |
+| Border Export Permit By HS Code Report | Tried localhost browser retest with wide date range. | ⚠️ Same in-app-browser limitation pattern: the report did not error, but the page stayed on the initial prompt state instead of returning a clean filtered result. Keep as browser-UAT pending. |
+
+Browser-UAT note from this pass:
+
+- The in-app browser can clearly confirm many Export Licence and several voucher/action pages.
+- A smaller cluster of Border Import/Border Export pages now shows a repeatable UI-automation limitation:
+  - the filter form values are visibly filled
+  - no `Failed to load table data` error appears
+  - but the page stays on `Set filters, then click Filter to load the report.`
+- Treat these as pending browser confirmation only. Do not treat them as confirmed SQL/API regressions without a matching backend failure.
+
+Follow-up browser finding - 2026-06-25:
+
+- A direct page-form submission attempt was tested as a fallback for the stuck HS Code pages.
+- Result split:
+  - `Export Licence By HS Code Report`: this fallback did work and returned rows in browser UAT for the tested range.
+  - `Border Export Permit By HS Code Report`: still remained on the initial prompt state even after the fallback.
+  - `Border Export Permit Cancellation Report`: still remained on the initial prompt state even after the fallback.
+- Meaning:
+  - the fallback is valid and should stay in the toolbox for stubborn pages
+  - but the remaining Border Export Permit stuck pages should still be treated as browser-UAT pending, not as proven backend regressions
+
+Fresh retry note - 2026-06-25:
+
+- Retried from a clean dashboard/session state on:
+  - `BorderExportPermitByHSCodeReport`
+  - `BorderExportPermitCancellationReport`
+- Both pages had:
+  - correct filled date inputs visible in the DOM
+  - a live submit button node located and clicked directly through `dom_cua`
+  - no `Failed to load table data` error
+- But both still remained on the initial `Set filters, then click Filter to load the report.` state with `0-0 of 0 total`.
+- This strengthens the conclusion that these two pages are currently blocked by an in-app browser automation/UI-submit limitation rather than a reproduced backend failure.
+
+Fresh-session retry note - 2026-06-26:
+
+- Retried from a fresh dashboard/browser state on additional Border Export Permit pages.
+- Observed behavior in this fresh session:
+  - `BorderExportPermitByHSCodeReport`: still stayed on `Set filters, then click Filter to load the report.` even with visible filled dates and direct submit-button node click.
+  - `BorderExportPermitCancellationReport`: same result.
+  - `BorderExportPermitActualAmendmentReport`: same result in this fresh session; no backend error, but browser never moved past the initial prompt state.
+  - `BorderExportPermitVoucherReport`: also stayed on the initial prompt state in this fresh session, even though it had returned rows in an earlier localhost browser run on 2026-06-25.
+- Meaning:
+  - the in-app browser result is not stable enough to be the source of truth for these Border Export Permit pages
+  - earlier successful browser confirmations for the same family should not be discarded, but new fresh-session prompt-state failures should be interpreted as automation/session inconsistency rather than evidence that SQL or API paths regressed overnight
+
+Manual UAT confirmation - 2026-06-26:
+
+- User manually tested the Border Export Permit pages outside the flaky in-app browser automation path with:
+  - `From Date = 2023-01-01`
+  - `To Date = 2026-06-30`
+  - other filters left blank/default
+- Manual results reported:
+  - `Border Export Permit Voucher Report`: rows shown, `42 total`
+  - `Border Export Permit Cancellation Report`: rows shown, `2 total`
+  - `Border Export Permit By HS Code Report`: rows shown, `74 total`
+  - `Border Export Permit Actual Amendment Report`: `No data`
+  - `Border Export Permit Extension Report`: rows shown, `3 total`
+- Conclusion:
+  - this manually confirms that the Wai Phyo Border Export Permit report group is behaving correctly for the tested broad range
+  - `Actual Amendment` remains a valid no-data case for the tested range
+  - prior in-app browser failures for this family should be treated as tool/browser noise, not product failures
+
+DB confirmation for Border Export Permit Actual Amendment - 2026-06-26:
+
+- Checked `TradeNetDB` directly for Border Export Permit `Actual Amend` source rows.
+- Source-row audit results:
+  - whole DB: `0` rows where `ApplyType='Actual Amend'` and `Status='Approved'`
+  - tested range `2023-01-01` to `2026-06-30`: `0` rows
+- Procedure audit:
+  - `dbo.sp_ActualAmendReport_pagination` with `@FormType = N'Border Export Permit'` also returned `0` rows for the same range
+- Conclusion:
+  - current `No data` behavior is correct for the tested database
+  - this is not a frontend crash and not a pagination regression
+
+Remaining manual checking after 2026-06-26:
+
+- `Export Licence By HS Code Report`
+  - backend/controller path was fixed earlier
+  - still needs one clean manual browser confirmation because the in-app browser stayed on the initial prompt state
+- `Export Licence Actual Amendment Report`
+  - page loads rows
+  - but the tested data-bearing day still showed `Currency = N/A` and `Total Value = N/A`
+  - DB verification showed the procedure itself returned `NULL` for those fields on the tested rows
+  - still needs business confirmation whether this source data shape is acceptable
+- `Border Import Licence Voucher Report`
+  - DB-side SQL fix is deployed and returning rows
+  - still needs one frontend/manual confirmation
+- `Border Import Licence New Report (New Report)`
+  - DB-side SQL fix is deployed and returning rows
+  - still needs one frontend/manual confirmation
+
+New follow-up found during localhost browser UAT:
+
+1. Export Licence Actual Amendment still has a visible row-value issue:
+   - rows load
+   - page does not fail
+   - but `Currency` and `Total Value` are showing `N/A` in the table for the tested data-bearing day
+2. Export Licence Voucher is now browser-verified on localhost for the previously broken blank Apply Type / blank Payment Type flow.
+3. Border Export Permit Actual Amendment browser behavior now supports the earlier conclusion that this is valid no-data in the tested DB, not a frontend crash.
+
+Follow-up verification for the Export Licence Actual Amendment visible `N/A` values:
+
+- Ran `dbo.sp_ActualAmendReport_pagination` directly in `TradeNetDB` for:
+  - `@FormType = N'Export Licence'`
+  - `@FromDate = '2026-04-01'`
+  - `@ToDate = '2026-04-01'`
+- Result: the returned rows themselves had `Currency = NULL`, `HSCode = NULL`, and `Amount = NULL`.
+- Cross-checked `ExportLicenceItem` for the same returned licences and the first joined item values were also `NULL`.
+- Conclusion: this localhost `N/A` is currently coming from DB/source-row shape for those licences, not from a frontend column-key mismatch.
 
 ## Active Task Log - Border Import Licence Voucher Report
 
