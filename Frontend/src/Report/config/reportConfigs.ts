@@ -678,13 +678,15 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         toName: 'ToDate',
         fromLabel: 'From Date',
         toLabel: 'To Date',
+        showTime: true,
         required: true,
       },
       {
         name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
+        label: 'Certificate Type',
+        type: 'select',
         defaultValue: '',
+        options: certificateTypeOptions,
       },
       {
         name: 'SakhanId',
@@ -6356,6 +6358,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         toName: 'ToDate',
         fromLabel: 'From Date',
         toLabel: 'To Date',
+        showTime: true,
         required: true,
       },
       {
@@ -12074,13 +12077,15 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         toName: 'ToDate',
         fromLabel: 'From Date',
         toLabel: 'To Date',
+        showTime: true,
         required: true,
       },
       {
         name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
+        label: 'Certificate Type',
+        type: 'select',
         defaultValue: '',
+        options: certificateTypeOptions,
       },
       {
         name: 'PaymentType',
@@ -12119,7 +12124,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'TrxnDate',
         dataIndex: 'transactionDateTime',
         title: 'Trxn Date',
-        dataType: 'date',
+        dataType: 'dateTime',
       },
       {
         key: 'FormType',
@@ -12184,6 +12189,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'VoucherNo',
         dataIndex: 'voucherNo',
         title: 'Voucher No',
+      },
+      {
+        key: 'TotalAmount',
+        dataIndex: 'totalAmount',
+        title: 'Total Amount',
+        dataType: 'money',
       },
       {
         key: 'AmountDiff',
@@ -12211,13 +12222,15 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         toName: 'ToDate',
         fromLabel: 'From Date',
         toLabel: 'To Date',
+        showTime: true,
         required: true,
       },
       {
         name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
+        label: 'Certificate Type',
+        type: 'select',
         defaultValue: '',
+        options: certificateTypeOptions,
       },
       {
         name: 'PaymentType',
@@ -12256,7 +12269,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'TrxnDate',
         dataIndex: 'transactionDateTime',
         title: 'Trxn Date',
-        dataType: 'date',
+        dataType: 'dateTime',
       },
       {
         key: 'FormType',
@@ -12323,6 +12336,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Voucher No',
       },
       {
+        key: 'TotalAmount',
+        dataIndex: 'totalAmount',
+        title: 'Total Amount',
+        dataType: 'money',
+      },
+      {
         key: 'AmountDiff',
         dataIndex: 'amountDiff',
         title: 'Amount Diff',
@@ -12348,6 +12367,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         toName: 'ToDate',
         fromLabel: 'From Date',
         toLabel: 'To Date',
+        showTime: true,
         required: true,
       },
       {

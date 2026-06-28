@@ -32,7 +32,7 @@ BEGIN
         N'Id', N'Sakhan', N'TransactionDateTime', N'CompanyName', N'CompanyRegistrationNo',
         N'ApplicationNo', N'MerchantId', N'AccountNo', N'InvoiceNo', N'ApprovalCode',
         N'TransactionRefNo', N'TransactionAmount', N'MOCAmount', N'IMAmount', N'MPUAmount', N'AmountDiff',
-        N'FormType', N'ApplyType', N'VoucherNo')
+        N'FormType', N'ApplyType', N'VoucherNo', N'TotalAmount')
         SET @ob = QUOTENAME(@SortColumn) + N' ' + @dir
             + CASE WHEN @SortColumn = N'TransactionDateTime' THEN N'' ELSE N', [TransactionDateTime] ASC' END
             + CASE WHEN @SortColumn = N'Id' THEN N'' ELSE N', [Id] ASC' END;
@@ -117,7 +117,11 @@ BEGIN
                 (SELECT TOP 1 VoucherNo FROM AccountTransaction
                     WHERE MPUPaymentTransaction.TransactionId = AccountTransaction.TransactionId
                     AND AccountTransaction.TotalAmount <> @OnlineFeeTotalAmount
-                    ORDER BY CreatedDate DESC) VoucherNo
+                    ORDER BY CreatedDate DESC) VoucherNo,
+                (SELECT TOP 1 TotalAmount FROM AccountTransaction
+                    WHERE MPUPaymentTransaction.TransactionId = AccountTransaction.TransactionId
+                    AND AccountTransaction.TotalAmount <> @OnlineFeeTotalAmount
+                    ORDER BY CreatedDate DESC) TotalAmount
             FROM dbo.MPUPaymentTransaction
             WHERE dbo.MPUPaymentTransaction.ResponseCode = ''00''
             AND dbo.MPUPaymentTransaction.TransactionDateTime IS NOT NULL
@@ -172,7 +176,11 @@ BEGIN
                 (SELECT TOP 1 VoucherNo FROM AccountTransaction
                     WHERE MPUPaymentTransaction.TransactionId = AccountTransaction.TransactionId
                     AND AccountTransaction.TotalAmount = @OnlineFeeTotalAmount
-                    ORDER BY CreatedDate DESC) VoucherNo
+                    ORDER BY CreatedDate DESC) VoucherNo,
+                (SELECT TOP 1 TotalAmount FROM AccountTransaction
+                    WHERE MPUPaymentTransaction.TransactionId = AccountTransaction.TransactionId
+                    AND AccountTransaction.TotalAmount = @OnlineFeeTotalAmount
+                    ORDER BY CreatedDate DESC) TotalAmount
             FROM dbo.MPUPaymentTransaction
             WHERE dbo.MPUPaymentTransaction.ResponseCode = ''00''
             AND dbo.MPUPaymentTransaction.TransactionDateTime IS NOT NULL

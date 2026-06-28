@@ -63,6 +63,11 @@ namespace Backend.Controllers.Report
                     data, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
 
+            if (request.IncludeTotalCount)
+            {
+                result.ColumnTotals = await sp_OnlineFeesReport.ExecuteColumnTotalsAsync(_context, procedureRequest!);
+            }
+
             return Ok(result);
         }
 

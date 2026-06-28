@@ -41,7 +41,7 @@ export interface BasicTableColumn<T extends AnyObject = AnyObject> {
   searchable?: boolean;
   hidden?: boolean;
   width?: number | string;
-  dataType?: 'string' | 'number' | 'date' | 'boolean' | 'money';
+  dataType?: 'string' | 'number' | 'date' | 'dateTime' | 'boolean' | 'money';
   render?: (value: unknown, row: T, rowIndex: number) => React.ReactNode;
   /** When set, the cell renders as a clickable link that drills into another report. */
   drilldown?: ReportColumnDrilldown;
@@ -213,6 +213,8 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   // prefer it over the initial response's (absent) footer.
   const [lazyCurrencyTotals, setLazyCurrencyTotals] =
     useState<PaginationType<T>['currencyTotals']>(undefined);
+  const [lazyColumnTotals, setLazyColumnTotals] =
+    useState<PaginationType<T>['columnTotals']>(undefined);
 
   const shouldShowActions =
     showActions ??
@@ -279,6 +281,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   useEffect(() => {
     setExactTotalCount(null);
     setLazyCurrencyTotals(undefined);
+    setLazyColumnTotals(undefined);
     countedFilterSig.current = null;
   }, [filterSig]);
 
@@ -317,6 +320,9 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
           // Heavy drill lists defer the per-currency footer to this request.
           if (result.currencyTotals) {
             setLazyCurrencyTotals(result.currencyTotals);
+          }
+          if (result.columnTotals) {
+            setLazyColumnTotals(result.columnTotals);
           }
         }
       })
@@ -415,7 +421,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   // Optional footer "Total" row, driven entirely by the per-column grand totals
   // the backend supplies (keyed by column dataIndex). Reports that don't send
   // columnTotals get no footer, so this is opt-in and backward compatible.
-  const columnTotals = data.columnTotals ?? {};
+  const columnTotals = lazyColumnTotals ?? data.columnTotals ?? {};
   const hasColumnTotals = normalizedColumns.some(
     (column) => (column.dataIndex ?? column.key).toString() in columnTotals
   );
@@ -451,6 +457,23 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
       minimumFractionDigits: 4,
       maximumFractionDigits: 4,
     });
+  const formatColumnTotalValue = (
+    value: number,
+    dataType?: BasicTableColumn<T>['dataType']
+  ) => {
+    if (dataType === 'money') {
+      return Number(value).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    }
+
+    if (dataType === 'number') {
+      return Number(value).toLocaleString('en-US');
+    }
+
+    return String(value);
+  };
 
   return (
     <>
@@ -633,7 +656,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
                             }
                             style={{ fontWeight: 700 }}
                           >
-                            {String(total)}
+                            {formatColumnTotalValue(total, column.dataType)}
                           </td>
                         );
                       }

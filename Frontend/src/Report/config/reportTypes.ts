@@ -2,6 +2,7 @@ export type ReportColumnDataType =
   | 'string'
   | 'number'
   | 'date'
+  | 'dateTime'
   | 'boolean'
   | 'money';
 
@@ -72,6 +73,7 @@ export interface ReportFilterConfig {
   toName?: string;
   fromLabel?: string;
   toLabel?: string;
+  showTime?: boolean;
   defaultValue?: string | number | boolean;
   defaultDateRangeMonths?: number;
   required?: boolean;

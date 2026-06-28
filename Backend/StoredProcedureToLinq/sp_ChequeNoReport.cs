@@ -58,6 +58,21 @@ public static class sp_ChequeNoReport
             .ToListAsync();
     }
 
+    public static async Task<IReadOnlyDictionary<string, decimal>> ExecuteColumnTotalsAsync(
+        TradeNetDbContext db,
+        sp_ChequeNoReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var amount = await Query(db, request).SumAsync(row => row.Amount);
+
+        return new Dictionary<string, decimal>
+        {
+            ["amount"] = (decimal)amount
+        };
+    }
+
     public static IQueryable<sp_ChequeNoReportRow> ExecuteQueryable(
         TradeNetDbContext db,
         sp_ChequeNoReportRequest request,
