@@ -92,6 +92,26 @@ public sealed class sp_MPUReport_V3Row
     };
 }
 
+public sealed class sp_MPUReport_V3ColumnTotals
+{
+    public decimal TransactionAmount { get; set; }
+    public decimal MOCAmount { get; set; }
+    public decimal IMAmount { get; set; }
+    public decimal MPUAmount { get; set; }
+    public decimal TotalAmount { get; set; }
+    public decimal AmountDiff { get; set; }
+
+    public IReadOnlyDictionary<string, decimal> ToDictionary() => new Dictionary<string, decimal>
+    {
+        ["transactionAmount"] = TransactionAmount,
+        ["mocAmount"] = MOCAmount,
+        ["imAmount"] = IMAmount,
+        ["mpuAmount"] = MPUAmount,
+        ["totalAmount"] = TotalAmount,
+        ["amountDiff"] = AmountDiff,
+    };
+}
+
 public static class sp_MPUReport_V3
 {
     private const int CommandTimeoutSeconds = 180;
@@ -151,6 +171,108 @@ public static class sp_MPUReport_V3
         db.Database.SetCommandTimeout(CommandTimeoutSeconds);
 
         return db.Database.SqlQueryRaw<sp_MPUReport_V3Row>(sql, parameters);
+    }
+
+    public static async Task<IReadOnlyDictionary<string, decimal>> ExecuteColumnTotalsAsync(
+        TradeNetDbContext db,
+        sp_MPUReport_V3Request request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var parameters = new[]
+        {
+            new SqlParameter("@FromDate", request.FromDate),
+            new SqlParameter("@ToDate", request.ToDate),
+            new SqlParameter("@FormType", request.FormType ?? string.Empty),
+            new SqlParameter("@PaymentType", request.PaymentType ?? string.Empty),
+        };
+
+        const string sql = @"
+DROP TABLE IF EXISTS #mpuTotals;
+DROP TABLE IF EXISTS #accTotals;
+
+SELECT
+    m.*,
+    ROW_NUMBER() OVER (
+        PARTITION BY m.TransactionId
+        ORDER BY m.TransactionDateTime, m.Id
+    ) AS rn
+INTO #mpuTotals
+FROM dbo.MPUPaymentTransaction m
+WHERE m.TransactionDateTime >= @FromDate
+    AND m.TransactionDateTime <= @ToDate
+    AND m.ResponseCode = '00'
+    AND m.FormType IS NOT NULL
+    AND m.FormType LIKE (CASE WHEN @FormType = '' THEN m.FormType + '%' ELSE @FormType + '%' END)
+    AND (@PaymentType = ''
+        OR m.PaymentType = @PaymentType
+        OR (@PaymentType = 'CitizenPay'
+            AND REPLACE(REPLACE(REPLACE(LOWER(ISNULL(m.PaymentType, '')), ' ', ''), '-', ''), '_', '')
+                IN ('citizenpay', 'citizen', 'cp')));
+
+CREATE INDEX IX_mpuTotals_TransactionId_rn ON #mpuTotals(TransactionId, rn);
+
+SELECT
+    a.TransactionId,
+    a.VoucherNo,
+    a.TotalAmount,
+    ROW_NUMBER() OVER (
+        PARTITION BY a.TransactionId
+        ORDER BY a.CreatedDate, a.Id
+    ) AS rn
+INTO #accTotals
+FROM dbo.AccountTransaction a
+WHERE EXISTS (
+    SELECT 1
+    FROM #mpuTotals m
+    WHERE m.TransactionId = a.TransactionId
+);
+
+CREATE INDEX IX_accTotals_TransactionId_rn ON #accTotals(TransactionId, rn);
+
+SELECT
+    CAST(ISNULL(SUM(amounts.TransactionAmount), 0) AS decimal(18, 2)) AS TransactionAmount,
+    CAST(ISNULL(SUM(amounts.MOCAmount), 0) AS decimal(18, 2)) AS MOCAmount,
+    CAST(ISNULL(SUM(amounts.IMAmount), 0) AS decimal(18, 2)) AS IMAmount,
+    CAST(ISNULL(SUM(amounts.TransactionAmount - amounts.MOCAmount - amounts.IMAmount), 0) AS decimal(18, 2)) AS MPUAmount,
+    CAST(ISNULL(SUM(CAST(a.TotalAmount AS decimal(18, 2))), 0) AS decimal(18, 2)) AS TotalAmount,
+    CAST(ISNULL(SUM(amounts.TransactionAmount - amounts.MOCAmount), 0) AS decimal(18, 2)) AS AmountDiff
+FROM #mpuTotals m
+INNER JOIN #accTotals a
+    ON m.TransactionId = a.TransactionId
+   AND m.rn = a.rn
+CROSS APPLY (
+    SELECT
+        ISNULL(TRY_CONVERT(decimal(18, 2),
+            CASE
+                WHEN LEN(ISNULL(m.TransactionAmount, '')) > 2 THEN LEFT(m.TransactionAmount, LEN(m.TransactionAmount) - 2) + '.' + RIGHT(m.TransactionAmount, 2)
+                WHEN LEN(ISNULL(m.TransactionAmount, '')) > 0 THEN '0.' + RIGHT('00' + m.TransactionAmount, 2)
+                ELSE '0'
+            END), 0) AS TransactionAmount,
+        ISNULL(TRY_CONVERT(decimal(18, 2), m.MOCAmount), 0) AS MOCAmount,
+        ISNULL(TRY_CONVERT(decimal(18, 2), m.IMAmount), 0) AS IMAmount
+) amounts
+WHERE a.VoucherNo IS NOT NULL;
+
+DROP TABLE IF EXISTS #mpuTotals;
+DROP TABLE IF EXISTS #accTotals;";
+
+        var previousTimeout = db.Database.GetCommandTimeout();
+        try
+        {
+            db.Database.SetCommandTimeout(CommandTimeoutSeconds);
+            var totals = (await db.Database
+                .SqlQueryRaw<sp_MPUReport_V3ColumnTotals>(sql, parameters)
+                .ToListAsync())
+                .Single();
+
+            return totals.ToDictionary();
+        }
+        finally
+        {
+            db.Database.SetCommandTimeout(previousTimeout);
+        }
     }
 
     public static IQueryable<sp_MPUReport_V3Result> Query(

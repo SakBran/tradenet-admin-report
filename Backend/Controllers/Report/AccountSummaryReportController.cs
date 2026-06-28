@@ -70,12 +70,22 @@ namespace Backend.Controllers.Report
                         data, pageIndex, pageSize,
                         request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
 
+                if (includeTotalCount)
+                {
+                    result.ColumnTotals = await sp_AccountSummaryReport.ExecuteColumnTotalsAsync(_context, procedureRequest!);
+                }
+
                 return Ok(result);
             }
             catch (SqlException ex) when (IsMissingPaginationProcedure(ex))
             {
                 var query = sp_AccountSummaryReport.Query(_context, procedureRequest!);
                 var result = await ReportQueryService.CreatePagedResultAsync(query, request);
+
+                if (request.IncludeTotalCount)
+                {
+                    result.ColumnTotals = await sp_AccountSummaryReport.ExecuteColumnTotalsAsync(_context, procedureRequest!);
+                }
 
                 return Ok(result);
             }

@@ -97,6 +97,31 @@ public static class sp_AccountSummaryReport
         }
     }
 
+    public static async Task<IReadOnlyDictionary<string, decimal>> ExecuteColumnTotalsAsync(
+        TradeNetDbContext db,
+        sp_AccountSummaryReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var previousTimeout = db.Database.GetCommandTimeout();
+        db.Database.SetCommandTimeout(CommandTimeoutSeconds);
+
+        try
+        {
+            var amount = await Query(db, request).SumAsync(row => row.Amount);
+
+            return new Dictionary<string, decimal>
+            {
+                ["amount"] = (decimal)amount
+            };
+        }
+        finally
+        {
+            db.Database.SetCommandTimeout(previousTimeout);
+        }
+    }
+
     public static IQueryable<sp_AccountSummaryReportRow> ExecuteQueryable(
         TradeNetDbContext db,
         sp_AccountSummaryReportRequest request,

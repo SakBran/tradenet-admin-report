@@ -67,6 +67,11 @@ namespace Backend.Controllers.Report
                     data, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
 
+            if (includeTotalCount)
+            {
+                result.ColumnTotals = await sp_MPUReport.ExecuteColumnTotalsAsync(_context, procedureRequest!);
+            }
+
             return Ok(result);
         }
 

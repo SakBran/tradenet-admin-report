@@ -67,6 +67,21 @@ public static class sp_OnlineFeesReport
             .ToListAsync();
     }
 
+    public static async Task<IReadOnlyDictionary<string, decimal>> ExecuteColumnTotalsAsync(
+        TradeNetDbContext db,
+        sp_OnlineFeesReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var amount = await Query(db, request).SumAsync(row => row.Amount);
+
+        return new Dictionary<string, decimal>
+        {
+            ["amount"] = (decimal)amount
+        };
+    }
+
     public static IQueryable<sp_OnlineFeesReportRow> ExecuteQueryable(
         TradeNetDbContext db,
         sp_OnlineFeesReportRequest request,

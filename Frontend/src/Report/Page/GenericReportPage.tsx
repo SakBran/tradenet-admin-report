@@ -121,6 +121,17 @@ const formatDate = (value: unknown) => {
   return parsed.isValid() ? parsed.format('YYYY-MM-DD') : value.toString();
 };
 
+const formatDateTime = (value: unknown) => {
+  if (!value) {
+    return 'N/A';
+  }
+
+  const parsed = dayjs(value.toString());
+  return parsed.isValid()
+    ? parsed.format('YYYY-MM-DD HH:mm:ss')
+    : value.toString();
+};
+
 const formatBoolean = (value: unknown) => {
   if (value === true || value?.toString().toLowerCase() === 'true') {
     return 'Yes';
@@ -187,6 +198,10 @@ const formatColumnValue = (
     return formatDate(value);
   }
 
+  if (dataType === 'dateTime') {
+    return formatDateTime(value);
+  }
+
   if (dataType === 'boolean') {
     return formatBoolean(value);
   }
@@ -203,15 +218,20 @@ const toApiDate = (value: Dayjs, edge: 'start' | 'end') =>
     'YYYY-MM-DDTHH:mm:ss'
   );
 
+const toApiDateTime = (value: Dayjs) => value.format('YYYY-MM-DDTHH:mm:ss');
+
 const getInitialFilterValue = (filter: ReportFilterConfig): FilterValue => {
   if (filter.type === 'dateRange') {
     const today = dayjs();
     const months = Math.max(1, filter.defaultDateRangeMonths ?? 1);
     if (months > 1) {
-      return [today.subtract(months - 1, 'month').startOf('month'), today];
+      return [
+        today.subtract(months - 1, 'month').startOf('month'),
+        filter.showTime ? today.endOf('day') : today,
+      ];
     }
 
-    return [today.startOf('month'), today];
+    return [today.startOf('month'), filter.showTime ? today.endOf('day') : today];
   }
 
   if (filter.type === 'date') {
@@ -284,10 +304,14 @@ const normalizeFilters = (
     if (filter.type === 'dateRange') {
       const range = value as [Dayjs, Dayjs] | undefined;
       request[filter.fromName ?? 'FromDate'] = range?.[0]
-        ? toApiDate(range[0], 'start')
+        ? filter.showTime
+          ? toApiDateTime(range[0])
+          : toApiDate(range[0], 'start')
         : undefined;
       request[filter.toName ?? 'ToDate'] = range?.[1]
-        ? toApiDate(range[1], 'end')
+        ? filter.showTime
+          ? toApiDateTime(range[1])
+          : toApiDate(range[1], 'end')
         : undefined;
       return request;
     }
@@ -378,6 +402,10 @@ const toTableColumn = (
     return { ...column, render: formatDate };
   }
 
+  if (column.dataType === 'dateTime') {
+    return { ...column, render: formatDateTime };
+  }
+
   if (column.dataType === 'boolean') {
     return { ...column, render: formatBoolean };
   }
@@ -439,10 +467,12 @@ const renderFilter = (
     return (
       <DatePicker.RangePicker
         allowClear={false}
+        format={filter.showTime ? 'YYYY-MM-DD HH:mm:ss' : undefined}
         placeholder={[
           filter.fromLabel ?? 'From Date',
           filter.toLabel ?? 'To Date',
         ]}
+        showTime={filter.showTime}
         style={{ width: '100%' }}
       />
     );
