@@ -1,6 +1,10 @@
 using API.DBContext;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace API.StoredProcedureToLinq;
 
@@ -28,13 +32,108 @@ public sealed class sp_ChequeNoDetailReportResult
     public string? State { get; set; }
     public string? Country { get; set; }
     public string? PostalCode { get; set; }
+    public string CompanyAddress => string.Join(", ", new[]
+    {
+        UnitLevel,
+        StreetNumberStreetName,
+        QuarterCityTownship,
+        State,
+        Country,
+        PostalCode
+    }.Where(part => !string.IsNullOrWhiteSpace(part)));
     public double Amount { get; set; }
+}
+
+public sealed class sp_ChequeNoDetailReportRow
+{
+    public string? TransactionId { get; set; }
+    public string? FormType { get; set; }
+    public string? ChequeNo { get; set; }
+    public string? SDate { get; set; }
+    public string? TransactionRefNo { get; set; }
+    public DateTime? TransactionDateTime { get; set; }
+    public string? CardNo { get; set; }
+    public string? PaThaKaNo { get; set; }
+    public string? CompanyName { get; set; }
+    public string? UnitLevel { get; set; }
+    public string? StreetNumberStreetName { get; set; }
+    public string? QuarterCityTownship { get; set; }
+    public string? State { get; set; }
+    public string? Country { get; set; }
+    public string? PostalCode { get; set; }
+    public string? CompanyAddress { get; set; }
+    public double Amount { get; set; }
+    public int? TotalCount { get; set; }
+
+    public sp_ChequeNoDetailReportResult ToResult() => new()
+    {
+        TransactionId = TransactionId ?? string.Empty,
+        FormType = FormType ?? string.Empty,
+        ChequeNo = ChequeNo,
+        SDate = SDate,
+        TransactionRefNo = TransactionRefNo,
+        TransactionDateTime = TransactionDateTime,
+        CardNo = CardNo ?? string.Empty,
+        PaThaKaNo = PaThaKaNo,
+        CompanyName = CompanyName ?? string.Empty,
+        UnitLevel = UnitLevel,
+        StreetNumberStreetName = StreetNumberStreetName,
+        QuarterCityTownship = QuarterCityTownship,
+        State = State,
+        Country = Country,
+        PostalCode = PostalCode,
+        Amount = Amount
+    };
 }
 
 public static class sp_ChequeNoDetailReport
 {
     private const string PaThaKaCardType = "Pa Tha Ka";
     private const string IndividualTradingCardType = "Individual Trading";
+
+    public static async Task<List<sp_ChequeNoDetailReportRow>> ExecuteAsync(
+        TradeNetDbContext db,
+        sp_ChequeNoDetailReportRequest request,
+        string? sortColumn = null,
+        string? sortOrder = null,
+        int? pageIndex = null,
+        int? pageSize = null,
+        bool includeTotalCount = true)
+    {
+        return await ExecuteQueryable(db, request, sortColumn, sortOrder, pageIndex, pageSize, includeTotalCount)
+            .ToListAsync();
+    }
+
+    public static IQueryable<sp_ChequeNoDetailReportRow> ExecuteQueryable(
+        TradeNetDbContext db,
+        sp_ChequeNoDetailReportRequest request,
+        string? sortColumn = null,
+        string? sortOrder = null,
+        int? pageIndex = null,
+        int? pageSize = null,
+        bool includeTotalCount = true)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var parameters = new[]
+        {
+            new SqlParameter("@FromDate", request.FromDate),
+            new SqlParameter("@ToDate", request.ToDate),
+            new SqlParameter("@ChequeNoId", request.ChequeNoId),
+            new SqlParameter("@SortColumn", (object?)sortColumn ?? DBNull.Value),
+            new SqlParameter("@SortOrder", (object?)sortOrder ?? DBNull.Value),
+            new SqlParameter("@PageIndex", (object?)pageIndex ?? DBNull.Value),
+            new SqlParameter("@PageSize", (object?)pageSize ?? DBNull.Value),
+            new SqlParameter("@IncludeTotalCount", includeTotalCount),
+        };
+
+        const string sql =
+            "EXEC dbo.sp_ChequeNoDetailReport_pagination @FromDate, @ToDate, @ChequeNoId, " +
+            "@SortColumn, @SortOrder, @PageIndex, @PageSize, @IncludeTotalCount";
+
+        return db.Database.SqlQueryRaw<sp_ChequeNoDetailReportRow>(sql, parameters);
+    }
 
     public static IQueryable<sp_ChequeNoDetailReportResult> Query(
         TradeNetDbContext db,
@@ -173,6 +272,21 @@ public static class sp_ChequeNoDetailReport
                 PaThaKaId = row.PaThaKaId!
             })))
             .OrderBy(row => row.TransactionDateTime);
+    }
+
+    public static async Task<IReadOnlyDictionary<string, decimal>> ExecuteColumnTotalsAsync(
+        TradeNetDbContext db,
+        sp_ChequeNoDetailReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var amount = await Query(db, request).SumAsync(row => row.Amount);
+
+        return new Dictionary<string, decimal>
+        {
+            ["amount"] = (decimal)amount
+        };
     }
 
     private static IQueryable<sp_ChequeNoDetailReportResult> MemberRows(

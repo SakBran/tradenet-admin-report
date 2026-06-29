@@ -57,6 +57,7 @@ import BorderImportPermitExtensionReport from './Page/BorderImportPermitExtensio
 import BorderImportPermitNewReportNewReport from './Page/BorderImportPermitNewReportNewReport';
 import BorderImportPermitVoucherReport from './Page/BorderImportPermitVoucherReport';
 import CardListsByCompanyRegistrationNumber from './Page/CardListsByCompanyRegistrationNumber';
+import ChequeNoDetailReport from './Page/ChequeNoDetailReport';
 import ChequeNoReport from './Page/ChequeNoReport';
 import CompanyProfile from './Page/CompanyProfile';
 import EIRCardBindReport from './Page/EIRCardBindReport';
@@ -225,6 +226,7 @@ export const reportRoutes = [
   { path: 'BorderImportPermitNewReportNewReport', element: <BorderImportPermitNewReportNewReport /> },
   { path: 'BorderImportPermitVoucherReport', element: <BorderImportPermitVoucherReport /> },
   { path: 'CardListsByCompanyRegistrationNumber', element: <CardListsByCompanyRegistrationNumber /> },
+  { path: 'ChequeNoDetailReport', element: <ChequeNoDetailReport /> },
   { path: 'ChequeNoReport', element: <ChequeNoReport /> },
   { path: 'CompanyProfile', element: <CompanyProfile /> },
   { path: 'EIRCardBindReport', element: <EIRCardBindReport /> },

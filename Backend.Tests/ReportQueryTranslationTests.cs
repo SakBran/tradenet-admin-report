@@ -112,6 +112,45 @@ public sealed class ReportQueryTranslationTests
         Assert.False(string.IsNullOrWhiteSpace(sql));
     }
 
+    [Fact]
+    public void Cheque_no_detail_report_translates_to_sql()
+    {
+        using var db = ReportTestHelper.CreateSqlServerDbContext();
+        var query = sp_ChequeNoDetailReport.Query(
+            db,
+            new sp_ChequeNoDetailReportRequest
+            {
+                FromDate = ReportTestHelper.FromDate,
+                ToDate = ReportTestHelper.ToDate,
+                ChequeNoId = 1
+            });
+
+        var sql = query.Skip(0).Take(10).ToQueryString();
+
+        Assert.False(string.IsNullOrWhiteSpace(sql));
+        Assert.Contains("ChequeNo", sql, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Cheque_no_detail_report_uses_pagination_procedure()
+    {
+        using var db = ReportTestHelper.CreateSqlServerDbContext();
+        var sql = sp_ChequeNoDetailReport.ExecuteQueryable(
+                db,
+                new sp_ChequeNoDetailReportRequest
+                {
+                    FromDate = ReportTestHelper.FromDate,
+                    ToDate = ReportTestHelper.ToDate,
+                    ChequeNoId = 1
+                },
+                pageIndex: 0,
+                pageSize: 10,
+                includeTotalCount: false)
+            .ToQueryString();
+
+        Assert.Contains("sp_ChequeNoDetailReport_pagination", sql, StringComparison.OrdinalIgnoreCase);
+    }
+
     public static IEnumerable<object[]> EmptySwitchBranchQueries()
     {
         var db = ReportTestHelper.CreateSqlServerDbContext();

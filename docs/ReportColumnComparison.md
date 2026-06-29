@@ -539,6 +539,15 @@ New columns (4): `Cheque Id`, `Cheque No`, `Date`, `Amount`
 Need in new (0): _None_
 Extra in new (0): _None_
 
+### ChequeNoDetailReport
+
+Title: Cheque No Detail Report
+Old source: `ChequeNoDetailReport.rdlc`
+Old columns (10): `No.`, `Cheque No`, `Trxn Ref No.`, `Trxn Date`, `Form Type`, `Licence/Permit/Card No`, `Amount`, `Company Registration No`, `Company Name`, `Company Address`
+New columns (10): `No`, `Cheque No`, `Trxn Ref No.`, `Trxn Date`, `Form Type`, `Licence/Permit/Card No`, `Amount`, `Company Registration No`, `Company Name`, `Company Address`
+Need in new (0): _None_
+Extra in new (0): _None_
+
 ### CompanyProfile
 
 Title: Company Profile

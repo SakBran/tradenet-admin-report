@@ -258,6 +258,11 @@ internal static class ReportTestHelper
 
         if (propertyType == typeof(int))
         {
+            if (propertyName == "ChequeNoId")
+            {
+                return 1;
+            }
+
             return propertyName is nameof(ReportQueryRequest.PageSize) ? 10 : 0;
         }
 
