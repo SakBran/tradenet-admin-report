@@ -199,6 +199,7 @@ const reportCategoryDefinitions: ReportCategory[] = [
       [
         'MPUReport',
         'ChequeNoReport',
+        'ChequeNoDetailReport',
         'OnlineFeesReport',
         'AccountSummaryReport',
         'MPUReportV3',
@@ -211,6 +212,11 @@ const createReportItem = (config: (typeof reportConfigList)[number]) => ({
   icon: <FileTextOutlined />,
   label: <Link to={`/Report/${config.controllerName}`}>{config.title}</Link>,
 });
+
+const hiddenReportKeys = new Set(['ChequeNoDetailReport']);
+const navReportConfigList = reportConfigList.filter(
+  (config) => !hiddenReportKeys.has(config.controllerName)
+);
 
 export const getReportCategoryKey = (controllerName: string) =>
   reportCategoryDefinitions.find((category) => category.matches(controllerName))
@@ -231,12 +237,12 @@ export const reportNavItems: Required<MenuProps>['items'] = [
       key: category.key,
       label: category.title,
       icon: category.icon,
-      children: reportConfigList
+      children: navReportConfigList
         .filter((config) => category.matches(config.controllerName))
         .map(createReportItem),
     }))
     .filter((category) => category.children.length > 0),
-  ...reportConfigList
+  ...navReportConfigList
     .filter((config) => !getReportCategoryKey(config.controllerName))
     .map(createReportItem),
 ];
