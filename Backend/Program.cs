@@ -27,6 +27,7 @@ public class Program
         // App-wide country list: loaded lazily on first report request and refreshed on demand
         // once stale (request-driven TTL, see CountryCache.Ttl), read in-memory by reports.
         builder.Services.AddSingleton<API.Service.Reports.ICountryCache, API.Service.Reports.CountryCache>();
+        builder.Services.AddScoped<API.Service.Reports.IDataImportService, API.Service.Reports.DataImportService>();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(options =>
         {
@@ -104,6 +105,8 @@ public class Program
         builder.Services.AddExcelExportQueue(builder.Configuration);
         // User-activity audit log: in-memory queue + background batch writer + retention cleanup (TemplateDB).
         builder.Services.AddActivityLogging(builder.Configuration);
+        // Daily TemplateDB import: at 1:00 AM local server time, import yesterday for all licence/permit types.
+        builder.Services.AddHostedService<API.Service.Reports.DataImportScheduleWorker>();
 
         var app = builder.Build();
 
