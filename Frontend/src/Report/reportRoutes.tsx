@@ -98,6 +98,7 @@ import ImportLicenceCancellationReport from './Page/ImportLicenceCancellationRep
 import ImportLicenceCompanyListReport from './Page/ImportLicenceCompanyListReport';
 import ImportLicenceDailyReportNewLicenceReport from './Page/ImportLicenceDailyReportNewLicenceReport';
 import ImportLicenceDetailByLicenceReport from './Page/ImportLicenceDetailByLicenceReport';
+import ImportLicenceDataImport from './Page/ImportLicenceDataImport';
 import ImportLicenceDetailReport from './Page/ImportLicenceDetailReport';
 import ImportLicenceDetailReportPending from './Page/ImportLicenceDetailReportPending';
 import ImportLicenceExtensionReport from './Page/ImportLicenceExtensionReport';
@@ -167,6 +168,7 @@ import ExportsDrive from './Page/ExportsDrive';
 
 export const reportRoutes = [
   { path: 'Exports', element: <ExportsDrive /> },
+  { path: 'DataImport', element: <ImportLicenceDataImport /> },
   { path: 'AccountSummaryReport', element: <AccountSummaryReport /> },
   { path: 'BorderExportLicenceActualAmendmentReport', element: <BorderExportLicenceActualAmendmentReport /> },
   { path: 'BorderExportLicenceAmendmentReport', element: <BorderExportLicenceAmendmentReport /> },
@@ -267,6 +269,7 @@ export const reportRoutes = [
   { path: 'ImportLicenceCompanyListReport', element: <ImportLicenceCompanyListReport /> },
   { path: 'ImportLicenceDailyReportNewLicenceReport', element: <ImportLicenceDailyReportNewLicenceReport /> },
   { path: 'ImportLicenceDetailByLicenceReport', element: <ImportLicenceDetailByLicenceReport /> },
+  { path: 'ImportLicenceDataImport', element: <ImportLicenceDataImport /> },
   { path: 'ImportLicenceDetailReport', element: <ImportLicenceDetailReport /> },
   { path: 'ImportLicenceDetailReportPending', element: <ImportLicenceDetailReportPending /> },
   { path: 'ImportLicenceExtensionReport', element: <ImportLicenceExtensionReport /> },

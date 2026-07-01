@@ -9519,6 +9519,24 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
     ],
   },
+  DataImport: {
+    controllerName: 'DataImport',
+    title: 'Data Import',
+    apiRoute: 'DataImport',
+    excelRoute: '',
+    excelFileName: '',
+    filters: [],
+    columns: [],
+  },
+  ImportLicenceDataImport: {
+    controllerName: 'ImportLicenceDataImport',
+    title: 'Data Import',
+    apiRoute: 'DataImport',
+    excelRoute: '',
+    excelFileName: '',
+    filters: [],
+    columns: [],
+  },
   // Licence-level drill target (one row per licence + currency) reached from the
   // By Section / Method / Seller Country / Company summaries. Its record count
   // equals the "No of Licences" of the clicked cell (the per-item Detail report

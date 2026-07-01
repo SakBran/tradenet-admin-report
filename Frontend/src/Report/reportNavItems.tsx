@@ -23,6 +23,7 @@ import {
   ContainerOutlined,
   ApartmentOutlined,
   CloudDownloadOutlined,
+  CloudUploadOutlined,
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { reportConfigList } from './config/reportConfigs';
@@ -213,7 +214,11 @@ const createReportItem = (config: (typeof reportConfigList)[number]) => ({
   label: <Link to={`/Report/${config.controllerName}`}>{config.title}</Link>,
 });
 
-const hiddenReportKeys = new Set(['ChequeNoDetailReport']);
+const hiddenReportKeys = new Set([
+  'ChequeNoDetailReport',
+  'DataImport',
+  'ImportLicenceDataImport',
+]);
 const navReportConfigList = reportConfigList.filter(
   (config) => !hiddenReportKeys.has(config.controllerName)
 );
@@ -231,6 +236,11 @@ export const reportNavItems: Required<MenuProps>['items'] = [
     key: 'Exports',
     icon: <CloudDownloadOutlined />,
     label: <Link to="/Report/Exports">Exports</Link>,
+  },
+  {
+    key: 'DataImport',
+    icon: <CloudUploadOutlined />,
+    label: <Link to="/Report/DataImport">Data Import</Link>,
   },
   ...reportCategoryDefinitions
     .map((category) => ({

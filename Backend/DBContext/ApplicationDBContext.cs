@@ -22,6 +22,7 @@ namespace API.DBContext
         public DbSet<ChatModel> ChatModels { get; set; }
         public DbSet<ExcelExportJob> ExcelExportJobs { get; set; }
         public DbSet<ActivityLog> ActivityLogs { get; set; }
+        public DbSet<ImportLicenceDailyImport> ImportLicenceDailyImports { get; set; }
 
 
 
@@ -81,6 +82,13 @@ namespace API.DBContext
                 entity.HasIndex(e => new { e.UserId, e.TimestampUtc });
                 // Filter by event type.
                 entity.HasIndex(e => e.EventType);
+            });
+
+            modelBuilder.Entity<ImportLicenceDailyImport>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.TotalAmount).HasPrecision(18, 4);
+                entity.HasIndex(e => e.LicenceDate).IsUnique();
             });
         }
     }
