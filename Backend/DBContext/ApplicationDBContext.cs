@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using API.Model;
 using API.Model.Activity;
 using API.Model.ExcelExport;
+using API.Model.Reports;
 using Backend.Model;
 
 namespace API.DBContext
@@ -21,6 +22,7 @@ namespace API.DBContext
         public DbSet<SystemSetting> SystemSetting { get; set; }
         public DbSet<ChatModel> ChatModels { get; set; }
         public DbSet<ExcelExportJob> ExcelExportJobs { get; set; }
+        public DbSet<DataImportJob> DataImportJobs { get; set; }
         public DbSet<ActivityLog> ActivityLogs { get; set; }
         public DbSet<ImportLicenceDailyImport> ImportLicenceDailyImports { get; set; }
 
@@ -61,6 +63,16 @@ namespace API.DBContext
                 entity.HasIndex(e => new { e.Status, e.CreatedAtUtc });
                 // Cleanup sweep.
                 entity.HasIndex(e => e.ExpiresAtUtc);
+            });
+
+            modelBuilder.Entity<DataImportJob>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.LicenceType).HasMaxLength(80).IsRequired();
+                entity.Property(e => e.RequestedByUserName).HasMaxLength(256);
+                entity.HasIndex(e => e.CreatedAtUtc);
+                entity.HasIndex(e => e.LeaseExpiresAtUtc);
+                entity.HasIndex(e => new { e.Status, e.CreatedAtUtc });
             });
 
             modelBuilder.Entity<ActivityLog>(entity =>
