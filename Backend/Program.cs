@@ -28,6 +28,7 @@ public class Program
         // once stale (request-driven TTL, see CountryCache.Ttl), read in-memory by reports.
         builder.Services.AddSingleton<API.Service.Reports.ICountryCache, API.Service.Reports.CountryCache>();
         builder.Services.AddScoped<API.Service.Reports.IDataImportService, API.Service.Reports.DataImportService>();
+        builder.Services.AddScoped<API.Service.Reports.IDataImportJobService, API.Service.Reports.DataImportJobService>();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(options =>
         {
@@ -107,6 +108,8 @@ public class Program
         builder.Services.AddActivityLogging(builder.Configuration);
         // Daily TemplateDB import: at 1:00 AM local server time, import yesterday for all licence/permit types.
         builder.Services.AddHostedService<API.Service.Reports.DataImportScheduleWorker>();
+        // Manual TemplateDB imports: queued by API and processed outside the request pipeline.
+        builder.Services.AddHostedService<API.Service.Reports.DataImportWorker>();
 
         var app = builder.Build();
 

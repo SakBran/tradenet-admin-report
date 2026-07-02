@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using API.Service.Reports;
@@ -14,10 +15,14 @@ namespace Backend.Controllers.Report
     public class DataImportController : ControllerBase
     {
         private readonly IDataImportService _dataImportService;
+        private readonly IDataImportJobService _dataImportJobService;
 
-        public DataImportController(IDataImportService dataImportService)
+        public DataImportController(
+            IDataImportService dataImportService,
+            IDataImportJobService dataImportJobService)
         {
             _dataImportService = dataImportService;
+            _dataImportJobService = dataImportJobService;
         }
 
         [HttpGet("LicenceTypes")]
@@ -53,28 +58,53 @@ namespace Backend.Controllers.Report
             }
         }
 
-        [HttpPost]
-        public async Task<ActionResult<DataImportResult>> Post(
+        [HttpGet("jobs")]
+        public async Task<ActionResult<IReadOnlyList<DataImportJobDto>>> GetJobs(
+            CancellationToken cancellationToken)
+        {
+            return Ok(await _dataImportJobService.ListAsync(cancellationToken));
+        }
+
+        [HttpGet("jobs/{id:guid}")]
+        public async Task<ActionResult<DataImportJobDto>> GetJob(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            var job = await _dataImportJobService.GetAsync(id, cancellationToken);
+            return job == null ? NotFound() : Ok(job);
+        }
+
+        [HttpPost("jobs")]
+        public async Task<ActionResult<DataImportJobDto>> PostJob(
             [FromBody] DataImportRequest? request,
             CancellationToken cancellationToken)
         {
-            if (request is null || request.StartDate == default || request.EndDate == default)
+            if (request is null)
             {
-                return BadRequest("Start date and end date are required.");
+                return BadRequest("Request body is required.");
             }
 
             try
             {
-                return Ok(await _dataImportService.ImportAsync(
-                    request.LicenceType,
-                    request.StartDate,
-                    request.EndDate,
-                    cancellationToken));
+                var job = await _dataImportJobService.EnqueueAsync(
+                    request,
+                    User.FindFirst(ClaimTypes.Name)?.Value,
+                    cancellationToken);
+
+                return Ok(job);
             }
             catch (ArgumentException ex)
             {
                 return BadRequest(ex.Message);
             }
+        }
+
+        [HttpPost]
+        public Task<ActionResult<DataImportJobDto>> Post(
+            [FromBody] DataImportRequest? request,
+            CancellationToken cancellationToken)
+        {
+            return PostJob(request, cancellationToken);
         }
     }
 }
