@@ -1,263 +1,324 @@
-import { Card, Col, Flex, Row, Space, theme, Typography } from 'antd';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  AppstoreOutlined,
-  BulbOutlined,
-  CheckCircleFilled,
-  FileExcelOutlined,
-  FilterOutlined,
-  ReloadOutlined,
-  SearchOutlined,
-  TableOutlined,
-} from '@ant-design/icons';
-import { ReactNode } from 'react';
+  Button,
+  Card,
+  Col,
+  DatePicker,
+  Flex,
+  Form,
+  Pagination,
+  Row,
+  Space,
+  Tag,
+  Typography,
+  message,
+} from 'antd';
+import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
+import dayjs, { Dayjs } from 'dayjs';
+import axiosInstance from '../../services/AxiosInstance';
+import '../../components/My Components/Table/style.css';
 
-const { Title, Text, Paragraph } = Typography;
+const { RangePicker } = DatePicker;
+const { Text } = Typography;
 
-type Step = {
-  icon: ReactNode;
-  title: string;
-  description: string;
+type DateRange = [Dayjs, Dayjs];
+
+type FilterFormValues = {
+  dateRange: DateRange;
 };
 
-type Feature = {
-  icon: ReactNode;
-  title: string;
-  description: string;
+type TemplateSummaryRow = {
+  date: string;
+  importLicenceCount: number;
+  importLicenceAmount: number;
+  borderImportLicenceCount: number;
+  borderImportLicenceAmount: number;
+  exportLicenceCount: number;
+  exportLicenceAmount: number;
+  borderExportLicenceCount: number;
+  borderExportLicenceAmount: number;
+  importPermitCount: number;
+  importPermitAmount: number;
+  borderImportPermitCount: number;
+  borderImportPermitAmount: number;
+  exportPermitCount: number;
+  exportPermitAmount: number;
+  borderExportPermitCount: number;
+  borderExportPermitAmount: number;
 };
 
-const steps: Step[] = [
-  {
-    icon: <AppstoreOutlined />,
-    title: 'Open a Report',
-    description:
-      'Use the left sidebar to pick a category (Member, Licence, Permit, Border, Payment…) and choose the report you need.',
-  },
-  {
-    icon: <FilterOutlined />,
-    title: 'Set the Filters',
-    description:
-      'Choose a date range and any other options such as Apply Type, then click Filter to load the data.',
-  },
-  {
-    icon: <TableOutlined />,
-    title: 'Review the Results',
-    description:
-      'Browse the report table. Use the page size and pager at the bottom to move through large result sets.',
-  },
-  {
-    icon: <FileExcelOutlined />,
-    title: 'Export to Excel',
-    description:
-      'Click the green Excel button to download the current report as a spreadsheet for sharing or printing.',
-  },
+type TemplateSummaryResult = {
+  startDate: string;
+  endDate: string;
+  rows: TemplateSummaryRow[];
+};
+
+const numberFormatter = new Intl.NumberFormat('en-US', {
+  maximumFractionDigits: 4,
+});
+
+const formatNumber = (value: number | null | undefined) =>
+  numberFormatter.format(value ?? 0);
+
+const initialDateRange: DateRange = [
+  dayjs().subtract(45, 'day'),
+  dayjs().subtract(1, 'day'),
 ];
 
-const features: Feature[] = [
-  {
-    icon: <AppstoreOutlined />,
-    title: 'Reports by Category',
-    description:
-      'Every report is grouped by type in the sidebar so you can find what you need at a glance.',
-  },
-  {
-    icon: <SearchOutlined />,
-    title: 'Filter & Search',
-    description:
-      'Narrow results by date range and report-specific options to focus on exactly what matters.',
-  },
-  {
-    icon: <FileExcelOutlined />,
-    title: 'One-click Excel',
-    description:
-      'Export any report to Excel with a single click — formatted and ready to use.',
-  },
-];
+const getRowTotalCount = (row: TemplateSummaryRow) =>
+  row.importLicenceCount +
+  row.borderImportLicenceCount +
+  row.exportLicenceCount +
+  row.borderExportLicenceCount +
+  row.importPermitCount +
+  row.borderImportPermitCount +
+  row.exportPermitCount +
+  row.borderExportPermitCount;
 
-const tips = [
-  'Always click Filter after changing the date range to refresh the table.',
-  'Use the Reset button to quickly return filters to their default values.',
-  'Increase the page size at the bottom of a table to see more rows at once.',
-  'Collapse the sidebar with the menu button to give the report more space.',
-];
+const getRowTotalAmount = (row: TemplateSummaryRow) =>
+  row.importLicenceAmount +
+  row.borderImportLicenceAmount +
+  row.exportLicenceAmount +
+  row.borderExportLicenceAmount +
+  row.importPermitAmount +
+  row.borderImportPermitAmount +
+  row.exportPermitAmount +
+  row.borderExportPermitAmount;
 
 export const HowToUsePage = () => {
-  const {
-    token: { colorPrimary, colorPrimaryBg, colorFillTertiary, borderRadiusLG },
-  } = theme.useToken();
+  const [form] = Form.useForm<FilterFormValues>();
+  const [dateRange, setDateRange] = useState<DateRange>(initialDateRange);
+  const [rows, setRows] = useState<TemplateSummaryRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
+
+  const loadSummary = useCallback(async (range: DateRange) => {
+    setLoading(true);
+    try {
+      const response = await axiosInstance.get<TemplateSummaryResult>(
+        'DataImport/Summary',
+        {
+          params: {
+            startDate: range[0].format('YYYY-MM-DD'),
+            endDate: range[1].format('YYYY-MM-DD'),
+          },
+        }
+      );
+      setRows(response.data.rows ?? []);
+      setPageIndex(0);
+    } catch {
+      message.error('Could not load template summary data.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSummary(dateRange);
+  }, [dateRange, loadSummary]);
+
+  const applyFilters = (values: FilterFormValues) => {
+    setDateRange(values.dateRange);
+  };
+
+  const resetFilters = () => {
+    form.setFieldsValue({ dateRange: initialDateRange });
+    setDateRange(initialDateRange);
+  };
+
+  const totals = useMemo(
+    () =>
+      rows.reduce(
+        (total, row) => ({
+          count: total.count + getRowTotalCount(row),
+          amount: total.amount + getRowTotalAmount(row),
+        }),
+        { count: 0, amount: 0 }
+      ),
+    [rows]
+  );
+
+  const pageRows = useMemo(
+    () => rows.slice(pageIndex * pageSize, pageIndex * pageSize + pageSize),
+    [pageIndex, pageSize, rows]
+  );
+
+  const pageTotals = useMemo(
+    () =>
+      pageRows.reduce(
+        (total, row) => ({
+          count: total.count + getRowTotalCount(row),
+          amount: total.amount + getRowTotalAmount(row),
+        }),
+        { count: 0, amount: 0 }
+      ),
+    [pageRows]
+  );
 
   return (
-    <Flex vertical gap="large">
-      {/* Hero */}
-      <Card
-        styles={{ body: { padding: 0 } }}
-        style={{
-          overflow: 'hidden',
-          border: 'none',
-          borderRadius: borderRadiusLG,
-        }}
-      >
-        <Flex
-          align="center"
-          gap="large"
-          wrap="wrap"
-          style={{
-            background: `linear-gradient(135deg, ${colorPrimary} 0%, #1565c0 100%)`,
-            padding: '32px 36px',
-          }}
+    <Flex vertical gap={16}>
+      <Card>
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{ dateRange: initialDateRange }}
+          onFinish={applyFilters}
         >
-          <div
-            style={{
-              background: '#ffffff',
-              borderRadius: '50%',
-              padding: 16,
-              boxShadow: '0 6px 18px rgba(0,0,0,0.18)',
-              lineHeight: 0,
-              flex: '0 0 auto',
-            }}
-          >
-            <img
-              src="/moc-logo.png"
-              alt="Ministry of Commerce logo"
-              height={84}
-              width={84}
-              style={{ display: 'block' }}
-            />
-          </div>
-          <Flex vertical gap={6} style={{ flex: '1 1 280px' }}>
-            <Title level={2} style={{ color: '#fff', margin: 0 }}>
-              Welcome to T2.0 Report
-            </Title>
-            <Text style={{ color: 'rgba(255,255,255,0.92)', fontSize: 16 }}>
-              The Ministry of Commerce reporting and administration portal.
-              Here&apos;s how to get the most out of it in just a few steps.
-            </Text>
-          </Flex>
-        </Flex>
-      </Card>
-
-      {/* Quick start steps */}
-      <div>
-        <Title level={4} style={{ marginBottom: 4 }}>
-          Get started in 4 steps
-        </Title>
-        <Text type="secondary">
-          From opening a report to exporting your results.
-        </Text>
-
-        <Row gutter={[20, 20]} style={{ marginTop: 20 }}>
-          {steps.map((step, index) => (
-            <Col xs={24} sm={12} lg={6} key={step.title}>
-              <Card
-                hoverable
-                style={{ height: '100%', borderRadius: borderRadiusLG }}
+          <Row gutter={[16, 16]} align="bottom">
+            <Col xs={24} md={12} lg={6}>
+              <Form.Item
+                label="From Date / To Date"
+                name="dateRange"
+                rules={[{ required: true, message: 'Date range is required' }]}
               >
-                <Flex vertical gap={12}>
-                  <Flex align="center" justify="space-between">
-                    <div
-                      style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: '50%',
-                        background: colorPrimaryBg,
-                        color: colorPrimary,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 22,
-                      }}
-                    >
-                      {step.icon}
-                    </div>
-                    <Text
-                      style={{
-                        fontSize: 40,
-                        fontWeight: 700,
-                        lineHeight: 1,
-                        color: colorFillTertiary,
-                      }}
-                    >
-                      {index + 1}
-                    </Text>
-                  </Flex>
-                  <Title level={5} style={{ margin: 0 }}>
-                    {step.title}
-                  </Title>
-                  <Paragraph type="secondary" style={{ margin: 0 }}>
-                    {step.description}
-                  </Paragraph>
-                </Flex>
-              </Card>
+                <RangePicker
+                  allowClear={false}
+                  format="YYYY-MM-DD"
+                  inputReadOnly
+                  style={{ width: '100%' }}
+                />
+              </Form.Item>
             </Col>
-          ))}
-        </Row>
-      </div>
-
-      {/* Feature highlights */}
-      <div>
-        <Title level={4} style={{ marginBottom: 4 }}>
-          What you can do
-        </Title>
-        <Text type="secondary">Key tools available on every report.</Text>
-
-        <Row gutter={[20, 20]} style={{ marginTop: 20 }}>
-          {features.map((feature) => (
-            <Col xs={24} md={8} key={feature.title}>
-              <Card style={{ height: '100%', borderRadius: borderRadiusLG }}>
-                <Flex gap="middle" align="flex-start">
-                  <div
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 10,
-                      background: colorPrimaryBg,
-                      color: colorPrimary,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 20,
-                      flex: '0 0 auto',
-                    }}
+            <Col xs={24} md={12} lg={8}>
+              <Form.Item>
+                <Space wrap>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    icon={<SearchOutlined />}
+                    loading={loading}
                   >
-                    {feature.icon}
-                  </div>
-                  <Flex vertical gap={4}>
-                    <Title level={5} style={{ margin: 0 }}>
-                      {feature.title}
-                    </Title>
-                    <Text type="secondary">{feature.description}</Text>
-                  </Flex>
-                </Flex>
-              </Card>
+                    Filter
+                  </Button>
+                  <Button onClick={resetFilters} icon={<ReloadOutlined />}>
+                    Reset
+                  </Button>
+                </Space>
+              </Form.Item>
             </Col>
-          ))}
-        </Row>
-      </div>
-
-      {/* Tips */}
-      <Card
-        style={{ borderRadius: borderRadiusLG, background: colorPrimaryBg, border: 'none' }}
-      >
-        <Flex align="center" gap="small" style={{ marginBottom: 12 }}>
-          <BulbOutlined style={{ fontSize: 20, color: colorPrimary }} />
-          <Title level={5} style={{ margin: 0 }}>
-            Handy tips
-          </Title>
-        </Flex>
-        <Space direction="vertical" size={10} style={{ width: '100%' }}>
-          {tips.map((tip) => (
-            <Flex key={tip} align="flex-start" gap="small">
-              <CheckCircleFilled style={{ color: colorPrimary, marginTop: 4 }} />
-              <Text>{tip}</Text>
-            </Flex>
-          ))}
-        </Space>
-        <Flex align="center" gap={6} style={{ marginTop: 16 }}>
-          <ReloadOutlined style={{ color: colorPrimary }} />
-          <Text type="secondary">
-            Tip: the Reset button on any report restores the default filters.
-          </Text>
-        </Flex>
+            <Col xs={24} lg={10}>
+              <Form.Item>
+                <Flex gap={8} justify="flex-end" wrap="wrap">
+                  <Tag color="blue">{`စုစုပေါင်း စောင်ရေ ${formatNumber(totals.count)}`}</Tag>
+                  <Tag color="green">{`စုစုပေါင်း တန်ဖိုး ${formatNumber(totals.amount)}`}</Tag>
+                </Flex>
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
       </Card>
+
+      <div className="report-viewer-container">
+        <div className="report-viewer-toolbar">
+          <Text strong>TemplateDB စာရင်းချုပ်</Text>
+        </div>
+        <div className="table-container">
+          {loading && (
+            <Flex
+              className="table-loading-banner"
+              align="center"
+              justify="space-between"
+              gap="middle"
+              wrap="wrap"
+            >
+              <Flex vertical gap={4}>
+                <Text strong>စာရင်းများ ရယူနေပါသည်</Text>
+                <Text type="secondary">TemplateDB မှ အချက်အလက်များကို ပြင်ဆင်နေပါသည်...</Text>
+              </Flex>
+            </Flex>
+          )}
+
+          <table id="templateSummaryTable">
+            <thead>
+              <tr className="report-header-row">
+                <th colSpan={18}>နေ့စဉ် Template စာရင်းချုပ်</th>
+              </tr>
+              <tr>
+                <th rowSpan={3}>စဉ်</th>
+                <th rowSpan={3}>နေ့စွဲ</th>
+                <th colSpan={4}>ပို့ကုန် လိုင်စင်</th>
+                <th colSpan={4}>သွင်းကုန် လိုင်စင်</th>
+                <th colSpan={4}>ပို့ကုန် (ပါမစ်)</th>
+                <th colSpan={4}>သွင်းကုန် (ပါမစ်)</th>
+              </tr>
+              <tr>
+                <th colSpan={2}>ပင်လယ်ရေကြောင်း</th>
+                <th colSpan={2}>နယ်စပ်</th>
+                <th colSpan={2}>ပင်လယ်ရေကြောင်း</th>
+                <th colSpan={2}>နယ်စပ်</th>
+                <th colSpan={2}>ပင်လယ်ရေကြောင်း</th>
+                <th colSpan={2}>နယ်စပ်</th>
+                <th colSpan={2}>ပင်လယ်ရေကြောင်း</th>
+                <th colSpan={2}>နယ်စပ်</th>
+              </tr>
+              <tr>
+                {Array.from({ length: 8 }).map((_, index) => (
+                  <Fragment key={index}>
+                    <th>စောင်ရေ</th>
+                    <th>တန်ဖိုး</th>
+                  </Fragment>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {pageRows.length ? (
+                pageRows.map((row, index) => (
+                  <tr key={row.date}>
+                    <td>{pageIndex * pageSize + index + 1}</td>
+                    <td>{dayjs(row.date).format('YYYY-MM-DD')}</td>
+                    <td className="col-numeric">{formatNumber(row.exportLicenceCount)}</td>
+                    <td className="col-numeric">{formatNumber(row.exportLicenceAmount)}</td>
+                    <td className="col-numeric">{formatNumber(row.borderExportLicenceCount)}</td>
+                    <td className="col-numeric">{formatNumber(row.borderExportLicenceAmount)}</td>
+                    <td className="col-numeric">{formatNumber(row.importLicenceCount)}</td>
+                    <td className="col-numeric">{formatNumber(row.importLicenceAmount)}</td>
+                    <td className="col-numeric">{formatNumber(row.borderImportLicenceCount)}</td>
+                    <td className="col-numeric">{formatNumber(row.borderImportLicenceAmount)}</td>
+                    <td className="col-numeric">{formatNumber(row.exportPermitCount)}</td>
+                    <td className="col-numeric">{formatNumber(row.exportPermitAmount)}</td>
+                    <td className="col-numeric">{formatNumber(row.borderExportPermitCount)}</td>
+                    <td className="col-numeric">{formatNumber(row.borderExportPermitAmount)}</td>
+                    <td className="col-numeric">{formatNumber(row.importPermitCount)}</td>
+                    <td className="col-numeric">{formatNumber(row.importPermitAmount)}</td>
+                    <td className="col-numeric">{formatNumber(row.borderImportPermitCount)}</td>
+                    <td className="col-numeric">{formatNumber(row.borderImportPermitAmount)}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={18} style={{ textAlign: 'center' }}>
+                    {loading ? 'စာရင်းများ ရယူနေပါသည်' : 'စာရင်း မရှိပါ'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+            <tfoot>
+              <tr className="report-total-row">
+                <td colSpan={2}>စုစုပေါင်း</td>
+                <td colSpan={8} className="col-numeric">{`စောင်ရေ ${formatNumber(pageTotals.count)}`}</td>
+                <td colSpan={8} className="col-numeric">{`တန်ဖိုး ${formatNumber(pageTotals.amount)}`}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div className="pagination">
+          <Pagination
+            showSizeChanger
+            current={pageIndex + 1}
+            pageSize={pageSize}
+            total={rows.length}
+            pageSizeOptions={[10, 20, 50, 100]}
+            showTotal={(total, range) =>
+              `${range[0]}-${range[1]} / စုစုပေါင်း ${total}`
+            }
+            onChange={(page, size) => {
+              setPageIndex(page - 1);
+              setPageSize(size);
+            }}
+          />
+        </div>
+      </div>
     </Flex>
   );
 };

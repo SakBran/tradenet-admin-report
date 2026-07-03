@@ -58,6 +58,27 @@ namespace Backend.Controllers.Report
             }
         }
 
+        [HttpGet("Summary")]
+        public async Task<ActionResult<DataImportSummaryResult>> GetSummary(
+            [FromQuery] DateTime? startDate,
+            [FromQuery] DateTime? endDate,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var toDate = (endDate ?? DateTime.Today.AddDays(-1)).Date;
+                var fromDate = (startDate ?? toDate.AddDays(-44)).Date;
+                return Ok(await _dataImportService.GetSummaryAsync(
+                    fromDate,
+                    toDate,
+                    cancellationToken));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         [HttpGet("jobs")]
         public async Task<ActionResult<IReadOnlyList<DataImportJobDto>>> GetJobs(
             CancellationToken cancellationToken)

@@ -21,6 +21,11 @@ namespace API.Service.Reports
             int year,
             CancellationToken cancellationToken = default);
 
+        Task<DataImportSummaryResult> GetSummaryAsync(
+            DateTime startDate,
+            DateTime endDate,
+            CancellationToken cancellationToken = default);
+
         Task<DataImportResult> ImportAsync(
             string? licenceType,
             DateTime startDate,
@@ -179,6 +184,49 @@ namespace API.Service.Reports
             };
         }
 
+        public async Task<DataImportSummaryResult> GetSummaryAsync(
+            DateTime startDate,
+            DateTime endDate,
+            CancellationToken cancellationToken = default)
+        {
+            var fromDate = startDate.Date;
+            var toDate = endDate.Date;
+            if (toDate < fromDate)
+            {
+                throw new ArgumentException("End date must be greater than or equal to start date.");
+            }
+
+            var rowByDate = new Dictionary<DateTime, DataImportSummaryRow>();
+
+            foreach (var target in Targets)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var tableRows = await GetSummaryRowsAsync(target.Key, fromDate, toDate, cancellationToken);
+
+                foreach (var tableRow in tableRows)
+                {
+                    if (!rowByDate.TryGetValue(tableRow.LicenceDate, out var summaryRow))
+                    {
+                        summaryRow = new DataImportSummaryRow { Date = tableRow.LicenceDate };
+                        rowByDate[tableRow.LicenceDate] = summaryRow;
+                    }
+
+                    ApplySummaryValue(summaryRow, target.Key, tableRow.TotalCount, tableRow.TotalAmount);
+                }
+            }
+
+            var rows = rowByDate.Values
+                .OrderByDescending(row => row.Date)
+                .ToList();
+
+            return new DataImportSummaryResult
+            {
+                StartDate = fromDate,
+                EndDate = toDate,
+                Rows = rows,
+            };
+        }
+
         private async Task<DataImportStatusRow> GetStatusRowAsync(
             ImportTarget target,
             DateTime importDate,
@@ -281,6 +329,57 @@ WHERE LicenceDate >= @StartDate
             return dates;
         }
 
+        private async Task<List<TemplateSummaryRow>> GetSummaryRowsAsync(
+            string tableName,
+            DateTime startDate,
+            DateTime endDate,
+            CancellationToken cancellationToken)
+        {
+            var tableExists = await TemplateTableExistsAsync(tableName, cancellationToken);
+            if (!tableExists)
+            {
+                return new List<TemplateSummaryRow>();
+            }
+
+            var sql = $@"
+SELECT
+    TotalCount,
+    TotalAmount,
+    LicenceDate
+FROM dbo.{tableName}
+WHERE LicenceDate >= @StartDate
+  AND LicenceDate <= @EndDate
+ORDER BY LicenceDate DESC;";
+
+            var connection = _templateDb.Database.GetDbConnection();
+            await using var command = connection.CreateCommand();
+            command.CommandText = sql;
+            command.Parameters.Add(new SqlParameter("@StartDate", startDate));
+            command.Parameters.Add(new SqlParameter("@EndDate", endDate));
+
+            if (connection.State != System.Data.ConnectionState.Open)
+            {
+                await connection.OpenAsync(cancellationToken);
+            }
+
+            var rows = new List<TemplateSummaryRow>();
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                if (reader.IsDBNull(2))
+                {
+                    continue;
+                }
+
+                rows.Add(new TemplateSummaryRow(
+                    reader.GetInt32(0),
+                    reader.GetDecimal(1),
+                    reader.GetDateTime(2).Date));
+            }
+
+            return rows;
+        }
+
         private async Task<bool> TemplateTableExistsAsync(
             string tableName,
             CancellationToken cancellationToken)
@@ -311,6 +410,49 @@ WHERE LicenceDate >= @StartDate
             return Targets
                 .Where(target => string.Equals(target.Key, licenceType, StringComparison.OrdinalIgnoreCase))
                 .ToList();
+        }
+
+        private static void ApplySummaryValue(
+            DataImportSummaryRow row,
+            string targetKey,
+            int totalCount,
+            decimal totalAmount)
+        {
+            switch (targetKey)
+            {
+                case "ImportLicence":
+                    row.ImportLicenceCount = totalCount;
+                    row.ImportLicenceAmount = totalAmount;
+                    break;
+                case "ExportLicence":
+                    row.ExportLicenceCount = totalCount;
+                    row.ExportLicenceAmount = totalAmount;
+                    break;
+                case "BorderImportLicence":
+                    row.BorderImportLicenceCount = totalCount;
+                    row.BorderImportLicenceAmount = totalAmount;
+                    break;
+                case "BorderExportLicence":
+                    row.BorderExportLicenceCount = totalCount;
+                    row.BorderExportLicenceAmount = totalAmount;
+                    break;
+                case "ImportPermit":
+                    row.ImportPermitCount = totalCount;
+                    row.ImportPermitAmount = totalAmount;
+                    break;
+                case "ExportPermit":
+                    row.ExportPermitCount = totalCount;
+                    row.ExportPermitAmount = totalAmount;
+                    break;
+                case "BorderImportPermit":
+                    row.BorderImportPermitCount = totalCount;
+                    row.BorderImportPermitAmount = totalAmount;
+                    break;
+                case "BorderExportPermit":
+                    row.BorderExportPermitCount = totalCount;
+                    row.BorderExportPermitAmount = totalAmount;
+                    break;
+            }
         }
 
         private async Task<List<DailyImportAggregate>> BuildDailyAggregatesAsync(
@@ -666,6 +808,34 @@ SELECT TOP (1) Id FROM @SavedIds;";
         public List<DataImportCalendarDayStatus> Days { get; set; } = new();
     }
 
+    public sealed class DataImportSummaryResult
+    {
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public List<DataImportSummaryRow> Rows { get; set; } = new();
+    }
+
+    public sealed class DataImportSummaryRow
+    {
+        public DateTime Date { get; set; }
+        public int ImportLicenceCount { get; set; }
+        public decimal ImportLicenceAmount { get; set; }
+        public int BorderImportLicenceCount { get; set; }
+        public decimal BorderImportLicenceAmount { get; set; }
+        public int ExportLicenceCount { get; set; }
+        public decimal ExportLicenceAmount { get; set; }
+        public int BorderExportLicenceCount { get; set; }
+        public decimal BorderExportLicenceAmount { get; set; }
+        public int ImportPermitCount { get; set; }
+        public decimal ImportPermitAmount { get; set; }
+        public int BorderImportPermitCount { get; set; }
+        public decimal BorderImportPermitAmount { get; set; }
+        public int ExportPermitCount { get; set; }
+        public decimal ExportPermitAmount { get; set; }
+        public int BorderExportPermitCount { get; set; }
+        public decimal BorderExportPermitAmount { get; set; }
+    }
+
     public sealed class DataImportCalendarDayStatus
     {
         public DateTime Date { get; set; }
@@ -677,6 +847,8 @@ SELECT TOP (1) Id FROM @SavedIds;";
     public sealed record DataImportLicenceTypeOption(string Value, string Label);
 
     internal sealed record ImportTarget(string Key, string Label);
+
+    internal sealed record TemplateSummaryRow(int TotalCount, decimal TotalAmount, DateTime LicenceDate);
 
     internal sealed record ImportLicenceRow(string Id, DateTime LicenceDate);
 
