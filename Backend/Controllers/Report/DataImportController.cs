@@ -62,6 +62,7 @@ namespace Backend.Controllers.Report
         public async Task<ActionResult<DataImportSummaryResult>> GetSummary(
             [FromQuery] DateTime? startDate,
             [FromQuery] DateTime? endDate,
+            [FromQuery] string? period,
             CancellationToken cancellationToken)
         {
             try
@@ -71,6 +72,7 @@ namespace Backend.Controllers.Report
                 return Ok(await _dataImportService.GetSummaryAsync(
                     fromDate,
                     toDate,
+                    period,
                     cancellationToken));
             }
             catch (ArgumentException ex)

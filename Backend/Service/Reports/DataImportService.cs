@@ -24,6 +24,7 @@ namespace API.Service.Reports
         Task<DataImportSummaryResult> GetSummaryAsync(
             DateTime startDate,
             DateTime endDate,
+            string? period,
             CancellationToken cancellationToken = default);
 
         Task<DataImportResult> ImportAsync(
@@ -187,6 +188,7 @@ namespace API.Service.Reports
         public async Task<DataImportSummaryResult> GetSummaryAsync(
             DateTime startDate,
             DateTime endDate,
+            string? period,
             CancellationToken cancellationToken = default)
         {
             var fromDate = startDate.Date;
@@ -196,7 +198,18 @@ namespace API.Service.Reports
                 throw new ArgumentException("End date must be greater than or equal to start date.");
             }
 
+            var summaryPeriod = DataImportSummaryPeriod.FromValue(period);
             var rowByDate = new Dictionary<DateTime, DataImportSummaryRow>();
+
+            if (summaryPeriod.IncludeEmptyBuckets)
+            {
+                for (var date = summaryPeriod.GetBucketStart(fromDate);
+                     date <= toDate;
+                     date = summaryPeriod.AddBucket(date))
+                {
+                    rowByDate[date] = new DataImportSummaryRow { Date = date };
+                }
+            }
 
             foreach (var target in Targets)
             {
@@ -205,24 +218,26 @@ namespace API.Service.Reports
 
                 foreach (var tableRow in tableRows)
                 {
-                    if (!rowByDate.TryGetValue(tableRow.LicenceDate, out var summaryRow))
+                    var bucketDate = summaryPeriod.GetBucketStart(tableRow.LicenceDate);
+                    if (!rowByDate.TryGetValue(bucketDate, out var summaryRow))
                     {
-                        summaryRow = new DataImportSummaryRow { Date = tableRow.LicenceDate };
-                        rowByDate[tableRow.LicenceDate] = summaryRow;
+                        summaryRow = new DataImportSummaryRow { Date = bucketDate };
+                        rowByDate[bucketDate] = summaryRow;
                     }
 
-                    ApplySummaryValue(summaryRow, target.Key, tableRow.TotalCount, tableRow.TotalAmount);
+                    AddSummaryValue(summaryRow, target.Key, tableRow.TotalCount, tableRow.TotalAmount);
                 }
             }
 
-            var rows = rowByDate.Values
-                .OrderByDescending(row => row.Date)
-                .ToList();
+            var rows = summaryPeriod.Value == DataImportSummaryPeriod.Daily
+                ? rowByDate.Values.OrderByDescending(row => row.Date).ToList()
+                : rowByDate.Values.OrderBy(row => row.Date).ToList();
 
             return new DataImportSummaryResult
             {
                 StartDate = fromDate,
                 EndDate = toDate,
+                Period = summaryPeriod.Value,
                 Rows = rows,
             };
         }
@@ -412,7 +427,7 @@ ORDER BY LicenceDate DESC;";
                 .ToList();
         }
 
-        private static void ApplySummaryValue(
+        private static void AddSummaryValue(
             DataImportSummaryRow row,
             string targetKey,
             int totalCount,
@@ -421,36 +436,36 @@ ORDER BY LicenceDate DESC;";
             switch (targetKey)
             {
                 case "ImportLicence":
-                    row.ImportLicenceCount = totalCount;
-                    row.ImportLicenceAmount = totalAmount;
+                    row.ImportLicenceCount += totalCount;
+                    row.ImportLicenceAmount += totalAmount;
                     break;
                 case "ExportLicence":
-                    row.ExportLicenceCount = totalCount;
-                    row.ExportLicenceAmount = totalAmount;
+                    row.ExportLicenceCount += totalCount;
+                    row.ExportLicenceAmount += totalAmount;
                     break;
                 case "BorderImportLicence":
-                    row.BorderImportLicenceCount = totalCount;
-                    row.BorderImportLicenceAmount = totalAmount;
+                    row.BorderImportLicenceCount += totalCount;
+                    row.BorderImportLicenceAmount += totalAmount;
                     break;
                 case "BorderExportLicence":
-                    row.BorderExportLicenceCount = totalCount;
-                    row.BorderExportLicenceAmount = totalAmount;
+                    row.BorderExportLicenceCount += totalCount;
+                    row.BorderExportLicenceAmount += totalAmount;
                     break;
                 case "ImportPermit":
-                    row.ImportPermitCount = totalCount;
-                    row.ImportPermitAmount = totalAmount;
+                    row.ImportPermitCount += totalCount;
+                    row.ImportPermitAmount += totalAmount;
                     break;
                 case "ExportPermit":
-                    row.ExportPermitCount = totalCount;
-                    row.ExportPermitAmount = totalAmount;
+                    row.ExportPermitCount += totalCount;
+                    row.ExportPermitAmount += totalAmount;
                     break;
                 case "BorderImportPermit":
-                    row.BorderImportPermitCount = totalCount;
-                    row.BorderImportPermitAmount = totalAmount;
+                    row.BorderImportPermitCount += totalCount;
+                    row.BorderImportPermitAmount += totalAmount;
                     break;
                 case "BorderExportPermit":
-                    row.BorderExportPermitCount = totalCount;
-                    row.BorderExportPermitAmount = totalAmount;
+                    row.BorderExportPermitCount += totalCount;
+                    row.BorderExportPermitAmount += totalAmount;
                     break;
             }
         }
@@ -812,6 +827,7 @@ SELECT TOP (1) Id FROM @SavedIds;";
     {
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+        public string Period { get; set; } = DataImportSummaryPeriod.Daily;
         public List<DataImportSummaryRow> Rows { get; set; } = new();
     }
 
@@ -845,6 +861,59 @@ SELECT TOP (1) Id FROM @SavedIds;";
     }
 
     public sealed record DataImportLicenceTypeOption(string Value, string Label);
+
+    internal sealed class DataImportSummaryPeriod
+    {
+        public const string Daily = "Daily";
+        public const string Monthly = "Monthly";
+        public const string Yearly = "Yearly";
+
+        private DataImportSummaryPeriod(string value, bool includeEmptyBuckets)
+        {
+            Value = value;
+            IncludeEmptyBuckets = includeEmptyBuckets;
+        }
+
+        public string Value { get; }
+        public bool IncludeEmptyBuckets { get; }
+
+        public static DataImportSummaryPeriod FromValue(string? value)
+        {
+            if (string.Equals(value, Monthly, StringComparison.OrdinalIgnoreCase))
+            {
+                return new DataImportSummaryPeriod(Monthly, includeEmptyBuckets: true);
+            }
+
+            if (string.Equals(value, Yearly, StringComparison.OrdinalIgnoreCase))
+            {
+                return new DataImportSummaryPeriod(Yearly, includeEmptyBuckets: true);
+            }
+
+            if (string.IsNullOrWhiteSpace(value) ||
+                string.Equals(value, Daily, StringComparison.OrdinalIgnoreCase))
+            {
+                return new DataImportSummaryPeriod(Daily, includeEmptyBuckets: false);
+            }
+
+            throw new ArgumentException("Period must be Daily, Monthly, or Yearly.");
+        }
+
+        public DateTime GetBucketStart(DateTime date) =>
+            Value switch
+            {
+                Monthly => new DateTime(date.Year, date.Month, 1),
+                Yearly => new DateTime(date.Year, 1, 1),
+                _ => date.Date,
+            };
+
+        public DateTime AddBucket(DateTime date) =>
+            Value switch
+            {
+                Monthly => date.AddMonths(1),
+                Yearly => date.AddYears(1),
+                _ => date.AddDays(1),
+            };
+    }
 
     internal sealed record ImportTarget(string Key, string Label);
 

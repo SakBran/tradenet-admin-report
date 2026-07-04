@@ -8,6 +8,7 @@ import {
   Form,
   Pagination,
   Row,
+  Select,
   Space,
   Tag,
   Typography,
@@ -22,9 +23,11 @@ const { RangePicker } = DatePicker;
 const { Text } = Typography;
 
 type DateRange = [Dayjs, Dayjs];
+type SummaryPeriod = 'Daily' | 'Monthly' | 'Yearly';
 
 type FilterFormValues = {
   dateRange: DateRange;
+  period: SummaryPeriod;
 };
 
 type TemplateSummaryRow = {
@@ -50,6 +53,7 @@ type TemplateSummaryRow = {
 type TemplateSummaryResult = {
   startDate: string;
   endDate: string;
+  period: SummaryPeriod;
   rows: TemplateSummaryRow[];
 };
 
@@ -61,8 +65,16 @@ const formatNumber = (value: number | null | undefined) =>
   numberFormatter.format(value ?? 0);
 
 const initialDateRange: DateRange = [
-  dayjs().subtract(45, 'day'),
-  dayjs().subtract(1, 'day'),
+  dayjs('2020-01-01'),
+  dayjs('2025-12-31'),
+];
+
+const initialPeriod: SummaryPeriod = 'Yearly';
+
+const periodOptions: { label: string; value: SummaryPeriod }[] = [
+  { label: 'Daily', value: 'Daily' },
+  { label: 'Monthly', value: 'Monthly' },
+  { label: 'Yearly', value: 'Yearly' },
 ];
 
 const getRowTotalCount = (row: TemplateSummaryRow) =>
@@ -85,15 +97,46 @@ const getRowTotalAmount = (row: TemplateSummaryRow) =>
   row.exportPermitAmount +
   row.borderExportPermitAmount;
 
+const getPeriodLabel = (selectedPeriod: SummaryPeriod) =>
+  selectedPeriod === 'Yearly'
+    ? 'နှစ်အလိုက်'
+    : selectedPeriod === 'Monthly'
+    ? 'လအလိုက်'
+    : 'နေ့စဉ်';
+
+const getDateColumnTitle = (selectedPeriod: SummaryPeriod) =>
+  selectedPeriod === 'Yearly'
+    ? 'နှစ်'
+    : selectedPeriod === 'Monthly'
+    ? 'လ'
+    : 'နေ့စွဲ';
+
+const formatPeriodDate = (value: string, selectedPeriod: SummaryPeriod) => {
+  const date = dayjs(value);
+  if (selectedPeriod === 'Yearly') {
+    return date.format('YYYY');
+  }
+
+  if (selectedPeriod === 'Monthly') {
+    return date.format('YYYY-MM');
+  }
+
+  return date.format('YYYY-MM-DD');
+};
+
 export const HowToUsePage = () => {
   const [form] = Form.useForm<FilterFormValues>();
   const [dateRange, setDateRange] = useState<DateRange>(initialDateRange);
+  const [period, setPeriod] = useState<SummaryPeriod>(initialPeriod);
   const [rows, setRows] = useState<TemplateSummaryRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(20);
 
-  const loadSummary = useCallback(async (range: DateRange) => {
+  const loadSummary = useCallback(async (
+    range: DateRange,
+    selectedPeriod: SummaryPeriod
+  ) => {
     setLoading(true);
     try {
       const response = await axiosInstance.get<TemplateSummaryResult>(
@@ -102,6 +145,7 @@ export const HowToUsePage = () => {
           params: {
             startDate: range[0].format('YYYY-MM-DD'),
             endDate: range[1].format('YYYY-MM-DD'),
+            period: selectedPeriod,
           },
         }
       );
@@ -115,16 +159,21 @@ export const HowToUsePage = () => {
   }, []);
 
   useEffect(() => {
-    loadSummary(dateRange);
-  }, [dateRange, loadSummary]);
+    loadSummary(dateRange, period);
+  }, [dateRange, loadSummary, period]);
 
   const applyFilters = (values: FilterFormValues) => {
     setDateRange(values.dateRange);
+    setPeriod(values.period);
   };
 
   const resetFilters = () => {
-    form.setFieldsValue({ dateRange: initialDateRange });
+    form.setFieldsValue({
+      dateRange: initialDateRange,
+      period: initialPeriod,
+    });
     setDateRange(initialDateRange);
+    setPeriod(initialPeriod);
   };
 
   const totals = useMemo(
@@ -162,7 +211,7 @@ export const HowToUsePage = () => {
         <Form
           form={form}
           layout="vertical"
-          initialValues={{ dateRange: initialDateRange }}
+          initialValues={{ dateRange: initialDateRange, period: initialPeriod }}
           onFinish={applyFilters}
         >
           <Row gutter={[16, 16]} align="bottom">
@@ -180,7 +229,16 @@ export const HowToUsePage = () => {
                 />
               </Form.Item>
             </Col>
-            <Col xs={24} md={12} lg={8}>
+            <Col xs={24} md={12} lg={4}>
+              <Form.Item
+                label="Option"
+                name="period"
+                rules={[{ required: true, message: 'Option is required' }]}
+              >
+                <Select options={periodOptions} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12} lg={6}>
               <Form.Item>
                 <Space wrap>
                   <Button
@@ -197,7 +255,7 @@ export const HowToUsePage = () => {
                 </Space>
               </Form.Item>
             </Col>
-            <Col xs={24} lg={10}>
+            <Col xs={24} lg={8}>
               <Form.Item>
                 <Flex gap={8} justify="flex-end" wrap="wrap">
                   <Tag color="blue">{`စုစုပေါင်း စောင်ရေ ${formatNumber(totals.count)}`}</Tag>
@@ -211,7 +269,7 @@ export const HowToUsePage = () => {
 
       <div className="report-viewer-container">
         <div className="report-viewer-toolbar">
-          <Text strong>TemplateDB စာရင်းချုပ်</Text>
+          <Text strong>{`${getPeriodLabel(period)} TemplateDB စာရင်းချုပ်`}</Text>
         </div>
         <div className="table-container">
           {loading && (
@@ -232,11 +290,11 @@ export const HowToUsePage = () => {
           <table id="templateSummaryTable">
             <thead>
               <tr className="report-header-row">
-                <th colSpan={18}>နေ့စဉ် Template စာရင်းချုပ်</th>
+                <th colSpan={18}>{`${getPeriodLabel(period)} Template စာရင်းချုပ်`}</th>
               </tr>
               <tr>
                 <th rowSpan={3}>စဉ်</th>
-                <th rowSpan={3}>နေ့စွဲ</th>
+                <th rowSpan={3}>{getDateColumnTitle(period)}</th>
                 <th colSpan={4}>ပို့ကုန် လိုင်စင်</th>
                 <th colSpan={4}>သွင်းကုန် လိုင်စင်</th>
                 <th colSpan={4}>ပို့ကုန် (ပါမစ်)</th>
@@ -266,7 +324,7 @@ export const HowToUsePage = () => {
                 pageRows.map((row, index) => (
                   <tr key={row.date}>
                     <td>{pageIndex * pageSize + index + 1}</td>
-                    <td>{dayjs(row.date).format('YYYY-MM-DD')}</td>
+                    <td>{formatPeriodDate(row.date, period)}</td>
                     <td className="col-numeric">{formatNumber(row.exportLicenceCount)}</td>
                     <td className="col-numeric">{formatNumber(row.exportLicenceAmount)}</td>
                     <td className="col-numeric">{formatNumber(row.borderExportLicenceCount)}</td>
