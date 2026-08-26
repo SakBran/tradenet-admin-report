@@ -1,14 +1,14 @@
 # Database Connection Notes
 
-Updated: 2026-05-29
+Updated: 2026-08-26
 
 Use `Backend/appsettings.json` -> `ConnectionStrings:TradeNetDBTest` for report database checks, stored procedure comparisons, and LINQ verification against the TradeNet database.
 
 ## TradeNetDBTest
 
-- Server: `203.81.66.111,14330`
+- Server: `tn2db.myanmartradenet.com,14133`
 - Database: `TradeNetDB`
-- User: `sa`
+- User: `tn2db`
 - Password: stored in `Backend/appsettings.json`; do not copy it into docs, logs, commits, or summaries.
 - Required options currently used by the app: `MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True`
 

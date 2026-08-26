@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Deploy backend and frontend from the repo to P:\WEBSITES.
+Deploy backend and frontend from the repo to M:\ (T20-ADMIN-REPORT-*).
 
 .DESCRIPTION
 Pulls latest git changes, builds and publishes the Backend, runs Frontend build, and copies the outputs to the target deployment folders.
@@ -10,10 +10,10 @@ Pulls latest git changes, builds and publishes the Backend, runs Frontend build,
 param(
     [switch]$NoGit,
     [switch]$NoFrontend,
-    [string]$BackendTarget = 'P:\WEBSITES\tradenet-admin-backend',
-    [string]$FrontendTarget = 'P:\WEBSITES\tradenenet-admin-frontend',
+    [string]$BackendTarget = 'M:\T20-ADMIN-REPORT-BACKEND',
+    [string]$FrontendTarget = 'M:\T20-ADMIN-REPORT-FRONTEND',
     # After the backend is back online, poll this URL until it returns 200 (non-fatal warning on failure).
-    [string]$HealthUrl = 'https://reportuatapi.myanmartradenet.com/health',
+    [string]$HealthUrl = 'https://reportapi.myanmartradenet.com/health',
     [switch]$SkipHealthCheck
 )
 
@@ -249,12 +249,12 @@ if (-not $NoFrontend) {
     Set-Location $frontendDir
 
     # Vite bakes VITE_* from the environment into the bundle at build time (Frontend/src/config.ts
-    # reads them, falling back to localhost only when unset). Default to the UAT API here so both
-    # manual (deploy.bat) and automated (auto-deploy-watch.ps1) runs build the right URLs without
+    # reads them, falling back to localhost only when unset). Default to the production API here so
+    # both manual (deploy.bat) and automated (auto-deploy-watch.ps1) runs build the right URLs without
     # duplicating the values. An externally-set VITE_* (e.g. for a different environment) wins.
-    if (-not $env:VITE_BASE_URL)  { $env:VITE_BASE_URL = 'https://reportuatapi.myanmartradenet.com/api/' }
-    if (-not $env:VITE_IMAGE_URL) { $env:VITE_IMAGE_URL = 'https://reportuatapi.myanmartradenet.com/Image/' }
-    if (-not $env:VITE_QR_URL)    { $env:VITE_QR_URL = 'https://uatapi.ecomreg.gov.mm/QR/' }
+    if (-not $env:VITE_BASE_URL)  { $env:VITE_BASE_URL = 'https://reportapi.myanmartradenet.com/api/' }
+    if (-not $env:VITE_IMAGE_URL) { $env:VITE_IMAGE_URL = 'https://reportapi.myanmartradenet.com/Image/' }
+    if (-not $env:VITE_QR_URL)    { $env:VITE_QR_URL = 'https://api.ecomreg.gov.mm/QR/' }
 
     Invoke-NativeCommand 'Installing Frontend dependencies...' { npm install --legacy-peer-deps }
     Invoke-NativeCommand 'Building Frontend...' { npm run build }
