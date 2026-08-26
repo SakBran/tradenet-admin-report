@@ -15,8 +15,6 @@ import {
 } from '../pages';
 import { DashboardLayout } from '../layouts';
 import React, { ReactNode, useEffect } from 'react';
-import UserPage from '../pages/User/UserPage.tsx';
-import UserList from '../pages/User/UserList.tsx';
 import ActivityLogList from '../pages/ActivityLog/ActivityLogList.tsx';
 import ProtectedRoute from './ProtectedRoute.tsx';
 import TimelinePage from '../pages/Timeline/Timeline.tsx';
@@ -111,42 +109,6 @@ const router = createBrowserRouter([
             index: true,
             path: 'default',
             element: <HowToUsePage />,
-          },
-        ],
-      },
-
-      {
-        path: `/User`,
-        element: (
-          <PageWrapper>
-            <DashboardLayout />
-          </PageWrapper>
-        ),
-        errorElement: <ErrorPage />,
-        children: [
-          {
-            path: 'List',
-            element: <UserList />,
-          },
-          {
-            path: 'New',
-            element: <UserPage />,
-          },
-          {
-            path: 'Edit/:id',
-            element: <UserPage />,
-          },
-          {
-            path: 'Delete/:id',
-            element: <UserPage />,
-          },
-          {
-            path: 'ToggleActive/:id',
-            element: <UserPage />,
-          },
-          {
-            path: 'Detail/:id',
-            element: <UserPage />,
           },
         ],
       },
