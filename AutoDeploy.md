@@ -1,4 +1,4 @@
-# UAT Auto-Deploy Guide
+# Production Auto-Deploy Guide
 
 ## Architecture Overview
 
@@ -8,14 +8,14 @@ Your Mac
         └── RDP → Build Server (dev_vm3)
                     ├── git checkout (H:\SakBran\Code\tradenet-report\tradenet-admin-report)
                     ├── .NET 8 SDK + Node.js
-                    └── P:\WEBSITES\ (network share → UAT IIS server)
-                              ├── tradenet-admin-backend\
-                              └── tradenenet-admin-frontend\
+                    └── M:\ (network share → production IIS server)
+                              ├── T20-ADMIN-REPORT-BACKEND\
+                              └── T20-ADMIN-REPORT-FRONTEND\
 ```
 
 - **Build Server** (`dev_vm3.myanmartradenet.com`) — performs git pull, dotnet build, npm build, and robocopy.
-- **UAT Web Server** — hosts IIS. Cannot be logged into directly; managed only through the file share.
-- **P:\WEBSITES** — network file share mapped on the Build Server that points to the UAT server's IIS site folders.
+- **Production Web Server** — hosts IIS. Cannot be logged into directly; managed only through the file share.
+- **M:\** — network file share mapped on the Build Server that points to the production server's IIS site folders.
 - **GitHub self-hosted runners cannot be used** — all automation runs inside your RDP session.
 
 ---
@@ -27,12 +27,12 @@ Your Mac
 3. If `origin/main` is ahead of `HEAD`, it runs `git reset --hard origin/main` then calls `deploy.ps1 -NoGit`.
 4. `deploy.ps1` does the full deploy:
    - Builds the backend (`dotnet publish`)
-   - Drops `app_offline.htm` onto the backend share → UAT server gracefully unloads the app pool and releases `API.dll`
-   - Robocopies the new build to `P:\WEBSITES\tradenet-admin-backend`
+   - Drops `app_offline.htm` onto the backend share → production server gracefully unloads the app pool and releases `API.dll`
+   - Robocopies the new build to `M:\T20-ADMIN-REPORT-BACKEND`
    - Removes `app_offline.htm` → app restarts on next request
-   - Builds the frontend (`npm run build` with UAT `VITE_*` env vars)
-   - Robocopies `dist/` to `P:\WEBSITES\tradenenet-admin-frontend`
-   - Polls `https://reportuatapi.myanmartradenet.com/health` until it returns 200
+   - Builds the frontend (`npm run build` with production `VITE_*` env vars)
+   - Robocopies `dist/` to `M:\T20-ADMIN-REPORT-FRONTEND`
+   - Polls `https://reportapi.myanmartradenet.com/health` until it returns 200
 5. If nothing changed, the watcher stays silent (no log noise).
 
 ---
@@ -57,10 +57,10 @@ Your Mac
    node -v
    ```
 
-4. **Confirm the P: drive is mapped**
+4. **Confirm the M: drive is mapped**
    ```powershell
-   Test-Path P:\WEBSITES\tradenet-admin-backend
-   Test-Path P:\WEBSITES\tradenenet-admin-frontend
+   Test-Path M:\T20-ADMIN-REPORT-BACKEND
+   Test-Path M:\T20-ADMIN-REPORT-FRONTEND
    ```
 
 5. **Run a manual deploy first** to verify everything works end-to-end:
@@ -103,13 +103,13 @@ Root folder: H:\SakBran\Code\tradenet-report\tradenet-admin-report
 Building Backend...
   (dotnet build output...)
 Publishing Backend to: ...
-Taking backend offline: P:\WEBSITES\tradenet-admin-backend\app_offline.htm
-Copying backend files to: P:\WEBSITES\tradenet-admin-backend
+Taking backend offline: M:\T20-ADMIN-REPORT-BACKEND\app_offline.htm
+Copying backend files to: M:\T20-ADMIN-REPORT-BACKEND
 Installing Frontend dependencies...
 Building Frontend...
   (npm output...)
-Copying frontend files to: P:\WEBSITES\tradenenet-admin-frontend
-Health check (waiting for 200): https://reportuatapi.myanmartradenet.com/health
+Copying frontend files to: M:\T20-ADMIN-REPORT-FRONTEND
+Health check (waiting for 200): https://reportapi.myanmartradenet.com/health
 DEPLOY OK - health check returned 200.
 Deployment complete.
 [2026-06-26 16:06:40] --- deploy.ps1 output ends ---
@@ -160,11 +160,11 @@ The watcher stops when the RDP session ends (sign-out) or the server reboots. To
 |---|---|---|
 | `git fetch failed` | No internet / GitHub unreachable from Build Server | Check network; retry |
 | `git reset --hard failed` | Local uncommitted changes in the repo | `git status` then `git checkout .` to discard |
-| `Taking backend offline` hangs | `app_offline.htm` already exists and is locked | Delete it manually from `P:\WEBSITES\tradenet-admin-backend\` |
-| Robocopy fails with exit code 8+ | `API.dll` still locked (ANCM didn't unload in time) | Stop the app pool in IIS Manager on the UAT server, then redeploy |
-| `DEPLOY HEALTH CHECK FAILED` | App didn't start within 90 s | Open UAT URL manually; check IIS logs on UAT server |
+| `Taking backend offline` hangs | `app_offline.htm` already exists and is locked | Delete it manually from `M:\T20-ADMIN-REPORT-BACKEND\` |
+| Robocopy fails with exit code 8+ | `API.dll` still locked (ANCM didn't unload in time) | Stop the app pool in IIS Manager on the production server, then redeploy |
+| `DEPLOY HEALTH CHECK FAILED` | App didn't start within 90 s | Open the production URL manually; check IIS logs on the production server |
 | Watcher shows `Deploy finished OK` but site is old | Frontend Vite cache / browser cache | Hard-refresh (`Ctrl+Shift+R`) in the browser |
-| `P:` drive not found | Session was restarted; drive not re-mapped | Re-map: `net use P: \\<uat-server>\WEBSITES` |
+| `M:` drive not found | Session was restarted; drive not re-mapped | Re-map: `net use M: \\<web-server>\<share>` |
 
 ---
 

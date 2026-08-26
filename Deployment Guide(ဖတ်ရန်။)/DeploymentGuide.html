@@ -227,7 +227,7 @@
   <pre><span class="k">const</span> envConfig = {
   baseUrl:  <span class="s">'https://localhost:8000/api/'</span>,   <span class="c">// API for data</span>
   imageUrl: <span class="s">'https://localhost:8000/Image/'</span>,  <span class="c">// API for images</span>
-  qrUrl:    <span class="s">'https://uatapi.ecomreg.gov.mm/QR/'</span>,
+  qrUrl:    <span class="s">'https://api.ecomreg.gov.mm/QR/'</span>,
 };
 <span class="k">export default</span> envConfig;</pre>
 
@@ -312,8 +312,8 @@ npm run build      <span class="c"># creates the dist/ folder</span></pre>
     <span class="s">"https://testingvehicle.myanmartradenet.com"</span>,
     <span class="s">"https://www.mpu-ecommerce.com"</span>,
     <span class="s">"https://www.mpuecomuat.com"</span>,
-    <span class="s">"https://reportuat.myanmartradenet.com"</span>,    <span class="c">// &lt;- UAT website (already here)</span>
-<span class="add">    "https://<span class="fill">PROD-WEBSITE-ADDRESS</span>",            // &lt;- ADD the Production website</span>
+    <span class="s">"https://report.myanmartradenet.com"</span>,       <span class="c">// &lt;- Production website (already here)</span>
+<span class="add">    "https://<span class="fill">OTHER-WEBSITE-ADDRESS</span>",           // &lt;- ADD any other website that calls this API</span>
     <span class="s">"http://localhost:5173"</span>,                     <span class="c">// (local dev — leave as is)</span>
     <span class="c">// ... the other localhost lines stay ...</span>
 ).AllowAnyMethod().AllowAnyHeader().AllowCredentials();</pre>
@@ -325,7 +325,7 @@ npm run build      <span class="c"># creates the dist/ folder</span></pre>
       <li>Include <code>https://</code> (or <code>http://</code>) — must match how the site is opened.</li>
       <li><b>No trailing slash</b> and <b>no path</b>: write <code>https://report.myanmartradenet.com</code>,
           <span style="color:var(--red)">not</span> <code>.../</code> or <code>.../reports</code>.</li>
-      <li>If UAT website (<code>reportuat...</code>) is already correct, you may only need to add Production.</li>
+      <li>The Production website (<code>report.myanmartradenet.com</code>) is already on the list — you only need to add any extra environment.</li>
     </ul>
   </div>
 
@@ -354,7 +354,7 @@ dotnet publish API.csproj -c Release -o publish</pre>
   <div class="box good">
     <b><span class="ic">⚡</span>Easiest way — use the included script</b>
     There is already a <code>deploy.ps1</code> in the project. On the server it: pulls latest code, builds backend &amp; frontend,
-    and copies them to <code>P:\WEBSITES\tradenet-admin-backend</code> and <code>P:\WEBSITES\tradenenet-admin-frontend</code>,
+    and copies them to <code>M:\T20-ADMIN-REPORT-BACKEND</code> and <code>M:\T20-ADMIN-REPORT-FRONTEND</code>,
     while protecting <code>appsettings.json</code> and <code>web.config</code>. Run it from the project root:
     <pre style="margin-top:8px;">powershell -ExecutionPolicy Bypass -File .\deploy.ps1</pre>
     <span style="font-size:13.5px; color:var(--grey)">Tip: confirm those two target paths match your real IIS site folders before running.</span>
