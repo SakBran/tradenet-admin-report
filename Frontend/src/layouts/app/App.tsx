@@ -12,12 +12,7 @@ import {
 } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ReactNode, useContext, useEffect, useRef, useState } from 'react';
-import {
-  LogoutOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-  UserOutlined,
-} from '@ant-design/icons';
+import { LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined } from '@ant-design/icons';
 import {
   CSSTransition,
   SwitchTransition,
@@ -58,17 +53,6 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   const auth = useContext(AuthContext);
 
   const items: MenuProps['items'] = [
-    {
-      key: 'user-profile-link',
-      label: 'profile',
-      icon: <UserOutlined />,
-      onClick: () => {
-        navigate('/User/Edit/' + auth?.user?.id);
-      },
-    },
-    {
-      type: 'divider',
-    },
     {
       key: 'user-logout-link',
       label: 'logout',

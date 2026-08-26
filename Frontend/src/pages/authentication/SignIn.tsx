@@ -21,7 +21,7 @@ import { Link } from 'react-router-dom';
 const { Title, Text } = Typography;
 
 type FieldType = {
-  email?: string;
+  userName?: string;
   password?: string;
   remember?: boolean;
 };
@@ -39,7 +39,7 @@ export const SignInPage = () => {
     console.log('Success:', values);
     setLoading(true);
     const login = async () => {
-      const response = await auth?.login(values['email'], values['password']);
+      const response = await auth?.login(values['userName'], values['password']);
       if (response) {
         setLoading(false);
         message.open({
@@ -119,8 +119,6 @@ export const SignInPage = () => {
             labelCol={{ span: 24 }}
             wrapperCol={{ span: 24 }}
             initialValues={{
-              email: 'demo@email.com',
-              password: 'demo123',
               remember: true,
             }}
             onFinish={onFinish}
@@ -131,10 +129,10 @@ export const SignInPage = () => {
             <Row gutter={[8, 0]}>
               <Col xs={24}>
                 <Form.Item<FieldType>
-                  label="Email"
-                  name="email"
+                  label="User Name"
+                  name="userName"
                   rules={[
-                    { required: true, message: 'Please input your email' },
+                    { required: true, message: 'Please input your user name' },
                   ]}
                 >
                   <Input />

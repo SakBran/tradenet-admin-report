@@ -1,9 +1,13 @@
-﻿using API.Interface;
+using API.DBContext;
+using API.Interface;
 using API.Model;
+using API.Model.TradeNet;
+using API.Service.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
@@ -17,48 +21,64 @@ namespace API.Service
 
         private readonly IConfiguration iconfiguration;
         private readonly ICommonService<TokenModel> _tokenService;
-        private readonly ICommonService<User> _userService;
+        private readonly TradeNetDbContext _tradeNetDb;
         public JWTManagerService(IConfiguration iconfiguration,
         ICommonService<TokenModel> tokenService,
-        ICommonService<User> userService
+        TradeNetDbContext tradeNetDb
             )
         {
             this.iconfiguration = iconfiguration;
             _tokenService = tokenService;
-            _userService = userService;
+            _tradeNetDb = tradeNetDb;
         }
-        public async Task<TokenModel?> Authenticate(User users)
+        public async Task<TokenModel?> Authenticate(API.Model.User users)
         {
-            IQueryable<User> UsersRecords = _userService.Retrieve.Where(x => x.Name == users.Name && x.Password == users.Password);
-            if (!UsersRecords.AsParallel().Any())
+            var encryptedPassword = TradenetPasswordCipher.Encrypt(users.Password);
+
+            var tempUser = await _tradeNetDb.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.UserName == users.Name &&
+                    x.Password == encryptedPassword &&
+                    x.IsActive &&
+                    !x.IsDeleted);
+
+            if (tempUser == null)
             {
                 return null;
             }
 
-            // Else we generate JSON Web Token
-            var tempUser = await UsersRecords.FirstOrDefaultAsync();
+            var userRights = await _tradeNetDb.UserDetails
+                .AsNoTracking()
+                .Where(x => x.UserId == tempUser.Id)
+                .ToListAsync();
+
+            var permission = GetPermission(tempUser, userRights);
+
             var tokenHandler = new JwtSecurityTokenHandler();
             var tokenKey = Encoding.UTF8.GetBytes(iconfiguration["JWT:Key"] ?? "");
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, tempUser.Id.ToString()),
+                new Claim(ClaimTypes.Role, permission)
+            };
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new Claim[]
-                {
-                new Claim(ClaimTypes.Name, tempUser?.Id??""),
-                new Claim(ClaimTypes.Role, tempUser?.Permission??"")
-                }),
+                Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.Now.AddDays(1),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(tokenKey), SecurityAlgorithms.HmacSha256Signature)
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
             var refreshToken = Guid.NewGuid().ToString();
             var encryptedRefreshToken = Convert.ToBase64String(Encoding.UTF8.GetBytes(refreshToken));
-            var userId = tempUser?.Id ?? "";
+            var userId = tempUser.Id.ToString();
             var tokenObj = new TokenModel
             {
                 Token = tokenHandler.WriteToken(token),
                 RefreshToken = encryptedRefreshToken,
                 UserId = userId,
-                Permission = tempUser?.Permission ?? "",
+                Permission = permission,
             };
             await _tokenService.Create(tokenObj);
             return tokenObj;
@@ -130,6 +150,20 @@ namespace API.Service
         }
 
 
+
+        private static string GetPermission(API.Model.TradeNet.User user, IReadOnlyCollection<UserDetail> userRights)
+        {
+            if (string.Equals(user.UserType, "Admin", StringComparison.OrdinalIgnoreCase) ||
+                userRights.Any(x =>
+                    string.Equals(x.Type, "Admin", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(x.SubType, "Admin", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(x.Section, "Admin", StringComparison.OrdinalIgnoreCase)))
+            {
+                return "Admin";
+            }
+
+            return "User";
+        }
 
     }
 }
