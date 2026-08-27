@@ -137,38 +137,13 @@ public class Program
 
         app.UseHttpsRedirection();
         #region Cors
-        app.UseCors(
-                      builder =>
-                      {
-                          builder.WithMethods("GET");
-                          builder.WithMethods("PUT");
-                          builder.WithMethods("POST");
-                          builder.WithMethods("DELETE");
-                          builder.WithMethods("*");
-                          builder.WithHeaders("Authorization");
-                          // builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().AllowCredentials();
-                          //Code capacitor://localhost for ios device 
-                          //http://localhost for android device
-                          //An origin is the combination of the protocol, domain, 
-                          //and port from which your Ionic app or the external resource is served. 
-                          //For example, apps running in 
-                          //Capacitor have capacitor://localhost (iOS) or http://localhost (Android) as their origin. 
-                          builder.WithOrigins(
-            "https://vehicle.myanmartradenet.com",
-            "https://testingvehicle.myanmartradenet.com",
-            "https://www.mpu-ecommerce.com",
-            "https://www.mpuecomuat.com",
-            "https://report.myanmartradenet.com",
-            "capacitor://localhost",
-            "http://localhost",
-            "https://localhost",
-            "http://localhost:3000",
-            "http://localhost:5173",
-            "http://localhost:8100"
-        ).AllowAnyMethod().AllowAnyHeader().AllowCredentials();
-
-                      }
-                  );
+        app.UseCors(builder =>
+        {
+            builder
+                .AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+        });
         #endregion
 
         app.UseHttpsRedirection();

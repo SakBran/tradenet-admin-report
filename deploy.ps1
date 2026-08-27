@@ -206,7 +206,7 @@ Remove-LocalDirectory -Path $publishOutput -AllowedRoot $root
 New-Item -ItemType Directory -Force -Path $publishOutput | Out-Null
 
 Set-Location $backendDir
-Invoke-NativeCommand 'Building Backend...' { dotnet build -c Release }
+Invoke-NativeCommand 'Building Backend...' { dotnet build API.csproj -c Release }
 
 Invoke-NativeCommand "Publishing Backend to: $publishOutput" { dotnet publish API.csproj -c Release -o $publishOutput }
 
@@ -214,7 +214,7 @@ $backendConfigFiles = @(
     Join-Path $publishOutput 'appsettings.json'
 ) + @(
     Get-ChildItem -LiteralPath $publishOutput -Filter 'appsettings.*.json' -File -ErrorAction SilentlyContinue |
-        Select-Object -ExpandProperty FullName
+    Select-Object -ExpandProperty FullName
 )
 
 foreach ($configFile in $backendConfigFiles) {
@@ -252,9 +252,9 @@ if (-not $NoFrontend) {
     # reads them, falling back to localhost only when unset). Default to the production API here so
     # both manual (deploy.bat) and automated (auto-deploy-watch.ps1) runs build the right URLs without
     # duplicating the values. An externally-set VITE_* (e.g. for a different environment) wins.
-    if (-not $env:VITE_BASE_URL)  { $env:VITE_BASE_URL = 'https://reportapi.myanmartradenet.com/api/' }
+    if (-not $env:VITE_BASE_URL) { $env:VITE_BASE_URL = 'https://reportapi.myanmartradenet.com/api/' }
     if (-not $env:VITE_IMAGE_URL) { $env:VITE_IMAGE_URL = 'https://reportapi.myanmartradenet.com/Image/' }
-    if (-not $env:VITE_QR_URL)    { $env:VITE_QR_URL = 'https://api.ecomreg.gov.mm/QR/' }
+    if (-not $env:VITE_QR_URL) { $env:VITE_QR_URL = 'https://api.ecomreg.gov.mm/QR/' }
 
     Invoke-NativeCommand 'Installing Frontend dependencies...' { npm install --legacy-peer-deps }
     Invoke-NativeCommand 'Building Frontend...' { npm run build }
