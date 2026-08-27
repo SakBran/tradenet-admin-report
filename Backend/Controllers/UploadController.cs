@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 // using Amazon.S3;
 // using Amazon.S3.Transfer;
 using API.DBContext;
+using API.Service;
 using Backend.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
@@ -20,20 +21,23 @@ namespace Backend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    // Uploads land in the folder Program.cs serves at /Image, i.e. they become publicly readable.
+    // Chat (the only caller) is a signed-in feature, so the endpoint requires a token.
+    [Authorize]
     public class UploadController : ControllerBase
     {
-        // private readonly IConfiguration _iconfiguration;
+        private readonly IConfiguration _iconfiguration;
         private readonly IWebHostEnvironment _hostingEnvironment;
         // private readonly ApplicationDbContext _context;
         // private readonly SystemSetting _sys;
 
         public UploadController(
-             // IConfiguration iconfiguration,
+             IConfiguration iconfiguration,
              IWebHostEnvironment hostingEnvironment
             // ,ApplicationDbContext context
             )
         {
-            // _iconfiguration = iconfiguration;
+            _iconfiguration = iconfiguration;
             _hostingEnvironment = hostingEnvironment;
             // _context = context;
             // _sys = _context.SystemSetting.First();
@@ -80,7 +84,20 @@ namespace Backend.Controllers
                         }
                         else
                         {
-                            var filePath = Path.Combine("wwwroot", "Image", filename);
+                            // Path.GetFileName strips any directory part: "../../appsettings.json"
+                            // would otherwise escape the image folder. Resolved through
+                            // ImageStorage so this writes exactly where /Image is served from
+                            // (the old "wwwroot/..." was relative to the process working directory).
+                            var safeName = Path.GetFileName(filename);
+                            if (string.IsNullOrWhiteSpace(safeName))
+                            {
+                                dict.Add("error", "A file name is required.");
+                                return new HttpResponseMessage(HttpStatusCode.BadRequest);
+                            }
+
+                            var filePath = Path.Combine(
+                                ImageStorage.ResolveRoot(_hostingEnvironment, _iconfiguration),
+                                safeName);
                             await SaveAsWebpAsync(file, filePath);
                             dict.Add("success", filename);
                             return new HttpResponseMessage(HttpStatusCode.OK);
