@@ -154,24 +154,18 @@ public class Program
                           //For example, apps running in 
                           //Capacitor have capacitor://localhost (iOS) or http://localhost (Android) as their origin. 
                           builder.WithOrigins(
-                          "https://vehicle.myanmartradenet.com",
-                          "https://testingvehicle.myanmartradenet.com",
-                          "https://www.mpu-ecommerce.com",
-                          "https://www.mpuecomuat.com",
-                          "https://report.myanmartradenet.com/",
-                          "https://report.myanmartradenet.com",
-                          "capacitor://localhost",
-                          "http://localhost:5173",
-                          "http://localhost:5173/",
-                          "http://localhost",
-                          "http://localhost/",
-                          "https://localhost",
-                          "https://localhost/",
-                          "http://localhost:*",
-                          "http://localhost:8100",
-                          "http://localhost:8100/",
-                          "http://localhost:3000",
-                          "http://localhost:3000/").AllowAnyMethod().AllowAnyHeader().AllowCredentials();
+            "https://vehicle.myanmartradenet.com",
+            "https://testingvehicle.myanmartradenet.com",
+            "https://www.mpu-ecommerce.com",
+            "https://www.mpuecomuat.com",
+            "https://report.myanmartradenet.com",
+            "capacitor://localhost",
+            "http://localhost",
+            "https://localhost",
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://localhost:8100"
+        ).AllowAnyMethod().AllowAnyHeader().AllowCredentials();
 
                       }
                   );
