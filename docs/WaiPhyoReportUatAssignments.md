@@ -45,16 +45,26 @@ Testing Admin for the same filters/date range.
 **UAT finding:** The displayed/exported columns do not match Testing Admin, and
 UAT currently shows two Import Licence Detail report variants.
 
+**Investigation (2026-09-01):** `ImportLicenceDetailReport` is the intended
+legacy-parity report: it has the same 26 columns and visible filter box as the
+old `ImportLicenceDetailReport.rdlc` and old Admin page. The apparent duplicate
+was `ImportLicenceDetailByLicenceReport`, a required nine-column, one-row-per-
+licence drill-down used by the By Section, Method, Seller Country, and Company
+reports. It was incorrectly given the exact same title and subtitle as the
+legacy detail report, causing the UAT confusion. It must remain available for
+those drill-downs, but must have a distinct UI and Excel identity.
+
 **Work required:**
 
 - Compare the old RDLC table headers and filter box with the new report config.
 - List all column/filter differences before changing code.
-- Keep the correct report variant and remove the unnecessary duplicate path or
-  columns.
+- Keep the correct report variant and distinguish the necessary drill-down
+  report without changing its route or drill-down links.
 - Make the UAT table and Excel export match the approved Testing Admin layout.
 
-**Done when:** Only the intended report remains and its filters, columns,
-headers, language, and export layout match Testing Admin.
+**Done when:** The 26-column legacy-parity report remains unchanged, while the
+nine-column drill-down is clearly identified as `Import Licence Detail (By
+Licence)` in its UI and Excel download.
 
 ## No. 14 — Import Licence Extension Report
 

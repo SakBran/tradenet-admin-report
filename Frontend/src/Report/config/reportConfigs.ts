@@ -9543,15 +9543,15 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   // fans out per HS line, so its count never matched).
   ImportLicenceDetailByLicenceReport: {
     controllerName: 'ImportLicenceDetailByLicenceReport',
-    title: 'Import Licence Detail Report',
+    title: 'Import Licence Detail (By Licence)',
     apiRoute: 'ImportLicenceDetailByLicenceReport',
     excelRoute: 'ImportLicenceDetailByLicenceReport/Excel',
-    excelFileName: 'ImportLicenceDetailByLicenceReport.xlsx',
+    excelFileName: 'ImportLicenceDetailByLicence.xlsx',
     initialSortColumn: 'licenceNo',
     showRowNumber: true,
     filters: importLicenceDetailByLicenceFilters,
     reportSubtitle: importLicenceRangeSubtitle(
-      'List of Import Licences By Detail',
+      'List of Import Licences By Licence',
       true
     ),
     currencyTotalsColumns: {
