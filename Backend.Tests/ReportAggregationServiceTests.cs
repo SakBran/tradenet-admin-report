@@ -161,4 +161,20 @@ public sealed class ReportAggregationServiceTests
 
         Assert.Empty(result);
     }
+
+    [Fact]
+    public void Daily_total_row_matches_the_sum_of_exported_daily_groups()
+    {
+        var total = ReportAggregationService.CreateDailyTotalRow(new[]
+        {
+            new ReportAggregateResult { Date = "2025-01-01", NoOfLicences = 2, TotalValue = 125.50m, Currency = "USD", TotalUSDValue = 125.50m },
+            new ReportAggregateResult { Date = "2025-01-02", NoOfLicences = 3, TotalValue = 200m, Currency = "MMK", TotalUSDValue = 0.33336m },
+        });
+
+        Assert.Equal("TOTAL", total.Date);
+        Assert.Equal(5, total.NoOfLicences);
+        Assert.Equal(325.50m, total.TotalValue);
+        Assert.Equal(125.8334m, total.TotalUSDValue);
+        Assert.Null(total.Currency);
+    }
 }

@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Xml.Linq;
 using API.Service.ExcelExport;
+using API.Service.Reports;
 
 namespace Backend.Tests;
 
@@ -109,6 +110,35 @@ public sealed class StreamingExcelWriterTests
         using var archive = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
         Assert.NotNull(archive.GetEntry("xl/worksheets/sheet1.xml"));
         Assert.NotNull(archive.GetEntry("xl/workbook.xml"));
+    }
+
+    [Fact]
+    public void Daily_report_export_includes_the_final_total_row()
+    {
+        var dailyRows = new List<ReportAggregateResult>
+        {
+            new() { Date = "2025-01-01", NoOfLicences = 2, TotalValue = 125.50m, Currency = "USD", TotalUSDValue = 125.50m },
+            new() { Date = "2025-01-02", NoOfLicences = 3, TotalValue = 200m, Currency = "MMK", TotalUSDValue = 0.33336m },
+        };
+
+        using var stream = new MemoryStream();
+        using (var writer = new StreamingExcelWriter(stream, "Daily"))
+        {
+            writer.AppendRows(dailyRows);
+            writer.AppendRows(new[] { ReportAggregationService.CreateDailyTotalRow(dailyRows) });
+            writer.Finish();
+        }
+
+        using var archive = new ZipArchive(new MemoryStream(stream.ToArray()), ZipArchiveMode.Read);
+        var document = ReadSheet(archive, 1);
+        var ns = document.Root!.Name.Namespace;
+        var totalCells = document.Descendants(ns + "row").Last().Elements(ns + "c").ToList();
+
+        // ReportAggregateResult.Date / NoOfLicences / TotalValue / TotalUSDValue.
+        Assert.Equal("TOTAL", totalCells[9].Descendants(ns + "t").Single().Value);
+        Assert.Equal("5", totalCells[10].Element(ns + "v")?.Value);
+        Assert.Equal("325.50", totalCells[11].Element(ns + "v")?.Value);
+        Assert.Equal("125.8334", totalCells[16].Element(ns + "v")?.Value);
     }
 
     private static XDocument ReadSheet(ZipArchive archive, int index)

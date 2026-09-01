@@ -138,6 +138,25 @@ namespace API.Service.Reports
             return Order(grouped, dimension, includeSakhan);
         }
 
+        /// <summary>
+        /// Builds the legacy Daily-report grand-total row from the already grouped
+        /// Date/Currency rows. The API footer and Excel export use this same row so
+        /// their totals cannot drift apart.
+        /// </summary>
+        public static ReportAggregateResult CreateDailyTotalRow(
+            IReadOnlyList<ReportAggregateResult> groups)
+        {
+            ArgumentNullException.ThrowIfNull(groups);
+
+            return new ReportAggregateResult
+            {
+                Date = "TOTAL",
+                NoOfLicences = groups.Sum(group => group.NoOfLicences),
+                TotalValue = groups.Sum(group => group.TotalValue ?? 0m),
+                TotalUSDValue = decimal.Round(groups.Sum(group => group.TotalUSDValue ?? 0m), 4),
+            };
+        }
+
         public static ApiResult<ReportAggregateResult> CreatePagedResult(
             IEnumerable<AggregateSourceRow> rows,
             ReportAggregateDimension dimension,

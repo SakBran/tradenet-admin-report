@@ -46,15 +46,17 @@ namespace Backend.Controllers.Report
             var result = ReportAggregationService.CreatePagedResultFromGroups(
                 groups, ReportAggregateDimension.Daily, includeSakhan: false, request!);
 
+            var totalRow = ReportAggregationService.CreateDailyTotalRow(groups);
+
             // Grand-total footer row (customer complaint #1). Keyed by the column
             // dataIndex so BasicTable renders a bold "Total" row. Mirrors the old
             // ImportLicenceByDailyReport.rdlc TOTAL row, including the USD-normalised
             // grand total (the FX conversion is filled by GetAggregateRowsAsync).
             result.ColumnTotals = new Dictionary<string, decimal>
             {
-                ["noOfLicences"] = groups.Sum(group => group.NoOfLicences),
-                ["totalValue"] = groups.Sum(group => group.TotalValue ?? 0m),
-                ["totalUSDValue"] = decimal.Round(groups.Sum(group => group.TotalUSDValue ?? 0m), 4),
+                ["noOfLicences"] = totalRow.NoOfLicences,
+                ["totalValue"] = totalRow.TotalValue ?? 0m,
+                ["totalUSDValue"] = totalRow.TotalUSDValue ?? 0m,
             };
 
             return Ok(result);
@@ -95,6 +97,11 @@ namespace Backend.Controllers.Report
             var rows = await sp_ImportLicenceDetailReport_Fast.GetAggregateRowsAsync(
                 _context, procedureRequest!, ReportAggregateDimension.Daily, includeSakhan: false);
             sink.Append(rows);
+
+            if (rows.Count > 0)
+            {
+                sink.Append(new[] { ReportAggregationService.CreateDailyTotalRow(rows) });
+            }
         }
 
         private bool TryCreateReportRequest(
