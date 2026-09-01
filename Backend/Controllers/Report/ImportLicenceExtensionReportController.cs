@@ -111,6 +111,13 @@ namespace Backend.Controllers.Report
             {
                 sink.Append(chunk.Select(row => row.ToResult()).ToList());
             }
+
+            // The screen already receives this legacy RDLC currency footer via
+            // CurrencyTotals. Append the same per-currency Total Value rows to the
+            // queued Excel export instead of leaving it as data rows only.
+            var currencyTotals = await sp_ExtensionReport.ExecuteCurrencyTotalsAsync(
+                _context, procedureRequest!);
+            sink.Append(sp_ExtensionReport.CreateCurrencyFooterRows(currencyTotals));
         }
 
         private bool TryCreateReportRequest(

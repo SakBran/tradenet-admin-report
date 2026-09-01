@@ -216,6 +216,36 @@ public static class sp_ExtensionReport
         };
     }
 
+    /// <summary>
+    /// Creates the currency footer rows for streamed Extension-report Excel exports.
+    /// The value stays numeric in the Amount column and currencies are never summed
+    /// together, matching the legacy RDLC currency-group footer.
+    /// </summary>
+    public static IReadOnlyList<sp_ExtensionReportResult> CreateCurrencyFooterRows(
+        ReportCurrencyTotalsSummary totals)
+    {
+        ArgumentNullException.ThrowIfNull(totals);
+
+        var rows = totals.Currencies
+            .Select(currency => new sp_ExtensionReportResult
+            {
+                LicenceNo = $"{currency.Currency}:{currency.NoOfLicences} licence(s)",
+                Currency = currency.Currency,
+                Amount = currency.TotalValue,
+            })
+            .ToList();
+
+        if (rows.Count > 0)
+        {
+            rows.Add(new sp_ExtensionReportResult
+            {
+                LicenceNo = $"Total:{totals.GrandTotalLicences} licence(s)",
+            });
+        }
+
+        return rows;
+    }
+
     public static IQueryable<sp_ExtensionReportResult> Query(
         TradeNetDbContext db,
         sp_ExtensionReportRequest request)

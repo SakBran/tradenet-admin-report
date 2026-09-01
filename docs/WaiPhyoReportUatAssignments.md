@@ -70,16 +70,24 @@ Licence)` in its UI and Excel download.
 
 **UAT finding:** The Excel export does not include the Total Value.
 
+**Investigation (2026-09-01):** The old `ExtensionReport.rdlc` has a
+currency-grouped footer: each currency has its own licence count and summed
+Total Value, followed by a grand total licence count. The UAT screen already
+uses `sp_ExtensionReportCurrencyTotals` to render that footer, but the queued
+Excel exporter streamed only data rows and dropped the footer. The Total Value
+must remain separated by currency; it must not be added across currencies.
+
 **Work required:**
 
 - Compare the UAT Excel export with the old Tradenet 2.0 / Testing Admin
   export.
 - Identify the expected Total Value calculation and placement.
-- Add Total Value to the UAT Excel export.
+- Append the existing filtered, currency-grouped Total Value footer to the UAT
+  Excel export.
 - Verify the value against the filtered UAT report data.
 
-**Done when:** UAT Excel includes the correct Total Value for the same filters
-and date range as Testing Admin.
+**Done when:** UAT Excel includes the same currency-grouped Total Value footer
+as Testing Admin for the same filters and date range.
 
 ## Execution order
 
