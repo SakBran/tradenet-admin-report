@@ -19,15 +19,14 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class AccountSummaryReportController : ControllerBase, IStreamingExcelReport
+    // v2 = the exported sheet gained the RDLC title row and the grid's 8 columns.
+    [ExcelFormatVersion(2)]
+    public class AccountSummaryReportController : ControllerBase, IStreamingExcelReport, IExcelReportLayoutProvider
     {
         private const string ReportKey = "AccountSummaryReport";
 
         private const int DefaultPageSize = 10;
         private const int MaxPageSize = 1000;
-
-        // Excel worksheets allow 1,048,576 rows including the header.
-        private const int MaxExcelDataRows = 1_048_576 - 1;
 
         private readonly TradeNetDbContext _context;
         private readonly IExcelExportJobService _excelExportJobs;
@@ -112,6 +111,38 @@ namespace Backend.Controllers.Report
         public string ExcelWorksheetTitle => "Account Summary Report";
         public Type ExcelRequestType => typeof(AccountSummaryReportRequest);
 
+        /// <summary>
+        /// The exported sheet mirrors the grid and the old Tradenet 2.0 RDLC: a title
+        /// banner, then No / Entry Date / Company Registration No / Company Name /
+        /// Voucher No / Transaction Title / Deducted Fees / Remark.
+        /// </summary>
+        [NonAction]
+        public ExcelReportLayout GetExcelLayout(object request)
+        {
+            var typedRequest = (AccountSummaryReportRequest)request;
+
+            return new ExcelReportLayout
+            {
+                TitleLines = new[]
+                {
+                    ExcelReportTitle.DateRange("Account Summary Report", typedRequest.FromDate, typedRequest.ToDate),
+                },
+                TotalsRowLabel = "Total",
+                Columns = new[]
+                {
+                    ExcelColumn.RowNumber(),
+                    ExcelColumn.Date<sp_AccountSummaryReportResult>("Entry Date", row => row.VoucherDate),
+                    ExcelColumn.Text<sp_AccountSummaryReportResult>("Company Registration No", row => row.CompanyRegistrationNo, width: 24),
+                    ExcelColumn.Text<sp_AccountSummaryReportResult>("Company Name", row => row.CompanyName, width: 34),
+                    ExcelColumn.Text<sp_AccountSummaryReportResult>("Voucher No", row => row.VoucherNo, width: 16),
+                    ExcelColumn.Text<sp_AccountSummaryReportResult>("Transaction Title", row => row.TransactionTitle, width: 30),
+                    ExcelColumn.Money<sp_AccountSummaryReportResult>("Deducted Fees", row => row.Amount, includeInTotals: true),
+                    // Unbound in the old RDLC too — a header with a deliberately empty body.
+                    ExcelColumn.Blank("Remark", width: 18),
+                },
+            };
+        }
+
         [NonAction]
         public Task WriteRowsAsync(object request, IExcelRowSink sink, int chunkSize, CancellationToken cancellationToken)
             => WriteRowsAsync((AccountSummaryReportRequest)request, sink, chunkSize, cancellationToken);
@@ -123,7 +154,11 @@ namespace Backend.Controllers.Report
             CancellationToken cancellationToken)
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
-            await foreach (var chunk in sp_AccountSummaryReport.ExecuteQueryable(_context, procedureRequest!)
+
+            // includeTotalCount: false — the export needs every row, never the count, and
+            // the extra COUNT(*) over #rows is what makes this proc time out.
+            await foreach (var chunk in sp_AccountSummaryReport
+                .ExecuteQueryable(_context, procedureRequest!, includeTotalCount: false)
                 .AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
             {
                 sink.Append(chunk.Select(row => row.ToResult()).ToList());

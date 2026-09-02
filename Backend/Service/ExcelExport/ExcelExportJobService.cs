@@ -42,7 +42,7 @@ namespace API.Service.ExcelExport
             }
 
             var requestJson = JsonSerializer.Serialize(request, request.GetType(), JsonOptions);
-            var filterHash = ExcelExportHasher.ComputeHash(reportKey, requestJson);
+            var filterHash = ExcelExportHasher.ComputeHash(reportKey, requestJson, handler.FormatVersion);
             var now = DateTime.UtcNow;
             var isPeriodClosed = toDate.Date < DateTime.Today;
 

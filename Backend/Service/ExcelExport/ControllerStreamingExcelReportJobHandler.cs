@@ -22,17 +22,20 @@ namespace API.Service.ExcelExport
             Type controllerType,
             string reportKey,
             string defaultTitle,
-            string fileNameBase)
+            string fileNameBase,
+            int formatVersion = 1)
         {
             _controllerType = controllerType;
             ReportKey = reportKey;
             DefaultTitle = defaultTitle;
             FileNameBase = fileNameBase;
+            FormatVersion = formatVersion;
         }
 
         public string ReportKey { get; }
         public string DefaultTitle { get; }
         public string FileNameBase { get; }
+        public int FormatVersion { get; }
 
         public async Task GenerateAsync(ExcelExportContext context)
         {
@@ -41,7 +44,13 @@ namespace API.Service.ExcelExport
             var request = JsonSerializer.Deserialize(context.RequestJson, report.ExcelRequestType, JsonOptions)
                 ?? throw new InvalidOperationException($"Could not deserialize request for '{ReportKey}'.");
 
-            using var writer = new StreamingExcelWriter(context.Output, report.ExcelWorksheetTitle);
+            // Reports that declare a layout get their own title and column list; the rest
+            // keep the reflected property names.
+            var layout = report is IExcelReportLayoutProvider layoutProvider
+                ? layoutProvider.GetExcelLayout(request)
+                : null;
+
+            using var writer = new StreamingExcelWriter(context.Output, report.ExcelWorksheetTitle, layout);
             var sink = new StreamingExcelWriterSink(writer);
 
             await report.WriteRowsAsync(request, sink, context.ChunkSize, context.CancellationToken);

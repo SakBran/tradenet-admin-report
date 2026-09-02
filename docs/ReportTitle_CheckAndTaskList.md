@@ -98,6 +98,25 @@ Renderer evidence:
 - [ ] Verify Excel/export file names are unchanged.
 - [x] Run `npm run build` from `Frontend`.
 
+## Excel Export Titles (2026-09-02)
+
+The `reportSubtitle` above is browser-only — it never reached the generated .xlsx, which
+opened straight into a header row of reflected DTO property names. `StreamingExcelWriter`
+now accepts an optional `ExcelReportLayout`, and a report opts in by implementing
+`IExcelReportLayoutProvider` (see `Backend/Service/ExcelExport/ExcelReportLayout.cs`).
+`ExcelReportTitle.DateRange` reproduces the old `header1` string in C#, InvariantCulture.
+
+Any report adopting a layout **must** also carry `[ExcelFormatVersion(n)]` with `n > 1`,
+or `ExcelExportJobService` keeps serving the previously generated file for closed date
+ranges and the change appears to have no effect.
+
+- [x] `AccountSummaryReport` — title row + the grid's 8 columns + a Deducted Fees total.
+- [ ] `MPUReport`
+- [ ] `MPUReportV3`
+- [ ] `ChequeNoReport`
+- [ ] `OnlineFeesReport`
+- [ ] The remaining ~126 reports that already declare a `reportSubtitle`.
+
 ## Manual Browser Test List
 
 For each report:

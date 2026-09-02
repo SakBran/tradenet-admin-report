@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,11 +51,13 @@ namespace API.Service.ExcelExport
             foreach (var type in reportTypes)
             {
                 var reportKey = StripControllerSuffix(type.Name);
+                var formatVersion = type.GetCustomAttribute<ExcelFormatVersionAttribute>()?.Version ?? 1;
                 var handler = new ControllerStreamingExcelReportJobHandler(
                     type,
                     reportKey,
                     PrettifyTitle(reportKey),
-                    reportKey);
+                    reportKey,
+                    formatVersion);
 
                 services.AddSingleton<IExcelReportJobHandler>(handler);
             }

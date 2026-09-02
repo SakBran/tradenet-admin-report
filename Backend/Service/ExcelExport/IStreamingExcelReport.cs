@@ -44,6 +44,40 @@ namespace API.Service.ExcelExport
             CancellationToken cancellationToken);
     }
 
+    /// <summary>
+    /// Opt-in companion to <see cref="IStreamingExcelReport"/>. A report that implements
+    /// this controls its own Excel title line(s) and its exact column list — header text,
+    /// order and cell formats — instead of the reflected property names. Reports that
+    /// don't implement it are completely unaffected.
+    ///
+    /// Mark the implementation <c>[NonAction]</c> on the controller, exactly like
+    /// <see cref="IStreamingExcelReport.WriteRowsAsync"/>, or MVC's ApiController
+    /// convention rejects it at startup as an unrouted action.
+    /// </summary>
+    public interface IExcelReportLayoutProvider
+    {
+        /// <param name="request">
+        /// The deserialized request DTO (<see cref="IStreamingExcelReport.ExcelRequestType"/>),
+        /// so the title can quote the report's own date range.
+        /// </param>
+        ExcelReportLayout GetExcelLayout(object request);
+    }
+
+    /// <summary>
+    /// Bumps the export cache key for one report. <see cref="ExcelExportJobService"/>
+    /// reuses an already-generated file for a closed date range whenever the request
+    /// hashes the same, so a change to the generated file's SHAPE (title text, column
+    /// set, header wording) must bump this or users keep receiving the old file until
+    /// it expires. Unversioned reports are version 1 and keep their existing hashes.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+    public sealed class ExcelFormatVersionAttribute : Attribute
+    {
+        public ExcelFormatVersionAttribute(int version) => Version = version;
+
+        public int Version { get; }
+    }
+
     internal sealed class StreamingExcelWriterSink : IExcelRowSink
     {
         private readonly StreamingExcelWriter _writer;
