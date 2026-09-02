@@ -98,6 +98,14 @@ export interface ReportPageConfig {
   showRowNumber?: boolean;
   disableLazyTotalCount?: boolean;
   /**
+   * Initial rows-per-page for the result grid (default 10). The legacy RDLC
+   * reports printed every row on one scrolling page, so the small summary
+   * reports (Daily / By X) set this high enough that a normal date range fits
+   * on one page — otherwise the grid's first page looks like missing data next
+   * to the old report. The backend caps a page at 1000 rows.
+   */
+  defaultPageSize?: number;
+  /**
    * Renders the result grid in a legacy RDLC ReportViewer-like shell.
    * Used only where we are intentionally matching the old admin report UI.
    */

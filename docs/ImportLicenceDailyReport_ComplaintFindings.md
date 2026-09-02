@@ -185,6 +185,54 @@ for cleanliness.
 4. **`Total USD Value`** column currently renders empty (backend leaves `TotalUSDValue = null`); decide
    whether the FX conversion must be implemented to match the old RDLC’s `Sum(totalUSDAmount)`.
 
+## 6b. Round 2 (2026-09-02) — “old shows 15 rows, new shows only 10”
+
+**Complaint.** *“2.2 Daily Report (New Licence Report) — the data is not correct. The old report has
+15 lines of data, the new one has only 10.”*
+
+**Verdict: the data is correct; the grid was paging at 10 rows/page.** 10 is `BasicTable`’s default
+`initialPageSize`, not a data loss.
+
+**Proof (UAT `203.81.66.111,14330 / TradeNetDB`).** Ran the OLD report’s exact row set
+(`sp_ImportLicenceDetailReport` Oversea join + filters, grouped the way
+`ImportLicenceByDailyReport.rdlc` groups it: `CONVERT(varchar(10), IssuedDate, 23)` + `Currency`)
+against the NEW source (`EXEC sp_ImportLicenceSummaryReport_Indexed …, 'Daily'`):
+
+| Range | Old rows | New rows | Value/count diffs |
+|---|---|---|---|
+| 2025-01-06 (1 day) | 5 | 5 | none |
+| 2025-01-06 → 01-08 (3 days) | **15** | **15** | none |
+| 2025-01-01 → 01-31 (1 month) | 132 | 132 | none |
+
+Every `(Date, Currency)` group matched on `NoOfLicences` **and** `TotalValue` to the last decimal.
+A 3-day range is exactly the customer’s case: **15 groups exist, the grid painted the first 10.**
+
+The two sources are equivalent by construction — the new proc drops only the old proc’s lookup
+INNER JOINs (Unit / HSCode / Incoterm …), which cannot *remove* rows, and keeps the identical
+`ApplyType='New' AND Status='Approved' AND ImportLicenceNo<>'' AND CreatedDate BETWEEN @From AND @To`
+predicate. The frontend also sends `ToDate` as `23:59:59` (`GenericReportPage.tsx` `toApiDate(…, 'end')`),
+matching the old `Reports.cs` `+ " 23:59:59"`.
+
+**Fix applied (frontend only).** New optional `ReportPageConfig.defaultPageSize`, wired to
+`BasicTable initialPageSize`, set to `1000` on all 8 `*DailyReportNew{Licence,Permit}Report` configs
+so a normal date range renders on one page like the old RDLC. No backend/SP change
+(`ReportAggregationService` already caps a page at 1000 and always returns the exact total).
+
+**Also checked for this report (parity axes):** Total footer present and correct — old
+`CountDistinct(LicenceNo)` == new `Sum(group.NoOfLicences)` on real data (960 / 5,863 for the two
+ranges above; no licence spans two currencies). Columns match the RDLC exactly. The old Daily RDLC
+has **no** drillthrough, so there is no drill-down to restore. Excel export was never affected — it
+writes all groups.
+
+**Open:** verification ran on UAT; the production DB (`tn2db.myanmartradenet.com,14133`) is not
+reachable from a dev machine, so confirm PROD is running the current build and that
+`sp_ImportLicenceSummaryReport_Indexed` is deployed there.
+
+**Sibling observation (not changed).** The other 7 Daily configs set `showRowNumber: false`, but all
+8 old `*ByDailyReport.rdlc` files carry the `GroupCountValue` row-number column. Only
+`ImportLicenceDailyReportNewLicenceReport` sets it to `true`. The `false` looks deliberate — confirm
+with the team before flipping.
+
 ## 7. Group-wide note
 
 The same two root causes recur across the whole **Import Licence** report group in the sheet:

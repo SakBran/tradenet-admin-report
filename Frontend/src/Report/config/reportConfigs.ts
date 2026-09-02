@@ -1527,6 +1527,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelRoute: 'BorderExportLicenceDailyReportNewLicenceReport/Excel',
     excelFileName: 'BorderExportLicenceDailyReportNewLicenceReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
+    defaultPageSize: 1000,
     showRowNumber: false,
     filters: [
       {
@@ -3014,6 +3015,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelRoute: 'BorderExportPermitDailyReportNewPermitReport/Excel',
     excelFileName: 'BorderExportPermitDailyReportNewPermitReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
+    defaultPageSize: 1000,
     showRowNumber: false,
     filters: [
       {
@@ -4148,6 +4150,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'BorderImportLicenceDailyReportNewLicenceReport.xlsx',
     reportSubtitle: importLicenceRangeSubtitle('List of Border Import Licences By Daily', true),
     initialSortColumn: 'PaThaKaTypeId',
+    defaultPageSize: 1000,
     showRowNumber: false,
     filters: borderImportLicenceDailyFilters,
     columns: [
@@ -5649,6 +5652,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelRoute: 'BorderImportPermitDailyReportNewPermitReport/Excel',
     excelFileName: 'BorderImportPermitDailyReportNewPermitReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
+    defaultPageSize: 1000,
     showRowNumber: false,
     filters: [
       {
@@ -7300,6 +7304,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelRoute: 'ExportLicenceDailyReportNewLicenceReport/Excel',
     excelFileName: 'ExportLicenceDailyReportNewLicenceReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
+    defaultPageSize: 1000,
     showRowNumber: false,
     filters: [
       {
@@ -8448,6 +8453,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelRoute: 'ExportPermitDailyReportNewPermitReport/Excel',
     excelFileName: 'ExportPermitDailyReportNewPermitReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
+    defaultPageSize: 1000,
     showRowNumber: false,
     filters: [
       {
@@ -9483,6 +9489,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelRoute: 'ImportLicenceDailyReportNewLicenceReport/Excel',
     excelFileName: 'ImportLicenceDailyReportNewLicenceReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
+    // The old ImportLicenceByDailyReport.rdlc printed every (Date, Currency)
+    // row on one page; a 10-row first page reads as missing data next to it.
+    defaultPageSize: 1000,
     showRowNumber: true,
     filters: importLicenceDailyFilters,
     reportSubtitle: importLicenceRangeSubtitle(
@@ -10896,6 +10905,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelRoute: 'ImportPermitDailyReportNewPermitReport/Excel',
     excelFileName: 'ImportPermitDailyReportNewPermitReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
+    defaultPageSize: 1000,
     showRowNumber: false,
     filters: [
       {
