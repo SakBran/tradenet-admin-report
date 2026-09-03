@@ -15,7 +15,9 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class ImportLicenceBySectionReportController : ControllerBase, IStreamingExcelReport
+    [ExcelFormatVersion(2)]
+    public class ImportLicenceBySectionReportController
+        : ControllerBase, IStreamingExcelReport, IExcelNoFooterReport
     {
         private const string ReportKey = "ImportLicenceBySectionReport";
 
@@ -40,7 +42,7 @@ namespace Backend.Controllers.Report
                 _context, procedureRequest!, ReportAggregateDimension.Section, includeSakhan: false);
 
             var result = ReportAggregationService.CreatePagedResultFromGroups(
-                rows, ReportAggregateDimension.Section, includeSakhan: false, request!, includeColumnTotals: true);
+                rows, ReportAggregateDimension.Section, includeSakhan: false, request!);
 
             return Ok(result);
         }

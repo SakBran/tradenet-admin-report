@@ -5,7 +5,11 @@
   "entries": [
     {
       "id": "eslint9-flat-config-missing",
-      "match": ["Frontend/.eslintrc.cjs", "eslint.config", "ESLint couldn't find an eslint.config"],
+      "match": [
+        "Frontend/.eslintrc.cjs",
+        "eslint.config",
+        "ESLint couldn't find an eslint.config"
+      ],
       "step": "npm run lint",
       "detail": "ESLint 9.28.0 requires a flat eslint.config.(js|mjs|cjs); the repo only tracks Frontend/.eslintrc.cjs (added in the initial commit). Lint fails before parsing any source, so it has never run in this repo.",
       "evidence": "git log -1 -- Frontend/.eslintrc.cjs = dadadc6 'Initial commit'",
@@ -28,10 +32,51 @@
     },
     {
       "id": "report-db-unreachable-from-dev-mac",
-      "match": ["TradeNetDBTest must be available", "dbAvailable", "unverified-nodb"],
+      "match": [
+        "TradeNetDBTest must be available",
+        "dbAvailable",
+        "unverified-nodb"
+      ],
       "step": "database probe",
       "detail": "The report database is CGNAT-internal and unreachable from this machine, so footer parity cannot be verified here. The contract test degrades to footer='unverified-nodb' rather than passing silently. 76 reports (43 ColumnTotals + 34 CurrencyTotals - 1 both) are affected.",
       "owner_decision_needed": "run the footer-parity suite where the DB is reachable before merging",
+      "blocking": false
+    },
+    {
+      "id": "db-bound-suites-skipped",
+      "match": [
+        "Connection Timeout Expired",
+        "pre-login handshake",
+        "Unknown error: 258",
+        "ReportEndpointSmokeTests",
+        "ReportSeededDatabaseSmokeTests",
+        "BorderImportPermitEndpointTests",
+        "TempSectionValidation",
+        "StoredProcedureSmokeTests",
+        "LiveDb",
+        "BorderImportLicenceParityTests",
+        "ImportPermitSystemTests"
+      ],
+      "step": "dotnet test",
+      "detail": "Owner decision 2026-09-03: do NOT run the DB-bound suites on this machine. The report DB is CGNAT-internal, so every test in these classes fails after a 15s pre-login handshake timeout. Running them cost 13m49s and produced 690 identical timeout failures that drowned the real signal. Gates MUST pass the DB-skip filter in _gate-common.md section 3 so these never execute; with it the suite is 1538 tests in 4 seconds. The single 15s dbAvailable probe still runs so the gate can report DB state honestly.",
+      "evidence": "full suite = Failed 698 / Passed 1582 / 2280 in 13m49s; with the DB-skip filter = Failed 9 / Passed 1529 / 1538 in 4s; the 689 dropped failures are all SqlException pre-login timeouts.",
+      "owner_decision_needed": "footer parity and the e2e spreadsheet check still need one run where the DB is reachable before merge",
+      "blocking": false
+    },
+    {
+      "id": "pre-existing-request-factory-and-filter-contract",
+      "match": [
+        "is missing TryCreateReportRequest",
+        "should accept the standard report test request",
+        "ReportEndpointPayloadFixtureTests",
+        "ReportControllerBranchDefaultsTests",
+        "ExportLicenceDetailReportContractTests"
+      ],
+      "step": "dotnet test",
+      "count": 8,
+      "detail": "Eight non-DB failures that predate this work: CardListsByCompanyRegistrationNumberController, DataImportController and ImportLicenceDataImportController have no TryCreateReportRequest (the same three controllers excluded from Excel scope), OGARecommendationHistoryReportController rejects the standard test request, and ExportLicenceDetailReportContractTests.Ui_filters_are_accepted_by_export_licence_detail_request differs at collection position 2.",
+      "evidence": "Verified 2026-09-03 in a detached worktree at base commit 261ec10 (pre-Excel-work): the identical 8 tests fail there with the identical messages.",
+      "owner_decision_needed": "separate fix; unrelated to Excel export",
       "blocking": false
     }
   ]

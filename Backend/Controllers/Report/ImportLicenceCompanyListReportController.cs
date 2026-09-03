@@ -16,7 +16,9 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class ImportLicenceCompanyListReportController : ControllerBase, IStreamingExcelReport
+    [ExcelFormatVersion(2)]
+    public class ImportLicenceCompanyListReportController
+        : ControllerBase, IStreamingExcelReport, IExcelNoFooterReport
     {
         private const string ReportKey = "ImportLicenceCompanyListReport";
 
@@ -38,8 +40,7 @@ namespace Backend.Controllers.Report
             }
 
             var result = await sp_ImportLicenceDetailReport_Fast.CreateAggregateResultAsync(
-                _context, procedureRequest!, request!, ReportAggregateDimension.Company, includeSakhan: false,
-                includeColumnTotals: true);
+                _context, procedureRequest!, request!, ReportAggregateDimension.Company, includeSakhan: false);
 
             return Ok(result);
         }

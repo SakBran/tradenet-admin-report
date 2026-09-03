@@ -1,0 +1,2197 @@
+{
+ "purpose": "Phase-1 (controller change) results recovered from run wf_661cd22a-591. The status writer reads this; do not edit.",
+ "run": "wf_661cd22a-591",
+ "controllers": {
+  "ExportLicenceBySectionReportController": {
+   "batchId": "aggregate-05",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ExportLicenceBySectionReportController.cs:87 \u2014 sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Section, includeSakhan: false)) (was sink.Append(rows)); 5-line comment above it citing why (SP has no ORDER BY, grid orders via CreatePagedResultFromGroups)"
+   ],
+   "notes": "Row type = ReportAggregateResult (Backend/Service/Reports/ReportAggregationService.cs:57), == T in Post's ActionResult<ApiResult<ReportAggregateResult>> (controller:33). Columns all resolve: sectionName\u2192SectionName(:61), noOfLicences\u2192NoOfLicences(:69), totalValue\u2192TotalValue(:70), currency\u2192Currency(:71). Ordering was genuinely missing: sp_ExportLicenceDetailReportV2.GetSummaryRowsAsync (sp_ExportLi"
+  },
+  "ExportLicenceBySellerCountryReportController": {
+   "batchId": "aggregate-05",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ExportLicenceBySellerCountryReportController.cs:87 \u2014 sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Country, includeSakhan: false)) (was sink.Append(rows)) + explanatory comment"
+   ],
+   "notes": "Row type = ReportAggregateResult, == Post's T (controller:33). Columns resolve: country\u2192Country, noOfLicences, totalValue, currency. Dimension Country + includeSakhan:false copied from Post (controller:41) / CreateSummaryResultAsync (sp_ExportLicenceDetailReportV2.cs:64-69); SP unordered (sp_ExportLicenceSummaryReport.sql:166 GROUP BY, no ORDER BY). footer: default-probe, ColumnTotals noOfLicences"
+  },
+  "ExportLicenceCompanyListReportController": {
+   "batchId": "aggregate-05",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ExportLicenceCompanyListReportController.cs:87 \u2014 sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Company, includeSakhan: false)) (was sink.Append(rows)) + explanatory comment"
+   ],
+   "notes": "Row type = ReportAggregateResult, == Post's T (controller:33). Columns resolve: companyName\u2192CompanyName(:64), noOfLicences, totalValue, currency. Dimension Company + includeSakhan:false from Post (controller:41); SP unordered (sp_ExportLicenceSummaryReport.sql:211). Order for Company = OrderBy(CompanyName, OrdinalIgnoreCase).ThenBy(Currency) (ReportAggregationService.cs:325,341). footer: default-p"
+  },
+  "ExportLicenceDailyReportNewLicenceReportController": {
+   "batchId": "aggregate-05",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ExportLicenceDailyReportNewLicenceReportController.cs:87 \u2014 sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Daily, includeSakhan: false)) (was sink.Append(rows)) + explanatory comment"
+   ],
+   "notes": "Row type = ReportAggregateResult, == Post's T (controller:33). 5 columns resolve: date\u2192Date(:68), noOfLicences, totalValue, currency, totalUSDValue\u2192TotalUSDValue(:84) (CamelCase gives totalUSDValue per Contract \u00a74). showRowNumber false, so the layout has no No column and the footer's 'Total' label lands in the first untotalled data column = date \u2014 same as BasicTable's totalLabelIndex (BasicTable.t"
+  },
+  "ExportPermitByHSCodeReportController": {
+   "batchId": "aggregate-05",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ExportPermitByHSCodeReportController.cs:84 \u2014 added procedureRequest!.HSCode = procedureRequest.HSCode?.Trim() ?? string.Empty before streaming, so the sheet rows use the same HS-code token as the grid and as the probed footer (matches sibling BorderExportPermitByHSCodeReportController.cs:84)",
+    "Backend/Controllers/Report/ExportPermitByHSCodeReportController.cs:86-93 \u2014 comment recording why NO OrderGroups call is added here (deliberate no-op decision, see notes)"
+   ],
+   "notes": "Row type = ReportAggregateResult, == Post's T (controller:33). Columns resolve: hsCode\u2192HSCode(:66), hsDescription\u2192HSDescription(:67), noOfLicences, totalValue, currency. NO re-sort by design: the grid pages sp_HSCodeReport_pagination, which sorts 'ORDER BY result.HSCode, result.CompanyName, result.Currency' (StoredProcedureMigrations/sp_HSCodeReport_pagination.sql:44 et al; UsesAggregateStoredProc"
+  },
+  "ExportPermitBySectionReportController": {
+   "batchId": "aggregate-05",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ExportPermitBySectionReportController.cs:86 \u2014 sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Section, includeSakhan: false)) (was sink.Append(rows)) + comment; the helper already orders, so this is defensive/explicit at the append site"
+   ],
+   "notes": "Row type = ReportAggregateResult, == Post's T (controller:33). Columns resolve: sectionName, noOfLicences, totalValue, currency. Ordering was ALREADY correct before the edit \u2014 sp_ExportPermitDetailReport_Fast.GetAggregateRowsAsync already calls OrderGroups(groups, dimension, includeSakhan) itself (sp_ExportPermitDetailReport_Fast.cs:190-192) \u2014 so this is not a bug fix; I added the explicit call an"
+  },
+  "BorderExportLicenceByHSCodeReportController": {
+   "batchId": "aggregate-01",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type: ReportAggregateResult \u2014 WriteRowsAsync appends sp_HSCodeReport.GetAggregateRowsAsync (Backend/StoredProcedureToLinq/sp_HSCodeReport.cs:182-190 \u2192 List<ReportAggregateResult>), equal to T in Post's Task<ActionResult<ApiResult<ReportAggregateResult>>> (controller:33). Columns: all 5 fixture dataIndexes resolve (hsCode\u2192HSCode, hsDescription\u2192HSDescription, noOfLicences, totalValue, currency; "
+  },
+  "BorderExportLicenceByMethodReportController": {
+   "batchId": "aggregate-01",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type: ReportAggregateResult (sp_ExportLicenceDetailReport_Fast.GetAggregateRowsAsync, Backend/StoredProcedureToLinq/sp_ExportLicenceDetailReport_Fast.cs:188-213) == T in Post (controller:36). Ordering already correct: controller:86 `sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Method, includeSakhan: true))`, dimension+flag copied from Post (controller:44). Si"
+  },
+  "BorderExportLicenceBySectionReportController": {
+   "batchId": "aggregate-01",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type: ReportAggregateResult (sp_ExportLicenceDetailReport_Fast.cs:188-213) == T in Post (controller:36). Ordering already correct: controller:87 OrderGroups(rows, ReportAggregateDimension.Section, includeSakhan: false), matching Post (controller:44); same stable-resort reasoning as the Method sibling (Aggregate already returns Order(Section,false), ReportAggregationService.cs:138/326). Columns"
+  },
+  "BorderExportLicenceBySellerCountryReportController": {
+   "batchId": "aggregate-01",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type: ReportAggregateResult (sp_ExportLicenceDetailReport_Fast.cs:188-213) == T in Post (controller:36). Ordering already correct: controller:86 OrderGroups(rows, ReportAggregateDimension.Country, includeSakhan: false), matching Post (controller:44). TITLE MISMATCH ALREADY RESOLVED \u2014 the manifest's titleMismatch:true is stale (manifest generatedFrom.head 261ec103, before commit d434f2d): Excel"
+  },
+  "BorderExportLicenceCompanyListReportController": {
+   "batchId": "aggregate-01",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type: ReportAggregateResult (sp_ExportLicenceDetailReport_Fast.cs:188-213) == T in Post (controller:36). Ordering already correct: controller:84 OrderGroups(rows, ReportAggregateDimension.Company, includeSakhan: false), matching Post (controller:44); Order(Company,false) = OrderBy(CompanyName).ThenBy(Currency) (ReportAggregationService.cs:329,342), identical to the JSON path. Columns: 4 fixtur"
+  },
+  "BorderExportLicenceDailyReportNewLicenceReportController": {
+   "batchId": "aggregate-01",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type: ReportAggregateResult (sp_ExportLicenceDetailReport_Fast.cs:188-213) == T in Post (controller:36). Ordering already correct: controller:86 OrderGroups(rows, ReportAggregateDimension.Daily, includeSakhan: true), matching Post (controller:44). The Daily JSON path is the one that really needs it (CreateAggregateResultAsync takes the Aggregate + FillDailyUsdValuesAsync + CreatePagedResultFro"
+  },
+  "ExportPermitBySellerCountryReportController": {
+   "batchId": "aggregate-06",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ExportPermitBySellerCountryReportController.cs:68 \u2014 ExcelWorksheetTitle \"Export Permit By Seller Country Report\" -> \"Export Permit By Buyer Country Report\" (config title verbatim; the old RDLC is ExportPermitByBuyerCountryReport.rdlc, so the config is right and the class name keeps the stale route spelling)",
+    "Backend/Controllers/Report/ExportPermitBySellerCountryReportController.cs:84-89 \u2014 sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Country, includeSakhan: false)) + comment; dimension/flag copied from Post:41"
+   ],
+   "notes": "Row type: ReportAggregateResult (ReportAggregationService.cs:57) == T in Post's Task<ActionResult<ApiResult<ReportAggregateResult>>> (:33). All 4 fixture dataIndexes resolve: country->Country(:63), noOfLicences->NoOfLicences(:69), totalValue->TotalValue(:70), currency->Currency(:71); Country column is a drilldown, exports the underlying value. rowNumberTitle 'No', showRowNumber true. Ordering: sp_"
+  },
+  "ExportPermitCompanyListReportController": {
+   "batchId": "aggregate-06",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ExportPermitCompanyListReportController.cs:81-86 \u2014 sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Company, includeSakhan: false)) + comment; dimension/flag copied from Post:41"
+   ],
+   "notes": "Row type ReportAggregateResult == Post's T (:33). Fixture dataIndexes resolve: companyName->CompanyName(:64), noOfLicences, totalValue, currency; CompanyName is a drilldown column, exports the underlying value. Title already equals config title (:65) \u2014 no titleMismatch. Same idempotent-OrderGroups note as the sibling (helper already orders at sp_ExportPermitDetailReport_Fast.cs:192). footer: defau"
+  },
+  "ExportPermitDailyReportNewPermitReportController": {
+   "batchId": "aggregate-06",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ExportPermitDailyReportNewPermitReportController.cs:81-86 \u2014 sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Daily, includeSakhan: false)) + comment; dimension/flag copied from Post:41"
+   ],
+   "notes": "Row type ReportAggregateResult == Post's T (:33). 5 fixture columns resolve: date->Date(:68), noOfLicences, totalValue, currency, totalUSDValue->TotalUSDValue(:84) (CamelCase policy: TotalUSDValue->totalUSDValue). showRowNumber false, so no 'No' column and the footer's 'Total' label lands in the first untotalled column = Date, same as BasicTable's totalLabelIndex (BasicTable.tsx:426-430). Date is "
+  },
+  "ImportLicenceByHSCodeReportController": {
+   "batchId": "aggregate-06",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ImportLicenceByHSCodeReportController.cs:83 \u2014 procedureRequest!.HSCode = procedureRequest.HSCode?.Trim() ?? string.Empty; (the grid trims @HSCode at sp_HSCodeReport.cs:78, this path calls GetAggregateRowsAsync directly and did not \u2014 a stray space in the free-text HS Code filter, reportConfigs.ts:220-225, made the Excel row SET differ from the grid's). Same line as the committed peer BorderExportPermitByHSCodeReportController.cs:83.",
+    "Backend/Controllers/Report/ImportLicenceByHSCodeReportController.cs:85-94 \u2014 comment recording why NO OrderGroups re-sort is applied here"
+   ],
+   "notes": "Row type ReportAggregateResult == Post's T (:33). 6 fixture dataIndexes resolve: hsCode->HSCode(:66), hsDescription->HSDescription(:67), noOfLicences, totalValue, currency, companyName. rowNumberTitle 'No.' (legacyReportViewer: name starts with ImportLicence) \u2014 matches the fixture. NO ordering edit, deliberately: both grid paths and the Excel path already emit HSCode, CompanyName, Currency order \u2014"
+  },
+  "ImportLicenceByMethodReportController": {
+   "batchId": "aggregate-06",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ImportLicenceByMethodReportController.cs:81-86 \u2014 sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Method, includeSakhan: false)) + comment; dimension/flag copied from Post:41"
+   ],
+   "notes": "Row type ReportAggregateResult == Post's T (:33). Fixture dataIndexes resolve: methodName->MethodName(:62), noOfLicences, totalValue, currency; Method is a drilldown column. rowNumberTitle 'No.'. Ordering edit is REQUIRED here (not merely defensive): sp_ImportLicenceDetailReport_Fast.GetAggregateRowsAsync just returns AggregateInSqlAsync (sp_ImportLicenceDetailReport_Fast.cs:165-175) which only GR"
+  },
+  "ImportLicenceBySectionReportController": {
+   "batchId": "aggregate-06",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ImportLicenceBySectionReportController.cs:81-86 \u2014 sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Section, includeSakhan: false)) + comment; dimension/flag copied from Post:40-43"
+   ],
+   "notes": "Row type ReportAggregateResult == Post's T (:32). Fixture dataIndexes resolve: sectionName->SectionName(:61), noOfLicences, totalValue, currency; Section is a drilldown column. rowNumberTitle 'No.'. Post reads GetAggregateRowsAsync(Section, includeSakhan:false) then CreatePagedResultFromGroups(..., includeColumnTotals:true) directly (:39-43); WriteRowsAsync reads GetSectionRowsAsync, which is the "
+  },
+  "BorderExportPermitByHSCodeReportController": {
+   "batchId": "aggregate-02",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type: ReportAggregateResult (Backend/Service/Reports/ReportAggregationService.cs:57) == T in Post's Task<ActionResult<ApiResult<ReportAggregateResult>>> (controller:33) and what WriteRowsAsync appends (controller:95-96 via sp_HSCodeReport.GetAggregateRowsAsync). Group C but NO OrderGroups needed and none added: the grid orders server-side (sp_HSCodeReport_pagination 'ORDER BY result.HSCode,res"
+  },
+  "BorderExportPermitBySectionReportController": {
+   "batchId": "aggregate-02",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type ReportAggregateResult (Post:36, WriteRowsAsync:82-87). Group C edit already present: controller:87 sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Section, includeSakhan: false)) \u2014 dimension/includeSakhan copied from Post:43-45. Idempotent belt-and-braces: sp_ExportPermitDetailReport_Fast.GetAggregateRowsAsync already calls OrderGroups (Backend/StoredProced"
+  },
+  "BorderExportPermitBySellerCountryReportController": {
+   "batchId": "aggregate-02",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type ReportAggregateResult (Post:36, WriteRowsAsync:82-87). Group C edit already present: controller:87 OrderGroups(rows, ReportAggregateDimension.Country, includeSakhan: false), matching Post:43-45. Columns: country<-Country, noOfLicences, totalValue, currency \u2014 fixture == config (reportConfigs.ts:2711 block, Country is a drilldown column exporting `country`; countryId is drill-down plumbing,"
+  },
+  "BorderExportPermitCompanyListReportController": {
+   "batchId": "aggregate-02",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/BorderExportPermitCompanyListReportController.cs:85-88 \u2014 Excel rows now appended through ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Company, includeSakhan: false) (dimension + includeSakhan copied verbatim from Post:43-45), with a comment saying why the guarantee is stated at the append site; Post untouched, no typed layout added"
+   ],
+   "notes": "Row type ReportAggregateResult (Post:36 T; WriteRowsAsync:82-83 appends List<ReportAggregateResult> from sp_ExportPermitDetailReport_Fast.GetAggregateRowsAsync). Ordering now matches the JSON path (CreatePagedResultFromGroups -> Order, ReportAggregationService.cs:208 + 318-343); the helper's own OrderGroups (sp_ExportPermitDetailReport_Fast.cs:192) makes the added call idempotent (stable OrderBy o"
+  },
+  "BorderExportPermitDailyReportNewPermitReportController": {
+   "batchId": "aggregate-02",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/BorderExportPermitDailyReportNewPermitReportController.cs:85-89 \u2014 Excel rows now appended through ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Daily, includeSakhan: true) (both copied from Post:43-45), with a comment naming the Date/Sakhan/Currency key order; Post untouched"
+   ],
+   "notes": "Row type ReportAggregateResult (Post:36; WriteRowsAsync:82-83). includeSakhan: true matters here \u2014 Order adds ThenBy(SakhanCode) between Date and Currency (ReportAggregationService.cs:336-343) \u2014 so the sheet order now equals the grid's even though there is no Sakhan column. Columns (fixture, 5): date<-Date (plain text 'yyyy-MM-dd' string, no dataType in config -> exported as text exactly as the gr"
+  },
+  "BorderImportLicenceByHSCodeReportController": {
+   "batchId": "aggregate-02",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/BorderImportLicenceByHSCodeReportController.cs:83 \u2014 trim the HS Code filter token on the Excel path (procedureRequest!.HSCode = procedureRequest.HSCode?.Trim() ?? string.Empty) so the export's LIKE matches the grid's; the grid trims it in sp_HSCodeReport.CreateAggregateResultAsync (Backend/StoredProcedureToLinq/sp_HSCodeReport.cs:78) and the deployed proc does LTRIM/RTRIM (StoredProcedureMigrations/sp_HSCodeReport_pagination.sql:18), while the raw value goes straight into EF.Functions.Like (sp_HSCodeReport.cs:453-456)",
+    "Backend/Controllers/Report/BorderImportLicenceByHSCodeReportController.cs:85-96 \u2014 comment recording why no OrderGroups re-sort is applied (mirrors the already-done sibling BorderExportPermitByHSCodeReportController.cs:85-94); append now uses the non-null procedureRequest"
+   ],
+   "notes": "Row type ReportAggregateResult (Post:33 T; WriteRowsAsync:96 appends sp_HSCodeReport.GetAggregateRowsAsync result). Group C with NO OrderGroups by design: grid order = sp_HSCodeReport_pagination 'ORDER BY result.HSCode,result.CompanyName,result.Currency' (sql:557,601 for the Border Import Licence branch) or AggregateQuery when an Export Section is chosen; the export streams AggregateQuery, which c"
+  },
+  "BorderImportLicenceByMethodReportController": {
+   "batchId": "aggregate-03",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/BorderImportLicenceByMethodReportController.cs:84-88 \u2014 wrapped the Excel rows in ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Method, includeSakhan: true) (copied verbatim from Post at :44) + 4-line rationale comment"
+   ],
+   "notes": "Row type = ReportAggregateResult (Post: :36 Task<ActionResult<ApiResult<ReportAggregateResult>>>; WriteRowsAsync streams sp_ImportLicenceDetailReport_Fast.GetAggregateRowsAsync at :82). Ordering edit required: GetAggregateRowsAsync \u2192 AggregateInSqlAsync (sp_ImportLicenceDetailReport_Fast.cs:579-702) only GROUP BYs, no ORDER BY; Type='Border' so UseOverseaViewSource is false (:826-827). Grid order "
+  },
+  "BorderImportLicenceBySectionReportController": {
+   "batchId": "aggregate-03",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/BorderImportLicenceBySectionReportController.cs:84-88 \u2014 wrapped the Excel rows in ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Section, includeSakhan: false) (copied from Post at :44) + rationale comment"
+   ],
+   "notes": "Row type = ReportAggregateResult (Post :36; GetAggregateRowsAsync :82). Same unordered-GROUP-BY root cause as the Method sibling; grid order = SectionName then Currency. Columns (fixture == reportConfigs.ts:3928+): sectionName/noOfLicences/totalValue/currency all resolve. footer: default-probe, includeColumnTotals:true (:45) \u2192 keys noOfLicences, totalValue over all groups; 'Total' label in the Sec"
+  },
+  "BorderImportLicenceBySellerCountryReportController": {
+   "batchId": "aggregate-03",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/BorderImportLicenceBySellerCountryReportController.cs:84-88 \u2014 wrapped the Excel rows in ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Country, includeSakhan: false) (copied from Post at :44) + rationale comment"
+   ],
+   "notes": "Row type = ReportAggregateResult. Columns (fixture == reportConfigs.ts:3973+): country\u2192Country, noOfLicences, totalValue, currency. Grid order = Country then Currency. footer: default-probe, keys noOfLicences + totalValue (includeColumnTotals:true at :45), cross-page; 'Total' label in the Country column."
+  },
+  "BorderImportLicenceCompanyListReportController": {
+   "batchId": "aggregate-03",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/BorderImportLicenceCompanyListReportController.cs:84-88 \u2014 wrapped the Excel rows in ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Company, includeSakhan: false) (copied from Post at :44) + rationale comment"
+   ],
+   "notes": "Row type = ReportAggregateResult. Columns (fixture == reportConfigs.ts:4101+): companyName\u2192CompanyName, noOfLicences, totalValue, currency. Grid order = CompanyName then Currency (Order, ReportAggregationService.cs:329). footer: default-probe, keys noOfLicences + totalValue, cross-page; 'Total' label in the Company Name column. Subtitle header line differs in wording from the siblings ('List of Bo"
+  },
+  "BorderImportLicenceDailyReportNewLicenceReportController": {
+   "batchId": "aggregate-03",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/BorderImportLicenceDailyReportNewLicenceReportController.cs:84-88 \u2014 wrapped the Excel rows in ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Daily, includeSakhan: true) (copied from Post at :44) + rationale comment"
+   ],
+   "notes": "Row type = ReportAggregateResult. showRowNumber false (reportConfigs.ts:4155) \u2192 no 'No' column, matching the fixture. Columns: date\u2192Date (a pre-formatted yyyy-MM-dd string from MapGroup, ReportAggregationService/sp_ImportLicenceDetailReport_Fast.cs:735-737; config sets no dataType so both grid and sheet show it as text \u2014 no date-serial conversion), noOfLicences (number), totalValue, currency, tota"
+  },
+  "BorderImportPermitByHSCodeReportController": {
+   "batchId": "aggregate-03",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/BorderImportPermitByHSCodeReportController.cs:78-83 \u2014 trim @HSCode on the Excel path (procedureRequest!.HSCode = procedureRequest.HSCode?.Trim()) so the exported filter token matches the grid's, which is trimmed in sp_HSCodeReport.cs:76-77 (and LTRIM/RTRIMmed by the deployed proc)",
+    "Backend/Controllers/Report/BorderImportPermitByHSCodeReportController.cs:85-93 \u2014 comment recording why NO OrderGroups call is added here (see notes); rows stay in the SQL order"
+   ],
+   "notes": "Row type = ReportAggregateResult (Post :33; WriteRowsAsync streams sp_HSCodeReport.GetAggregateRowsAsync :94). NO ordering edit: Post passes no dimension/includeSakhan (it calls sp_HSCodeReport.CreateAggregateResultAsync at :40), and both paths are already ordered on the same three keys server-side \u2014 grid = sp_HSCodeReport_pagination 'ORDER BY result.HSCode, result.CompanyName, result.Currency' (S"
+  },
+  "BorderImportPermitBySectionReportController": {
+   "batchId": "aggregate-04",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/BorderImportPermitBySectionReportController.cs:87 \u2014 sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Section, includeSakhan: false)) (dimension/flag copied from Post at :44), + 2-line comment naming the JSON path it mirrors"
+   ],
+   "notes": "Row type: ReportAggregateResult \u2014 WriteRowsAsync appends sp_ImportPermitDetailReport_Fast.GetAggregateRowsAsync (Backend/StoredProcedureToLinq/sp_ImportPermitDetailReport_Fast.cs:168) which returns List<ReportAggregateResult>; equals T in Post's Task<ActionResult<ApiResult<ReportAggregateResult>>> (:36). All 4 fixture dataIndexes resolve on ReportAggregateResult (Backend/Service/Reports/ReportAggr"
+  },
+  "BorderImportPermitBySellerCountryReportController": {
+   "batchId": "aggregate-04",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/BorderImportPermitBySellerCountryReportController.cs:87 \u2014 sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Country, includeSakhan: false)) (copied from Post at :44), + comment"
+   ],
+   "notes": "Row type: ReportAggregateResult (same helper as the Section sibling; matches Post's T at :36). Fixture dataIndexes country\u2192Country, noOfLicences, totalValue, currency all resolve; columns == config; no extras. dateShape range (FromDate/ToDate on the request DTO :137-138) \u2192 From Date/To Date + Exported lines; headerLines[0] is the config title so no duplicate Title line; ExcelWorksheetTitle (:68) ="
+  },
+  "BorderImportPermitCompanyListReportController": {
+   "batchId": "aggregate-04",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/BorderImportPermitCompanyListReportController.cs:87 \u2014 sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Company, includeSakhan: false)) (copied from Post at :44), + comment"
+   ],
+   "notes": "Row type: ReportAggregateResult (GetAggregateRowsAsync, dimension Company). Fixture dataIndexes companyName\u2192CompanyName, noOfLicences, totalValue, currency resolve; CompanyRegistrationNo is populated by Aggregate for the Company dimension but is NOT a UI column and is correctly absent from the spec. footer: default-probe \u2014 includeColumnTotals: true (:45) \u2192 keys noOfLicences, totalValue over all gr"
+  },
+  "BorderImportPermitDailyReportNewPermitReportController": {
+   "batchId": "aggregate-04",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/BorderImportPermitDailyReportNewPermitReportController.cs:87 \u2014 sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Daily, includeSakhan: true)) (dimension + includeSakhan: true copied from Post at :44), + comment"
+   ],
+   "notes": "Row type: ReportAggregateResult; the Daily branch of GetAggregateRowsAsync also fills TotalUSDValue via ReportUsdConversionService (sp_ImportPermitDetailReport_Fast.cs:176-181), same as the JSON path (:137-144), so the totalUSDValue column is populated in the export too. 5 fixture columns resolve: date\u2192Date (string property, so a text cell \u2014 the grid renders the same raw 'yyyy-MM-dd' string, no da"
+  },
+  "ExportLicenceByHSCodeReportController": {
+   "batchId": "aggregate-04",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ExportLicenceByHSCodeReportController.cs:83 \u2014 procedureRequest!.HSCode = procedureRequest.HSCode?.Trim() ?? string.Empty; so the export filters on the same HS Code token as the grid (the grid path trims at sp_HSCodeReport.cs:78 and the deployed proc LTRIM/RTRIMs); mirrors sibling BorderExportPermitByHSCodeReportController.cs:83",
+    "Backend/Controllers/Report/ExportLicenceByHSCodeReportController.cs:85-94 \u2014 comment recording why NO OrderGroups call is added here (see notes)"
+   ],
+   "notes": "Row type: ReportAggregateResult \u2014 sp_HSCodeReport.GetAggregateRowsAsync (sp_HSCodeReport.cs:182) returns AggregateQuery(...).ToListAsync(); equals T in Post (:33). Ordering: deliberately NOT re-sorted. AggregateQuery ends with .OrderBy(HSCode).ThenBy(CompanyName).ThenBy(Currency) server-side (sp_HSCodeReport.cs:219-221) and the grid's proc path uses the identical 'ORDER BY result.HSCode, result.Co"
+  },
+  "ExportLicenceByMethodReportController": {
+   "batchId": "aggregate-04",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ExportLicenceByMethodReportController.cs:86 \u2014 sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Method, includeSakhan: false)) (dimension from Post at :41, includeSakhan: false from CreateSummaryResultAsync's hardcoded includeSakhan: false, sp_ExportLicenceDetailReportV2.cs:67), + 4-line comment"
+   ],
+   "notes": "Row type: ReportAggregateResult \u2014 sp_ExportLicenceDetailReportV2.GetSummaryRowsAsync (:73) maps the SQL-grouped sp_ExportLicenceSummaryReport rows via ToAggregateResult(dimension); equals T in Post (:33). This is the one controller in the batch where the ordering edit was genuinely missing: the rows are grouped in SQL and returned in proc order, while the grid adds the canonical ordering in Create"
+  },
+  "ImportPermitCompanyListReportController": {
+   "batchId": "aggregate-08",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ImportPermitCompanyListReportController.cs:81-84 \u2014 private WriteRowsAsync now appends `ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Company, includeSakhan: false)` instead of raw `rows` (dimension + includeSakhan copied verbatim from Post at :41); 2-line comment matching the sibling BorderImportPermitCompanyListReportController.cs:84 pattern. Post untouched, no typed layout added."
+   ],
+   "notes": "Row type: `ReportAggregateResult` \u2014 WriteRowsAsync appends `List<ReportAggregateResult>` from sp_ImportPermitDetailReport_Fast.GetAggregateRowsAsync (Backend/StoredProcedureToLinq/sp_ImportPermitDetailReport_Fast.cs:168-186), and Post returns `Task<ActionResult<ApiResult<ReportAggregateResult>>>` (:33), so ExcelRowTypeResolver.UnwrapPostReturnType yields the same type. Columns (fixture Backend.Tes"
+  },
+  "ImportPermitDailyReportNewPermitReportController": {
+   "batchId": "aggregate-08",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ImportPermitDailyReportNewPermitReportController.cs:81-84 \u2014 private WriteRowsAsync now appends `ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Daily, includeSakhan: false)` instead of raw `rows` (dimension + includeSakhan copied verbatim from Post at :41 \u2014 note includeSakhan is false here, unlike the Border sibling's true). Post untouched, no typed layout added."
+   ],
+   "notes": "Row type: `ReportAggregateResult`, same resolution as the sibling (Post :33 vs GetAggregateRowsAsync :79-80). Columns (fixture ImportPermitDailyReportNewPermitReport.json, 5 cols, showRowNumber false so no 'No' column): date\u2192Date, noOfLicences\u2192NoOfLicences (number), totalValue\u2192TotalValue, currency\u2192Currency, totalUSDValue\u2192TotalUSDValue (number) \u2014 all resolve; `TotalUSDValue` camelCases to `totalUSD"
+  },
+  "ImportLicenceBySellerCountryReportController": {
+   "batchId": "aggregate-07",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ImportLicenceBySellerCountryReportController.cs:86 \u2014 sink.Append(rows) -> sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Country, includeSakhan: false)) + comment citing the JSON path"
+   ],
+   "notes": "Row type ReportAggregateResult == T in Post (ImportLicenceBySellerCountryReportController.cs:33 ActionResult<ApiResult<ReportAggregateResult>>); WriteRowsAsync appends List<ReportAggregateResult> from sp_ImportLicenceDetailReport_Fast.GetAggregateRowsAsync(Country, includeSakhan:false) (:79-80). Ordering edit REQUIRED: GetAggregateRowsAsync -> AggregateInSqlAsync (sp_ImportLicenceDetailReport_Fast"
+  },
+  "ImportLicenceCompanyListReportController": {
+   "batchId": "aggregate-07",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ImportLicenceCompanyListReportController.cs:86 \u2014 sink.Append(rows) -> sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Company, includeSakhan: false)) + comment citing the JSON path"
+   ],
+   "notes": "Row type ReportAggregateResult == T in Post (:33); WriteRowsAsync appends GetAggregateRowsAsync(Company, includeSakhan:false) (:79-80) \u2014 same unordered AggregateInSqlAsync source as its Seller-Country sibling, so the OrderGroups edit is required; dimension/includeSakhan copied from Post (:41). Columns (fixture ImportLicenceCompanyListReport.json): companyName->CompanyName, noOfLicences, totalValue"
+  },
+  "ImportLicenceDailyReportNewLicenceReportController": {
+   "batchId": "aggregate-07",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ImportLicenceDailyReportNewLicenceReportController.cs:103 \u2014 sink.Append(rows) -> sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Daily, includeSakhan: false)) + comment noting Date-then-Currency order and that GetAggregateRowsAsync already fills TotalUSDValue"
+   ],
+   "notes": "Row type ReportAggregateResult == T in Post (:34); WriteRowsAsync appends GetAggregateRowsAsync(Daily, includeSakhan:false) (:95-96), unordered (AggregateInSqlAsync) while Post orders via CreatePagedResultFromGroups (:46-47) -> Order = OrderBy(Date, Ordinal).ThenBy(Currency) (ReportAggregationService.cs:325-341). TotalUSDValue is filled inside AggregateInSqlAsync for the Daily dimension on both br"
+  },
+  "ImportPermitByHSCodeReportController": {
+   "batchId": "aggregate-07",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ImportPermitByHSCodeReportController.cs:83 \u2014 added procedureRequest!.HSCode = procedureRequest.HSCode?.Trim() ?? string.Empty so the export filters on the same HS Code token the grid does",
+    "Backend/Controllers/Report/ImportPermitByHSCodeReportController.cs:85-94 \u2014 comment recording why NO OrderGroups re-sort is applied here (SQL already emits the grid's ORDER BY)"
+   ],
+   "notes": "Row type ReportAggregateResult == T in Post (:33). Deliberately NO OrderGroups: the Excel path's sp_HSCodeReport.GetAggregateRowsAsync -> AggregateQuery ends with .OrderBy(HSCode).ThenBy(CompanyName).ThenBy(Currency) server-side (sp_HSCodeReport.cs:182-221) and the grid's proc orders identically (StoredProcedureMigrations/sp_HSCodeReport_pagination.sql:44 'ORDER BY result.HSCode,result.CompanyName"
+  },
+  "ImportPermitBySectionReportController": {
+   "batchId": "aggregate-07",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ImportPermitBySectionReportController.cs:86 \u2014 sink.Append(rows) -> sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Section, includeSakhan: false)) + comment citing the JSON path"
+   ],
+   "notes": "Row type ReportAggregateResult == T in Post (:33); WriteRowsAsync appends sp_ImportPermitDetailReport_Fast.GetAggregateRowsAsync(Section, includeSakhan:false) (:79-80), which returns ReportAggregationService.Aggregate(...) (sp_ImportPermitDetailReport_Fast.cs:168-186) \u2014 Aggregate already ends with Order (ReportAggregationService.cs:138), so this OrderGroups call is an idempotent re-sort on the sam"
+  },
+  "ImportPermitBySellerCountryReportController": {
+   "batchId": "aggregate-07",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ImportPermitBySellerCountryReportController.cs:86 \u2014 sink.Append(rows) -> sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Country, includeSakhan: false)) + comment citing the JSON path"
+   ],
+   "notes": "Row type ReportAggregateResult == T in Post (:33); WriteRowsAsync appends sp_ImportPermitDetailReport_Fast.GetAggregateRowsAsync(Country, includeSakhan:false) (:79-80) -> Aggregate (already ordered), so the OrderGroups call is an idempotent re-sort stated at the append site, same as the shipped ImportPermit/ExportPermit siblings; dimension/includeSakhan copied from Post (:41). Columns (fixture, 4)"
+  },
+  "BorderExportLicenceTotalValueLicencesReportController": {
+   "batchId": "composite-01",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Already carried the full group-D recipe from an earlier run and I changed nothing: [ExcelFormatVersion(2)] at Backend/Controllers/Report/BorderExportLicenceTotalValueLicencesReportController.cs:21, IExcelReportLayoutProvider at :23, typed 2-section GetExcelLayout at :82-125, WriteRowsAsync replaying Post's own sp_ExportLicenceDetailReport_Fast.GetTotalValueLicencesSummaryAsync at :140 then BeginSe"
+  },
+  "BorderImportLicenceTotalValueLicencesReportController": {
+   "batchId": "composite-01",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/BorderImportLicenceTotalValueLicencesReportController.cs:3 \u2014 added `using System.Globalization;` for the N4 note",
+    "Backend/Controllers/Report/BorderImportLicenceTotalValueLicencesReportController.cs:21-23 \u2014 added [ExcelFormatVersion(2)] and IExcelReportLayoutProvider to the class declaration (was version 1/no provider)",
+    "Backend/Controllers/Report/BorderImportLicenceTotalValueLicencesReportController.cs:73-125 \u2014 new [NonAction] GetExcelLayout: TitleLines = ExcelReportTitle.DateRange(\"Border Import Licences Total Value & Licences\", FromDate, ToDate) and two ExcelReportSections (\"Total Value\": Sr.No. | Total Value Money4 | Currency; \"Total Licences\": Sr.No. | Total Licences Number | Pa Tha Ka Type), each column .Bind(key, dataIndex)",
+    "Backend/Controllers/Report/BorderImportLicenceTotalValueLicencesReportController.cs:137-150 \u2014 private WriteRowsAsync now calls the same helper Post uses (sp_ImportLicenceDetailReport_Fast.GetTotalValueLicencesSummaryAsync) and emits BeginSection(0)/Append(TotalValueByCurrency), BeginSection(1)/Append(TotalLicencesByPaThaKaType), AppendNote(\"Total USD Value: \" + N4); replaces the old GetAggregateRowsAsync(ReportAggregateDimension.TotalValue) ReportAggregateResult dump",
+    "Backend.Tests/ExcelParity/BorderImportLicenceTotalValueLicencesReportControllerLayoutTests.cs \u2014 new xunit file (7 facts): sections-only layout + row type == ImportLicenceTotalValueLicencesSummary, two sections in page order with the page's headers, cell formats (Money4/Number/Text + IsRowNumber), title line == page heading with the date range, GetExcelLayout/WriteRowsAsync are [NonAction], ExcelFormatVersion > 1, no footer (not IExcelFooterTotalsProvider, summary not IReportTotals, ExcelFooterBuilder empty), and an end-to-end StreamingExcelWriter round-trip pinning the written rows"
+   ],
+   "notes": "Page source of truth Frontend/src/Report/Page/BorderImportLicenceTotalValueLicencesReport.tsx:206-251 \u2014 heading `Border Import Licences Total Value & Licences (DD/MM/YYYY) To (DD/MM/YYYY)` (:206-210), valueColumns Sr.No./Total Value(formatValue \u2192 4 decimals, :212-230)/Currency, licenceColumns Sr.No./Total Licences/Pa Tha Ka Type (:233-250), then `Total USD Value: <N4>` (:368). Section rows: TotalV"
+  },
+  "ExportLicenceTotalValueLicencesReportController": {
+   "batchId": "composite-01",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ExportLicenceTotalValueLicencesReportController.cs:3 \u2014 added `using System.Globalization;`",
+    "Backend/Controllers/Report/ExportLicenceTotalValueLicencesReportController.cs:20-22 \u2014 added [ExcelFormatVersion(2)] and IExcelReportLayoutProvider",
+    "Backend/Controllers/Report/ExportLicenceTotalValueLicencesReportController.cs:70-122 \u2014 new [NonAction] GetExcelLayout: TitleLines = ExcelReportTitle.DateRange(\"Export Licences Total Value & Licences\", FromDate, ToDate) + the same two sections (Total Value / Total Licences) with bound columns",
+    "Backend/Controllers/Report/ExportLicenceTotalValueLicencesReportController.cs:134-147 \u2014 WriteRowsAsync now uses sp_ExportLicenceDetailReport_Fast.GetTotalValueLicencesSummaryAsync (Post's own call) with BeginSection(0)/BeginSection(1)/AppendNote, replacing the GetAggregateRowsAsync dump",
+    "Backend.Tests/ExcelParity/ExportLicenceTotalValueLicencesReportControllerLayoutTests.cs \u2014 new xunit file, same 7 facts as the Border Import sibling (controller built with two null! args to match its (context, excelExportJobs) constructor)"
+   ],
+   "notes": "Page Frontend/src/Report/Page/ExportLicenceTotalValueLicencesReport.tsx:200-248 \u2014 heading `Export Licences Total Value & Licences (\u2026) To (\u2026)`, identical valueColumns/licenceColumns and `Total USD Value` line (:353). Row types as the sibling; helper is the Export _Fast one (sp_ExportLicenceDetailReport_Fast.cs:215). footer: default-probe, no footer (same reasoning: summary payload is not IReportTot"
+  },
+  "ImportLicenceTotalValueLicencesReportController": {
+   "batchId": "composite-01",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ImportLicenceTotalValueLicencesReportController.cs:3 \u2014 added `using System.Globalization;`",
+    "Backend/Controllers/Report/ImportLicenceTotalValueLicencesReportController.cs:20-22 \u2014 added [ExcelFormatVersion(2)] and IExcelReportLayoutProvider",
+    "Backend/Controllers/Report/ImportLicenceTotalValueLicencesReportController.cs:73-125 \u2014 new [NonAction] GetExcelLayout: TitleLines = ExcelReportTitle.DateRange(\"Import Licences Total Value & Licences\", FromDate, ToDate) + the two page sections with bound columns",
+    "Backend/Controllers/Report/ImportLicenceTotalValueLicencesReportController.cs:137-150 \u2014 WriteRowsAsync now uses sp_ImportLicenceDetailReport_Fast.GetTotalValueLicencesSummaryAsync with BeginSection(0)/BeginSection(1)/AppendNote, replacing the GetAggregateRowsAsync dump",
+    "Backend.Tests/ExcelParity/ImportLicenceTotalValueLicencesReportControllerLayoutTests.cs \u2014 new xunit file, same 7 facts (two null! constructor args)"
+   ],
+   "notes": "Page Frontend/src/Report/Page/ImportLicenceTotalValueLicencesReport.tsx:27-28 (comment: two summary tables + one Total USD Value box), heading at :204-208 `Import Licences Total Value & Licences (\u2026) To (\u2026)`, valueColumns :210-228, licenceColumns :231-249, USD line :357; formatValue = toLocaleString min/max 4 fraction digits (:70-76) \u2192 Money4. footer: default-probe, no footer (identical reasoning t"
+  },
+  "BorderExportLicenceExtensionReportController": {
+   "batchId": "verify-02",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type: WriteRowsAsync appends chunk.Select(row => row.ToResult()) over sp_ExtensionReport.ExecuteQueryable (Backend/Controllers/Report/BorderExportLicenceExtensionReportController.cs:109-113); ExecuteQueryable returns IQueryable<sp_ExtensionReportRow> (Backend/StoredProcedureToLinq/sp_ExtensionReport.cs:124) and ToResult() -> sp_ExtensionReportResult == T in Post's ActionResult<ApiResult<sp_Ext"
+  },
+  "BorderExportLicenceNewReportNewReportController": {
+   "batchId": "verify-02",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type: sp_NewReportResult (WriteRowsAsync at BorderExportLicenceNewReportNewReportController.cs:112-116, ToResult() over sp_NewReport.ExecuteQueryable) == T in Post (controller:41). Columns: all 9 fixture dataIndexes resolve on sp_NewReportResult (sp_NewReport.cs) \u2014 sakhanCode, sectionName, licenceNo, companyRegistrationNo, companyName, currency, amount, auto; 'companyAddress' resolves through "
+  },
+  "BorderExportLicenceVoucherReportController": {
+   "batchId": "verify-02",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Already carries its recipe edit (committed d434f2d): the class implements IExcelFooterTotalsProvider and GetExcelFooterTotalsAsync (BorderExportLicenceVoucherReportController.cs:22, 142-165) calls the same helper Post uses \u2014 ExportLicenceListingCurrencyTotals.ExecuteVoucherAsync with identical arguments (compare controller:72-75 with controller:159-162) \u2014 returning ReportFooterTotals(ColumnTotals:"
+  },
+  "BorderExportPermitActualAmendmentReportController": {
+   "batchId": "verify-02",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type: sp_ActualAmendReportResult (WriteRowsAsync at BorderExportPermitActualAmendmentReportController.cs:135-139) == T in Post (controller:41). Columns: all 11 fixture dataIndexes resolve on sp_ActualAmendReportResult (sp_ActualAmendReport.cs) incl. hsCode (HSCode -> hsCode) and sDate (SDate -> sDate, a string? so it stays a text column exactly as the grid renders it, no dataType in the config"
+  },
+  "BorderExportPermitAmendmentReportController": {
+   "batchId": "verify-02",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type: sp_AmendReportResult (WriteRowsAsync at BorderExportPermitAmendmentReportController.cs:107-111) == T in Post (controller:37). Columns: all 10 fixture dataIndexes resolve on sp_AmendReportResult (sp_AmendReport.cs); note this fixture has no HS Code column even though the DTO exposes HSCode \u2014 that is M4-correct (never a column the UI does not show). 'companyAddress' via its 6 fallbacks. Ti"
+  },
+  "BorderExportPermitCancellationReportController": {
+   "batchId": "verify-02",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type: sp_CancelReportResult (WriteRowsAsync at BorderExportPermitCancellationReportController.cs:104-108) == T in Post (controller:37). Columns: all 12 fixture dataIndexes resolve on sp_CancelReportResult (sp_CancelReport.cs) incl. hsCode and remark (Remark is a real property here, so unlike AccountSummary's Remark this needs no allowlist entry); 'companyAddress' via its 6 fallbacks. Verified "
+  },
+  "BorderExportPermitDetailReportController": {
+   "batchId": "verify-02",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B. Row type: sink.Append(chunk) where chunk comes from sp_ExportPermitDetailReport_Fast.StreamResolvedChunksAsync, declared IAsyncEnumerable<List<sp_ExportPermitDetailReportResult>> (Backend/StoredProcedureToLinq/sp_ExportPermitDetailReport_Fast.cs:106) == T in Post (controller:36). Columns: all 25 fixture dataIndexes resolve on sp_ExportPermitDetailReportResult (sp_ExportPermitDetailReport."
+  },
+  "BorderExportPermitExtensionReportController": {
+   "batchId": "verify-02",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type: sp_ExtensionReportResult (WriteRowsAsync at BorderExportPermitExtensionReportController.cs:101-105) == T in Post (controller:37) \u2014 same DTO and same sp_* file as its BorderExportLicence sibling, differing only in FormType 'Border Export Permit' (controller:141). Columns: all 10 fixture dataIndexes resolve as for the Licence sibling; 'companyAddress' via its 6 fallbacks. Title: controller"
+  },
+  "BorderExportPermitNewReportNewReportController": {
+   "batchId": "verify-03",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A generic path, no edit needed. Row type: WriteRowsAsync appends List<sp_NewReportResult> (BorderExportPermitNewReportNewReportController.cs:105-109, sp_NewReport.ExecuteQueryable -> IQueryable<sp_NewReportRow> at sp_NewReport.cs:130, .ToResult() -> sp_NewReportResult at sp_NewReport.cs:77) == T in Post's Task<ActionResult<ApiResult<sp_NewReportResult>>> (:38), so RowTypeAssertingSink (Contr"
+  },
+  "BorderExportPermitVoucherReportController": {
+   "batchId": "verify-03",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A generic path, no edit needed. Row type: List<sp_VoucherReportResult> (:104-108; sp_VoucherReport.cs:138 queryable of sp_VoucherReportRow, ToResult() at sp_VoucherReport.cs:83) == Post's T (:37). title: ExcelWorksheetTitle (:90) == config title 'Border Export Permit Voucher Report' (reportConfigs.ts:3478-3483). columnsExact: verified on all SEVEN fixtures that exist for this configKey (base"
+  },
+  "BorderImportLicenceActualAmendmentReportController": {
+   "batchId": "verify-03",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A generic path, no edit needed. Row type: List<sp_ActualAmendReportResult> (:101-105; sp_ActualAmendReport.cs:120 + :70) == Post's T (:38). title: ExcelWorksheetTitle (:87) == config title (reportConfigs.ts:3619-3623). columnsExact: 11/11 resolve on sp_ActualAmendReportResult; CompanyAddress via the 6 address fallbacks; 'hsCode' -> HSCode; the two columns 'Licence No' and 'Licence Amendment "
+  },
+  "BorderImportLicenceAmendmentReportController": {
+   "batchId": "verify-03",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A generic path, no edit needed. Row type: List<sp_AmendReportResult> (:101-105; sp_AmendReport.cs:120 + :70) == Post's T (:38). title: ExcelWorksheetTitle (:87) == config title (reportConfigs.ts:3697-3701). columnsExact: 11/11 resolve on sp_AmendReportResult in config order; 'Licence No' = oldLicenceNo with licenceNo fallback (both resolve); CompanyAddress via the 6 address fallbacks; 'hsCod"
+  },
+  "BorderImportLicenceCancellationReportController": {
+   "batchId": "verify-03",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A generic path, no edit needed. Row type: List<sp_CancelReportResult> (:101-105; sp_CancelReport.cs:122 + :71) == Post's T (:38). title: ExcelWorksheetTitle (:87) == config title (reportConfigs.ts:4018-4022). columnsExact: 12/12 resolve on sp_CancelReportResult in config order (Sakhan, Section, LicenceNo, CancellationNo->licenceNo, CancellationDate->sDate string, CompanyRegistrationNo, Compa"
+  },
+  "BorderImportLicenceDetailReportController": {
+   "batchId": "verify-03",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A generic path, no edit needed. Row type: chunk.ConvertAll(row => row.ToResult()) -> List<sp_ImportLicenceDetailReportResult> (:78-82; sp_BorderImportLicenceDetailReport.cs:79 queryable of sp_ImportLicenceDetailReportRow, ToResult() at sp_ImportLicenceDetailReport.cs:116) == Post's T (:34). title: ExcelWorksheetTitle (:64) == config title 'Border Import Licence Detail Report' (reportConfigs."
+  },
+  "BorderImportLicenceDetailReportPendingController": {
+   "batchId": "verify-03",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A generic path, no edit needed. Row type: List<sp_ImportLicencePendingDetailReportResult> (:78-82; sp_BorderImportLicencePendingDetailReport.cs:79 + sp_ImportLicencePendingDetailReport.cs:114) == Post's T (:34). title: ExcelWorksheetTitle (:64) == config title 'Border Import Licence Detail Report (Pending)' (reportConfigs.ts:4345-4347); 45 chars, but StreamingExcelWriter.SanitizeWorksheetNam"
+  },
+  "BorderImportLicenceExtensionReportController": {
+   "batchId": "verify-03",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A generic path, no edit needed. Row type: List<sp_ExtensionReportResult> (:106-110; sp_ExtensionReport.cs:124 + :68) == Post's T (:38). title: ExcelWorksheetTitle (:92) == config title (reportConfigs.ts:4503-4507). columnsExact: 10/10 resolve on sp_ExtensionReportResult in config order ('Extension No'->licenceNo, 'Extension Last Date'->sDate string, CompanyAddress via the 6 fallbacks, TotalV"
+  },
+  "BorderImportLicenceNewReportNewReportController": {
+   "batchId": "verify-04",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A, kind:verify \u2014 no edit needed. Row type: WriteRowsAsync appends sp_NewReportResult (Backend/Controllers/Report/BorderImportLicenceNewReportNewReportController.cs:101-105 -> sp_NewReport.ExecuteQueryable(...).Select(row => row.ToResult()), ToResult declared Backend/StoredProcedureToLinq/sp_NewReport.cs:77), which equals T in Post's ActionResult<ApiResult<sp_NewReportResult>> (same file:38)."
+  },
+  "BorderImportLicencePendingReportController": {
+   "batchId": "verify-04",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A, kind:verify \u2014 no edit needed. Row type: sp_PendingReportResult (Backend/Controllers/Report/BorderImportLicencePendingReportController.cs:101-105; ToResult at Backend/StoredProcedureToLinq/sp_PendingReport.cs:53) == T in Post (:38). title: ExcelWorksheetTitle \"Border Import Licence Pending Report\" (:87) == fixture title, and the single fixture headerLine already is that title (no duplicate"
+  },
+  "BorderImportLicenceVoucherReportController": {
+   "batchId": "verify-04",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A, kind:verify, 6 fixtures (default + 5 ApplyType variants) \u2014 no edit needed. Row type: sp_VoucherReportResult (Backend/Controllers/Report/BorderImportLicenceVoucherReportController.cs:101-105; ToResult at Backend/StoredProcedureToLinq/sp_VoucherReport.cs:83) == T in Post (:38). title: ExcelWorksheetTitle \"Border Import Licence Voucher Report\" (:87) == fixture title; the fixture headerLine i"
+  },
+  "BorderImportPermitActualAmendmentReportController": {
+   "batchId": "verify-04",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A, kind:verify \u2014 no edit needed. Row type: sp_ActualAmendReportResult (Backend/Controllers/Report/BorderImportPermitActualAmendmentReportController.cs:101-106 region / WriteRowsAsync over sp_ActualAmendReport.ExecuteQueryable; ToResult at Backend/StoredProcedureToLinq/sp_ActualAmendReport.cs:70) == T in Post (controller :38). title: ExcelWorksheetTitle \"Border Import Permit Actual Amendment "
+  },
+  "BorderImportPermitAmendmentReportController": {
+   "batchId": "verify-04",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A, kind:verify \u2014 no edit needed. Row type: sp_AmendReportResult (WriteRowsAsync over sp_AmendReport.ExecuteQueryable, Backend/Controllers/Report/BorderImportPermitAmendmentReportController.cs WriteRowsAsync; ToResult at Backend/StoredProcedureToLinq/sp_AmendReport.cs:70) == T in Post. title: ExcelWorksheetTitle \"Border Import Permit Amendment Report\" == fixture title; subtitle headerLine doe"
+  },
+  "BorderImportPermitCancellationReportController": {
+   "batchId": "verify-04",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A, kind:verify \u2014 no edit needed. Row type: sp_CancelReportResult (WriteRowsAsync over sp_CancelReport.ExecuteQueryable; ToResult at Backend/StoredProcedureToLinq/sp_CancelReport.cs:71) == T in Post. title: ExcelWorksheetTitle \"Border Import Permit Cancellation Report\" == fixture title; subtitle headerLine does not contain it -> title line added. date/fromTo: DateTime FromDate+ToDate. columns"
+  },
+  "BorderImportPermitDetailReportController": {
+   "batchId": "verify-04",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B, kind:verify \u2014 no edit needed. Row type: chunks are List<sp_ImportPermitDetailReportResult> (Backend/Controllers/Report/BorderImportPermitDetailReportController.cs:83-87 -> sp_ImportPermitDetailReport_Fast.StreamResolvedChunksAsync, declared IAsyncEnumerable<List<sp_ImportPermitDetailReportResult>> at Backend/StoredProcedureToLinq/sp_ImportPermitDetailReport_Fast.cs:105), matching T in Pos"
+  },
+  "BorderImportPermitExtensionReportController": {
+   "batchId": "verify-04",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A, kind:verify, the one report in this batch WITH a footer \u2014 no edit needed. Row type: sp_ExtensionReportResult (Backend/Controllers/Report/BorderImportPermitExtensionReportController.cs:106-110; ToResult at Backend/StoredProcedureToLinq/sp_ExtensionReport.cs:68) == T in Post (:38). title: ExcelWorksheetTitle \"Border Import Permit Extension Report\" (:92) == fixture title; subtitle headerLine"
+  },
+  "AccountSummaryReportController": {
+   "batchId": "verify-01",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Already carries the change; nothing edited. Typed layout AccountSummaryReportController.cs:121-148 (IExcelReportLayoutProvider) + [ExcelFormatVersion(2)] at :23 + IExcelFooterTotalsProvider at :164-185. Row type sp_AccountSummaryReportResult: Post :42 returns ApiResult<sp_AccountSummaryReportResult>, WriteRowsAsync :201-206 appends row.ToResult() from sp_AccountSummaryReport.ExecuteQueryable(inclu"
+  },
+  "AlcoholicBeveragesImportationDetailReportController": {
+   "batchId": "verify-01",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Verify-only (group B); nothing needed changing. Row type sp_WineImportationReportResult: Post :39 == element of sp_WineImportationReport_Fast.StreamResolvedChunksAsync (sp_WineImportationReport_Fast.cs:105) appended at :92. All 15 fixture columns resolve on sp_WineImportationReport.cs (companyAddress has no property but its 6 fallbacks unitLevel/streetNumberStreetName/quarterCityTownship/state/cou"
+  },
+  "AlcoholicBeveragesImportationRegistrationByVoucherController": {
+   "batchId": "verify-01",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Verify-only (group B); no edit required. Row type sp_WineImportationRegistrationReportResult: Post :39 == element of sp_WineImportationRegistrationReport_Fast.StreamResolvedChunksAsync (sp_WineImportationRegistrationReport_Fast.cs:102) appended at :92. All 11 fixture columns resolve on sp_WineImportationRegistrationReport.cs (companyAddress via the same 6 address fallbacks; nrcNo, totalAmount, pay"
+  },
+  "AlcoholicBeveragesImportationSummaryReportController": {
+   "batchId": "verify-01",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Verify-only (group F); no edit required. Row type RegistrationSummaryRow: Post :39/:47-49 returns ApiResult<RegistrationSummaryRow>, WriteRowsAsync :86-87 appends the single SummaryRowAsync row (sp_WineImportationReport_Fast.cs:236) \u2014 same type. All 6 fixture columns (newCount/cancelCount/extensionCount/validCount/invalidCount/totalNumber, all dataType 'number') resolve on Backend/StoredProcedureT"
+  },
+  "BorderExportLicenceActualAmendmentReportController": {
+   "batchId": "verify-01",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Verify-only (group A); no edit required. Row type sp_ActualAmendReportResult: Post :41 == WriteRowsAsync :112-116 (ExecuteQueryable + row.ToResult()). All 10 fixture columns resolve on sp_ActualAmendReport.cs \u2014 LicenceNo via dataIndex oldLicenceNo (fallback licenceNo), AmendmentDate via the string sDate (text, as in the grid), CompanyAddress via the 6 address fallbacks, TotalValue via amount. Fixt"
+  },
+  "BorderExportLicenceAmendmentReportController": {
+   "batchId": "verify-01",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Verify-only (group A); no edit required. Identical shape to its ActualAmendment sibling. Row type sp_AmendReportResult: Post :41 == WriteRowsAsync :112-116. All 10 fixture columns resolve on sp_AmendReport.cs (LicenceNo via oldLicenceNo + fallback licenceNo, sDate text, CompanyAddress via 6 fallbacks, amount). Fixture == config columns 10/10 in order (reportConfigs.ts BorderExportLicenceAmendmentR"
+  },
+  "BorderExportLicenceCancellationReportController": {
+   "batchId": "verify-01",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Verify-only (group A); no edit required. Row type sp_CancelReportResult: Post :41 == WriteRowsAsync :112-116. All 11 fixture columns resolve on sp_CancelReport.cs \u2014 including Remark (dataIndex remark, which DOES exist on this DTO, unlike AccountSummary's) and CancellationNo/CancellationDate via licenceNo/sDate. Fixture == config 11/11 in order (verified key+title pairwise), showRowNumber true / 'N"
+  },
+  "BorderExportLicenceDetailReportController": {
+   "batchId": "verify-01",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Verify-only (group B); no edit required. Row type sp_ExportLicenceDetailReportResult: Post :36 == element of sp_ExportLicenceDetailReport_Fast.StreamResolvedChunksAsync (sp_ExportLicenceDetailReport_Fast.cs:108) appended at :83. All 28 fixture columns resolve on sp_ExportLicenceDetailReport.cs (hsCode, hsDescription, portofExport/portofDischarge, countryofOrigin, destinationCountry, unit/price/qua"
+  },
+  "DutyFreeShopDetailReportController": {
+   "batchId": "verify-06",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B verify-only, zero edits required. Row type: Post is Task<ActionResult<ApiResult<sp_DutyFreeShopReportResult>>> (Backend/Controllers/Report/DutyFreeShopDetailReportController.cs:34) and WriteRowsAsync appends chunks of the same sp_DutyFreeShopReport.Query(...) IQueryable<sp_DutyFreeShopReportResult> (:80-84, proc helper Backend/StoredProcedureToLinq/sp_DutyFreeShopReport.cs:54) \u2014 types matc"
+  },
+  "DutyFreeShopRegistrationByVoucherController": {
+   "batchId": "verify-06",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B verify-only, zero edits required. Row type: Post T = sp_DutyFreeShopRegistrationReportResult (Backend/Controllers/Report/DutyFreeShopRegistrationByVoucherController.cs:34) == the chunk element of sp_DutyFreeShopRegistrationReport.Query(...) appended by WriteRowsAsync (:80-84, Backend/StoredProcedureToLinq/sp_DutyFreeShopRegistrationReport.cs:47) \u2014 match; both paths share TryCreateReportReq"
+  },
+  "DutyFreeShopSummaryReportController": {
+   "batchId": "verify-06",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group F verify-only, zero edits required. Row type: Post T = RegistrationSummaryRow (Backend/Controllers/Report/DutyFreeShopSummaryReportController.cs:34) and WriteRowsAsync appends new[]{ row } from the same sp_DutyFreeShopReport.SummaryRowAsync (:80-81 vs :42, helper Backend/StoredProcedureToLinq/sp_DutyFreeShopReport.cs:118) \u2014 match, single row. title: ExcelWorksheetTitle \"Duty Free Shop Summar"
+  },
+  "EIRCardBindReportController": {
+   "batchId": "verify-06",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A verify-only, zero edits required. Row type: Post T = sp_PathakaBindReportResult (Backend/Controllers/Report/EIRCardBindReportController.cs:41) and WriteRowsAsync appends chunk.Select(row => row.ToResult()) i.e. List<sp_PathakaBindReportResult> (:101-105; ExecuteQueryable yields sp_PathakaBindReportRow, .ToResult() maps to the Result DTO \u2014 Backend/StoredProcedureToLinq/sp_PathakaBindReport."
+  },
+  "EVCycleShowRoomDetailReportController": {
+   "batchId": "verify-06",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B verify-only, zero edits required. Row type: Post T = sp_EVCycleShowRoomReportResult (Backend/Controllers/Report/EVCycleShowRoomDetailReportController.cs:34) == chunk element of sp_EVCycleShowRoomReport.Query(...) appended by WriteRowsAsync (:80-84, Backend/StoredProcedureToLinq/sp_EVCycleShowRoomReport.cs:94) \u2014 match. Both paths run the same TryCreateReportRequest (:37, :79) including Allo"
+  },
+  "EVCycleShowRoomRegistrationByVoucherController": {
+   "batchId": "verify-06",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B verify-only, zero edits required. Row type: Post T = sp_EVCycleShowRoomRegistrationReportResult (Backend/Controllers/Report/EVCycleShowRoomRegistrationByVoucherController.cs:34) == chunk element of sp_EVCycleShowRoomRegistrationReport.Query(...) (:80-84, Backend/StoredProcedureToLinq/sp_EVCycleShowRoomRegistrationReport.cs:75) \u2014 match; shared TryCreateReportRequest (:37, :79) incl. Payment"
+  },
+  "EVCycleShowRoomSummaryReportController": {
+   "batchId": "verify-06",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group F verify-only, zero edits required. Row type: Post T = RegistrationSummaryRow (Backend/Controllers/Report/EVCycleShowRoomSummaryReportController.cs:34) and WriteRowsAsync appends new[]{ row } from the same sp_EVCycleShowRoomReport.SummaryRowAsync (:80-81 vs :42, Backend/StoredProcedureToLinq/sp_EVCycleShowRoomReport.cs:68) \u2014 match; both build the procedure request via TryCreateReportRequest "
+  },
+  "EVShowRoomDetailReportController": {
+   "batchId": "verify-06",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B verify-only, zero edits required. Row type: Post T = sp_EVShowRoomReportResult (Backend/Controllers/Report/EVShowRoomDetailReportController.cs:34) == chunk element of sp_EVShowRoomReport.Query(...) appended by WriteRowsAsync (:80-84, Backend/StoredProcedureToLinq/sp_EVShowRoomReport.cs:98) \u2014 match; shared TryCreateReportRequest (:37, :79) incl. AllowedFormTypes = sp_EVShowRoomReport.Resolv"
+  },
+  "ExportLicenceVoucherReportController": {
+   "batchId": "verify-08",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A. Row type: sp_VoucherReport.ExecuteQueryable -> sp_VoucherReportRow, .ToResult() -> sp_VoucherReportResult (sp_VoucherReport.cs:83, ExportLicenceVoucherReportController.cs:98-102) == T in Post's Task<ActionResult<ApiResult<sp_VoucherReportResult>>> (line 37). All 6 fixtures on disk (base + ApplyType New/Amend/Extension/Cancel/Actual_Amend) resolve: every dataIndex maps camelCase onto sp_Vo"
+  },
+  "ExportPermitActualAmendmentReportController": {
+   "batchId": "verify-08",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A. Row type: sp_ActualAmendReport.ExecuteQueryable -> sp_ActualAmendReportRow, .ToResult() -> sp_ActualAmendReportResult (sp_ActualAmendReport.cs:70, controller lines 112-116) == Post's T (line 41). Fixture ExportPermitActualAmendmentReport.json: 10 columns, all resolve (sectionName, oldLicenceNo, licenceNo, sDate, companyRegistrationNo, companyName, hsCode, currency, amount); the CompanyAdd"
+  },
+  "ExportPermitAmendmentReportController": {
+   "batchId": "verify-08",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A. Row type: sp_AmendReport.ExecuteQueryable -> sp_AmendReportRow, .ToResult() -> sp_AmendReportResult (sp_AmendReport.cs:70, controller lines 112-116) == Post's T (line 41). Fixture: 9 columns, all resolve (sectionName, oldLicenceNo, licenceNo, sDate, companyRegistrationNo, companyName, currency, amount) plus the companyAddress fallback chain as above. ExcelWorksheetTitle (line 98) == confi"
+  },
+  "ExportPermitCancellationReportController": {
+   "batchId": "verify-08",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A. Row type: sp_CancelReport.ExecuteQueryable -> sp_CancelReportRow, .ToResult() -> sp_CancelReportResult (sp_CancelReport.cs:71, controller lines 112-116) == Post's T (line 41). Fixture: 11 columns, all resolve (sectionName, oldLicenceNo, licenceNo, sDate, companyRegistrationNo, companyName, hsCode, currency, amount, remark) plus the companyAddress fallback chain. ExcelWorksheetTitle (line "
+  },
+  "ExportPermitDetailReportController": {
+   "batchId": "verify-08",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B. Row type: sp_ExportPermitDetailReport_Fast.StreamResolvedChunksAsync returns IAsyncEnumerable<List<sp_ExportPermitDetailReportResult>> (sp_ExportPermitDetailReport_Fast.cs:106) and the controller appends the chunk verbatim (lines 80-84) == Post's T via CreatePagedResultAsync -> ApiResult<sp_ExportPermitDetailReportResult> (line 36, _Fast.cs:26). Fixture: 25 columns, all resolve on that ty"
+  },
+  "ExportPermitExtensionReportController": {
+   "batchId": "verify-08",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A. Row type: sp_ExtensionReport.ExecuteQueryable -> sp_ExtensionReportRow, .ToResult() -> sp_ExtensionReportResult (sp_ExtensionReport.cs:68, controller lines 109-113) == Post's T (line 41). Fixture: 9 columns, all resolve (sectionName, licenceNo used by both the LicenceNo and ExtensionNo columns, sDate, companyRegistrationNo, companyName, currency, amount) plus the companyAddress fallback c"
+  },
+  "ExportPermitNewReportNewReportController": {
+   "batchId": "verify-08",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A. Row type: sp_NewReport.ExecuteQueryable -> sp_NewReportRow, .ToResult() -> sp_NewReportResult (sp_NewReport.cs:77, controller lines 112-116) == Post's T (line 41). Fixture: 9 columns, all resolve (sectionName, licenceNo, companyRegistrationNo, companyName, commodityType, hsCode, currency, amount) plus the companyAddress fallback chain. titleMismatch false: ExcelWorksheetTitle (line 98) is"
+  },
+  "ExportPermitVoucherReportController": {
+   "batchId": "verify-08",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A. Row type: sp_VoucherReport.ExecuteQueryable -> sp_VoucherReportRow, .ToResult() -> sp_VoucherReportResult (sp_VoucherReport.cs:83, controller lines 112-116) == Post's T (line 41). Fixture ExportPermitVoucherReport.json: 11 columns, all resolve (licenceNo, applicationNo, sLicenceDate, companyRegistrationNo, companyName, totalAmount, currency, voucherNo, sVoucherDate, approvedUser, amount)."
+  },
+  "EVShowRoomRegistrationByVoucherController": {
+   "batchId": "verify-07",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B. Row type = sp_EVShowRoomRegistrationReportResult: WriteRowsAsync chunks sp_EVShowRoomRegistrationReport.Query (Backend/Controllers/Report/EVShowRoomRegistrationByVoucherController.cs:80-84), whose signature is IQueryable<sp_EVShowRoomRegistrationReportResult> (Backend/StoredProcedureToLinq/sp_EVShowRoomRegistrationReport.cs:75) == T in Post (controller:34), so RowTypeAssertingSink passes."
+  },
+  "EVShowRoomSummaryReportController": {
+   "batchId": "verify-07",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group F. Row type = RegistrationSummaryRow: WriteRowsAsync appends new[]{ SummaryRowAsync(...) } (Backend/Controllers/Report/EVShowRoomSummaryReportController.cs:81-82) == T in Post (:34). All 6 fixture columns (newCount, cancelCount, extensionCount, validCount, invalidCount, totalNumber) resolve \u2014 RegistrationSummaryRow declares exactly those 6 properties (Backend/StoredProcedureToLinq/Registrati"
+  },
+  "ExportLicenceActualAmendmentReportController": {
+   "batchId": "verify-07",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B. Row type = sp_ActualAmendReportResult: WriteRowsAsync chunks sp_ActualAmendReport.Query (Backend/Controllers/Report/ExportLicenceActualAmendmentReportController.cs:128-132), declared IQueryable<sp_ActualAmendReportResult> (Backend/StoredProcedureToLinq/sp_ActualAmendReport.cs:155) == T in Post (controller:42) \u2014 note Post reaches the same DTO the other way, via ExecuteAsync rows + ToResult"
+  },
+  "ExportLicenceAmendmentReportController": {
+   "batchId": "verify-07",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A. Row type = sp_AmendReportResult: WriteRowsAsync appends chunk.Select(row => row.ToResult()) over sp_AmendReport.ExecuteQueryable (Backend/Controllers/Report/ExportLicenceAmendmentReportController.cs:99-103) == T in Post (:37). All 9 fixture columns resolve on sp_AmendReportResult (Backend/StoredProcedureToLinq/sp_AmendReport.cs:22ff, 20 props); companyAddress via its 6 fallbacks. Fixture "
+  },
+  "ExportLicenceCancellationReportController": {
+   "batchId": "verify-07",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A. Row type = sp_CancelReportResult: WriteRowsAsync appends chunk.Select(row => row.ToResult()) over sp_CancelReport.ExecuteQueryable (Backend/Controllers/Report/ExportLicenceCancellationReportController.cs:96-100) == T in Post (:37). All 10 fixture columns resolve on sp_CancelReportResult (Backend/StoredProcedureToLinq/sp_CancelReport.cs:21ff, 21 props), including 'remark' (a real property "
+  },
+  "ExportLicenceDetailReportController": {
+   "batchId": "verify-07",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B. Row type = sp_ExportLicenceDetailReportResult: WriteRowsAsync chunks sp_ExportLicenceDetailReport_Fast.StreamResolvedChunksAsync, declared IAsyncEnumerable<List<sp_ExportLicenceDetailReportResult>> (Backend/StoredProcedureToLinq/sp_ExportLicenceDetailReport_Fast.cs:108) == T in Post (Backend/Controllers/Report/ExportLicenceDetailReportController.cs:36). All 27 fixture columns resolve on t"
+  },
+  "ExportLicenceExtensionReportController": {
+   "batchId": "verify-07",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A. Row type = sp_ExtensionReportResult: WriteRowsAsync appends chunk.Select(row => row.ToResult()) over sp_ExtensionReport.ExecuteQueryable (Backend/Controllers/Report/ExportLicenceExtensionReportController.cs:101-105) == T in Post (:37). All 9 fixture columns resolve on sp_ExtensionReportResult (Backend/StoredProcedureToLinq/sp_ExtensionReport.cs:22ff, 19 props); companyAddress via its 6 fa"
+  },
+  "ExportLicenceNewReportNewReportController": {
+   "batchId": "verify-07",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A. Row type = sp_NewReportResult: WriteRowsAsync appends chunk.Select(row => row.ToResult()) over sp_NewReport.ExecuteQueryable (Backend/Controllers/Report/ExportLicenceNewReportNewReportController.cs:97-101) == T in Post (:37). All 11 fixture columns resolve on sp_NewReportResult (Backend/StoredProcedureToLinq/sp_NewReport.cs:23ff, 23 props) including commodityType, hsCode, quota, auto; com"
+  },
+  "ImportLicencePendingReportController": {
+   "batchId": "verify-10",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A. Row type = sp_PendingReportResult: WriteRowsAsync appends chunk.Select(row => row.ToResult()) (ImportLicencePendingReportController.cs:104-108) and sp_PendingReport.cs:53 declares `public sp_PendingReportResult ToResult()`, matching T in Post's Task<ActionResult<ApiResult<sp_PendingReportResult>>> (ImportLicencePendingReportController.cs:41) -> ExcelRowTypeResolver.Resolve returns sp_Pend"
+  },
+  "ImportLicenceVoucherReportController": {
+   "batchId": "verify-10",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A, the one report with BOTH totals. Row type = sp_VoucherReportResult (WriteRowsAsync :126-130 appends row.ToResult(); sp_VoucherReport.cs:83 returns sp_VoucherReportResult) == T in Post (:41). title: ExcelWorksheetTitle (:112) == config title == all 5 fixture titles. fromTo: FromDate/ToDate on the request (:183-184), both validated non-default (:147-157). columnsExact: 16 columns in all 5 f"
+  },
+  "ImportPermitActualAmendmentReportController": {
+   "batchId": "verify-10",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A. Row type = sp_ActualAmendReportResult (WriteRowsAsync :104-108; sp_ActualAmendReport.cs:70 ToResult) == T in Post (:41). title: ExcelWorksheetTitle (:90) == config title (reportConfigs.ts:10281-10283) == fixture. fromTo: FromDate/ToDate (:161-162) validated (:125-135). columnsExact: 10 columns resolve; CompanyAddress uses dataIndex 'companyAddress' (no such property) and falls back to uni"
+  },
+  "ImportPermitAmendmentReportController": {
+   "batchId": "verify-10",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A. Row type = sp_AmendReportResult (WriteRowsAsync :112-116; sp_AmendReport.cs:70 ToResult) == T in Post (:41). title: ExcelWorksheetTitle (:98) == config title == fixture; reportHeading ['Ministry of Commerce','Directorate of Trade'] arrives as spec.headerLines[0..1] plus the subtitle line. fromTo: FromDate/ToDate (:168-169) validated (:133-143). columnsExact: 10 columns resolve (LicenceAme"
+  },
+  "ImportPermitCancellationReportController": {
+   "batchId": "verify-10",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A. Row type = sp_CancelReportResult (WriteRowsAsync :104-108; sp_CancelReport.cs:71 ToResult) == T in Post (:41). title: ExcelWorksheetTitle (:90) == config title == fixture. fromTo: FromDate/ToDate (:159-160) validated (:133-143). columnsExact: 11 columns resolve (hsCode<-HSCode is deliberately the FIRST config column, sectionName, licenceNo, oldLicenceNo, sDate, companyRegistrationNo, comp"
+  },
+  "ImportPermitDetailReportController": {
+   "batchId": "verify-10",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B. Row type = sp_ImportPermitDetailReportResult: WriteRowsAsync (:80-84) appends the chunks of sp_ImportPermitDetailReport_Fast.StreamResolvedChunksAsync, declared IAsyncEnumerable<List<sp_ImportPermitDetailReportResult>> (sp_ImportPermitDetailReport_Fast.cs:105), matching T in Post (:36, served by CreatePagedResultAsync at sp_ImportPermitDetailReport_Fast.cs:25). title: ExcelWorksheetTitle "
+  },
+  "ImportPermitExtensionReportController": {
+   "batchId": "verify-10",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A. Row type = sp_ExtensionReportResult (WriteRowsAsync :109-113; sp_ExtensionReport.cs:68 ToResult) == T in Post (:41). title: ExcelWorksheetTitle (:95) == config title == fixture. fromTo: FromDate/ToDate (:165-166) validated (:130-140). columnsExact: 9 columns resolve (sectionName, licenceNo, ExtensionNo -> oldLicenceNo, ExtensionLastDate -> sDate, companyRegistrationNo, companyName, compan"
+  },
+  "ImportPermitNewReportNewReportController": {
+   "batchId": "verify-10",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A. Row type = sp_NewReportResult (WriteRowsAsync :111-115; sp_NewReport.cs:77 ToResult) == T in Post (:41). title: ExcelWorksheetTitle 'Import Permit New Report (New Report )' (:97) == config title verbatim, including the space before the closing paren, == fixture title; manifest titleMismatch false, so no edit per implement-batch step 3. fromTo: FromDate/ToDate (:168-169) validated (:132-14"
+  },
+  "BorderImportPermitNewReportNewReportController": {
+   "batchId": "verify-05",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type sp_NewReportResult: Post is Task<ActionResult<ApiResult<sp_NewReportResult>>> (BorderImportPermitNewReportNewReportController.cs:38) and WriteRowsAsync appends chunk.Select(row => row.ToResult()) off sp_NewReport.ExecuteQueryable (:101-105) \u2014 same type, so the generic spec path binds against the right rows. Fixture BorderImportPermitNewReportNewReport.json (8 cols): sakhanCode/sectionName"
+  },
+  "BorderImportPermitVoucherReportController": {
+   "batchId": "verify-05",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type sp_VoucherReportResult: Post (BorderImportPermitVoucherReportController.cs:38) and WriteRowsAsync's row.ToResult() (:101-105) agree. Fixture (12 cols) all resolve on sp_VoucherReport.cs:23-49: sakhanCode, licenceNo, applicationDate (DateTime), applicationNo, licenceNo again, sLicenceDate, companyRegistrationNo, companyName, voucherNo, voucherDate, commodityType, totalAmount. Note the deli"
+  },
+  "BusinessServiceAgencyDetailReportController": {
+   "batchId": "verify-05",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B. Row type sp_BusinessServiceAgencyReportResult: sp_BusinessServiceAgencyReport.Query returns IQueryable<sp_BusinessServiceAgencyReportResult> (sp_BusinessServiceAgencyReport.cs:43) and WriteRowsAsync appends the chunk unprojected (BusinessServiceAgencyDetailReportController.cs:80-84), matching Post's T (:34). Fixture (7 cols) resolves on sp_BusinessServiceAgencyReport.cs:18-33: companyRegi"
+  },
+  "BusinessServiceAgencyRegistrationByVoucherController": {
+   "batchId": "verify-05",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B. Row type sp_BusinessServiceAgencyRegistrationReportResult (sp_BusinessServiceAgencyRegistrationReport.cs:15-31, Query at :38) \u2014 appended unprojected (BusinessServiceAgencyRegistrationByVoucherController.cs:80-84) and equal to Post's T (:34). Fixture (10 cols) all resolve: date, companyRegistrationNo, companyName, businessServiceAgencyNo, authorizeCompany, totalAmount (double), paymentType"
+  },
+  "BusinessServiceAgencySummaryReportController": {
+   "batchId": "verify-05",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group F. Row type RegistrationSummaryRow: sp_BusinessServiceAgencyReport.SummaryRowAsync (sp_BusinessServiceAgencyReport.cs:91) feeds both Post (BusinessServiceAgencySummaryReportController.cs:34,42-44) and WriteRowsAsync's sink.Append(new[] { row }) (:81-82). Fixture's 6 numeric columns all resolve on RegistrationSummaryRow.cs:12-17 (newCount, cancelCount, extensionCount, validCount, invalidCount"
+  },
+  "ChequeNoDetailReportController": {
+   "batchId": "verify-05",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type sp_ChequeNoDetailReportResult: WriteRowsAsync streams sp_ChequeNoDetailReport.Query (ChequeNoDetailReportController.cs:114-118), whose element type is sp_ChequeNoDetailReportResult (sp_ChequeNoDetailReport.cs:138), the same T as Post (:37) \u2014 Post's fast path returns row.ToResult() of the same type (:63). Fixture (9 cols) all resolve on sp_ChequeNoDetailReport.cs:18-45: chequeNo, transacti"
+  },
+  "ChequeNoReportController": {
+   "batchId": "verify-05",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/ChequeNoReportController.cs:21 \u2014 added IExcelFooterTotalsProvider to the class declaration",
+    "Backend/Controllers/Report/ChequeNoReportController.cs:95-135 \u2014 new [NonAction] GetExcelFooterTotalsAsync that returns new ReportFooterTotals(await sp_ChequeNoReport.ExecuteColumnTotalsAsync(_context, procedureRequest!), CurrencyTotals: null), i.e. the same helper Post uses for the grid's ColumnTotals, with the doc comment explaining why the default probe is opted out of"
+   ],
+   "notes": "Row type sp_ChequeNoReportResult (sp_ChequeNoReport.cs:18-24): Post's T (:38) == WriteRowsAsync's row.ToResult() (:106-110). Fixture (4 cols) all resolve: chequeId (int), chequeNo, date (DateTime?), amount (double). showRowNumber false. title: ExcelWorksheetTitle (:92) == config title; subtitle 'Cheque No Report (\u2026)' contains it. footer: override(sp_ChequeNoReport.ExecuteColumnTotalsAsync). Keys: "
+  },
+  "CompanyProfileController": {
+   "batchId": "verify-05",
+   "status": "needs-shared-edit",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": false,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type sp_CompanyProfileReportResult: Post's T (CompanyProfileController.cs:41) == WriteRowsAsync's row.ToResult() (:101-105); every one of the fixture's 18 dataIndexes resolves on sp_CompanyProfileReport.cs:18-39 (incl. directorNrc \u2190 DirectorNrc, lineofBusiness, capital, extensionCount). So the generic path BINDS \u2014 but it is not the UI. columnsExact = false: CompanyProfile is rendered by the be"
+  },
+  "ImportLicenceActualAmendmentReportController": {
+   "batchId": "verify-09",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A, verify-only, no edit required. Row type: WriteRowsAsync appends chunk.Select(r => r.ToResult()) (Backend/Controllers/Report/ImportLicenceActualAmendmentReportController.cs:112-116); ToResult() returns sp_ActualAmendReportResult (Backend/StoredProcedureToLinq/sp_ActualAmendReport.cs:70) == T in Post's ActionResult<ApiResult<sp_ActualAmendReportResult>> (controller:41). All 10 fixture dataI"
+  },
+  "ImportLicenceAmendmentReportController": {
+   "batchId": "verify-09",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A, verify-only, no edit required. Row type sp_AmendReportResult (Backend/StoredProcedureToLinq/sp_AmendReport.cs:70, appended at Backend/Controllers/Report/ImportLicenceAmendmentReportController.cs:112-116) == T in Post (controller:41). Identical 10-column fixture to the ActualAmendment sibling and an identical property set (sp_AmendReport.cs:22-43): all dataIndexes resolve, companyAddress v"
+  },
+  "ImportLicenceCancellationReportController": {
+   "batchId": "verify-09",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A, verify-only, no edit required. Row type sp_CancelReportResult (Backend/StoredProcedureToLinq/sp_CancelReport.cs:71, appended at Backend/Controllers/Report/ImportLicenceCancellationReportController.cs:114-118) == T in Post (controller:41). All 11 fixture dataIndexes resolve on sp_CancelReport.cs:21-42, including the extra remark column (Remark -> remark, a real property here, unlike the Ac"
+  },
+  "ImportLicenceDetailByLicenceReportController": {
+   "batchId": "verify-09",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group E, verify-only, no edit required. Row type: WriteRowsAsync appends List<ReportLicenceListResult> from sp_ImportLicenceDetailReport_Fast.GetLicenceListRowsAsync (Backend/Controllers/Report/ImportLicenceDetailByLicenceReportController.cs:101-103; helper at Backend/StoredProcedureToLinq/sp_ImportLicenceDetailReport_Fast.cs:397) == T in Post's ApiResult<ReportLicenceListResult> (controller:39). "
+  },
+  "ImportLicenceDetailReportController": {
+   "batchId": "verify-09",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B, verify-only, no edit required. Row type: chunk element of sp_ImportLicenceDetailReport_Fast.StreamResolvedChunksAsync, declared IAsyncEnumerable<List<sp_ImportLicenceDetailReportResult>> (Backend/StoredProcedureToLinq/sp_ImportLicenceDetailReport_Fast.cs:108), appended whole at Backend/Controllers/Report/ImportLicenceDetailReportController.cs:87-91 == T in Post (controller:39). All 25 fix"
+  },
+  "ImportLicenceDetailReportPendingController": {
+   "batchId": "verify-09",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A, verify-only, no edit required. Row type sp_ImportLicencePendingDetailReportResult (Backend/StoredProcedureToLinq/sp_ImportLicencePendingDetailReport.cs:114, appended at Backend/Controllers/Report/ImportLicenceDetailReportPendingController.cs:104-108) == T in Post (controller:41). All 25 fixture dataIndexes resolve on sp_ImportLicencePendingDetailReport.cs:25-68 \u2014 notably this fixture does"
+  },
+  "ImportLicenceExtensionReportController": {
+   "batchId": "verify-09",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A, verify-only, no controller edit required \u2014 but see sharedEditRequests for a real config-binding bug this report carries (Excel is at grid parity; the grid itself diverges from the RDLC). Row type sp_ExtensionReportResult (Backend/StoredProcedureToLinq/sp_ExtensionReport.cs:68, appended at Backend/Controllers/Report/ImportLicenceExtensionReportController.cs:109-113) == T in Post (controlle"
+  },
+  "ImportLicenceNewReportNewReportController": {
+   "batchId": "verify-09",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A, verify-only, no edit required. Row type sp_NewReportResult (Backend/StoredProcedureToLinq/sp_NewReport.cs:77, appended at Backend/Controllers/Report/ImportLicenceNewReportNewReportController.cs:115-122 via the ExecuteQueryable(includeTotalCount: false) overload) == T in Post (controller:41). All 11 fixture dataIndexes resolve on sp_NewReport.cs:23-46: sectionName, licenceNo, companyRegist"
+  },
+  "ShowRoomRegistrationByVoucherController": {
+   "batchId": "verify-14",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B. Row type = sp_ShowRoomRegistrationReportResult: WriteRowsAsync appends chunks of sp_ShowRoomRegistrationReport.Query(...) (Backend/Controllers/Report/ShowRoomRegistrationByVoucherController.cs:80-84), whose declared return is IQueryable<sp_ShowRoomRegistrationReportResult> (Backend/StoredProcedureToLinq/sp_ShowRoomRegistrationReport.cs:78) \u2014 identical to T in Post's Task<ActionResult<ApiR"
+  },
+  "ShowRoomSummaryReportController": {
+   "batchId": "verify-14",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group F. Row type = RegistrationSummaryRow: WriteRowsAsync appends new[]{ row } from sp_ShowRoomReport.SummaryRowAsync (Backend/Controllers/Report/ShowRoomSummaryReportController.cs:81-82), declared Task<RegistrationSummaryRow> (sp_ShowRoomReport.cs:85), == T in Post (:34). All 6 fixture columns resolve: newCount/cancelCount/extensionCount/validCount/invalidCount/totalNumber \u2194 NewCount\u2026TotalNumber"
+  },
+  "WholeSaleDetailReportController": {
+   "batchId": "verify-14",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B. Row type = sp_WholeSaleRetailReportResult: chunks of sp_WholeSaleRetailReport.Query(...) (Backend/Controllers/Report/WholeSaleDetailReportController.cs:81-85), declared IQueryable<sp_WholeSaleRetailReportResult> (sp_WholeSaleRetailReport.cs:81), == T in Post (:35). All 7 fixture columns resolve (WholeSaleDetailReport.json vs the DTO): companyRegistrationNo, wholeSaleRetailNo, companyName,"
+  },
+  "WholeSaleRegistrationByVoucherController": {
+   "batchId": "verify-14",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B. Row type = sp_WholeSaleRetailRegistrationReportResult: chunks of sp_WholeSaleRetailRegistrationReport.Query(...) (Backend/Controllers/Report/WholeSaleRegistrationByVoucherController.cs:81-85), declared IQueryable<sp_WholeSaleRetailRegistrationReportResult> (sp_WholeSaleRetailRegistrationReport.cs:45), == T in Post (:35). All 10 fixture columns resolve: date/companyRegistrationNo/companyNa"
+  },
+  "WholeSaleSummaryReportController": {
+   "batchId": "verify-14",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group F. Row type = RegistrationSummaryRow: sink.Append(new[]{ row }) from sp_WholeSaleRetailReport.SummaryRowAsync (Backend/Controllers/Report/WholeSaleSummaryReportController.cs:82-83), declared Task<RegistrationSummaryRow> (sp_WholeSaleRetailReport.cs:55), == T in Post (:35). All 6 fixture columns resolve on RegistrationSummaryRow.cs:13-18. Config reportConfigs.ts:12804-12833 matches the fixtur"
+  },
+  "WholeSaleAndRetailDetailReportController": {
+   "batchId": "verify-14",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B, same sp/DTO pair as WholeSaleDetailReport (only the FormType literal 'Whole Sale and Retail' differs, :23). Row type = sp_WholeSaleRetailReportResult (Backend/Controllers/Report/WholeSaleAndRetailDetailReportController.cs:81 \u2192 sp_WholeSaleRetailReport.cs:81), == T in Post (:35). All 7 fixture columns resolve; column titles differ from the WholeSale sibling only in wording ('Whole Sale & R"
+  },
+  "WholeSaleAndRetailRegistrationByVoucherController": {
+   "batchId": "verify-14",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B, same sp/DTO pair as WholeSaleRegistrationByVoucher (RegistrationType literal 'Whole Sale and Retail', :23). Row type = sp_WholeSaleRetailRegistrationReportResult (Backend/Controllers/Report/WholeSaleAndRetailRegistrationByVoucherController.cs:81 \u2192 sp_WholeSaleRetailRegistrationReport.cs:45), == T in Post (:35). All 10 fixture columns resolve (fallback 'wholeSaleRetailPostalCode' matches t"
+  },
+  "WholeSaleAndRetailSummaryReportController": {
+   "batchId": "verify-14",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group F. Row type = RegistrationSummaryRow via sp_WholeSaleRetailReport.SummaryRowAsync (Backend/Controllers/Report/WholeSaleAndRetailSummaryReportController.cs:82-83; sp_WholeSaleRetailReport.cs:55), == T in Post (:35). All 6 fixture columns resolve on RegistrationSummaryRow.cs:13-18. Config reportConfigs.ts:13214-13243 matches the fixture (reportHeading ['Statement of Registered','Whole Sale & R"
+  },
+  "ImportPermitVoucherReportController": {
+   "batchId": "verify-11",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type: WriteRowsAsync appends chunk.Select(row => row.ToResult()) over sp_VoucherReport.ExecuteQueryable (StoredProcedureToLinq/sp_VoucherReport.cs:138 -> IQueryable<sp_VoucherReportRow>; sp_VoucherReport.cs:83 ToResult() -> sp_VoucherReportResult), which equals T in Post's ActionResult<ApiResult<sp_VoucherReportResult>> (ImportPermitVoucherReportController.cs:41). All 14 fixture dataIndexes re"
+  },
+  "ListOfCompanyController": {
+   "batchId": "verify-11",
+   "status": "needs-shared-edit",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type: sp_PaThaKaAllReport.ExecuteQueryable -> IQueryable<sp_PaThaKaAllReportRow> (sp_PaThaKaAllReport.cs:131), .ToResult() -> sp_PaThaKaAllReportResult (sp_PaThaKaAllReport.cs:81) == T in Post (ListOfCompanyController.cs:41). 17 of 19 dataIndexes resolve exactly. Two notes: (a) 'companyAddress' has no property but all 6 fallbackDataIndexes resolve exactly (unitLevel, streetNumberStreetName, qu"
+  },
+  "ListOfDirectorsByCompanyRegistrationNoController": {
+   "batchId": "verify-11",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type: sp_DirectorListReport.ExecuteQueryable -> IQueryable<sp_DirectorListReportRow> (sp_DirectorListReport.cs:132), .ToResult() -> sp_DirectorListReportResult (sp_DirectorListReport.cs:83) == T in Post (ListOfDirectorsByCompanyRegistrationNoController.cs:106 region, `ActionResult<ApiResult<sp_DirectorListReportResult>>`). The extra [HttpPost(\"Detail\")] action returns DirectorsByCompanyDetailR"
+  },
+  "ListOfDirectorsController": {
+   "batchId": "verify-11",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type: sp_DirectorListReport.ExecuteQueryable -> sp_DirectorListReportRow -> ToResult() -> sp_DirectorListReportResult == T in Post (ListOfDirectorsController.cs:41,101,104). All 7 dataIndexes resolve exactly (companyRegistrationNo, companyName, directorName, directorPosition, directorNRC, directorNationality, directorBlackList) - note the fixture column key 'nrcNo' is only a key, its dataIndex"
+  },
+  "ListOfTopCapitalCompanyController": {
+   "batchId": "verify-11",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type: sp_PaThaKaReport.ExecuteQueryable -> IQueryable<sp_PaThaKaReportRow> (sp_PaThaKaReport.cs:108), .ToResult() -> sp_PaThaKaReportResult (sp_PaThaKaReport.cs:62) == T in Post (ListOfTopCapitalCompanyController.cs:41). 7 of 8 dataIndexes resolve exactly; 'companyAddress' resolves through its 6 exact fallbacks -> columnsExact holds. title: ExcelWorksheetTitle 'List of Top Capital Company' (li"
+  },
+  "ListOfValidAndInvalidCompanyController": {
+   "batchId": "verify-11",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Row type: sp_PaThaKaValidInvalidReport.ExecuteQueryable -> IQueryable<sp_PaThaKaValidInvalidReportRow> (sp_PaThaKaValidInvalidReport.cs:105), .ToResult() -> sp_PaThaKaValidInvalidReportResult (sp_PaThaKaValidInvalidReport.cs:60) == T in Post (ListOfValidAndInvalidCompanyController.cs:41). 7 of 8 dataIndexes resolve exactly; 'companyAddress' resolves through its 6 exact fallbacks. title: ExcelWorks"
+  },
+  "MPUReportController": {
+   "batchId": "verify-11",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/MPUReportController.cs:21 \u2014 added IExcelFooterTotalsProvider to the class declaration",
+    "Backend/Controllers/Report/MPUReportController.cs:117-159 \u2014 added the [NonAction] GetExcelFooterTotalsAsync override (doc comment 117-138, method 140-159): calls the same sp_MPUReport.ExecuteColumnTotalsAsync helper Post uses, returns new ReportFooterTotals(columnTotals, CurrencyTotals: null)"
+   ],
+   "notes": "Row type: sp_MPUReport.ExecuteQueryable -> IQueryable<sp_MPUReportRow> (sp_MPUReport.cs:129), .ToResult() -> sp_MPUReportResult (sp_MPUReport.cs:67) == T in Post (MPUReportController.cs:41). All 19 dataIndexes resolve exactly on sp_MPUReportResult, including the four cell-rule specials (transactionAmount, mocAmount, imAmount are string?, mpuAmount/amountDiff derived when blank \u2014 implemented at Exc"
+  },
+  "MPUReportV3Controller": {
+   "batchId": "verify-11",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/MPUReportV3Controller.cs:21 \u2014 added IExcelFooterTotalsProvider to the class declaration",
+    "Backend/Controllers/Report/MPUReportV3Controller.cs:113-156 \u2014 added the [NonAction] GetExcelFooterTotalsAsync override (doc comment 113-135, method 137-156): calls the same sp_MPUReport_V3.ExecuteColumnTotalsAsync helper Post uses, returns new ReportFooterTotals(columnTotals, CurrencyTotals: null)"
+   ],
+   "notes": "Row type: sp_MPUReport_V3.ExecuteQueryable -> IQueryable<sp_MPUReport_V3Row> (sp_MPUReport_V3.cs:142), .ToResult() -> sp_MPUReport_V3Result (sp_MPUReport_V3.cs:69) == T in Post (MPUReportV3Controller.cs:37). All 19 dataIndexes resolve exactly (identical column list to MPUReport; the row type's extra paymentDate property is not a UI column and is correctly absent from the sheet). title: ExcelWorksh"
+  },
+  "RegistrationByVoucherController": {
+   "batchId": "verify-13",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A, verify-only \u2014 no edit required, file untouched (clean at 8130333). Row type: WriteRowsAsync appends chunk.Select(row => row.ToResult()) \u2192 List<sp_PaThaKaRegistrationReportResult> (RegistrationByVoucherController.cs:101-105; ToResult at Backend/StoredProcedureToLinq/sp_PaThaKaRegistrationReport.cs:57), equal to T in Post's Task<ActionResult<ApiResult<sp_PaThaKaRegistrationReportResult>>> ("
+  },
+  "RetailDetailReportController": {
+   "batchId": "verify-13",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B, verify-only \u2014 no edit required. Row type: sink.Append(chunk) over sp_WholeSaleRetailReport.Query(...).AsAsyncEnumerable().ChunkAsync (RetailDetailReportController.cs:81-85) \u2192 sp_WholeSaleRetailReportResult (sp_WholeSaleRetailReport.cs:81), same T as Post (:35, via ReportQueryService.CreatePagedResultAsync on the identical query :43). title: ExcelWorksheetTitle \"Retail Detail Report\" (:67)"
+  },
+  "RetailRegistrationByVoucherController": {
+   "batchId": "verify-13",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B, verify-only \u2014 no edit required. Row type: sink.Append(chunk) over sp_WholeSaleRetailRegistrationReport.Query (RetailRegistrationByVoucherController.cs:81-85) \u2192 sp_WholeSaleRetailRegistrationReportResult, same T as Post (:35). title: \"Retail Registration By Voucher\" (:67) == config title. fromTo/date: FromDate/ToDate on the DTO (:135-136), validated :102-118. columnsExact: all 10 fixture c"
+  },
+  "RetailSummaryReportController": {
+   "batchId": "verify-13",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group F, verify-only \u2014 no edit required. Row type: sink.Append(new[] { row }) where row = await sp_WholeSaleRetailReport.SummaryRowAsync (RetailSummaryReportController.cs:82-83; helper returns Task<RegistrationSummaryRow>, sp_WholeSaleRetailReport.cs:55) == T in Post's ApiResult<RegistrationSummaryRow> (:35, :43). title: \"Retail Summary Report\" (:68) == config title (reportConfigs.ts:13011). fromT"
+  },
+  "SaleCenterDetailReportController": {
+   "batchId": "verify-13",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B, verify-only \u2014 no edit required. Row type: sink.Append(chunk) over sp_SaleCenterReport.Query (SaleCenterDetailReportController.cs:80-83) \u2192 sp_SaleCenterReportResult (sp_SaleCenterReport.cs:102), same T as Post (:34, :42). title: \"Sale Center Detail Report\" (:66) == config title (newReportConfigs.ts:569-577 detailConfig). fromTo/date: FromDate/ToDate on the DTO, validated in TryCreateReport"
+  },
+  "SaleCenterRegistrationByVoucherController": {
+   "batchId": "verify-13",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B, verify-only \u2014 no edit required. Row type: sink.Append(chunk) over sp_SaleCenterRegistrationReport.Query (SaleCenterRegistrationByVoucherController.cs:80-83) \u2192 sp_SaleCenterRegistrationReportResult (sp_SaleCenterRegistrationReport.cs:51), same T as Post (:34, :42). title: \"Sale Center Registration By Voucher\" (:66) == config title (newReportConfigs.ts:579-587). fromTo/date: FromDate/ToDate"
+  },
+  "SaleCenterSummaryReportController": {
+   "batchId": "verify-13",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group F, verify-only \u2014 no edit required. Row type: sink.Append(new[] { row }) from sp_SaleCenterReport.SummaryRowAsync (SaleCenterSummaryReportController.cs:80-81; Task<RegistrationSummaryRow> at sp_SaleCenterReport.cs:76) == T in Post's ApiResult<RegistrationSummaryRow> (:34, :42). title: \"Sale Center Summary Report\" (:66) == config title (newReportConfigs.ts:560-568 summaryConfig). fromTo/date: "
+  },
+  "ShowRoomDetailReportController": {
+   "batchId": "verify-13",
+   "status": "already-done",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B, verify-only \u2014 no edit required. Row type: sink.Append(chunk) over sp_ShowRoomReport.Query (ShowRoomDetailReportController.cs:80-83) \u2192 sp_ShowRoomReportResult (sp_ShowRoomReport.cs:111), same T as Post (:34, :42). title: \"Show Room Detail Report\" (:66) == config title (newReportConfigs.ts:598-606). fromTo/date: FromDate/ToDate on the DTO. columnsExact: 10 fixture cols == showRoomDetailColu"
+  },
+  "MemberRegistrationReportController": {
+   "batchId": "verify-12",
+   "status": "needs-shared-edit",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": false,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B. Row type: sp_MemberRegistrationReportResult (Backend/StoredProcedureToLinq/sp_MemberRegistrationReport.cs:14), appended from sp_MemberRegistrationReport.Query(...).ChunkAsync (controller:81-85) and identical to T in Post's ActionResult<ApiResult<T>> (controller:34). Columns 7/8 resolve: applyType/memberCode/email/fullName/nrcNo(NRCNo->nrcNo)/issuedDate/endDate. UNRESOLVED: 'mobile1' (Fron"
+  },
+  "OGARecommendationHistoryReportController": {
+   "batchId": "verify-12",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/OGARecommendationHistoryReportController.cs:73 \u2014 ExcelWorksheetTitle \"OGA Recommendation History Report\" -> \"OGA Recommendation History\" (the config title verbatim, newReportConfigs.ts:727), resolving the manifest titleMismatch; comment records that the old RDLC had no fixed name here (=Fields!ReferenceNo.Value+\" History\")"
+   ],
+   "notes": "Group B. Row type: sp_OGARecommendationHistoryReportResult (sp_OGARecommendationHistoryReport.cs:14) appended from Query(...).ChunkAsync (controller:83-87) == Post's T (controller:37). All 8 columns resolve: sDate, sarNo, allowance, licenceNo, remark, balance, fullName, position. dateShape none is correct - the config's only filter is ReferenceNo (newReportConfigs.ts:728-736) and neither OGARecomm"
+  },
+  "OGARecommendationReportController": {
+   "batchId": "verify-12",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B, no edit needed. Row type: sp_OGARecommendationListReportResult (sp_OGARecommendationListReport.cs) appended from Query(...).ChunkAsync (controller:80-84) == Post's T (controller:34). All 10 columns resolve: sDate, ogaDepartmentName, ogaSectionName, referenceNo, sFromDate, sToDate, allowance, terminate, isUsedOnce, and the ViewDetail drilldown column whose dataIndex is referenceNo (newRepo"
+  },
+  "OnlineFeesReportController": {
+   "batchId": "verify-12",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/OnlineFeesReportController.cs:21 \u2014 class now also implements IExcelFooterTotalsProvider",
+    "Backend/Controllers/Report/OnlineFeesReportController.cs:95-135 \u2014 added [NonAction] GetExcelFooterTotalsAsync returning new ReportFooterTotals(await sp_OnlineFeesReport.ExecuteColumnTotalsAsync(_context, procedureRequest!), CurrencyTotals: null), same helper Post uses; throws if the stored filters are invalid (mirrors the default probe)"
+   ],
+   "notes": "Group A. Row type: sp_OnlineFeesReportResult - WriteRowsAsync appends chunk.Select(row => row.ToResult()) (controller:106-110) == Post's T (controller:38). All 6 columns resolve on it: voucherDate, companyRegistrationNo, companyName, formType, amount, remark (sp_OnlineFeesReport.cs:19-28). footer: override(sp_OnlineFeesReport.ExecuteColumnTotalsAsync) - key 'amount' only, which is the Deducted Fee"
+  },
+  "PaThaKaRegisteredBusinessOrganizationReportController": {
+   "batchId": "verify-12",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [
+    "Backend/Controllers/Report/PaThaKaRegisteredBusinessOrganizationReportController.cs:107 \u2014 ExcelWorksheetTitle \"PaThaKaRegisteredBusinessOrganizationReport\" -> \"PaThaKa Registered Business Organization Report\" (the config title verbatim, reportConfigs.ts:12541), resolving the manifest titleMismatch; the old value was the class name, and the RDLC (PaThaKaAllReport.rdlc) carries no report-name line to agree with it"
+   ],
+   "notes": "Group A. Row type: sp_PaThaKaReportResult - WriteRowsAsync appends chunk.Select(row => row.ToResult()) (controller:116-120) == Post's T (controller:41). All 8 columns bind: companyRegistrationNo, companyName, companyRegistrationDate, endDate, businessType, lineofBusiness; companyAddress has no property but all 6 fallbackDataIndexes (unitLevel/streetNumberStreetName/quarterCityTownship/state/countr"
+  },
+  "ReExportDetailReportController": {
+   "batchId": "verify-12",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B, no edit needed. Row type: sp_ReExportReportResult (sp_ReExportReport.cs:18) appended from Query(...).ChunkAsync (controller:80-84) == Post's T (controller:34). All 7 columns bind: companyRegistrationNo, reExportNo, companyName, issuedDate, endDate directly; companyAddress and reExportAddress have no own property but every fallback resolves (unitLevel.. / reExportUnitLevel.., sp_ReExportRe"
+  },
+  "ReExportSummaryReportController": {
+   "batchId": "verify-12",
+   "status": "needs-shared-edit",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": false,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group B. Row type: sp_ReExportReportResult (sp_ReExportReport.cs:18) appended from Query(...).ChunkAsync (controller:80-84) == Post's T (controller:34) - so the row type check passes, but NONE of the 6 config columns resolve on it. The config uses the shared 6-count summaryColumns (newReportConfigs.ts:209-216: newCount/cancelCount/extensionCount/validCount/invalidCount/totalNumber), which are prop"
+  },
+  "RegistrationByBusinessTypeController": {
+   "batchId": "verify-12",
+   "status": "ok",
+   "rulesVerified": {
+    "title": true,
+    "date": true,
+    "fromTo": true,
+    "columnsExact": true,
+    "footer": true
+   },
+   "edits": [],
+   "notes": "Group A, no edit needed. Row type: sp_PaThaKaByBusinessTypeReportResult - WriteRowsAsync appends chunk.Select(row => row.ToResult()) (controller:109-113) == Post's T (controller:41). Both columns resolve: businessType, companyCount (sp_PaThaKaByBusinessTypeReport.cs:18-22). footer: default-probe. Post sets ColumnTotals = {\"companyCount\" = rows[0].GrandTotal} unconditionally (controller:60,69-72); "
+  }
+ }
+}

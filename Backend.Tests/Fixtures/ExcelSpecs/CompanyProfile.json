@@ -5,104 +5,78 @@
   "title": "Company Profile",
   "fileName": "CompanyProfile.xlsx",
   "headerLines": [
-    "Company Profile"
+    "Ministry of Commerce",
+    "Directorate of Trade",
+    "Company Profile (01/02/2026) To (28/02/2026)"
   ],
-  "showRowNumber": false,
-  "rowNumberTitle": "No",
+  "showRowNumber": true,
+  "rowNumberTitle": "စဥ်",
   "columns": [
     {
       "key": "CompanyRegistrationNo",
       "dataIndex": "companyRegistrationNo",
-      "title": "Company Registration No"
-    },
-    {
-      "key": "CompanyName",
-      "dataIndex": "companyName",
-      "title": "Company Name"
-    },
-    {
-      "key": "CompanyRegistrationDate",
-      "dataIndex": "companyRegistrationDate",
-      "title": "Company Registration Date",
-      "dataType": "date"
+      "title": "ပသက / အမှတ်/ရက်စွဲ"
     },
     {
       "key": "EndDate",
       "dataIndex": "endDate",
-      "title": "End Date",
+      "title": "သက်တမ်းကုန်ဆုံးရက်",
       "dataType": "date"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "ကုမ္ပဏီအမည်"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "ကုမ္ပဏီလိပ်စာ",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
     },
     {
       "key": "BusinessType",
       "dataIndex": "businessType",
-      "title": "Business Type"
+      "title": "ကုမ္ပဏီအမျိုးအစား"
     },
     {
-      "key": "LineofBusiness",
-      "dataIndex": "lineofBusiness",
-      "title": "Line of Business"
-    },
-    {
-      "key": "UnitLevel",
-      "dataIndex": "unitLevel",
-      "title": "Unit Level"
-    },
-    {
-      "key": "StreetNumberStreetName",
-      "dataIndex": "streetNumberStreetName",
-      "title": "Street Number / Street Name"
-    },
-    {
-      "key": "QuarterCityTownship",
-      "dataIndex": "quarterCityTownship",
-      "title": "Quarter / City / Township"
-    },
-    {
-      "key": "State",
-      "dataIndex": "state",
-      "title": "State"
-    },
-    {
-      "key": "Country",
-      "dataIndex": "country",
-      "title": "Country"
-    },
-    {
-      "key": "PostalCode",
-      "dataIndex": "postalCode",
-      "title": "Postal Code"
+      "key": "PermitBusiness",
+      "dataIndex": "permitBusiness",
+      "title": "လုပ်ငန်းရည်ရွယ်ချက်"
     },
     {
       "key": "Capital",
       "dataIndex": "capital",
-      "title": "Capital",
+      "title": "မတည်ငွေရင်း",
+      "dataType": "number"
+    },
+    {
+      "key": "ExtensionCount",
+      "dataIndex": "extensionCount",
+      "title": "ပသက သက်တမ်းတိုး",
       "dataType": "number"
     },
     {
       "key": "DirectorName",
       "dataIndex": "directorName",
-      "title": "Director Name"
+      "title": "အမည်"
     },
     {
       "key": "DirectorNrc",
       "dataIndex": "directorNrc",
-      "title": "Director NRC"
+      "title": "နိုင်ငံသားအမှတ်"
     },
     {
       "key": "DirectorPosition",
       "dataIndex": "directorPosition",
-      "title": "Director Position"
-    },
-    {
-      "key": "PermitBusiness",
-      "dataIndex": "permitBusiness",
-      "title": "Permit Business"
-    },
-    {
-      "key": "ExtensionCount",
-      "dataIndex": "extensionCount",
-      "title": "Extension Count",
-      "dataType": "number"
+      "title": "ရာထူး"
     }
   ]
 }

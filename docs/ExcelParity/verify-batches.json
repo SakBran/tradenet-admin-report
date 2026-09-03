@@ -1,0 +1,203 @@
+{
+ "purpose": "Adversarial verification batches. Each skeptic agent is told one id and reads its controllers here.",
+ "batches": [
+  {
+   "id": "skeptic-01",
+   "controllers": [
+    "AccountSummaryReportController",
+    "BorderExportLicenceActualAmendmentReportController",
+    "BorderExportLicenceAmendmentReportController",
+    "BorderExportLicenceByHSCodeReportController",
+    "BorderExportLicenceByMethodReportController"
+   ]
+  },
+  {
+   "id": "skeptic-02",
+   "controllers": [
+    "BorderExportLicenceBySectionReportController",
+    "BorderExportLicenceBySellerCountryReportController",
+    "BorderExportLicenceCancellationReportController",
+    "BorderExportLicenceCompanyListReportController",
+    "BorderExportLicenceDailyReportNewLicenceReportController"
+   ]
+  },
+  {
+   "id": "skeptic-03",
+   "controllers": [
+    "BorderExportLicenceExtensionReportController",
+    "BorderExportLicenceNewReportNewReportController",
+    "BorderExportLicenceTotalValueLicencesReportController",
+    "BorderExportLicenceVoucherReportController",
+    "BorderExportPermitActualAmendmentReportController"
+   ]
+  },
+  {
+   "id": "skeptic-04",
+   "controllers": [
+    "BorderExportPermitAmendmentReportController",
+    "BorderExportPermitByHSCodeReportController",
+    "BorderExportPermitBySectionReportController",
+    "BorderExportPermitBySellerCountryReportController",
+    "BorderExportPermitCancellationReportController"
+   ]
+  },
+  {
+   "id": "skeptic-05",
+   "controllers": [
+    "BorderExportPermitCompanyListReportController",
+    "BorderExportPermitDailyReportNewPermitReportController",
+    "BorderExportPermitDetailReportController",
+    "BorderExportPermitExtensionReportController",
+    "BorderExportPermitNewReportNewReportController"
+   ]
+  },
+  {
+   "id": "skeptic-06",
+   "controllers": [
+    "BorderExportPermitVoucherReportController",
+    "BorderImportLicenceByHSCodeReportController",
+    "BorderImportLicenceByMethodReportController",
+    "BorderImportLicenceBySectionReportController",
+    "BorderImportLicenceBySellerCountryReportController"
+   ]
+  },
+  {
+   "id": "skeptic-07",
+   "controllers": [
+    "BorderImportLicenceCompanyListReportController",
+    "BorderImportLicenceDailyReportNewLicenceReportController",
+    "BorderImportLicenceExtensionReportController",
+    "BorderImportLicenceTotalValueLicencesReportController",
+    "BorderImportLicenceVoucherReportController"
+   ]
+  },
+  {
+   "id": "skeptic-08",
+   "controllers": [
+    "BorderImportPermitByHSCodeReportController",
+    "BorderImportPermitBySectionReportController",
+    "BorderImportPermitBySellerCountryReportController",
+    "BorderImportPermitCompanyListReportController",
+    "BorderImportPermitDailyReportNewPermitReportController"
+   ]
+  },
+  {
+   "id": "skeptic-09",
+   "controllers": [
+    "BorderImportPermitExtensionReportController",
+    "BusinessServiceAgencyRegistrationByVoucherController",
+    "ChequeNoReportController",
+    "CompanyProfileController",
+    "ExportLicenceByHSCodeReportController"
+   ]
+  },
+  {
+   "id": "skeptic-10",
+   "controllers": [
+    "ExportLicenceByMethodReportController",
+    "ExportLicenceBySectionReportController",
+    "ExportLicenceBySellerCountryReportController",
+    "ExportLicenceCompanyListReportController",
+    "ExportLicenceDailyReportNewLicenceReportController"
+   ]
+  },
+  {
+   "id": "skeptic-11",
+   "controllers": [
+    "ExportLicenceDetailReportController",
+    "ExportLicenceExtensionReportController",
+    "ExportLicenceTotalValueLicencesReportController",
+    "ExportLicenceVoucherReportController",
+    "ExportPermitActualAmendmentReportController"
+   ]
+  },
+  {
+   "id": "skeptic-12",
+   "controllers": [
+    "ExportPermitAmendmentReportController",
+    "ExportPermitByHSCodeReportController",
+    "ExportPermitBySectionReportController",
+    "ExportPermitBySellerCountryReportController",
+    "ExportPermitCancellationReportController"
+   ]
+  },
+  {
+   "id": "skeptic-13",
+   "controllers": [
+    "ExportPermitCompanyListReportController",
+    "ExportPermitDailyReportNewPermitReportController",
+    "ExportPermitExtensionReportController",
+    "ExportPermitNewReportNewReportController",
+    "ExportPermitVoucherReportController"
+   ]
+  },
+  {
+   "id": "skeptic-14",
+   "controllers": [
+    "ImportLicenceActualAmendmentReportController",
+    "ImportLicenceAmendmentReportController",
+    "ImportLicenceByHSCodeReportController",
+    "ImportLicenceByMethodReportController",
+    "ImportLicenceBySectionReportController"
+   ]
+  },
+  {
+   "id": "skeptic-15",
+   "controllers": [
+    "ImportLicenceBySellerCountryReportController",
+    "ImportLicenceCancellationReportController",
+    "ImportLicenceCompanyListReportController",
+    "ImportLicenceDailyReportNewLicenceReportController",
+    "ImportLicenceDetailByLicenceReportController"
+   ]
+  },
+  {
+   "id": "skeptic-16",
+   "controllers": [
+    "ImportLicenceDetailReportPendingController",
+    "ImportLicenceExtensionReportController",
+    "ImportLicenceNewReportNewReportController",
+    "ImportLicenceTotalValueLicencesReportController",
+    "ImportLicenceVoucherReportController"
+   ]
+  },
+  {
+   "id": "skeptic-17",
+   "controllers": [
+    "ImportPermitAmendmentReportController",
+    "ImportPermitByHSCodeReportController",
+    "ImportPermitBySectionReportController",
+    "ImportPermitBySellerCountryReportController",
+    "ImportPermitCompanyListReportController"
+   ]
+  },
+  {
+   "id": "skeptic-18",
+   "controllers": [
+    "ImportPermitDailyReportNewPermitReportController",
+    "ImportPermitExtensionReportController",
+    "ImportPermitNewReportNewReportController",
+    "ImportPermitVoucherReportController",
+    "ListOfDirectorsByCompanyRegistrationNoController"
+   ]
+  },
+  {
+   "id": "skeptic-19",
+   "controllers": [
+    "ListOfDirectorsController",
+    "MPUReportController",
+    "MPUReportV3Controller",
+    "MemberRegistrationReportController",
+    "OGARecommendationHistoryReportController"
+   ]
+  },
+  {
+   "id": "skeptic-20",
+   "controllers": [
+    "OnlineFeesReportController",
+    "PaThaKaRegisteredBusinessOrganizationReportController",
+    "RegistrationByBusinessTypeController"
+   ]
+  }
+ ]
+}

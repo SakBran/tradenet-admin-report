@@ -97,7 +97,7 @@ if (shared.length) {
 phase('Build gate')
 let gate = null
 for (let c = 0; c <= MAX_REPAIRS; c++) {
-  gate = await agent(`${RULES}\nRead ${P('gate-final')} and ${P('_gate-common')}. Build gate cycle ${c}: build the solution and run the FULL Backend.Tests suite. Return one results entry per controller in docs/ExcelParity/manifest.json (160).`,
+  gate = await agent(`${RULES}\nRead ${P('gate-final')} and ${P('_gate-common')}. Build gate cycle ${c}: build the solution, then run Backend.Tests with the MANDATORY DB-skip filter from _gate-common section 3a (the DB is unreachable here; an unfiltered run wastes 14 minutes and returns ~690 pre-login-timeout failures). Expect ~1538 tests in seconds and exactly the 8 pre-existing failures listed in known-failures.json under pre-existing-request-factory-and-filter-contract. Rebuild Backend.Tests first if any fixture changed. Return one results entry per controller in docs/ExcelParity/manifest.json (160); footer is unverified-nodb for every report with totals.`,
     { label: `build gate #${c}`, phase: 'Build gate', schema: GATE, effort: 'high' })
   if (!gate) { log('build gate agent died'); break }
   if (gateOk(gate)) break
@@ -152,7 +152,7 @@ if (PAGES.length) {
 phase('Final gate + status')
 let finalGate = null
 for (let c = 0; c <= MAX_REPAIRS; c++) {
-  finalGate = await agent(`${RULES}\nRead ${P('gate-final')} and ${P('_gate-common')}. FINAL gate cycle ${c}: full solution build, full Backend.Tests suite, frontend build/lint/vitest with fixture no-diff. One results entry per manifest controller.`, { label: `final gate #${c}`, phase: 'Final gate + status', schema: GATE, effort: 'high' })
+  finalGate = await agent(`${RULES}\nRead ${P('gate-final')} and ${P('_gate-common')}. FINAL gate cycle ${c}: full solution build, Backend.Tests with the MANDATORY DB-skip filter from _gate-common section 3a (never the unfiltered suite), frontend build/lint/vitest with fixture no-diff. Rebuild Backend.Tests after any fixture change or the contract theory reads stale copies from bin/. One results entry per manifest controller; footer is unverified-nodb here.`, { label: `final gate #${c}`, phase: 'Final gate + status', schema: GATE, effort: 'high' })
   if (!finalGate || gateOk(finalGate) || c === MAX_REPAIRS) break
   const bad = ALL.filter((x) => finalGate.failures.some((f) => (f.controller || f.file || '').includes(x)) || finalGate.results.some((r) => r.controller === x && !r.passed))
   if (!bad.length) await agent(`${RULES}\nRead ${P('core-repair')}. Final gate red outside any controller; fix ONLY these:\n${J(finalGate.failures)}`, { label: `final shared repair #${c}`, phase: 'Final gate + status', schema: REPORT, effort: 'high' })

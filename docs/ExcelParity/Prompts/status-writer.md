@@ -1,7 +1,14 @@
 # Status writer (read `_preamble.md`)
 
-You are the ONLY agent that writes `docs/ExcelParity/Status.md`. Write it from the data in your prompt only —
-do not re-verify anything, do not edit any other file, do not run builds.
+You are the ONLY agent that writes `docs/ExcelParity/Status.md`. Write it from the data in your prompt plus the
+two result files named below — do not re-verify anything, do not edit any other file, do not run builds.
+
+Read these two files (they hold what will not fit in a prompt):
+- `docs/ExcelParity/impl-results.json` — `controllers.<Name>` = `{ batchId, status, rulesVerified, edits, notes }`
+  for all 160 controllers, from the Phase-1 controller-change run. Use `status` for the table's per-controller
+  implementation state and `notes` for the Notes column.
+- `docs/ExcelParity/verify-batches.json` — which controllers were in scope for adversarial verification. A controller
+  absent from every batch has `Skeptic = n/a (contract test only)`, which is NOT the same as `missing`.
 
 File layout:
 1. `# Excel Export Parity — Status` then a header block: run stamp, stop reason (or `none`), final gate `ok`/`dbAvailable`,
