@@ -48,6 +48,27 @@ Only the Daily report set it. Added it to the other summary reports that had a T
   same `result.ColumnTotals` block summing across all cached section rows.
 - `ImportLicenceDailyReportNewLicenceReportController.cs` — already had it (commit `f1ce97f`); unchanged.
 
+### 2a. REVERSED for the four By-X / Company List reports (2026-09-03) — do not re-add
+
+The customer asked for the footer to be **removed** from By Method (2.14), By Section (2.15),
+By Seller Country (2.16) and Company List (2.17) — "Total ပေါင်းပြစရာမလိုပါ", neither on screen nor
+in the Excel export. Reason it was unwanted: `BuildColumnTotals` sums `totalValue` across **mixed
+currencies** (each row is one (group, currency) pair), so the "Total Value" total adds USD to EUR to
+CNY. The old RDLC TOTAL row only ever printed `CountDistinct(LicenceNo)` — it left the Total Value
+cell blank — so the summed money column was never in 2.0 either.
+
+Applied to all four controllers:
+
+- dropped `includeColumnTotals: true` → the JSON response carries no `ColumnTotals`, so `BasicTable`
+  renders no `<tfoot>` (the footer is opt-in, driven entirely by that payload);
+- added `IExcelNoFooterReport` → `DefaultExcelFooterTotalsResolver` skips the footer probe entirely
+  instead of replaying `Post` with `IncludeTotalCount = true` for an empty result;
+- added `[ExcelFormatVersion(2)]` → invalidates the cached `.xlsx` files that still carry the footer
+  row, so users stop being served the old sheet from the export queue.
+
+`ImportLicenceDailyReportNewLicenceReport` keeps its footer (its USD roll-up **is** summable across
+currencies), and the Border Import Licence siblings were not in scope.
+
 ## 3. Already-correct items (no change — earlier "stale build" complaints)
 
 - **Section dropdown showing 1,2,3** — `importLicenceSectionFilter` already pins
