@@ -1,0 +1,27 @@
+{
+  "formatVersion": 1,
+  "configKey": "RegistrationByBusinessType",
+  "controllerName": "RegistrationByBusinessType",
+  "title": "Registration By Business Type",
+  "fileName": "RegistrationByBusinessType.xlsx",
+  "headerLines": [
+    "Ministry of Commerce",
+    "Directorate of Trade",
+    "Registration List (01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "BusinessType",
+      "dataIndex": "businessType",
+      "title": "Business Type"
+    },
+    {
+      "key": "Total",
+      "dataIndex": "companyCount",
+      "title": "Total",
+      "dataType": "number"
+    }
+  ]
+}

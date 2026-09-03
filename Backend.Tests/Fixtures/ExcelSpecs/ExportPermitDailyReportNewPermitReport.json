@@ -1,0 +1,41 @@
+{
+  "formatVersion": 1,
+  "configKey": "ExportPermitDailyReportNewPermitReport",
+  "controllerName": "ExportPermitDailyReportNewPermitReport",
+  "title": "Export Permit Daily Report (New Permit Report)",
+  "fileName": "ExportPermitDailyReportNewPermitReport.xlsx",
+  "headerLines": [
+    "List of Export Permit By Daily From (01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": false,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "Date",
+      "dataIndex": "date",
+      "title": "Date"
+    },
+    {
+      "key": "NoOfLicences",
+      "dataIndex": "noOfLicences",
+      "title": "No of Licences",
+      "dataType": "number"
+    },
+    {
+      "key": "TotalValue",
+      "dataIndex": "totalValue",
+      "title": "Total Value"
+    },
+    {
+      "key": "Currency",
+      "dataIndex": "currency",
+      "title": "Currency"
+    },
+    {
+      "key": "TotalUSDValue",
+      "dataIndex": "totalUSDValue",
+      "title": "Total USD Value",
+      "dataType": "number"
+    }
+  ]
+}

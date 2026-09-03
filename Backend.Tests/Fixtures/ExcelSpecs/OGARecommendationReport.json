@@ -1,0 +1,65 @@
+{
+  "formatVersion": 1,
+  "configKey": "OGARecommendationReport",
+  "controllerName": "OGARecommendationReport",
+  "title": "OGA Recommendation Report",
+  "fileName": "OGARecommendationReport.xlsx",
+  "headerLines": [
+    "OGA Recommendation Report",
+    "(01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "SDate",
+      "dataIndex": "sDate",
+      "title": "Date"
+    },
+    {
+      "key": "OGADepartmentName",
+      "dataIndex": "ogaDepartmentName",
+      "title": "Department"
+    },
+    {
+      "key": "OGASectionName",
+      "dataIndex": "ogaSectionName",
+      "title": "Section"
+    },
+    {
+      "key": "ReferenceNo",
+      "dataIndex": "referenceNo",
+      "title": "Reference No"
+    },
+    {
+      "key": "SFromDate",
+      "dataIndex": "sFromDate",
+      "title": "From Date"
+    },
+    {
+      "key": "SToDate",
+      "dataIndex": "sToDate",
+      "title": "To Date"
+    },
+    {
+      "key": "Allowance",
+      "dataIndex": "allowance",
+      "title": "Allowance"
+    },
+    {
+      "key": "Terminate",
+      "dataIndex": "terminate",
+      "title": "Terminate"
+    },
+    {
+      "key": "IsUsedOnce",
+      "dataIndex": "isUsedOnce",
+      "title": "Used Once"
+    },
+    {
+      "key": "ViewDetail",
+      "dataIndex": "referenceNo",
+      "title": "View Detail"
+    }
+  ]
+}

@@ -1,0 +1,147 @@
+{
+  "formatVersion": 1,
+  "configKey": "EVCycleShowRoomRegistrationByVoucher",
+  "controllerName": "EVCycleShowRoomRegistrationByVoucher",
+  "title": "EVCycle Show Room Registration By Voucher",
+  "fileName": "EVCycleShowRoomRegistrationByVoucher.xlsx",
+  "headerLines": [
+    "Ministry of Commerce",
+    "Directorate of Trade",
+    "(01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "Date",
+      "dataIndex": "date",
+      "title": "Date",
+      "dataType": "date"
+    },
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "Name",
+      "dataIndex": "name",
+      "title": "Name"
+    },
+    {
+      "key": "NRCNo",
+      "dataIndex": "nrcNo",
+      "title": "NRC No"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
+    },
+    {
+      "key": "ShowRoomNo",
+      "dataIndex": "showRoomNo",
+      "title": "Show Room No"
+    },
+    {
+      "key": "ShowRoomAddress",
+      "dataIndex": "showRoomAddress",
+      "title": "Show Room Address 1",
+      "fallbackDataIndexes": [
+        "showRoomUnitLevel",
+        "showRoomStreetNumberStreetName",
+        "showRoomQuarterCityTownship",
+        "showRoomState",
+        "showRoomCountry",
+        "showRoomPostalCode"
+      ]
+    },
+    {
+      "key": "ShowRoomAddress2",
+      "dataIndex": "showRoomAddress2",
+      "title": "Show Room Address 2",
+      "fallbackDataIndexes": [
+        "showRoomUnitLevel2",
+        "showRoomStreetNumberStreetName2",
+        "showRoomQuarterCityTownship2",
+        "showRoomState2",
+        "showRoomCountry2",
+        "showRoomPostalCode2"
+      ]
+    },
+    {
+      "key": "ShowRoomAddress3",
+      "dataIndex": "showRoomAddress3",
+      "title": "Show Room Address 3",
+      "fallbackDataIndexes": [
+        "showRoomUnitLevel3",
+        "showRoomStreetNumberStreetName3",
+        "showRoomQuarterCityTownship3",
+        "showRoomState3",
+        "showRoomCountry3",
+        "showRoomPostalCode3"
+      ]
+    },
+    {
+      "key": "ShowRoomAddress4",
+      "dataIndex": "showRoomAddress4",
+      "title": "Show Room Address 4",
+      "fallbackDataIndexes": [
+        "showRoomUnitLevel4",
+        "showRoomStreetNumberStreetName4",
+        "showRoomQuarterCityTownship4",
+        "showRoomState4",
+        "showRoomCountry4",
+        "showRoomPostalCode4"
+      ]
+    },
+    {
+      "key": "ShowRoomAddress5",
+      "dataIndex": "showRoomAddress5",
+      "title": "Show Room Address 5",
+      "fallbackDataIndexes": [
+        "showRoomUnitLevel5",
+        "showRoomStreetNumberStreetName5",
+        "showRoomQuarterCityTownship5",
+        "showRoomState5",
+        "showRoomCountry5",
+        "showRoomPostalCode5"
+      ]
+    },
+    {
+      "key": "TotalAmount",
+      "dataIndex": "totalAmount",
+      "title": "Total Amount",
+      "dataType": "number"
+    },
+    {
+      "key": "PaymentType",
+      "dataIndex": "paymentType",
+      "title": "Payment Type"
+    },
+    {
+      "key": "VoucherNo",
+      "dataIndex": "voucherNo",
+      "title": "Voucher No"
+    },
+    {
+      "key": "VoucherDate",
+      "dataIndex": "voucherDate",
+      "title": "Voucher Date",
+      "dataType": "date"
+    }
+  ]
+}

@@ -235,3 +235,17 @@ Never write `Status.md` except the status-writer agent. Never print connection s
 - `newReportConfigs.ts` configs are factory-built — read configs at runtime (vitest/vite-node), never via the TypeScript AST.
 - `Frontend/vitest.config.ts`: environment `node`, include `src/**/*.test.{ts,tsx}`; `vite-node` and `vitest` exist, `tsx` does not; python3 + openpyxl 3.1.5 available; dotnet SDK 10 (projects target net8.0); solution file `tradenet-admin-report.sln` at the repo root.
 - Peer commit `7e02910` (2026-09-02 19:45) is the base: `ExcelReportLayout`, `IExcelReportLayoutProvider`, `ExcelFormatVersionAttribute`, hasher version salt, writer layout mode, AccountSummary opt-in, `StreamingExcelWriterTests` layout facts, `ExcelExportLayoutContractTests`. Extend it — never redesign it. Other sessions edit this repo concurrently: re-read a file before editing if it changed unexpectedly.
+
+## 14. Verification scope (recorded decision, 2026-09-03)
+
+Adversarial skeptics run for the **98** reports where judgment can change the answer: any report with a
+`ColumnTotals` or `CurrencyTotals` footer, every group C report (its row order changes), every group D composite,
+every controller whose `ExcelWorksheetTitle` differs from the config title, the 4 alias configs, the 5
+filter-dependent voucher configs, and the bespoke pages. The remaining **62** (24 group A, 28 group B, 10 group F)
+are mechanical-only: no footer, no ordering change, no header nuance. For those, `ExcelSpecContractTests` is the
+sole evidence, and it proves the whole rule set for them — header block, exact UI columns in UI order, every
+`dataIndex` binding to a real property on the streamed row type, and the date shape. `Status.md` records
+`skepticScope: not-required` for them so the gap is visible rather than implied.
+
+Waves are 32 controllers, so 5 gate cycles instead of 8. A gate is a full build plus test run, and it is the most
+expensive serial step in the workflow; wave size trades gate count against how early a systemic problem surfaces.

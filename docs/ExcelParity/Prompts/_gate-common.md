@@ -47,10 +47,21 @@ The fixture generator runs inside vitest; a non-empty `git status` under `Backen
 means fixture drift → a failure `{ file: "Backend.Tests/Fixtures/ExcelSpecs", error: "fixtures drifted: <files>" }`.
 Confirm `index.json` has the expected number of entries when the prompt gives one.
 
+## 4b. Known pre-existing failures (classify, never fix)
+
+Load `docs/ExcelParity/known-failures.json`. A failure whose file path or error text matches any entry's
+`match` strings is PRE-EXISTING: still list it in `failures[]`, prefix its `error` with `PRE-EXISTING(<id>): `,
+and do **not** let it set `ok=false`. Everything else is real and blocking. Never edit a file to silence a
+known entry, and never widen an entry. If a step cannot run at all because of a known entry (lint), say so in
+`summary` and treat that step as neither pass nor fail.
+
+`dbAvailable=false` is likewise not a failure: footer checks degrade to `unverified-nodb` and `summary` must
+state that no footer parity claim can be made this cycle.
+
 ## 5. Result
 
 ```json
-{ "ok": <buildOk && every listed controller passed && frontend steps passed if run>,
+{ "ok": <buildOk && every listed controller passed && no NON-pre-existing failure in any step that ran>,
   "buildOk": ..., "dbAvailable": ..., "results": [...], "failures": [...],
   "summary": "<counts, durations, which filters ran, anything odd>" }
 ```

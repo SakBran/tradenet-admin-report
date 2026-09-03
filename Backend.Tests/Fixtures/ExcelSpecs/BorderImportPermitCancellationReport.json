@@ -1,0 +1,87 @@
+{
+  "formatVersion": 1,
+  "configKey": "BorderImportPermitCancellationReport",
+  "controllerName": "BorderImportPermitCancellationReport",
+  "title": "Border Import Permit Cancellation Report",
+  "fileName": "BorderImportPermitCancellationReport.xlsx",
+  "headerLines": [
+    "List of Border Import Permit Report (01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No.",
+  "columns": [
+    {
+      "key": "Sakhan",
+      "dataIndex": "sakhanCode",
+      "title": "Sakhan"
+    },
+    {
+      "key": "Section",
+      "dataIndex": "sectionName",
+      "title": "Section"
+    },
+    {
+      "key": "LicenceNo",
+      "dataIndex": "licenceNo",
+      "title": "Licence No"
+    },
+    {
+      "key": "CancellationNo",
+      "dataIndex": "licenceNo",
+      "title": "Cancellation No"
+    },
+    {
+      "key": "CancellationDate",
+      "dataIndex": "sDate",
+      "title": "Cancellation Date"
+    },
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
+    },
+    {
+      "key": "Currency",
+      "dataIndex": "currency",
+      "title": "Currency"
+    },
+    {
+      "key": "TotalValue",
+      "dataIndex": "amount",
+      "title": "Total Value",
+      "dataType": "number"
+    },
+    {
+      "key": "hsCode",
+      "dataIndex": "hsCode",
+      "title": "hsCode"
+    },
+    {
+      "key": "Remark",
+      "dataIndex": "remark",
+      "title": "Remark"
+    }
+  ],
+  "currencyTotalsColumns": {
+    "labelColumnKey": "LicenceNo",
+    "valueColumnKey": "TotalValue"
+  }
+}

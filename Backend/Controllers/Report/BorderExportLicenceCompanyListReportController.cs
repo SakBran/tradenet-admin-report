@@ -81,7 +81,7 @@ namespace Backend.Controllers.Report
             TryCreateReportRequest(request, out var procedureRequest, out _);
             var rows = await sp_ExportLicenceDetailReport_Fast.GetAggregateRowsAsync(
                 _context, procedureRequest!, ReportAggregateDimension.Company, includeSakhan: false);
-            sink.Append(rows);
+            sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Company, includeSakhan: false));
         }
 
         private bool TryCreateReportRequest(

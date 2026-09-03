@@ -3718,8 +3718,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
+        fallbackDataIndexes: ['licenceNo'],
       },
       {
         key: 'LicenceAmendmentNo',
@@ -6139,7 +6140,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderImportPermitVoucherReport: {
     controllerName: 'BorderImportPermitVoucherReport',
-    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'Amount' },
+    // 'TotalAmount' is this report's money column ('Amount' matches nothing here, so the
+    // grid rendered no per-currency value cell at all).
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalAmount' },
     reportSubtitle: importLicenceRangeSubtitle('Border Import Permit Voucher List'),
     title: 'Border Import Permit Voucher Report',
     apiRoute: 'BorderImportPermitVoucherReport',

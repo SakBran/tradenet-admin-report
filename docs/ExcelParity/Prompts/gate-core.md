@@ -10,6 +10,11 @@ Steps (common procedure §1–§5) with these specifics:
   Additionally assert (put failures into `failures[]`): every `IStreamingExcelReport` controller is covered by at
   least one fixture (`Every_streaming_controller_has_a_spec_fixture`), and every registered handler has `FormatVersion >= 2`.
 - §4 frontend: REQUIRED. Also check `Backend.Tests/Fixtures/ExcelSpecs/index.json` exists and its entry count
-  equals the number your prompt gives (167 configs; voucher variants are extra files, not extra entries unless the
-  index lists variants separately — read the index format in `Contract.md` §10).
-- `ok` additionally requires: `buildOk`, unit tests green, fixtures present, frontend build/lint/vitest green.
+  equals the number your prompt gives. Expect **191 entries / 164 distinct configKeys**: 167 frontend configs
+  minus the 3 excluded (CardListsByCompanyRegistrationNumber, DataImport, ImportLicenceDataImport) = 164 base
+  (equivalently 160 controllers + 4 alias configs), plus 27 ApplyType variant entries (6 each for
+  BorderExportLicenceVoucherReport and BorderExportPermitVoucherReport, whose ApplyType also offers De-Cancel;
+  5 each for the other three voucher configs). The index lists one entry per file, each carrying `variant`.
+  Do NOT let a repair agent drive the fixture count toward 167 — that would be wrong.
+- `ok` additionally requires: `buildOk`, unit tests green, fixtures present, and the frontend build green.
+  Lint and vitest failures matching `docs/ExcelParity/known-failures.json` (see §4b) do NOT block `ok`.

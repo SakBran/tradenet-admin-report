@@ -17,7 +17,6 @@ import { AnyObject } from '../../../types/AnyObject';
 import { PaginationType } from '../../../types/PaginationType';
 import { ReportColumnDrilldown } from '../../../Report/config/reportTypes';
 import { FileExcelOutlined } from '@ant-design/icons';
-import * as XLSX from 'xlsx';
 
 export type SortOrder = 'asc' | 'desc';
 
@@ -66,6 +65,11 @@ interface PropsType<T extends AnyObject = AnyObject> {
   searchable?: boolean;
   extraFilters?: React.ReactNode;
   onExcel?: (query: BasicTableQuery) => Promise<void>;
+  /**
+   * Kept for callers that still pass it; the table no longer names the file.
+   * The saved name comes from the export job (`ExcelEnqueueResult.fileName`),
+   * which the page derives from the spec's `fileName`.
+   */
   excelFileName?: string;
   refreshKey?: string | number;
   initialSortColumn?: string;
@@ -155,7 +159,6 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   rowKey,
   showActions,
   onExcel,
-  excelFileName = 'Report.xlsx',
   refreshKey,
   initialPageSize = 10,
   emptyText = 'No data',
@@ -342,19 +345,12 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   const isEstimatedTotalCount =
     data.isTotalCountExact === false && exactTotalCount === null;
 
-  const exportClientTableToExcel = () => {
-    const table = document.getElementById(tableId);
-    if (!table) {
-      return;
-    }
-
-    const workbook = XLSX.utils.table_to_book(table, { sheet: 'Report' });
-    XLSX.writeFile(workbook, excelFileName);
-  };
-
+  // Excel is always server-side now: every report page passes `onExcel`, which
+  // enqueues a job carrying the presentation spec. The old client-side
+  // `xlsx` DOM scrape (which exported only the visible page, with no header
+  // block or footer totals) is gone.
   const handleExcel = async () => {
     if (!onExcel) {
-      exportClientTableToExcel();
       return;
     }
 

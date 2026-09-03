@@ -1,0 +1,24 @@
+{
+  "formatVersion": 1,
+  "configKey": "ImportLicenceTotalValueLicencesReport",
+  "controllerName": "ImportLicenceTotalValueLicencesReport",
+  "title": "Import Licence Total Value & Licences Report",
+  "fileName": "ImportLicenceTotalValueLicencesReport.xlsx",
+  "headerLines": [
+    "Import Licences Total Value & Licences (01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No.",
+  "columns": [
+    {
+      "key": "TotalValue",
+      "dataIndex": "totalValue",
+      "title": "Total Value"
+    },
+    {
+      "key": "Currency",
+      "dataIndex": "currency",
+      "title": "Currency"
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using System.Xml.Linq;
+using API.Model;
 using API.Service.ExcelExport;
 using API.StoredProcedureToLinq;
 using Backend.Controllers.Report;
@@ -365,6 +366,253 @@ public sealed class StreamingExcelWriterTests
         finally
         {
             System.Globalization.CultureInfo.CurrentCulture = original;
+        }
+    }
+
+    // ---- Standard header block, freeze pane, grid footer rows, composite sections ----
+
+    private static ExcelReportLayout WithBlock(ExcelReportLayout layout, object request)
+        => ExcelLayoutBuilder.WithStandardHeaderBlock(
+            layout,
+            null,
+            "Account Summary Report",
+            request,
+            new DateTimeOffset(2026, 9, 2, 19, 40, 0, TimeSpan.Zero));
+
+    private static AccountSummaryReportRequest SampleRequest() => new()
+    {
+        FromDate = new DateTime(2026, 8, 1),
+        ToDate = new DateTime(2026, 8, 31, 23, 59, 59),
+    };
+
+    [Fact]
+    public void The_header_block_sits_above_the_column_headers_with_meta_rows_unmerged()
+    {
+        var layout = WithBlock(AccountSummaryLayout(), SampleRequest());
+        var bytes = WriteWithLayout([[AccountRow(1, 10)]], layout);
+
+        using var archive = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
+        var doc = ReadSheet(archive, 1);
+        var ns = doc.Root!.Name.Namespace;
+        var rows = doc.Descendants(ns + "row").ToList();
+
+        // subtitle, From Date, To Date, Exported, header, 1 data row, and — because this
+        // test appends no AppendFooterRows footer — the layout's own summed totals row.
+        Assert.Equal(7, rows.Count);
+        Assert.Equal(
+            "Total",
+            rows[6].Elements(ns + "c").ElementAt(5).Descendants(ns + "t").First().Value);
+        Assert.Equal(ExpectedTitle, rows[0].Descendants(ns + "t").First().Value);
+        Assert.Equal("From Date: 01/08/2026", rows[1].Descendants(ns + "t").First().Value);
+        Assert.Equal("To Date: 31/08/2026", rows[2].Descendants(ns + "t").First().Value);
+        Assert.Equal("Exported: 02/09/2026 19:40", rows[3].Descendants(ns + "t").First().Value);
+        Assert.Equal(
+            ExpectedHeaders,
+            rows[4].Elements(ns + "c").Select(c => c.Descendants(ns + "t").First().Value).ToArray());
+
+        // Only the title band is merged; the meta rows stay single cells.
+        var merge = doc.Descendants(ns + "mergeCell").Single();
+        Assert.Equal("A1:H1", merge.Attribute("ref")?.Value);
+        AssertRowIndexesAreSane(doc);
+    }
+
+    [Fact]
+    public void The_header_rows_are_frozen_and_sheetViews_comes_first()
+    {
+        var layout = WithBlock(AccountSummaryLayout(), SampleRequest());
+        var bytes = WriteWithLayout([[AccountRow(1, 10)]], layout);
+
+        using var archive = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
+        var doc = ReadSheet(archive, 1);
+        var ns = doc.Root!.Name.Namespace;
+
+        var pane = doc.Descendants(ns + "pane").Single();
+        Assert.Equal("5", pane.Attribute("ySplit")?.Value);
+        Assert.Equal("A6", pane.Attribute("topLeftCell")?.Value);
+        Assert.Equal("frozen", pane.Attribute("state")?.Value);
+
+        var children = doc.Root!.Elements().Select(e => e.Name.LocalName).ToList();
+        Assert.Equal(0, children.IndexOf("sheetViews"));
+        Assert.True(children.IndexOf("cols") < children.IndexOf("sheetData"));
+    }
+
+    [Fact]
+    public void The_legacy_no_layout_sheet_is_untouched_by_the_header_block_work()
+    {
+        var bytes = Write([[new Row { Id = 1, Name = "A", Amount = 1m, When = null }]]);
+
+        using var archive = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
+        var doc = ReadSheet(archive, 1);
+        var ns = doc.Root!.Name.Namespace;
+
+        // No freeze pane, no widths, header still at row 1.
+        Assert.Empty(doc.Descendants(ns + "sheetViews"));
+        Assert.Empty(doc.Descendants(ns + "cols"));
+        Assert.Equal("1", doc.Descendants(ns + "row").First().Attribute("r")?.Value);
+    }
+
+    [Fact]
+    public void AppendFooterRows_writes_the_grid_footer_and_suppresses_the_summed_totals_row()
+    {
+        var layout = WithBlock(AccountSummaryLayout(), SampleRequest());
+        var totals = new ReportFooterTotals(
+            new Dictionary<string, decimal> { ["amount"] = 3001m },
+            new ReportCurrencyTotalsSummary
+            {
+                Currencies = [new ReportCurrencyTotal { Currency = "MMK", NoOfLicences = 2, TotalValue = 3001m }],
+                GrandTotalLicences = 2,
+            });
+
+        using var ms = new MemoryStream();
+        using (var writer = new StreamingExcelWriter(ms, "Account Summary Report", layout))
+        {
+            writer.AppendRows(new[] { AccountRow(1, 1000.25), AccountRow(2, 2000.75) });
+            writer.AppendFooterRows(ExcelFooterBuilder.Build(layout, totals, writer.TotalDataRows));
+            writer.Finish();
+
+            Assert.Equal(2, writer.TotalDataRows);
+        }
+
+        using var archive = new ZipArchive(new MemoryStream(ms.ToArray()), ZipArchiveMode.Read);
+        var doc = ReadSheet(archive, 1);
+        var ns = doc.Root!.Name.Namespace;
+        var rows = doc.Descendants(ns + "row").ToList();
+
+        // 4 preamble + header + 2 data + Total + MMK + TOTAL
+        Assert.Equal(10, rows.Count);
+        // "Total" sits in the first data column with no total of its own (Entry Date),
+        // exactly where BasicTable's totalLabelIndex puts it — NOT immediately left of
+        // the totalled column, which is where the legacy WriteTotalsRow used to put it.
+        Assert.Equal("Total", rows[7].Elements(ns + "c").ElementAt(1).Descendants(ns + "t").First().Value);
+        Assert.Equal("3001", rows[7].Elements(ns + "c").ElementAt(6).Element(ns + "v")?.Value);
+        Assert.Equal(
+            "MMK:2 licence(s)",
+            rows[8].Elements(ns + "c").ElementAt(1).Descendants(ns + "t").First().Value);
+        Assert.Equal("TOTAL", rows[9].Elements(ns + "c").First().Descendants(ns + "t").First().Value);
+
+        // Exactly one "Total" label — the layout's own summed row must not also appear.
+        Assert.Single(doc.Descendants(ns + "t").Where(t => t.Value == "Total"));
+        AssertRowIndexesAreSane(doc);
+    }
+
+    private sealed class SectionRow
+    {
+        public string Currency { get; init; } = string.Empty;
+        public decimal TotalValue { get; init; }
+    }
+
+    [Fact]
+    public void A_composite_sheet_writes_one_header_per_section_and_restarts_its_numbering()
+    {
+        var layout = new ExcelReportLayout
+        {
+            Sections =
+            [
+                new ExcelReportSection
+                {
+                    Title = "Total Value",
+                    Columns =
+                    [
+                        ExcelColumn.RowNumber("Sr.No."),
+                        ExcelColumn.Money4<SectionRow>("Total Value", row => row.TotalValue),
+                        ExcelColumn.Text<SectionRow>("Currency", row => row.Currency),
+                    ],
+                },
+                new ExcelReportSection
+                {
+                    Title = "Total Licences",
+                    Columns =
+                    [
+                        ExcelColumn.RowNumber("Sr.No."),
+                        ExcelColumn.Number<SectionRow>("Total Licences", row => row.TotalValue),
+                        ExcelColumn.Text<SectionRow>("Pa Tha Ka Type", row => row.Currency),
+                    ],
+                },
+            ],
+        };
+
+        using var ms = new MemoryStream();
+        using (var writer = new StreamingExcelWriter(ms, "Total Value", layout))
+        {
+            writer.BeginSection(0);
+            writer.AppendRows(new[]
+            {
+                new SectionRow { Currency = "USD", TotalValue = 10m },
+                new SectionRow { Currency = "EUR", TotalValue = 20m },
+            });
+
+            writer.BeginSection(1);
+            writer.AppendRows(new[] { new SectionRow { Currency = "Wholesale", TotalValue = 5m } });
+            writer.AppendNote("Total USD Value: 1,234.5678");
+            writer.Finish();
+        }
+
+        using var archive = new ZipArchive(new MemoryStream(ms.ToArray()), ZipArchiveMode.Read);
+        var doc = ReadSheet(archive, 1);
+        var ns = doc.Root!.Name.Namespace;
+        var rows = doc.Descendants(ns + "row").ToList();
+
+        var texts = rows
+            .Select(row => row.Elements(ns + "c").FirstOrDefault())
+            .Select(cell => cell?.Descendants(ns + "t").FirstOrDefault()?.Value
+                ?? cell?.Element(ns + "v")?.Value
+                ?? string.Empty)
+            .ToList();
+
+        Assert.Equal("Total Value", texts[0]);
+        Assert.Equal("Sr.No.", texts[1]);
+        Assert.Equal("1", texts[2]);
+        Assert.Equal("2", texts[3]);
+        Assert.Equal(string.Empty, texts[4]);            // spacer
+        Assert.Equal("Total Licences", texts[5]);
+        Assert.Equal("Sr.No.", texts[6]);
+        Assert.Equal("1", texts[7]);                     // numbering restarts per section
+        Assert.Equal(string.Empty, texts[8]);            // spacer
+        Assert.Equal("Total USD Value: 1,234.5678", texts[9]);
+
+        // One header row per section, and only per section.
+        Assert.Equal(2, doc.Descendants(ns + "row").Count(row =>
+            row.Elements(ns + "c").Any(c => c.Descendants(ns + "t").Any(t => t.Value == "Sr.No."))));
+        AssertRowIndexesAreSane(doc);
+    }
+
+    [Fact]
+    public void The_new_cell_formats_use_styles_that_exist()
+    {
+        var layout = new ExcelReportLayout
+        {
+            Columns =
+            [
+                ExcelColumn.Timestamp<SectionRow>("Created", _ => new DateTime(2026, 2, 1, 8, 30, 0)),
+                ExcelColumn.Money4<SectionRow>("Total Value", row => row.TotalValue),
+            ],
+        };
+
+        using var ms = new MemoryStream();
+        using (var writer = new StreamingExcelWriter(ms, "Formats", layout))
+        {
+            writer.AppendRows(new[] { new SectionRow { TotalValue = 1.2345m } });
+            writer.Finish();
+        }
+
+        using var archive = new ZipArchive(new MemoryStream(ms.ToArray()), ZipArchiveMode.Read);
+        var styles = XDocument.Load(archive.GetEntry("xl/styles.xml")!.Open());
+        var stylesNs = styles.Root!.Name.Namespace;
+        var xfCount = styles.Descendants(stylesNs + "cellXfs").Single().Elements().Count();
+
+        var doc = ReadSheet(archive, 1);
+        var ns = doc.Root!.Name.Namespace;
+        var cells = doc.Descendants(ns + "row").Last().Elements(ns + "c").ToList();
+
+        Assert.Equal("9", cells[0].Attribute("s")?.Value);
+        Assert.Equal("10", cells[1].Attribute("s")?.Value);
+        Assert.InRange(10, 0, xfCount - 1);
+
+        // Every count attribute still matches its element count.
+        foreach (var name in new[] { "numFmts", "fonts", "fills", "borders", "cellStyleXfs", "cellXfs" })
+        {
+            var element = styles.Descendants(stylesNs + name).Single();
+            Assert.Equal(element.Elements().Count().ToString(), element.Attribute("count")?.Value);
         }
     }
 

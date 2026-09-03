@@ -21,7 +21,8 @@ namespace Backend.Controllers.Report
     [Route("api/[controller]")]
     // v2 = the exported sheet gained the RDLC title row and the grid's 8 columns.
     [ExcelFormatVersion(2)]
-    public class AccountSummaryReportController : ControllerBase, IStreamingExcelReport, IExcelReportLayoutProvider
+    public class AccountSummaryReportController
+        : ControllerBase, IStreamingExcelReport, IExcelReportLayoutProvider, IExcelFooterTotalsProvider
     {
         private const string ReportKey = "AccountSummaryReport";
 
@@ -136,11 +137,51 @@ namespace Backend.Controllers.Report
                     ExcelColumn.Text<sp_AccountSummaryReportResult>("Company Name", row => row.CompanyName, width: 34),
                     ExcelColumn.Text<sp_AccountSummaryReportResult>("Voucher No", row => row.VoucherNo, width: 16),
                     ExcelColumn.Text<sp_AccountSummaryReportResult>("Transaction Title", row => row.TransactionTitle, width: 30),
-                    ExcelColumn.Money<sp_AccountSummaryReportResult>("Deducted Fees", row => row.Amount, includeInTotals: true),
+                    // Bound to "amount" so the footer builder places Post's
+                    // ColumnTotals["amount"] under this column instead of re-summing.
+                    ExcelColumn.Money<sp_AccountSummaryReportResult>("Deducted Fees", row => row.Amount, includeInTotals: true)
+                        .Bind("DeductedFees", "amount"),
                     // Unbound in the old RDLC too — a header with a deliberately empty body.
                     ExcelColumn.Blank("Remark", width: 18),
                 },
             };
+        }
+
+        /// <summary>
+        /// The grid's footer number, without the default probe.
+        ///
+        /// Replaying <c>Post</c> with <c>IncludeTotalCount = true</c> would run the
+        /// pagination procedure's exact <c>COUNT(*)</c> over #rows — the very thing
+        /// <c>WriteRowsAsync</c> passes <c>includeTotalCount: false</c> to avoid, because
+        /// it is what times this report out.
+        ///
+        /// This calls the SAME helper <c>Post</c> uses for the grid's
+        /// <c>ColumnTotals</c> (<c>sp_AccountSummaryReport.ExecuteColumnTotalsAsync</c>, a
+        /// single cross-page SUM(Amount) over the filtered set), so the sheet's Total row is
+        /// the grid's Total row by construction. The layout binds the Deducted Fees column to
+        /// "amount", which is the key this dictionary carries.
+        /// </summary>
+        [NonAction]
+        public async Task<ReportFooterTotals?> GetExcelFooterTotalsAsync(
+            object request,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!TryCreateReportRequest((AccountSummaryReportRequest)request, out var procedureRequest, out _))
+            {
+                // Unreachable in practice: the Excel action validates the same filters
+                // before enqueueing. Throwing mirrors the default probe, which fails the
+                // job when Post rejects the export's own filters, rather than quietly
+                // shipping a sheet with no footer.
+                throw new InvalidOperationException(
+                    "Account Summary Report footer totals: the export's stored FromDate/ToDate are invalid.");
+            }
+
+            var columnTotals = await sp_AccountSummaryReport.ExecuteColumnTotalsAsync(_context, procedureRequest!);
+
+            // No per-currency footer on this report (fees are all MMK).
+            return new ReportFooterTotals(columnTotals, CurrencyTotals: null);
         }
 
         [NonAction]

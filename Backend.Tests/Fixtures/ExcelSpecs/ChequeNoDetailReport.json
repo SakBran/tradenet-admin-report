@@ -1,0 +1,61 @@
+{
+  "formatVersion": 1,
+  "configKey": "ChequeNoDetailReport",
+  "controllerName": "ChequeNoDetailReport",
+  "title": "Cheque No Detail Report",
+  "fileName": "ChequeNoDetailReport.xlsx",
+  "headerLines": [
+    "Cheque No Detail Report (01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "ChequeNo",
+      "dataIndex": "chequeNo",
+      "title": "Cheque No"
+    },
+    {
+      "key": "TransactionRefNo",
+      "dataIndex": "transactionRefNo",
+      "title": "Trxn Ref No."
+    },
+    {
+      "key": "TransactionDateTime",
+      "dataIndex": "transactionDateTime",
+      "title": "Trxn Date",
+      "dataType": "dateTime"
+    },
+    {
+      "key": "FormType",
+      "dataIndex": "formType",
+      "title": "Form Type"
+    },
+    {
+      "key": "CardNo",
+      "dataIndex": "cardNo",
+      "title": "Licence/Permit/Card No"
+    },
+    {
+      "key": "Amount",
+      "dataIndex": "amount",
+      "title": "Amount",
+      "dataType": "number"
+    },
+    {
+      "key": "PaThaKaNo",
+      "dataIndex": "paThaKaNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address"
+    }
+  ]
+}

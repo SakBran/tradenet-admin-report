@@ -1,0 +1,144 @@
+{
+  "formatVersion": 1,
+  "configKey": "ImportPermitDetailReport",
+  "controllerName": "ImportPermitDetailReport",
+  "title": "Import Permit Detail Report",
+  "fileName": "ImportPermitDetailReport.xlsx",
+  "headerLines": [
+    "Ministry of Commerce",
+    "Directorate of Trade",
+    "List of Import Permit By Detail From (01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "Section",
+      "dataIndex": "sectionName",
+      "title": "Section"
+    },
+    {
+      "key": "PermitNo",
+      "dataIndex": "licenceNo",
+      "title": "Permit No"
+    },
+    {
+      "key": "PermitDate",
+      "dataIndex": "licenceDate",
+      "title": "Permit Date",
+      "dataType": "date"
+    },
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
+    },
+    {
+      "key": "UnionCitizenshipNo",
+      "dataIndex": "nrcNo",
+      "title": "Union Citizenship No"
+    },
+    {
+      "key": "AgentName",
+      "dataIndex": "authorisedAgentName",
+      "title": "Agent Name"
+    },
+    {
+      "key": "AgentAddress",
+      "dataIndex": "authorisedAgentAddress",
+      "title": "Agent Address"
+    },
+    {
+      "key": "SellerCountry",
+      "dataIndex": "sellerCountry",
+      "title": "Seller Country"
+    },
+    {
+      "key": "PortOfShipment",
+      "dataIndex": "portofShipment",
+      "title": "Port of Shipment"
+    },
+    {
+      "key": "PlacePortOfDischarge",
+      "dataIndex": "portofDischarge",
+      "title": "Place/Port of Discharge"
+    },
+    {
+      "key": "LastDate",
+      "dataIndex": "lastDate",
+      "title": "Last Date",
+      "dataType": "date"
+    },
+    {
+      "key": "CountryOfOrign",
+      "dataIndex": "countryofOrigin",
+      "title": "Country of Orign"
+    },
+    {
+      "key": "TypeOfPermit",
+      "dataIndex": "permitType",
+      "title": "Type of Permit"
+    },
+    {
+      "key": "hsCode",
+      "dataIndex": "hsCode",
+      "title": "hsCode"
+    },
+    {
+      "key": "Decription",
+      "dataIndex": "hsDescription",
+      "title": "Decription"
+    },
+    {
+      "key": "AU",
+      "dataIndex": "unit",
+      "title": "A/U"
+    },
+    {
+      "key": "Price",
+      "dataIndex": "price",
+      "title": "Price",
+      "dataType": "number"
+    },
+    {
+      "key": "Qty",
+      "dataIndex": "quantity",
+      "title": "Qty",
+      "dataType": "number"
+    },
+    {
+      "key": "Value",
+      "dataIndex": "amount",
+      "title": "Value",
+      "dataType": "number"
+    },
+    {
+      "key": "Currency",
+      "dataIndex": "currency",
+      "title": "Currency"
+    },
+    {
+      "key": "Conditions",
+      "dataIndex": "conditions",
+      "title": "Conditions"
+    }
+  ]
+}

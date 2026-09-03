@@ -1,0 +1,73 @@
+{
+  "formatVersion": 1,
+  "configKey": "ImportPermitActualAmendmentReport",
+  "controllerName": "ImportPermitActualAmendmentReport",
+  "title": "Import Permit Actual Amendment Report",
+  "fileName": "ImportPermitActualAmendmentReport.xlsx",
+  "headerLines": [
+    "List of Import Permit Report (01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "Section",
+      "dataIndex": "sectionName",
+      "title": "Section"
+    },
+    {
+      "key": "LicenceNo",
+      "dataIndex": "licenceNo",
+      "title": "Licence No"
+    },
+    {
+      "key": "LicenceAmendmentNo",
+      "dataIndex": "licenceNo",
+      "title": "Licence Amendment No"
+    },
+    {
+      "key": "AmendmentDate",
+      "dataIndex": "sDate",
+      "title": "Amendment Date"
+    },
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
+    },
+    {
+      "key": "Currency",
+      "dataIndex": "currency",
+      "title": "Currency"
+    },
+    {
+      "key": "hsCode",
+      "dataIndex": "hsCode",
+      "title": "hsCode"
+    },
+    {
+      "key": "TotalValue",
+      "dataIndex": "amount",
+      "title": "Total Value",
+      "dataType": "number"
+    }
+  ]
+}

@@ -1,0 +1,167 @@
+{
+  "formatVersion": 1,
+  "configKey": "ExportLicenceDetailReport",
+  "controllerName": "ExportLicenceDetailReport",
+  "title": "Export Licence Detail Report",
+  "fileName": "ExportLicenceDetailReport.xlsx",
+  "headerLines": [
+    "List of Export Licences By Detail From (01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "Section",
+      "dataIndex": "sectionName",
+      "title": "Section"
+    },
+    {
+      "key": "ApplicationDate",
+      "dataIndex": "applicationDate",
+      "title": "Application Date",
+      "dataType": "date"
+    },
+    {
+      "key": "ApplicationNo",
+      "dataIndex": "applicationNo",
+      "title": "Application No"
+    },
+    {
+      "key": "LicenceNo",
+      "dataIndex": "licenceNo",
+      "title": "Licence No"
+    },
+    {
+      "key": "LicenceDate",
+      "dataIndex": "licenceDate",
+      "title": "Licence Date",
+      "dataType": "date"
+    },
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
+    },
+    {
+      "key": "BuyerName",
+      "dataIndex": "buyerName",
+      "title": "Buyer Name"
+    },
+    {
+      "key": "BuyerAddress",
+      "dataIndex": "buyerAddress",
+      "title": "Buyer Address"
+    },
+    {
+      "key": "BuyerCountry",
+      "dataIndex": "buyerCountry",
+      "title": "Buyer Country"
+    },
+    {
+      "key": "PlacePortOfExport",
+      "dataIndex": "portofExport",
+      "title": "Place/Port of Export"
+    },
+    {
+      "key": "PlacePortOfDischarge",
+      "dataIndex": "portofDischarge",
+      "title": "Place/Port of Discharge"
+    },
+    {
+      "key": "LastDate",
+      "dataIndex": "lastDate",
+      "title": "Last Date",
+      "dataType": "date"
+    },
+    {
+      "key": "Method",
+      "dataIndex": "methodName",
+      "title": "Method"
+    },
+    {
+      "key": "ConsignedCountry",
+      "dataIndex": "consignedCountry",
+      "title": "Consigned Country"
+    },
+    {
+      "key": "CountryOfOrign",
+      "dataIndex": "countryofOrigin",
+      "title": "Country of Orign"
+    },
+    {
+      "key": "CountryOfDestination",
+      "dataIndex": "destinationCountry",
+      "title": "Country of Destination"
+    },
+    {
+      "key": "hsCode",
+      "dataIndex": "hsCode",
+      "title": "hsCode"
+    },
+    {
+      "key": "Decription",
+      "dataIndex": "hsDescription",
+      "title": "Decription"
+    },
+    {
+      "key": "AU",
+      "dataIndex": "unit",
+      "title": "Unit"
+    },
+    {
+      "key": "Price",
+      "dataIndex": "price",
+      "title": "Price",
+      "dataType": "number"
+    },
+    {
+      "key": "Qty",
+      "dataIndex": "quantity",
+      "title": "Qty",
+      "dataType": "number"
+    },
+    {
+      "key": "Value",
+      "dataIndex": "amount",
+      "title": "Value",
+      "dataType": "number"
+    },
+    {
+      "key": "Currency",
+      "dataIndex": "currency",
+      "title": "Currency"
+    },
+    {
+      "key": "CommodityType",
+      "dataIndex": "commodityType",
+      "title": "Commodity Type"
+    },
+    {
+      "key": "Conditions",
+      "dataIndex": "conditions",
+      "title": "Conditions"
+    }
+  ],
+  "currencyTotalsColumns": {
+    "labelColumnKey": "LicenceNo",
+    "valueColumnKey": "Value"
+  }
+}

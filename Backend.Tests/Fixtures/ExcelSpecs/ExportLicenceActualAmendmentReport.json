@@ -1,0 +1,72 @@
+{
+  "formatVersion": 1,
+  "configKey": "ExportLicenceActualAmendmentReport",
+  "controllerName": "ExportLicenceActualAmendmentReport",
+  "title": "Export Licence Actual Amendment Report",
+  "fileName": "ExportLicenceActualAmendmentReport.xlsx",
+  "headerLines": [
+    "List of Export Licence Report (01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "Section",
+      "dataIndex": "sectionName",
+      "title": "Section"
+    },
+    {
+      "key": "LicenceNo",
+      "dataIndex": "licenceNo",
+      "title": "Licence No"
+    },
+    {
+      "key": "LicenceAmendmentNo",
+      "dataIndex": "licenceNo",
+      "title": "Licence Amendment No"
+    },
+    {
+      "key": "AmendmentDate",
+      "dataIndex": "sDate",
+      "title": "Amendment Date"
+    },
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
+    },
+    {
+      "key": "Currency",
+      "dataIndex": "currency",
+      "title": "Currency"
+    },
+    {
+      "key": "TotalValue",
+      "dataIndex": "amount",
+      "title": "Total Value",
+      "dataType": "number"
+    }
+  ],
+  "currencyTotalsColumns": {
+    "labelColumnKey": "LicenceNo",
+    "valueColumnKey": "TotalValue"
+  }
+}

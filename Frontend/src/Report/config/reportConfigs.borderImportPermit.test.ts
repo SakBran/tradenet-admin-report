@@ -111,9 +111,11 @@ describe('Border Import Permit report configs', () => {
     expect(cfg.filters.find((filter) => filter.name === 'SakhanId')?.lookupName).toBe(
       'sakhans'
     );
+    // The money column on this report is keyed 'TotalAmount' (reportConfigs.ts:6273);
+    // 'Amount' matched no column, so the grid rendered no per-currency value cell.
     expect(cfg.currencyTotalsColumns).toEqual({
       labelColumnKey: 'LicenceNo',
-      valueColumnKey: 'Amount',
+      valueColumnKey: 'TotalAmount',
     });
   });
 

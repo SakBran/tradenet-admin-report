@@ -17,13 +17,15 @@ namespace API.Service.ExcelExport
     /// over to a new worksheet at the Excel 1,048,576-row limit.
     ///
     /// Without a layout, columns are inferred from the first appended row's public
-    /// properties and the header sits at row 1 — the original behaviour, which every
-    /// report that has not opted in still gets. With an <see cref="ExcelReportLayout"/>
-    /// the sheet instead opens with the report's title line(s), then a header row of
-    /// the layout's own column names, and only the layout's columns are written.
+    /// properties and the header sits at row 1 — the original behaviour, kept only for
+    /// callers that pass no layout at all. With an <see cref="ExcelReportLayout"/> the
+    /// sheet opens with the report's header block (title, subtitle, From/To, Exported),
+    /// then a bold header row of the layout's own column names, then the data, then the
+    /// grid's footer rows.
     ///
-    /// Usage: append chunks, then Finish(). Disposing without Finish leaves an
-    /// incomplete (unreadable) archive — the worker deletes the file on failure.
+    /// Usage: append chunks, optionally <see cref="AppendFooterRows"/>, then
+    /// <see cref="Finish"/>. Disposing without Finish leaves an incomplete (unreadable)
+    /// archive — the worker deletes the file on failure.
     /// </summary>
     public sealed class StreamingExcelWriter : IDisposable
     {
@@ -41,22 +43,35 @@ namespace API.Service.ExcelExport
         private const int StyleMoney = 4;
         private const int StyleTotalLabel = 5;
         private const int StyleTotalMoney = 6;
+        private const int StyleMeta = 7;
+        private const int StyleTotalNumber = 8;
+        private const int StyleDateTime = 9;
+        private const int StyleMoney4 = 10;
 
         private readonly ZipArchive _archive;
         private readonly string _worksheetBaseName;
         private readonly ExcelReportLayout _layout;
         private readonly int _maxRowsPerSheet;
         private readonly string[] _titleLines;
+        private readonly ExcelHeaderLine[] _headerBlock;
         private readonly ExcelColumn[]? _columns;   // null → legacy reflection mode
-        private readonly int _headerRowIndex;       // 1 when there is no title
+        private readonly ExcelReportSection[] _sections;
+        private readonly int _preambleRows;         // title lines + header block, per sheet
+        private readonly int _headerRowIndex;       // the column header row; = _preambleRows in section mode
+        private readonly double?[] _widths;
         private readonly double[]? _totals;         // one slot per column; null when no totals row
 
+        private ExcelColumn[]? _activeColumns;      // the section currently being written
         private PropertyInfo[]? _properties;        // legacy mode only
         private XmlWriter? _sheetWriter;
         private Stream? _sheetStream;
+        private List<string> _mergeRefs = new();    // merged bands on the CURRENT sheet
         private int _sheetCount;
         private int _rowInSheet;       // 1-based row number within the current sheet
         private long _totalDataRows;   // also the running ordinal behind the "No" column
+        private long _sectionRows;     // rows in the active section (its own "No" ordinal)
+        private int _activeSection = -1;
+        private bool _footerWritten;
 
         public StreamingExcelWriter(Stream output, string worksheetName)
             : this(output, worksheetName, null, MaxRowsPerSheetDefault)
@@ -77,8 +92,16 @@ namespace API.Service.ExcelExport
             _layout = layout ?? ExcelReportLayout.None;
             _maxRowsPerSheet = maxRowsPerSheet;
             _titleLines = _layout.TitleLines.ToArray();
+            _headerBlock = _layout.HeaderBlock.ToArray();
             _columns = _layout.HasExplicitColumns ? _layout.Columns.ToArray() : null;
-            _headerRowIndex = _titleLines.Length + 1;
+            _sections = _layout.Sections.ToArray();
+            _preambleRows = _titleLines.Length + _headerBlock.Length;
+
+            // A composite sheet writes one header row per section instead of a single
+            // global one, so nothing but the preamble is frozen.
+            _headerRowIndex = HasSections ? _preambleRows : _preambleRows + 1;
+            _activeColumns = _columns;
+            _widths = BuildWidths();
             _totals = _layout.TotalsRowLabel != null && _columns != null && _columns.Any(c => c.IncludeInTotals)
                 ? new double[_columns.Length]
                 : null;
@@ -86,8 +109,12 @@ namespace API.Service.ExcelExport
 
         public int SheetCount => _sheetCount;
 
-        /// <summary>Data rows only — title, header and totals rows are excluded.</summary>
+        /// <summary>Data rows only — preamble, header, section and footer rows are excluded.</summary>
         public long TotalDataRows => _totalDataRows;
+
+        private bool HasSections => _sections.Length > 0;
+
+        private bool IsLayoutMode => _columns != null || HasSections;
 
         /// <summary>
         /// Appends a chunk of rows. In legacy mode the column set is fixed from the
@@ -105,9 +132,15 @@ namespace API.Service.ExcelExport
                     continue;
                 }
 
-                if (_columns == null)
+                if (!IsLayoutMode)
                 {
                     _properties ??= GetExportProperties(row.GetType());
+                }
+                else if (HasSections && _activeSection < 0)
+                {
+                    // A composite report that never called BeginSection still gets its
+                    // first table's headers instead of a naked block of values.
+                    BeginSection(0);
                 }
 
                 if (_sheetWriter == null || _rowInSheet >= _maxRowsPerSheet)
@@ -119,17 +152,138 @@ namespace API.Service.ExcelExport
                 // Incremented before the write so the "No" column is 1-based, and never
                 // reset by a rollover so it keeps counting across sheets.
                 _totalDataRows++;
+                _sectionRows++;
                 WriteDataRow(_sheetWriter!, _rowInSheet, row);
+            }
+        }
+
+        /// <summary>
+        /// Switches to a composite sheet's <paramref name="sectionIndex"/>-th table: writes
+        /// a spacer, the section title and the section's own header row, and restarts that
+        /// section's row numbering.
+        /// </summary>
+        public void BeginSection(int sectionIndex)
+        {
+            if (!HasSections)
+            {
+                return;
+            }
+
+            if (sectionIndex < 0 || sectionIndex >= _sections.Length)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(sectionIndex),
+                    sectionIndex,
+                    $"The layout declares {_sections.Length} section(s); WriteRowsAsync asked for section {sectionIndex}.");
+            }
+
+            if (_sheetWriter == null)
+            {
+                StartNewSheet();
+            }
+            else if (_activeSection >= 0)
+            {
+                WriteBlankRow();
+            }
+
+            var section = _sections[sectionIndex];
+            _activeSection = sectionIndex;
+            _activeColumns = section.Columns.ToArray();
+            _sectionRows = 0;
+
+            if (!string.IsNullOrWhiteSpace(section.Title))
+            {
+                _rowInSheet++;
+                WriteSingleCellRow(_sheetWriter!, _rowInSheet, section.Title, StyleTitle);
+                TrackMerge(_rowInSheet);
+            }
+
+            _rowInSheet++;
+            WriteHeaderRow(_sheetWriter!, _rowInSheet);
+        }
+
+        /// <summary>
+        /// A trailing single-cell line under the data, e.g. a composite page's
+        /// "Total USD Value: 1,234.5678".
+        /// </summary>
+        public void AppendNote(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return;
+            }
+
+            if (_sheetWriter == null)
+            {
+                StartNewSheet();
+            }
+
+            WriteBlankRow();
+            _rowInSheet++;
+            WriteSingleCellRow(_sheetWriter!, _rowInSheet, text, StyleTotalLabel);
+        }
+
+        /// <summary>
+        /// Writes the grid's own footer rows (see <see cref="ExcelFooterBuilder"/>) and
+        /// suppresses the layout's summed <c>TotalsRowLabel</c> row — the two would
+        /// otherwise disagree, and the grid's numbers are the ones users reconcile against.
+        /// Call it after the last chunk and before <see cref="Finish"/>.
+        /// </summary>
+        public void AppendFooterRows(IReadOnlyList<ExcelFooterRow> footerRows)
+        {
+            // Claimed even for an EMPTY footer: once the grid's own totals have been
+            // consulted they are the answer, and "the grid shows no footer" must not turn
+            // into the layout's self-summed row under a different column.
+            _footerWritten = true;
+
+            if (footerRows == null || footerRows.Count == 0)
+            {
+                return;
+            }
+
+            if (_sheetWriter == null)
+            {
+                StartNewSheet();
+            }
+
+            var columnCount = _activeColumns?.Length ?? ColumnCount();
+
+            foreach (var footerRow in footerRows)
+            {
+                if (_rowInSheet >= _maxRowsPerSheet)
+                {
+                    StartNewSheet();
+                }
+
+                _rowInSheet++;
+                _sheetWriter!.WriteStartElement("row");
+                _sheetWriter.WriteAttributeString("r", _rowInSheet.ToString(CultureInfo.InvariantCulture));
+
+                for (var i = 0; i < columnCount; i++)
+                {
+                    var cell = i < footerRow.Cells.Count ? footerRow.Cells[i] : null;
+                    var reference = GetCellReference(i + 1, _rowInSheet);
+
+                    if (cell == null)
+                    {
+                        WriteCell(_sheetWriter, reference, null, ExcelCellFormat.Text, StyleTotalLabel);
+                        continue;
+                    }
+
+                    WriteCell(_sheetWriter, reference, cell.Value, cell.Format, FooterStyleFor(cell.Format));
+                }
+
+                _sheetWriter.WriteEndElement();
             }
         }
 
         /// <summary>Closes the current sheet and writes the workbook manifest parts.</summary>
         public void Finish()
         {
-            // Ensure at least one (title + header only) sheet exists.
+            // Ensure at least one (header only) sheet exists.
             if (_sheetWriter == null)
             {
-                if (_columns == null)
+                if (!IsLayoutMode)
                 {
                     _properties ??= Array.Empty<PropertyInfo>();
                 }
@@ -137,7 +291,11 @@ namespace API.Service.ExcelExport
                 StartNewSheet();
             }
 
-            WriteTotalsRow();
+            if (!_footerWritten)
+            {
+                WriteTotalsRow();
+            }
+
             CloseCurrentSheet();
 
             WriteTextEntry("[Content_Types].xml", ContentTypesXml(_sheetCount));
@@ -159,6 +317,7 @@ namespace API.Service.ExcelExport
             CloseCurrentSheet();
 
             _sheetCount++;
+            _mergeRefs = new List<string>();
             var entry = _archive.CreateEntry($"xl/worksheets/sheet{_sheetCount}.xml", CompressionLevel.Optimal);
             _sheetStream = entry.Open();
             _sheetWriter = XmlWriter.Create(_sheetStream, new XmlWriterSettings
@@ -171,24 +330,61 @@ namespace API.Service.ExcelExport
             _sheetWriter.WriteStartDocument();
             _sheetWriter.WriteStartElement("worksheet", SpreadsheetNamespace);
 
-            // <cols> must precede <sheetData> in the CT_Worksheet sequence.
+            // CT_Worksheet sequence: sheetViews, cols, sheetData, mergeCells.
+            WriteSheetViews(_sheetWriter);
             WriteColumnWidths(_sheetWriter);
 
             _sheetWriter.WriteStartElement("sheetData");
 
-            // Title lines and the header row repeat on every sheet, so a rolled-over
+            // The header block and the header row repeat on every sheet, so a rolled-over
             // file still reads standalone.
+            _rowInSheet = 0;
+
             for (var i = 0; i < _titleLines.Length; i++)
             {
-                WriteSingleCellRow(_sheetWriter, i + 1, _titleLines[i], StyleTitle);
+                _rowInSheet++;
+                WriteSingleCellRow(_sheetWriter, _rowInSheet, _titleLines[i], StyleTitle);
+                TrackMerge(_rowInSheet);
             }
 
-            WriteHeaderRow(_sheetWriter, _headerRowIndex);
+            foreach (var line in _headerBlock)
+            {
+                _rowInSheet++;
+                WriteSingleCellRow(
+                    _sheetWriter,
+                    _rowInSheet,
+                    line.Text,
+                    line.Kind == ExcelHeaderLineKind.Meta ? StyleMeta : StyleTitle);
 
-            // Re-base the row cursor past the preamble. Leaving this at 1 would make the
-            // first data row re-emit a row number already used, which Excel reports as a
-            // corrupt file.
-            _rowInSheet = _headerRowIndex;
+                if (line.IsMerged)
+                {
+                    TrackMerge(_rowInSheet);
+                }
+            }
+
+            if (HasSections)
+            {
+                // Section headers are written by BeginSection; re-emit the active one so a
+                // rolled-over sheet is still readable.
+                if (_activeSection >= 0)
+                {
+                    var section = _sections[_activeSection];
+                    if (!string.IsNullOrWhiteSpace(section.Title))
+                    {
+                        _rowInSheet++;
+                        WriteSingleCellRow(_sheetWriter, _rowInSheet, section.Title, StyleTitle);
+                        TrackMerge(_rowInSheet);
+                    }
+
+                    _rowInSheet++;
+                    WriteHeaderRow(_sheetWriter, _rowInSheet);
+                }
+
+                return;
+            }
+
+            _rowInSheet++;
+            WriteHeaderRow(_sheetWriter, _rowInSheet);
         }
 
         private void CloseCurrentSheet()
@@ -209,17 +405,82 @@ namespace API.Service.ExcelExport
             _sheetStream = null;
         }
 
+        /// <summary>
+        /// Freezes the header block (and the column header row) so they stay visible
+        /// while the user scrolls a 100k-row export.
+        /// </summary>
+        private void WriteSheetViews(XmlWriter writer)
+        {
+            if (!_layout.FreezeHeader || !IsLayoutMode || _headerRowIndex <= 0)
+            {
+                return;
+            }
+
+            writer.WriteStartElement("sheetViews");
+            writer.WriteStartElement("sheetView");
+            writer.WriteAttributeString("workbookViewId", "0");
+            writer.WriteStartElement("pane");
+            writer.WriteAttributeString("ySplit", _headerRowIndex.ToString(CultureInfo.InvariantCulture));
+            writer.WriteAttributeString(
+                "topLeftCell",
+                "A" + (_headerRowIndex + 1).ToString(CultureInfo.InvariantCulture));
+            writer.WriteAttributeString("activePane", "bottomLeft");
+            writer.WriteAttributeString("state", "frozen");
+            writer.WriteEndElement();
+            writer.WriteEndElement();
+            writer.WriteEndElement();
+        }
+
+        /// <summary>Widest declared width per column index across the grid and every section.</summary>
+        private double?[] BuildWidths()
+        {
+            var count = Math.Max(
+                _columns?.Length ?? 0,
+                _sections.Length == 0 ? 0 : _sections.Max(section => section.Columns.Count));
+
+            if (count == 0)
+            {
+                return Array.Empty<double?>();
+            }
+
+            var widths = new double?[count];
+
+            void Merge(IReadOnlyList<ExcelColumn> columns)
+            {
+                for (var i = 0; i < columns.Count; i++)
+                {
+                    var width = columns[i].Width;
+                    if (width is > 0 && (widths[i] == null || width > widths[i]))
+                    {
+                        widths[i] = width;
+                    }
+                }
+            }
+
+            if (_columns != null)
+            {
+                Merge(_columns);
+            }
+
+            foreach (var section in _sections)
+            {
+                Merge(section.Columns);
+            }
+
+            return widths;
+        }
+
         private void WriteColumnWidths(XmlWriter writer)
         {
-            if (_columns == null || !_columns.Any(c => c.Width is > 0))
+            if (_widths.Length == 0 || !_widths.Any(width => width is > 0))
             {
                 return;
             }
 
             writer.WriteStartElement("cols");
-            for (var i = 0; i < _columns.Length; i++)
+            for (var i = 0; i < _widths.Length; i++)
             {
-                var width = _columns[i].Width is > 0 ? _columns[i].Width!.Value : 18d;
+                var width = _widths[i] is > 0 ? _widths[i]!.Value : 18d;
 
                 writer.WriteStartElement("col");
                 writer.WriteAttributeString("min", (i + 1).ToString(CultureInfo.InvariantCulture));
@@ -232,28 +493,36 @@ namespace API.Service.ExcelExport
             writer.WriteEndElement();
         }
 
+        private void TrackMerge(int rowNumber)
+        {
+            var columnCount = ColumnCount();
+            if (!_layout.MergeTitleAcrossColumns || columnCount < 2)
+            {
+                return;
+            }
+
+            var row = rowNumber.ToString(CultureInfo.InvariantCulture);
+            _mergeRefs.Add($"A{row}:{GetColumnName(columnCount)}{row}");
+        }
+
         /// <summary>
-        /// Merged title bands. <c>mergeCells</c> follows <c>sheetData</c> in the
+        /// Merged title/heading bands. <c>mergeCells</c> follows <c>sheetData</c> in the
         /// CT_Worksheet sequence, so this is emitted while closing the sheet rather
         /// than next to the title rows themselves.
         /// </summary>
         private void WriteMergedTitleCells(XmlWriter writer)
         {
-            var columnCount = ColumnCount();
-            if (!_layout.MergeTitleAcrossColumns || _titleLines.Length == 0 || columnCount < 2)
+            if (_mergeRefs.Count == 0)
             {
                 return;
             }
 
-            var lastColumn = GetColumnName(columnCount);
-
             writer.WriteStartElement("mergeCells");
-            writer.WriteAttributeString("count", _titleLines.Length.ToString(CultureInfo.InvariantCulture));
-            for (var rowNumber = 1; rowNumber <= _titleLines.Length; rowNumber++)
+            writer.WriteAttributeString("count", _mergeRefs.Count.ToString(CultureInfo.InvariantCulture));
+            foreach (var reference in _mergeRefs)
             {
-                var row = rowNumber.ToString(CultureInfo.InvariantCulture);
                 writer.WriteStartElement("mergeCell");
-                writer.WriteAttributeString("ref", $"A{row}:{lastColumn}{row}");
+                writer.WriteAttributeString("ref", reference);
                 writer.WriteEndElement();
             }
 
@@ -265,11 +534,11 @@ namespace API.Service.ExcelExport
             writer.WriteStartElement("row");
             writer.WriteAttributeString("r", rowNumber.ToString(CultureInfo.InvariantCulture));
 
-            if (_columns != null)
+            if (_activeColumns != null)
             {
-                for (var i = 0; i < _columns.Length; i++)
+                for (var i = 0; i < _activeColumns.Length; i++)
                 {
-                    WriteCell(writer, GetCellReference(i + 1, rowNumber), _columns[i].Header, ExcelCellFormat.Text, StyleHeader);
+                    WriteCell(writer, GetCellReference(i + 1, rowNumber), _activeColumns[i].Header, ExcelCellFormat.Text, StyleHeader);
                 }
             }
             else
@@ -286,19 +555,35 @@ namespace API.Service.ExcelExport
             writer.WriteEndElement();
         }
 
+        private void WriteBlankRow()
+        {
+            if (_rowInSheet >= _maxRowsPerSheet)
+            {
+                StartNewSheet();
+                return;
+            }
+
+            _rowInSheet++;
+            _sheetWriter!.WriteStartElement("row");
+            _sheetWriter.WriteAttributeString("r", _rowInSheet.ToString(CultureInfo.InvariantCulture));
+            _sheetWriter.WriteEndElement();
+        }
+
         private void WriteDataRow(XmlWriter writer, int rowNumber, object row)
         {
             writer.WriteStartElement("row");
             writer.WriteAttributeString("r", rowNumber.ToString(CultureInfo.InvariantCulture));
 
-            if (_columns != null)
+            if (_activeColumns != null)
             {
-                for (var i = 0; i < _columns.Length; i++)
-                {
-                    var column = _columns[i];
-                    var value = column.GetValue(row, _totalDataRows);
+                var ordinal = HasSections ? _sectionRows : _totalDataRows;
 
-                    if (_totals != null && column.IncludeInTotals)
+                for (var i = 0; i < _activeColumns.Length; i++)
+                {
+                    var column = _activeColumns[i];
+                    var value = column.GetValue(row, ordinal);
+
+                    if (_totals != null && _columns != null && ReferenceEquals(_activeColumns, _columns) && column.IncludeInTotals)
                     {
                         _totals[i] += ToDoubleOrZero(value);
                     }
@@ -325,9 +610,10 @@ namespace API.Service.ExcelExport
         }
 
         /// <summary>
-        /// The grid's footer total, written once after the last data row. Sums are
-        /// accumulated while streaming, so they always describe exactly the rows in the
-        /// file. Skipped for an empty export.
+        /// The layout's own summed totals row, written once after the last data row when
+        /// no <see cref="AppendFooterRows"/> footer was supplied. Sums are accumulated
+        /// while streaming, so they always describe exactly the rows in the file. Skipped
+        /// for an empty export.
         /// </summary>
         private void WriteTotalsRow()
         {
@@ -372,13 +658,30 @@ namespace API.Service.ExcelExport
             _sheetWriter.WriteEndElement();
         }
 
-        private int ColumnCount() => _columns?.Length ?? _properties?.Length ?? 0;
+        private int ColumnCount()
+        {
+            if (_activeColumns != null)
+            {
+                return Math.Max(_activeColumns.Length, _widths.Length);
+            }
+
+            return _widths.Length > 0 ? _widths.Length : _properties?.Length ?? 0;
+        }
 
         private static int StyleFor(ExcelCellFormat format) => format switch
         {
             ExcelCellFormat.Date => StyleDate,
+            ExcelCellFormat.DateTime => StyleDateTime,
             ExcelCellFormat.Money => StyleMoney,
+            ExcelCellFormat.Money4 => StyleMoney4,
             _ => StyleDefault,
+        };
+
+        private static int FooterStyleFor(ExcelCellFormat format) => format switch
+        {
+            ExcelCellFormat.Money or ExcelCellFormat.Money4 => StyleTotalMoney,
+            ExcelCellFormat.Number => StyleTotalNumber,
+            _ => StyleTotalLabel,
         };
 
         private static double ToDoubleOrZero(object? value)
@@ -431,7 +734,7 @@ namespace API.Service.ExcelExport
 
             if (value != null)
             {
-                if (format == ExcelCellFormat.Date && TryGetDateSerial(value, out var serial))
+                if (format is ExcelCellFormat.Date or ExcelCellFormat.DateTime && TryGetDateSerial(value, out var serial))
                 {
                     writer.WriteElementString("v", serial);
                 }
@@ -612,9 +915,11 @@ namespace API.Service.ExcelExport
         private const string StylesXml =
             "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>" +
             "<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">" +
-            "<numFmts count=\"2\">" +
+            "<numFmts count=\"4\">" +
             "<numFmt numFmtId=\"164\" formatCode=\"dd/mm/yyyy\"/>" +
             "<numFmt numFmtId=\"165\" formatCode=\"#,##0.00\"/>" +
+            "<numFmt numFmtId=\"166\" formatCode=\"yyyy-mm-dd hh:mm:ss\"/>" +
+            "<numFmt numFmtId=\"167\" formatCode=\"#,##0.0000\"/>" +
             "</numFmts>" +
             "<fonts count=\"3\">" +
             "<font><sz val=\"11\"/><name val=\"Calibri\"/></font>" +
@@ -627,7 +932,7 @@ namespace API.Service.ExcelExport
             "</fills>" +
             "<borders count=\"1\"><border><left/><right/><top/><bottom/><diagonal/></border></borders>" +
             "<cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs>" +
-            "<cellXfs count=\"7\">" +
+            "<cellXfs count=\"11\">" +
             // 0 body
             "<xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/>" +
             // 1 title
@@ -644,6 +949,15 @@ namespace API.Service.ExcelExport
             "<xf numFmtId=\"0\" fontId=\"2\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyFont=\"1\"/>" +
             // 6 totals amount
             "<xf numFmtId=\"165\" fontId=\"2\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\" applyFont=\"1\"/>" +
+            // 7 meta (From Date / To Date / Exported) — bold 11, left, unmerged
+            "<xf numFmtId=\"0\" fontId=\"2\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyFont=\"1\" applyAlignment=\"1\">" +
+            "<alignment horizontal=\"left\" vertical=\"center\"/></xf>" +
+            // 8 totals plain number
+            "<xf numFmtId=\"0\" fontId=\"2\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyFont=\"1\"/>" +
+            // 9 date + time
+            "<xf numFmtId=\"166\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\"/>" +
+            // 10 money with 4 decimals
+            "<xf numFmtId=\"167\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\"/>" +
             "</cellXfs>" +
             "</styleSheet>";
     }

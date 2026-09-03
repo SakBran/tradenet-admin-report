@@ -1,0 +1,53 @@
+{
+  "formatVersion": 1,
+  "configKey": "EVCycleShowRoomSummaryReport",
+  "controllerName": "EVCycleShowRoomSummaryReport",
+  "title": "EVCycle Show Room Summary Report",
+  "fileName": "EVCycleShowRoomSummaryReport.xlsx",
+  "headerLines": [
+    "Statement of Registered",
+    "Show Room for Electric Cycles at",
+    "Ministry of Commerce",
+    "(01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": false,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "NewCount",
+      "dataIndex": "newCount",
+      "title": "Number of Register",
+      "dataType": "number"
+    },
+    {
+      "key": "CancelCount",
+      "dataIndex": "cancelCount",
+      "title": "Number of De-Register",
+      "dataType": "number"
+    },
+    {
+      "key": "ExtensionCount",
+      "dataIndex": "extensionCount",
+      "title": "Number of Extension",
+      "dataType": "number"
+    },
+    {
+      "key": "ValidCount",
+      "dataIndex": "validCount",
+      "title": "Total Number Still Valid",
+      "dataType": "number"
+    },
+    {
+      "key": "InvalidCount",
+      "dataIndex": "invalidCount",
+      "title": "Total Number Invalid",
+      "dataType": "number"
+    },
+    {
+      "key": "TotalNumber",
+      "dataIndex": "totalNumber",
+      "title": "Total Number",
+      "dataType": "number"
+    }
+  ]
+}

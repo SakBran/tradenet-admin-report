@@ -11,7 +11,6 @@ import {
   Row,
   Select,
   Space,
-  message,
 } from 'antd';
 import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
@@ -30,15 +29,16 @@ import {
   ReportFilterConfig,
   ReportPageConfig,
 } from '../config/reportTypes';
+import {
+  buildReportHeaderLines,
+  getDerivedFilterValues,
+  isLegacyReportViewer,
+  resolveReportColumns,
+  resolveRowNumberTitle,
+} from '../reportPresentation';
+import { buildExcelPresentation } from '../excel/buildExcelPresentation';
+import { enqueueExcelExport } from '../excel/excelEnqueue';
 import { filterOptionsByParent } from './filterCascade';
-
-type ExcelEnqueueResult = {
-  status: 'Ready' | 'Queued' | 'Processing';
-  jobId: string;
-  fileName?: string;
-  downloadUrl?: string;
-  message?: string;
-};
 
 type FilterValue =
   | string
@@ -48,17 +48,6 @@ type FilterValue =
   | [Dayjs, Dayjs]
   | undefined;
 type FilterFormValues = Record<string, FilterValue>;
-
-const formTypePrefixes: Array<[string, string]> = [
-  ['BorderExportLicence', 'Border Export Licence'],
-  ['BorderImportLicence', 'Border Import Licence'],
-  ['BorderExportPermit', 'Border Export Permit'],
-  ['BorderImportPermit', 'Border Import Permit'],
-  ['ExportLicence', 'Export Licence'],
-  ['ImportLicence', 'Import Licence'],
-  ['ExportPermit', 'Export Permit'],
-  ['ImportPermit', 'Import Permit'],
-];
 
 interface LookupOption {
   id: number;
@@ -108,9 +97,6 @@ const idFilterLookups: Record<string, LookupFilterConfig> = {
   SakhanId: { lookupName: 'sakhans', label: 'Sakhan' },
   SellerCountryId: { lookupName: 'countries', label: 'Seller Country' },
 };
-
-const excelContentType =
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 const formatDate = (value: unknown) => {
   if (!value) {
@@ -259,37 +245,6 @@ const buildInitialValues = (filters: ReportFilterConfig[]) =>
     return values;
   }, {});
 
-const getDerivedFilterValues = (
-  controllerName: string,
-  filters: ReportFilterConfig[]
-) => {
-  const values: FilterFormValues = {};
-  const hasFilter = (name: string) =>
-    filters.some((filter) => filter.name === name);
-  const formType = formTypePrefixes.find(([prefix]) =>
-    controllerName.startsWith(prefix)
-  )?.[1];
-
-  if (formType && hasFilter('FormType')) {
-    values.FormType = formType;
-  }
-
-  if (hasFilter('Type')) {
-    if (controllerName.startsWith('Border')) {
-      values.Type = 'Border';
-    } else if (
-      formType &&
-      ['Export Licence', 'Import Licence', 'Export Permit', 'Import Permit'].includes(
-        formType
-      )
-    ) {
-      values.Type = 'Oversea';
-    }
-  }
-
-  return values;
-};
-
 const normalizeFilters = (
   filters: ReportFilterConfig[],
   values: FilterFormValues
@@ -345,17 +300,6 @@ const buildRequest = (
   filterQuery: query.filterQuery,
   includeTotalCount: query.includeTotalCount,
 });
-
-const downloadBlob = (blob: Blob, fileName: string) => {
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.URL.revokeObjectURL(url);
-};
 
 const toTableColumn = (
   column: ReportColumnConfig
@@ -592,20 +536,14 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
     form
   );
   const resolvedColumns = useMemo(
-    () =>
-      config.resolveColumns
-        ? config.resolveColumns(filters, config.columns)
-        : config.columns,
+    () => resolveReportColumns(config, filters),
     [config, filters]
   );
   const tableColumns = useMemo(
     () => resolvedColumns.map(toTableColumn),
     [resolvedColumns]
   );
-  const legacyReportViewer =
-    config.legacyReportViewer ??
-    (config.controllerName.startsWith('ImportLicence') ||
-      config.controllerName.startsWith('BorderImportPermit'));
+  const legacyReportViewer = isLegacyReportViewer(config);
 
   const reportLookupFilters = useMemo(() => {
     const lookups = config.filters
@@ -731,7 +669,7 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
 
   const generateExcel = useCallback(
     async (query: BasicTableQuery) => {
-      // Excel is now asynchronous: the endpoint enqueues a job (or returns an
+      // Excel is asynchronous: the endpoint enqueues a job (or returns an
       // already-finished file to reuse). See docs/ExcelJobQueueTask.md.
       // Export the filters currently entered in the form so the user can
       // export without first clicking Filter to load the grid. Validate first
@@ -743,37 +681,16 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
         return;
       }
       const currentFilters = normalizeReportFilters(values);
-      const response = await axiosInstance.post<ExcelEnqueueResult>(
+      // The presentation spec makes the sheet match this grid: same header
+      // block, same columns in the same order with the same header text.
+      await enqueueExcelExport(
         config.excelRoute,
-        buildRequest(currentFilters, query)
+        buildRequest(currentFilters, query),
+        buildExcelPresentation(config, currentFilters),
+        config.excelFileName
       );
-      const result = response.data;
-
-      if (result.status === 'Ready' && result.downloadUrl) {
-        const fileResponse = await axiosInstance.get(result.downloadUrl, {
-          responseType: 'blob',
-        });
-        const blob = new Blob([fileResponse.data], {
-          type: String(
-            fileResponse.headers['content-type'] ?? excelContentType
-          ),
-        });
-        downloadBlob(blob, result.fileName ?? config.excelFileName);
-        message.success('Your Excel export is ready and downloading.');
-        return;
-      }
-
-      if (result.status === 'Processing') {
-        message.info(
-          'This export is already being generated. It will appear in Exports when ready.'
-        );
-      } else {
-        message.success(
-          'Export queued. It will appear in Exports when ready.'
-        );
-      }
     },
-    [config.excelFileName, config.excelRoute, form]
+    [config, form, normalizeReportFilters]
   );
 
   const applyFilters = (values: FilterFormValues) => {
@@ -931,12 +848,12 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
 
   // Legacy RDLC-style report header rendered inside the grid, shown only once
   // filters are applied. Reflects the applied Type/Date via reportSubtitle.
+  // Same lines the Excel spec carries (buildReportHeaderLines). Reports with
+  // neither a heading nor a subtitle keep the plain grid they have today — the
+  // sheet still gets its title row, which the backend adds.
   const reportHeaderLines =
     hasAppliedFilters && (config.reportHeading?.length || config.reportSubtitle)
-      ? [
-          ...(config.reportHeading ?? []),
-          ...(config.reportSubtitle ? [config.reportSubtitle(filters)] : []),
-        ]
+      ? buildReportHeaderLines(config, filters)
       : undefined;
 
   return (
@@ -1019,7 +936,7 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
         lazyTotalCount={!config.disableLazyTotalCount}
         excelFileName={config.excelFileName}
         showRowNumber={config.showRowNumber ?? true}
-        rowNumberTitle={legacyReportViewer ? 'No.' : 'No'}
+        rowNumberTitle={resolveRowNumberTitle(config)}
         legacyReportViewer={legacyReportViewer}
       />
     </>

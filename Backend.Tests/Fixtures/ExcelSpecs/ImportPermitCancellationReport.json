@@ -1,0 +1,80 @@
+{
+  "formatVersion": 1,
+  "configKey": "ImportPermitCancellationReport",
+  "controllerName": "ImportPermitCancellationReport",
+  "title": "Import Permit Cancellation Report",
+  "fileName": "ImportPermitCancellationReport.xlsx",
+  "headerLines": [
+    "Ministry of Commerce",
+    "Directorate of Trade",
+    "List of Import Permit Report (01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "hsCode",
+      "dataIndex": "hsCode",
+      "title": "hsCode"
+    },
+    {
+      "key": "Section",
+      "dataIndex": "sectionName",
+      "title": "Section"
+    },
+    {
+      "key": "LicenceNo",
+      "dataIndex": "licenceNo",
+      "title": "Licence No"
+    },
+    {
+      "key": "CancellationNo",
+      "dataIndex": "oldLicenceNo",
+      "title": "Cancellation No"
+    },
+    {
+      "key": "CancellationDate",
+      "dataIndex": "sDate",
+      "title": "Cancellation Date"
+    },
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
+    },
+    {
+      "key": "Currency",
+      "dataIndex": "currency",
+      "title": "Currency"
+    },
+    {
+      "key": "TotalValue",
+      "dataIndex": "amount",
+      "title": "Total Value",
+      "dataType": "number"
+    },
+    {
+      "key": "Remark",
+      "dataIndex": "remark",
+      "title": "Remark"
+    }
+  ]
+}

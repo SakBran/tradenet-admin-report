@@ -2,8 +2,10 @@ using System;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace API.Service.ExcelExport
 {
@@ -33,6 +35,15 @@ namespace API.Service.ExcelExport
             services.AddSingleton<ExcelReportJobRegistry>();
             services.AddScoped<IExcelExportJobService, ExcelExportJobService>();
 
+            // The footer numbers are read by replaying the report's own Post, which needs
+            // the scoped DbContext the export job already runs inside.
+            services.AddScoped<IExcelFooterTotalsResolver, DefaultExcelFooterTotalsResolver>();
+            services.TryAddSingleton(TimeProvider.System);
+
+            // Registered here rather than in Program.cs so the whole feature stays one
+            // AddExcelExportQueue call.
+            services.Configure<MvcOptions>(options => options.Filters.Add<RequireExcelPresentationSpecFilter>());
+
             services.AddHostedService<ExcelExportWorker>();
             services.AddHostedService<ExcelExportCleanupWorker>();
 
@@ -51,7 +62,11 @@ namespace API.Service.ExcelExport
             foreach (var type in reportTypes)
             {
                 var reportKey = StripControllerSuffix(type.Name);
-                var formatVersion = type.GetCustomAttribute<ExcelFormatVersionAttribute>()?.Version ?? 1;
+                // + Generation: the shared sheet shape (header block, footer rows, freeze
+                // pane) changed, so every report's cached files must be invalidated, not
+                // just the ones that also bumped their own version.
+                var formatVersion = (type.GetCustomAttribute<ExcelFormatVersionAttribute>()?.Version ?? 1)
+                    + ExcelExportFormat.Generation;
                 var handler = new ControllerStreamingExcelReportJobHandler(
                     type,
                     reportKey,

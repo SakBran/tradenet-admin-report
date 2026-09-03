@@ -1,0 +1,85 @@
+{
+  "formatVersion": 1,
+  "configKey": "WholeSaleAndRetailRegistrationByVoucher",
+  "controllerName": "WholeSaleAndRetailRegistrationByVoucher",
+  "title": "WS and R Registration By Voucher",
+  "fileName": "WholeSaleAndRetailRegistrationByVoucher.xlsx",
+  "headerLines": [
+    "Ministry of Commerce",
+    "Directorate of Trade",
+    "(01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "Date",
+      "dataIndex": "date",
+      "title": "Date",
+      "dataType": "date"
+    },
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
+    },
+    {
+      "key": "WholeSaleRetailNo",
+      "dataIndex": "wholeSaleRetailNo",
+      "title": "Whole Sale & Retail No"
+    },
+    {
+      "key": "WholeSaleRetailAddress",
+      "dataIndex": "wholeSaleRetailAddress",
+      "title": "Whole Sale & Retail Address",
+      "fallbackDataIndexes": [
+        "wholeSaleRetailUnitLevel",
+        "wholeSaleRetailStreetNumberStreetName",
+        "wholeSaleRetailQuarterCityTownship",
+        "wholeSaleRetailState",
+        "wholeSaleRetailCountry",
+        "wholeSaleRetailPostalCode"
+      ]
+    },
+    {
+      "key": "TotalAmount",
+      "dataIndex": "totalAmount",
+      "title": "Total Amount",
+      "dataType": "number"
+    },
+    {
+      "key": "PaymentType",
+      "dataIndex": "paymentType",
+      "title": "Payment Type"
+    },
+    {
+      "key": "VoucherNo",
+      "dataIndex": "voucherNo",
+      "title": "Voucher No"
+    },
+    {
+      "key": "VoucherDate",
+      "dataIndex": "voucherDate",
+      "title": "Voucher Date",
+      "dataType": "date"
+    }
+  ]
+}

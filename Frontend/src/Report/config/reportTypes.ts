@@ -53,7 +53,21 @@ export interface ReportColumnConfig {
   title: string;
   dataType?: ReportColumnDataType;
   fallbackDataIndexes?: string[];
+  /**
+   * Excel number format for a money column, when 2 decimals are not enough:
+   * '#,##0.0000' exports the legacy RDLC 4-decimal value format. Carried into the
+   * Excel presentation spec only; the grid formats money with `toFixed(2)`.
+   */
+  numberFormat?: string;
   drilldown?: ReportColumnDrilldown;
+  /**
+   * Column carried in the config for drill-down/lookup plumbing but NOT rendered
+   * by the grid and NOT exported to Excel. `BasicTable` already drops hidden
+   * columns; `resolveReportColumns` (Report/reportPresentation.ts) drops them
+   * from the Excel presentation spec so the sheet can never show a column the
+   * UI does not.
+   */
+  hidden?: boolean;
 }
 
 export interface ReportFilterConfig {

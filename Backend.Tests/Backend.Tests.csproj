@@ -24,4 +24,10 @@
     <ProjectReference Include="..\Backend\API.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The Excel spec fixtures are the frontend's rendering of every report config;
+         the contract tests read them from the test output directory. -->
+    <Content Include="Fixtures/**/*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

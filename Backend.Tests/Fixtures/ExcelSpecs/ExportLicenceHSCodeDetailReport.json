@@ -1,0 +1,34 @@
+{
+  "formatVersion": 1,
+  "configKey": "ExportLicenceHSCodeDetailReport",
+  "controllerName": "ExportLicenceByHSCodeReport",
+  "title": "HS Code Detail Report",
+  "fileName": "ExportLicenceHSCodeDetailReport.xlsx",
+  "headerLines": [
+    "List of Export Licence By HS Code From (01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "hsCode",
+      "dataIndex": "hsCode",
+      "title": "HS Code"
+    },
+    {
+      "key": "Description",
+      "dataIndex": "hsDescription",
+      "title": "Description"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "NoOfLicences",
+      "dataIndex": "noOfLicences",
+      "title": "No of Licences"
+    }
+  ]
+}

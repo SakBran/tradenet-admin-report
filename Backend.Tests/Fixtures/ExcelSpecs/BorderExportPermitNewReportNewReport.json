@@ -1,0 +1,67 @@
+{
+  "formatVersion": 1,
+  "configKey": "BorderExportPermitNewReportNewReport",
+  "controllerName": "BorderExportPermitNewReportNewReport",
+  "title": "Border Export Permit New Report (New Report )",
+  "fileName": "BorderExportPermitNewReportNewReport.xlsx",
+  "headerLines": [
+    "List of Border Export Permit Report (01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "Sakhan",
+      "dataIndex": "sakhanCode",
+      "title": "Sakhan"
+    },
+    {
+      "key": "Section",
+      "dataIndex": "sectionName",
+      "title": "Section"
+    },
+    {
+      "key": "LicenceNo",
+      "dataIndex": "licenceNo",
+      "title": "Licence No"
+    },
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
+    },
+    {
+      "key": "Currency",
+      "dataIndex": "currency",
+      "title": "Currency"
+    },
+    {
+      "key": "TotalValue",
+      "dataIndex": "amount",
+      "title": "Total Value",
+      "dataType": "number"
+    }
+  ],
+  "currencyTotalsColumns": {
+    "labelColumnKey": "LicenceNo",
+    "valueColumnKey": "TotalValue"
+  }
+}

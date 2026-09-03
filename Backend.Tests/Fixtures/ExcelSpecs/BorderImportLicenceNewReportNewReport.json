@@ -1,0 +1,68 @@
+{
+  "formatVersion": 1,
+  "configKey": "BorderImportLicenceNewReportNewReport",
+  "controllerName": "BorderImportLicenceNewReportNewReport",
+  "title": "Border Import Licence New Report (New Report )",
+  "fileName": "BorderImportLicenceNewReportNewReport.xlsx",
+  "headerLines": [
+    "Border Import Licence New Report (New Report )"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "Sakhan",
+      "dataIndex": "sakhanCode",
+      "title": "Sakhan"
+    },
+    {
+      "key": "Section",
+      "dataIndex": "sectionName",
+      "title": "Section"
+    },
+    {
+      "key": "LicenceNo",
+      "dataIndex": "licenceNo",
+      "title": "Licence No"
+    },
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
+    },
+    {
+      "key": "Currency",
+      "dataIndex": "currency",
+      "title": "Currency"
+    },
+    {
+      "key": "TotalValue",
+      "dataIndex": "amount",
+      "title": "Total Value",
+      "dataType": "number"
+    },
+    {
+      "key": "Auto",
+      "dataIndex": "auto",
+      "title": "auto"
+    }
+  ]
+}

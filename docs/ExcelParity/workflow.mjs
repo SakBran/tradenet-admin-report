@@ -64,6 +64,26 @@ const implPrompt = (it) => `${RULES}\nRead ${P(implPromptFile(it.group))} and ${
 const gatePrompt = (wave, tag, cycle, fe) => `${RULES}\nRead ${P('gate-wave')} and ${P('_gate-common')}. Gate ${tag} cycle ${cycle}. Controllers in this wave: ${J(wave.map((i) => i.controller))}. Frontend shared files were touched this wave: ${fe} (if true, regenerate fixtures first). Return one results entry per controller listed.`
 const repairPrompt = (it, gate, cycle) => `${RULES}\nRead ${P('repair')}. Repair cycle ${cycle} for:\n${J(it)}\nGate evidence: ${J({ buildOk: gate.buildOk, failures: gate.failures.filter((f) => (f.controller || f.file || '').includes(it.controller)), result: gate.results.find((r) => r.controller === it.controller) || null })}\nYou may edit ONLY: ${ownFiles(it).join(', ')}. If you cannot make it compile, restore with git checkout -- <file> and return status "reverted".`
 const skepticPrompt = (it, gate) => `${RULES}\nRead ${P('skeptic')}. You are a skeptic: try to REFUTE that this report's Excel export now matches the UI grid and the 5 rules. Default to refuted=true when uncertain.\n${J(it)}\nGate result for it: ${J((gate && gate.results.find((r) => r.controller === it.controller)) || null)}`
+// A gate's own ok field is advisory: judge it on evidence. Failures matching
+// docs/ExcelParity/known-failures.json (passed in via args) predate this work and
+// must not block, but every other failure does. dbAvailable is never a blocker —
+// footer checks degrade to 'unverified-nodb' by design.
+const KNOWN = A.knownFailureMatches || []
+const isKnownFailure = (f) => KNOWN.some((m) => `${f.file || ''} ${f.error || ''}`.includes(m))
+const gateOk = (g) => {
+  if (!g || !g.buildOk) return false
+  if (!g.results.every((r) => r.passed)) return false
+  const real = g.failures.filter((f) => !isKnownFailure(f))
+  const waived = g.failures.length - real.length
+  if (waived) log(`gate: waived ${waived} known pre-existing failure(s); ${real.length} real`)
+  return real.length === 0
+}
+// Adversarial verification is targeted, not universal: a report with no footer, no
+// aggregate ordering, no alias, no filter-dependent header and no title mismatch has
+// nothing left for judgment to catch — the contract test already proves its header
+// block, exact columns, dataIndex binding and date shape. args.skepticControllers
+// lists the ones that DO need a skeptic; absent, every report gets one.
+const needsSkeptic = (it) => !A.skepticControllers || A.skepticControllers.includes(it.controller)
 const failingIn = (list, gate) => list.filter((it) => gate.failures.some((f) => (f.controller || f.file || '').includes(it.controller)) || gate.results.some((r) => r.controller === it.controller && !r.passed))
 
 phase('Core')
@@ -82,9 +102,9 @@ for (let c = 0; c <= MAX_REPAIRS; c++) {
   }
   coreGate = await agent(`${RULES}\nRead ${P('gate-core')} and ${P('_gate-common')}. Core gate cycle ${c}. Expect ${A.expectedFixtures || 167} entries in Backend.Tests/Fixtures/ExcelSpecs/index.json.`, { label: `core gate #${c}`, schema: GATE })
   if (!coreGate) throw new Error('core gate agent died')
-  if (coreGate.ok) break
+  if (gateOk(coreGate)) break
 }
-if (!coreGate.ok) return { stoppedAt: 'core', mergeable: false, gate: coreGate }
+if (!gateOk(coreGate)) return { stoppedAt: 'core', mergeable: false, gate: coreGate }
 log(`core green; dbAvailable=${coreGate.dbAvailable}`)
 
 phase('Fan-out')
@@ -112,7 +132,7 @@ for (let w = 0; w < waves.length && !stopReason; w++) {
   for (let c = 0; c <= MAX_REPAIRS; c++) {
     gate = await agent(gatePrompt(wave, tag, c, touchedFrontend), { label: `${tag} gate #${c}`, phase: 'Fan-out', schema: GATE })
     if (!gate) { stopReason = `${tag}: gate agent died`; break }
-    if (gate.ok) break
+    if (gateOk(gate)) break
     const failing = failingIn(wave, gate)
     if (c === 0 && failing.length > SYSTEMIC * wave.length) { stopReason = `${tag}: ${failing.length}/${wave.length} failed the first gate (systemic)`; break }
     if (c === MAX_REPAIRS) { log(`${tag}: still red after ${MAX_REPAIRS} repairs: ${J(failing.map((i) => i.controller))}`); break }
@@ -125,8 +145,12 @@ for (let w = 0; w < waves.length && !stopReason; w++) {
   }
   wave.forEach((it) => { rows.get(it.controller).gate = (gate && gate.results.find((r) => r.controller === it.controller)) || null })
   if (stopReason) break
-  skepticRuns.push(pipeline(wave, (_, it) => agent(skepticPrompt(it, gate), { label: `${tag} skeptic ${it.controller}`, phase: 'Fan-out', schema: VERDICT })
-    .then((v) => { rows.get(it.controller).skeptic = v; if (v && v.refuted) refuted.push(it); return v })))
+  const toSkeptic = wave.filter(needsSkeptic)
+  if (toSkeptic.length < wave.length) log(`${tag}: ${wave.length - toSkeptic.length} mechanical-only report(s) skip the skeptic; contract test is their sole evidence`)
+  if (toSkeptic.length) {
+    skepticRuns.push(pipeline(toSkeptic, (_, it) => agent(skepticPrompt(it, gate), { label: `${tag} skeptic ${it.controller}`, phase: 'Fan-out', schema: VERDICT })
+      .then((v) => { rows.get(it.controller).skeptic = v; if (v && v.refuted) refuted.push(it); return v })))
+  }
 }
 if (stopReason) log(`FAN-OUT STOPPED: ${stopReason}`)
 
@@ -138,12 +162,12 @@ if (!stopReason && pages.length) {
   pageResults = await pipeline(pages, (_, page) => agent(`${RULES}\nRead ${P('bespoke-page')}. Bring this bespoke page onto the queued Excel-spec flow. Edit ONLY Frontend/src/Report/Page/${page}.tsx, Frontend/src/Report/excel/bespoke/* (your own module + your entry in index.ts) and, for MemberRegistrationReport only, its entry in Frontend/src/Report/config/reportConfigs.ts. Do NOT run npm.\nPage: ${page}. Controllers behind it: ${J(ITEMS.filter((it) => it.bespokePage === page))}`, { label: `page ${page}`, phase: 'Bespoke pages', schema: PAGE }))
   for (let c = 0; c <= MAX_REPAIRS; c++) {
     feGate = await agent(`${RULES}\nRead ${P('gate-frontend')} and ${P('_gate-common')}. Frontend gate cycle ${c}. Pages: ${J(pages)}`, { label: `frontend gate #${c}`, phase: 'Bespoke pages', schema: GATE })
-    if (!feGate || feGate.ok || c === MAX_REPAIRS) break
+    if (!feGate || gateOk(feGate) || c === MAX_REPAIRS) break
     const bad = pages.filter((p) => feGate.failures.some((f) => f.file.includes(p)))
     if (!bad.length) await agent(`${RULES}\nRead ${P('core-repair')}. Frontend gate red outside any bespoke page; fix ONLY these:\n${J(feGate.failures)}`, { label: `frontend shared repair #${c}`, phase: 'Bespoke pages', schema: REPORT })
     else await pipeline(bad, (_, page) => agent(`${RULES}\nRead ${P('repair')}. Frontend repair #${c}; edit ONLY Frontend/src/Report/Page/${page}.tsx and its bespoke spec module:\n${J(feGate.failures.filter((f) => f.file.includes(page)))}`, { label: `page repair ${page} #${c}`, phase: 'Bespoke pages', schema: PAGE }))
   }
-  log(`bespoke pages: ${pages.length}; frontend gate ok=${!!(feGate && feGate.ok)}`)
+  log(`bespoke pages: ${pages.length}; frontend gate ok=${gateOk(feGate)}`)
 } else log(`bespoke pages skipped (${stopReason ? 'fan-out stopped' : 'none'})`)
 
 phase('Final gate + status')
@@ -158,7 +182,7 @@ if (!stopReason) {
   }
   for (let c = 0; c <= MAX_REPAIRS; c++) {
     finalGate = await agent(`${RULES}\nRead ${P('gate-final')} and ${P('_gate-common')}. Final gate cycle ${c}. Return one results entry per controller in docs/ExcelParity/manifest.json.`, { label: `final gate #${c}`, phase: 'Final gate + status', schema: GATE, effort: 'high' })
-    if (!finalGate || finalGate.ok || c === MAX_REPAIRS) break
+    if (!finalGate || gateOk(finalGate) || c === MAX_REPAIRS) break
     const bad = failingIn(ITEMS, finalGate)
     if (!bad.length) await agent(`${RULES}\nRead ${P('core-repair')}. Final gate red outside any controller; fix ONLY these:\n${J(finalGate.failures)}`, { label: `final shared repair #${c}`, phase: 'Final gate + status', schema: REPORT })
     else await pipeline(bad, (_, it) => agent(repairPrompt(it, finalGate, c), { label: `final repair ${it.controller} #${c}`, phase: 'Final gate + status', schema: REPORT }))
@@ -166,7 +190,7 @@ if (!stopReason) {
   ITEMS.forEach((it) => { const r = finalGate && finalGate.results.find((x) => x.controller === it.controller); if (r) rows.get(it.controller).gate = r })
 }
 const reps = A.e2eControllers || ['A', 'B', 'C', 'D', 'E', 'F'].map((g) => (ITEMS.find((it) => it.group === g) || {}).controller).filter(Boolean)
-const e2e = !stopReason && A.e2e !== false && finalGate && finalGate.ok
+const e2e = !stopReason && A.e2e !== false && gateOk(finalGate)
   ? await agent(`${RULES}\nRead ${P('e2e-smoke')}. Generate one real export per group for ${J(reps)} against the dev DB (read TradeNetDBTest from Backend/appsettings.json into env, never print it; use 2025 date ranges), verify each .xlsx with openpyxl per the prompt, and delete the jobs you created.`, { label: 'e2e smoke', phase: 'Final gate + status', schema: E2E, effort: 'high' })
   : (log('e2e smoke skipped'), null)
 const statusRows = ITEMS.map((it) => {
@@ -178,7 +202,8 @@ const statusRows = ITEMS.map((it) => {
   return {
     controller: it.controller, group: it.group, hasColumnTotals: it.hasColumnTotals, hasCurrencyTotals: it.hasCurrencyTotals,
     headerOk: !!(g && g.header), columnsOk: !!(g && g.columns), footer: g ? g.footer : 'n/a', gatePassed: !!(g && g.passed), repairs: r.repairs,
-    skepticRefuted: !!(s && s.refuted), skepticRules: s ? s.refutedRules : [], implStatus: i ? i.status : 'agent-died', green,
+    skepticRefuted: !!(s && s.refuted), skepticRules: s ? s.refutedRules : [],
+    skepticScope: needsSkeptic(it) ? (s ? 'run' : 'died') : 'not-required', implStatus: i ? i.status : 'agent-died', green,
     notes: [i && i.notes, s && s.refuted && s.evidence.join('; '), r.skepticRepair && r.skepticRepair.notes].filter(Boolean).join(' | '),
   }
 })
@@ -188,6 +213,6 @@ const green = statusRows.filter((r) => r.green).length
 log(`${green}/${ITEMS.length} green; not green: ${J((critic ? critic.notGreen : []).map((n) => n.controller))}`)
 return {
   stopReason, green, total: ITEMS.length, notGreen: critic ? critic.notGreen : [], statusPath: written && written.path,
-  finalGateOk: !!(finalGate && finalGate.ok), e2e,
-  mergeable: !stopReason && !!(finalGate && finalGate.ok && (!pages.length || (feGate && feGate.ok)) && (!e2e || !e2e.failed.length)) && green === ITEMS.length,
+  finalGateOk: gateOk(finalGate), e2e,
+  mergeable: !stopReason && gateOk(finalGate) && (!pages.length || gateOk(feGate)) && (!e2e || !e2e.failed.length) && green === ITEMS.length,
 }

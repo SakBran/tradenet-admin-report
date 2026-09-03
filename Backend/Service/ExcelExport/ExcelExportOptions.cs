@@ -1,5 +1,19 @@
 namespace API.Service.ExcelExport
 {
+    /// <summary>What to do when the grid's footer totals cannot be resolved for an export.</summary>
+    public enum FooterTotalsPolicy
+    {
+        /// <summary>
+        /// Fail the job (and retry it per <see cref="ExcelExportOptions.MaxAttempts"/>). A
+        /// silently footer-less export looks like a data problem to the user, so the
+        /// default is to surface the failure instead.
+        /// </summary>
+        Required = 0,
+
+        /// <summary>Log the failure and export the sheet without a footer.</summary>
+        BestEffort = 1,
+    }
+
     /// <summary>
     /// Bound from the "ExcelExport" config section. All have safe defaults so the
     /// feature works without explicit config.
@@ -45,5 +59,10 @@ namespace API.Service.ExcelExport
 
         /// <summary>Cleanup sweep interval (minutes).</summary>
         public int CleanupIntervalMinutes { get; set; } = 30;
+
+        /// <summary>
+        /// Whether a report whose grid shows footer totals may be exported without them.
+        /// </summary>
+        public FooterTotalsPolicy FooterTotals { get; set; } = FooterTotalsPolicy.Required;
     }
 }

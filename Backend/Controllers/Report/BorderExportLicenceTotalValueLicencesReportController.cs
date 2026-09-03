@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,7 +18,9 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class BorderExportLicenceTotalValueLicencesReportController : ControllerBase, IStreamingExcelReport
+    [ExcelFormatVersion(2)]
+    public class BorderExportLicenceTotalValueLicencesReportController
+        : ControllerBase, IStreamingExcelReport, IExcelReportLayoutProvider
     {
         private const string ReportKey = "BorderExportLicenceTotalValueLicencesReport";
 
@@ -67,6 +70,60 @@ namespace Backend.Controllers.Report
         public string ExcelWorksheetTitle => "Border Export Licence Total Value & Licences Report";
         public Type ExcelRequestType => typeof(BorderExportLicenceTotalValueLicencesReportRequest);
 
+        /// <summary>
+        /// This report's page is not a grid: it renders TWO tables (Total Value per
+        /// currency, Total Licences per Pa Tha Ka type) plus a "Total USD Value" line
+        /// (Frontend/src/Report/Page/BorderExportLicenceTotalValueLicencesReport.tsx —
+        /// valueColumns/licenceColumns and the heading), so the sheet is declared here
+        /// as two sections instead of being built from the grid's flat column spec.
+        /// Headers, order and number formats are the page's, verbatim.
+        /// </summary>
+        [NonAction]
+        public ExcelReportLayout GetExcelLayout(object request)
+        {
+            var typedRequest = (BorderExportLicenceTotalValueLicencesReportRequest)request;
+
+            return new ExcelReportLayout
+            {
+                TitleLines = new[]
+                {
+                    // Same wording as the page's heading (`heading` in the .tsx).
+                    ExcelReportTitle.DateRange(
+                        "Border Export Licences Total Value & Licences",
+                        typedRequest.FromDate,
+                        typedRequest.ToDate),
+                },
+                Sections = new[]
+                {
+                    new ExcelReportSection
+                    {
+                        Title = "Total Value",
+                        Columns = new[]
+                        {
+                            ExcelColumn.RowNumber("Sr.No.", width: 9),
+                            // The page prints 4 decimals (formatValue → N4).
+                            ExcelColumn.Money4<TotalValueByCurrencyRow>("Total Value", row => row.TotalValue)
+                                .Bind("TotalValue", "totalValue"),
+                            ExcelColumn.Text<TotalValueByCurrencyRow>("Currency", row => row.Currency)
+                                .Bind("Currency", "currency"),
+                        },
+                    },
+                    new ExcelReportSection
+                    {
+                        Title = "Total Licences",
+                        Columns = new[]
+                        {
+                            ExcelColumn.RowNumber("Sr.No.", width: 9),
+                            ExcelColumn.Number<TotalLicencesByPaThaKaTypeRow>("Total Licences", row => row.NoOfLicences)
+                                .Bind("TotalLicences", "noOfLicences"),
+                            ExcelColumn.Text<TotalLicencesByPaThaKaTypeRow>("Pa Tha Ka Type", row => row.PaThaKaType)
+                                .Bind("PaThaKaType", "paThaKaType"),
+                        },
+                    },
+                },
+            };
+        }
+
         [NonAction]
         public Task WriteRowsAsync(object request, IExcelRowSink sink, int chunkSize, CancellationToken cancellationToken)
             => WriteRowsAsync((BorderExportLicenceTotalValueLicencesReportRequest)request, sink, chunkSize, cancellationToken);
@@ -78,9 +135,19 @@ namespace Backend.Controllers.Report
             CancellationToken cancellationToken)
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
-            var rows = await sp_ExportLicenceDetailReport_Fast.GetAggregateRowsAsync(
-                _context, procedureRequest!, ReportAggregateDimension.TotalValue, includeSakhan: false);
-            sink.Append(rows);
+
+            // The SAME call Post makes, so the sheet and the page cannot disagree.
+            var summary = await sp_ExportLicenceDetailReport_Fast.GetTotalValueLicencesSummaryAsync(
+                _context, procedureRequest!);
+
+            sink.BeginSection(0);
+            sink.Append(summary.TotalValueByCurrency);
+
+            sink.BeginSection(1);
+            sink.Append(summary.TotalLicencesByPaThaKaType);
+
+            sink.AppendNote(
+                "Total USD Value: " + summary.TotalUsdValue.ToString("N4", CultureInfo.InvariantCulture));
         }
 
         private bool TryCreateReportRequest(

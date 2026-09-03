@@ -1,0 +1,70 @@
+{
+  "formatVersion": 1,
+  "configKey": "ReExportDetailReport",
+  "controllerName": "ReExportDetailReport",
+  "title": "Re-Export Detail Report",
+  "fileName": "ReExportDetailReport.xlsx",
+  "headerLines": [
+    "Statement of Registered",
+    "Re-Export",
+    "Ministry of Commerce",
+    "(01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "ReExportNo",
+      "dataIndex": "reExportNo",
+      "title": "Re-Export No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
+    },
+    {
+      "key": "ReExportAddress",
+      "dataIndex": "reExportAddress",
+      "title": "Re-Export Address",
+      "fallbackDataIndexes": [
+        "reExportUnitLevel",
+        "reExportStreetNumberStreetName",
+        "reExportQuarterCityTownship",
+        "reExportState",
+        "reExportCountry",
+        "reExportPostalCode"
+      ]
+    },
+    {
+      "key": "IssuedDate",
+      "dataIndex": "issuedDate",
+      "title": "Issued Date",
+      "dataType": "date"
+    },
+    {
+      "key": "EndDate",
+      "dataIndex": "endDate",
+      "title": "Valid Date",
+      "dataType": "date"
+    }
+  ]
+}

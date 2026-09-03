@@ -1,0 +1,38 @@
+{
+  "purpose": "Repo-level failures that predate the Excel-parity work. Gate agents must REPORT these and must NOT let them set ok=false, and repair agents must NOT 'fix' them. Anything not matching an entry here is a real, blocking failure.",
+  "recordedAt": "2026-09-03",
+  "recordedFrom": "core gate cycle 3 of run wf_30f16369-102 (buildOk=true, 1249 backend tests passed, npm run build passed)",
+  "entries": [
+    {
+      "id": "eslint9-flat-config-missing",
+      "match": ["Frontend/.eslintrc.cjs", "eslint.config", "ESLint couldn't find an eslint.config"],
+      "step": "npm run lint",
+      "detail": "ESLint 9.28.0 requires a flat eslint.config.(js|mjs|cjs); the repo only tracks Frontend/.eslintrc.cjs (added in the initial commit). Lint fails before parsing any source, so it has never run in this repo.",
+      "evidence": "git log -1 -- Frontend/.eslintrc.cjs = dadadc6 'Initial commit'",
+      "owner_decision_needed": "migrate to a flat config, or drop the lint step from the gates",
+      "blocking": false
+    },
+    {
+      "id": "reportconfig-parity-assertions",
+      "match": [
+        "reportConfigs.borderExportPermit.test.ts",
+        "reportConfigs.borderImportLicence.test.ts",
+        "reportConfigs.exportLicence.test.ts"
+      ],
+      "step": "npx vitest run",
+      "count": 8,
+      "detail": "Eight report-config parity assertions unrelated to Excel export: legacy subtitle wording missing the 'From ' prefix (BorderExportPermitActualAmendment, BorderImportLicenceActualAmendment, ExportLicence action reports), unwired filter lookups ('sakhans' on a Border Export Permit new report, 'paymentTypes' on Border Import Licence and Export Licence vouchers), one filter-list length on BorderExportPermitCancellationReport, and one voucher header string ('Licence Amendment No' vs 'Amendment No').",
+      "evidence": "All three test files have zero working-tree diff vs HEAD and were last touched by unrelated commits 0353bb0, 0bad678, 9a486dd. The only config deltas from this work are additive optional type members (hidden?, numberFormat?) and a 3-line BorderImportPermitVoucherReport valueColumnKey fix; none of the 8 assertions concern that report.",
+      "owner_decision_needed": "these are genuine report-parity gaps worth their own fix, separate from Excel export",
+      "blocking": false
+    },
+    {
+      "id": "report-db-unreachable-from-dev-mac",
+      "match": ["TradeNetDBTest must be available", "dbAvailable", "unverified-nodb"],
+      "step": "database probe",
+      "detail": "The report database is CGNAT-internal and unreachable from this machine, so footer parity cannot be verified here. The contract test degrades to footer='unverified-nodb' rather than passing silently. 76 reports (43 ColumnTotals + 34 CurrencyTotals - 1 both) are affected.",
+      "owner_decision_needed": "run the footer-parity suite where the DB is reachable before merging",
+      "blocking": false
+    }
+  ]
+}

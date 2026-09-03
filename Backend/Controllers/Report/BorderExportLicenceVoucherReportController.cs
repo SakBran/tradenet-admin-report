@@ -18,7 +18,8 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class BorderExportLicenceVoucherReportController : ControllerBase, IStreamingExcelReport
+    public class BorderExportLicenceVoucherReportController
+        : ControllerBase, IStreamingExcelReport, IExcelFooterTotalsProvider
     {
         private const string ReportKey = "BorderExportLicenceVoucherReport";
 
@@ -114,6 +115,53 @@ namespace Backend.Controllers.Report
             {
                 sink.Append(chunk.Select(row => row.ToResult()).ToList());
             }
+        }
+
+        /// <summary>
+        /// The grid's per-currency footer, computed directly instead of by replaying
+        /// <see cref="Post"/>.
+        ///
+        /// This calls the SAME helper <c>Post</c> uses for the grid's
+        /// <c>CurrencyTotals</c> — <c>ExportLicenceListingCurrencyTotals.ExecuteVoucherAsync</c>
+        /// (<c>dbo.sp_ExportLicenceVoucherCurrencyTotals</c>) — with the same arguments, so the
+        /// sheet's footer is the grid's footer by construction, not a second implementation
+        /// that can drift.
+        ///
+        /// The default probe is opted out of because it sets <c>IncludeTotalCount = true</c>,
+        /// which runs <c>sp_VoucherReport_pagination</c>'s Border Export Licence
+        /// <c>COUNT(*)</c> branch: a UNION over two AccountTransaction joins that carry no
+        /// <c>TransactionFormType</c> discriminator and no LOOP JOIN hint
+        /// (StoredProcedureMigrations/sp_VoucherReport_pagination.sql:277-307) — the same cold
+        /// columnstore scan that made the sibling Permit voucher reports take 30s+. The export
+        /// never uses that count, and under <c>FooterTotalsPolicy.Required</c> a slow probe
+        /// would fail the whole export job.
+        ///
+        /// No <c>ColumnTotals</c> on this report: the grid shows only the per-currency rows
+        /// plus the grand TOTAL row.
+        /// </summary>
+        [NonAction]
+        public async Task<ReportFooterTotals?> GetExcelFooterTotalsAsync(
+            object request,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!TryCreateReportRequest((BorderExportLicenceVoucherReportRequest)request, out var procedureRequest, out _))
+            {
+                // Unreachable in practice: the Excel action validates the same filters
+                // before enqueueing. Throwing mirrors the default probe, which fails the
+                // job when Post rejects the export's own filters, rather than quietly
+                // shipping a sheet with no footer.
+                throw new InvalidOperationException(
+                    "Border Export Licence Voucher Report footer totals: the export's stored FromDate/ToDate are invalid.");
+            }
+
+            var currencyTotals = await ExportLicenceListingCurrencyTotals.ExecuteVoucherAsync(
+                _context, procedureRequest!.FormType, procedureRequest.FromDate, procedureRequest.ToDate,
+                procedureRequest.ExportImportSectionId, procedureRequest.PaymentType, procedureRequest.ApplyType,
+                procedureRequest.CompanyRegistrationNo, procedureRequest.SakhanId);
+
+            return new ReportFooterTotals(ColumnTotals: null, CurrencyTotals: currencyTotals);
         }
 
         private bool TryCreateReportRequest(
