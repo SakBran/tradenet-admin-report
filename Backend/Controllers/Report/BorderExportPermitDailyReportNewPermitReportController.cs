@@ -81,7 +81,12 @@ namespace Backend.Controllers.Report
             TryCreateReportRequest(request, out var procedureRequest, out _);
             var rows = await sp_ExportPermitDetailReport_Fast.GetAggregateRowsAsync(
                 _context, procedureRequest!, ReportAggregateDimension.Daily, includeSakhan: true);
-            sink.Append(rows);
+
+            // Same ordering the JSON grid path applies (CreatePagedResultFromGroups -> Order): Date,
+            // then Sakhan (includeSakhan: true, matching this report's Post), then Currency. Stated
+            // here at the append site because that guarantee must not depend on the helper keeping its
+            // own internal OrderGroups call.
+            sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Daily, includeSakhan: true));
         }
 
         private bool TryCreateReportRequest(

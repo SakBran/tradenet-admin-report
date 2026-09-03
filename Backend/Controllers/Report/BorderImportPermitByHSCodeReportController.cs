@@ -74,7 +74,24 @@ namespace Backend.Controllers.Report
             CancellationToken cancellationToken)
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
-            var rows = await sp_HSCodeReport.GetAggregateRowsAsync(_context, procedureRequest!);
+
+            // Match the grid's HS Code token exactly. The grid goes through
+            // sp_HSCodeReport.CreateAggregateResultAsync, which trims @HSCode before the
+            // LIKE (the deployed sp_HSCodeReport_pagination does LTRIM/RTRIM too); this
+            // path calls GetAggregateRowsAsync directly, so without the trim a filter
+            // typed with a stray space would LIKE ' 1006%' here and '1006%' in the grid.
+            procedureRequest!.HSCode = procedureRequest.HSCode?.Trim() ?? string.Empty;
+
+            // Row order already equals the grid's, so no re-sort here. The grid pages
+            // through sp_HSCodeReport_pagination ("ORDER BY result.HSCode,
+            // result.CompanyName, result.Currency"), and AggregateQuery -- what
+            // GetAggregateRowsAsync streams -- ends with exactly that ORDER BY
+            // server-side. Re-sorting with ReportAggregationService.OrderGroups(...,
+            // ReportAggregateDimension.HSCode, includeSakhan: false) would sort on the
+            // same three keys but with StringComparer.OrdinalIgnoreCase, trading the DB
+            // collation for ordinal semantics -- it could only move Excel rows AWAY from
+            // the grid order.
+            var rows = await sp_HSCodeReport.GetAggregateRowsAsync(_context, procedureRequest);
             sink.Append(rows);
         }
 
