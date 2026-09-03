@@ -18,7 +18,7 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class ChequeNoReportController : ControllerBase, IStreamingExcelReport
+    public class ChequeNoReportController : ControllerBase, IStreamingExcelReport, IExcelFooterTotalsProvider
     {
         private const string ReportKey = "ChequeNoReport";
 
@@ -91,6 +91,48 @@ namespace Backend.Controllers.Report
         // --- Async Excel export streaming (used by the background queue worker) ---
         public string ExcelWorksheetTitle => "Cheque No Report";
         public Type ExcelRequestType => typeof(ChequeNoReportRequest);
+
+        /// <summary>
+        /// The grid's Total row, computed directly instead of by replaying <see cref="Post"/>.
+        ///
+        /// This calls the SAME helper <c>Post</c> uses for the grid's <c>ColumnTotals</c>
+        /// (<c>sp_ChequeNoReport.ExecuteColumnTotalsAsync</c> — one cross-page
+        /// <c>SUM(AccountTransactionDetail.Amount)</c> over the filtered set, keyed
+        /// "amount", which is the Amount column's dataIndex), so the sheet's Total row is
+        /// the grid's Total row by construction rather than a second implementation that
+        /// can drift.
+        ///
+        /// The default probe is opted out of because it sets <c>IncludeTotalCount = true</c>,
+        /// which makes <c>sp_ChequeNoReport_pagination</c> add a <c>COUNT(*) OVER()</c> on
+        /// top of the full AccountTransaction/AccountTransactionDetail/AccountTitle/ChequeNo
+        /// join and GROUP BY (StoredProcedureMigrations/sp_ChequeNoReport_pagination.sql:37-59)
+        /// — a second scan of the same 2M-row transaction join the export itself is already
+        /// paying for, and a count the export never uses. Under
+        /// <c>FooterTotalsPolicy.Required</c> a slow probe fails the whole export job
+        /// (Contract §9: ChequeNo is one of the reports with a cheap totals helper).
+        /// </summary>
+        [NonAction]
+        public async Task<ReportFooterTotals?> GetExcelFooterTotalsAsync(
+            object request,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!TryCreateReportRequest((ChequeNoReportRequest)request, out var procedureRequest, out _))
+            {
+                // Unreachable in practice: the Excel action validates the same filters
+                // before enqueueing. Throwing mirrors the default probe, which fails the
+                // job when Post rejects the export's own filters, rather than quietly
+                // shipping a sheet with no footer.
+                throw new InvalidOperationException(
+                    "Cheque No Report footer totals: the export's stored FromDate/ToDate are invalid.");
+            }
+
+            var columnTotals = await sp_ChequeNoReport.ExecuteColumnTotalsAsync(_context, procedureRequest!);
+
+            // No per-currency footer on this report: cheque payments are all MMK.
+            return new ReportFooterTotals(columnTotals, CurrencyTotals: null);
+        }
 
         [NonAction]
         public Task WriteRowsAsync(object request, IExcelRowSink sink, int chunkSize, CancellationToken cancellationToken)
