@@ -71,6 +71,14 @@ namespace API.Service.ExcelExport
                     return await provider.GetExcelFooterTotalsAsync(request, cancellationToken);
                 }
 
+                // A report that declares it has no footer is never probed: replaying Post
+                // would cost a second full query (with the exact count) to produce an
+                // empty footer, and a failure in it would fail the export.
+                if (report is IExcelNoFooterReport)
+                {
+                    return null;
+                }
+
                 return await ProbeAsync(controllerType, request);
             }
             catch (OperationCanceledException)

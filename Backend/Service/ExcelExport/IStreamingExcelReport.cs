@@ -95,6 +95,22 @@ namespace API.Service.ExcelExport
     }
 
     /// <summary>
+    /// Declares that this report has NO footer at all (the grid shows neither a Total row
+    /// nor per-currency rows), so the default resolver must not replay <c>Post</c> to look
+    /// for one. The probe is pure overhead there — it re-runs the report's query with
+    /// <c>IncludeTotalCount = true</c>, which is exactly the exact-count these streaming
+    /// paths avoid — and under <see cref="FooterTotalsPolicy.Required"/> a failure in it
+    /// fails the whole export for a footer that would have come out empty anyway.
+    ///
+    /// Implement it on the controller itself (no members to write). A report that HAS a
+    /// footer but must compute it without the probe implements
+    /// <see cref="IExcelFooterTotalsProvider"/> instead.
+    /// </summary>
+    public interface IExcelNoFooterReport
+    {
+    }
+
+    /// <summary>
     /// Declares the row type a report appends when it cannot be inferred from the bare
     /// <c>Post</c> action's <c>ActionResult&lt;ApiResult&lt;T&gt;&gt;</c>.
     /// </summary>

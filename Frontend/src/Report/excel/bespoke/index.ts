@@ -9,14 +9,17 @@
  *
  * The registry is intentionally the ONLY seam between the bespoke pages and the
  * fixture generator, so `exportExcelSpecFixtures.test.ts` writes the same spec
- * the page posts. Empty for now — the bespoke builders land in a later phase
- * (docs/ExcelParity/Contract.md §8.6).
+ * the page posts (docs/ExcelParity/Contract.md §8.6). The remaining bespoke
+ * builders land in a later phase.
  */
 import { ExcelPresentationSpec } from '../excelTypes';
+import { buildCompanyProfileExcelSpec } from './companyProfile';
 
 /** Builds a spec from the page's applied (normalized) filter values. */
 export type BespokeSpecBuilder = (
   applied: Record<string, unknown>
 ) => ExcelPresentationSpec;
 
-export const bespokeSpecBuilders: Record<string, BespokeSpecBuilder> = {};
+export const bespokeSpecBuilders: Record<string, BespokeSpecBuilder> = {
+  CompanyProfile: buildCompanyProfileExcelSpec,
+};
