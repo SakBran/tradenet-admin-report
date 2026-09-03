@@ -10,7 +10,9 @@ Pulls latest git changes, builds and publishes the Backend, runs Frontend build,
 param(
     [switch]$NoGit,
     [switch]$NoFrontend,
+    # [string]$BackendTarget = 'P:\WEBSITES\tradenet-admin-backend',
     [string]$BackendTarget = 'M:\T20-ADMIN-REPORT-BACKEND',
+    
     [string]$FrontendTarget = 'M:\T20-ADMIN-REPORT-FRONTEND',
     # After the backend is back online, poll this URL until it returns 200 (non-fatal warning on failure).
     [string]$HealthUrl = 'https://reportapi.myanmartradenet.com/health',
