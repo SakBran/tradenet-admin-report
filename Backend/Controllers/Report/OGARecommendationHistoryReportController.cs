@@ -66,7 +66,11 @@ namespace Backend.Controllers.Report
         }
 
         // --- Async Excel export streaming (used by the background queue worker) ---
-        public string ExcelWorksheetTitle => "OGA Recommendation History Report";
+        // The worksheet tab is the report's own title, verbatim from the page config
+        // (reportConfigs.OGARecommendationHistoryReport -> newReportConfigs.ts:727), so the
+        // tab and the sheet's title row agree. The old RDLC had no fixed name here at all:
+        // its header line was =Fields!ReferenceNo.Value+" History" (OGARecommendationHistoryReport.rdlc).
+        public string ExcelWorksheetTitle => "OGA Recommendation History";
         public Type ExcelRequestType => typeof(OGARecommendationHistoryReportRequest);
 
         [NonAction]

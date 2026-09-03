@@ -9949,7 +9949,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
       },
       {
@@ -11588,7 +11588,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'MICPermitNo',
-        dataIndex: 'mICPermitNo',
+        dataIndex: 'micPermitNo',
         title: 'MICPermit No',
       },
       {
@@ -12153,7 +12153,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'Mobile',
-        dataIndex: 'mobile1',
+        dataIndex: 'mobile',
         title: 'Mobile',
       },
       {
@@ -12617,7 +12617,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'MICPermitNo',
-        dataIndex: 'mICPermitNo',
+        dataIndex: 'micPermitNo',
         title: 'MICPermit No',
       },
       {

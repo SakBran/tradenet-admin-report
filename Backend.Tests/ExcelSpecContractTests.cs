@@ -41,18 +41,17 @@ public sealed class ExcelSpecContractTests
     /// per-controller <c>Backend.Tests/ExcelParity/*LayoutTests.cs</c> pins the sheet
     /// instead.
     /// <para>
-    /// <c>BorderExportLicenceTotalValueLicencesReport</c> already has that typed layout, so
-    /// it IS at parity: a <c>IExcelReportLayoutProvider</c> controller is handed the plain
-    /// sink and bypasses <c>RowTypeAssertingSink</c> entirely
-    /// (<c>ControllerStreamingExcelReportJobHandler.cs:103-105</c>). Its set entry stays only
-    /// because its fixture still describes the flat 3-column grid; drop the entry when the
+    /// All four controllers now HAVE that typed layout (<c>IExcelReportLayoutProvider</c> +
+    /// <c>[ExcelFormatVersion(2)]</c> + <c>BeginSection</c>/<c>AppendNote</c>, e.g.
+    /// <c>ImportLicenceTotalValueLicencesReportController.cs:20-22,143-149</c>), so they ARE at
+    /// parity: such a controller is handed the plain sink and bypasses
+    /// <c>RowTypeAssertingSink</c> entirely
+    /// (<c>ControllerStreamingExcelReportJobHandler.cs:103-105</c>). The set entries stay only
+    /// because all four fixtures still describe the old flat grid; drop an entry when the
     /// composite fixture (sections + summaryLines) replaces it, or
     /// <c>Every_column_binds_to_a_real_property_on_the_row_type_the_report_streams</c> starts
     /// failing on <c>totalValue</c>/<c>currency</c>/<c>noOfLicences</c>.
     /// </para>
-    /// The other three exports are NOT at parity yet: their <c>WriteRowsAsync</c> still
-    /// appends <c>ReportAggregateResult</c> rows, which
-    /// <c>ControllerStreamingExcelReportJobHandler.RowTypeAssertingSink</c> rejects.
     /// </summary>
     private static readonly HashSet<string> CompositesPendingTypedLayout = new(StringComparer.Ordinal)
     {
@@ -417,8 +416,6 @@ public sealed class ExcelSpecContractTests
         ["ImportLicenceDetailByLicenceReport"] = "Import Licence Detail (By Licence) Report",
         ["ImportLicenceDetailReportPending"] = "Import Licence Pending Detail Report",
         ["ImportLicenceNewReportNewReport"] = "Import Licence New Report",
-        ["OGARecommendationHistoryReport"] = "OGA Recommendation History Report",
-        ["PaThaKaRegisteredBusinessOrganizationReport"] = "PaThaKaRegisteredBusinessOrganizationReport",
     };
 
     [Theory]
