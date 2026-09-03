@@ -9492,9 +9492,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelRoute: 'ImportLicenceDailyReportNewLicenceReport/Excel',
     excelFileName: 'ImportLicenceDailyReportNewLicenceReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
-    // The old ImportLicenceByDailyReport.rdlc printed every (Date, Currency)
-    // row on one page; a 10-row first page reads as missing data next to it.
-    defaultPageSize: 1000,
     showRowNumber: true,
     filters: importLicenceDailyFilters,
     reportSubtitle: importLicenceRangeSubtitle(
