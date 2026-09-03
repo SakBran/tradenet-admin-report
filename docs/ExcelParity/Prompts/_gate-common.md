@@ -22,10 +22,28 @@ dotnet test Backend.Tests/Backend.Tests.csproj --no-build --nologo --filter "Ful
 `dbAvailable` = that test passed. **Never echo the variable.** `ReportSqlServerFixture` targets `(localdb)` and is
 Windows-only; do not try to use it on this machine.
 
+This single probe (~15s when the DB is down) is the ONLY DB-bound test you may run. See §3a.
+
+## 3a. MANDATORY: skip the DB-bound suites (owner decision, 2026-09-03)
+
+Every `dotnet test` command you run — except the §2 probe — MUST append this to its `--filter`, joined with `&`:
+
+```
+FullyQualifiedName!~ReportEndpointSmokeTests&FullyQualifiedName!~ReportSeededDatabaseSmokeTests&FullyQualifiedName!~BorderImportPermitEndpointTests&FullyQualifiedName!~TempSectionValidation&FullyQualifiedName!~StoredProcedureSmokeTests&FullyQualifiedName!~LiveDb&FullyQualifiedName!~BorderImportLicenceParityTests&FullyQualifiedName!~ImportPermitSystemTests
+```
+
+Why: the report DB is CGNAT-internal, so each of those tests burns a 15-second pre-login handshake timeout and fails.
+Unfiltered the suite is **698 failures in 13m49s**; with this filter it is **9 failures in 4s** over 1538 tests, and the
+9 are all in `known-failures.json`. Do not run the full suite "just to check", and do not narrow this filter.
+
+Consequence you MUST report, never hide: footer parity is `unverified-nodb` for every report with totals, because
+`ExcelFooterParityLiveDbTests` is one of the skipped suites. Say so in `summary`.
+
 ## 3. Contract tests → `results[]`
 
 Use the filter your gate prompt specifies (wave: the listed controllers; core: the Excel unit tests + the contract
-theory; final: the full suite) with a trx logger, then parse the trx with python `xml.etree`:
+theory; final: everything that is not DB-bound) **combined with the §3a DB-skip clauses** and a trx logger, then parse
+the trx with python `xml.etree`:
 
 ```bash
 dotnet test Backend.Tests/Backend.Tests.csproj --no-build --nologo --filter "<FILTER>" --logger "trx;LogFileName=<tag>.trx" 2>&1 | tail -40
@@ -45,6 +63,12 @@ git status --porcelain Backend.Tests/Fixtures/ExcelSpecs
 ```
 The fixture generator runs inside vitest; a non-empty `git status` under `Backend.Tests/Fixtures/ExcelSpecs`
 means fixture drift → a failure `{ file: "Backend.Tests/Fixtures/ExcelSpecs", error: "fixtures drifted: <files>" }`.
+
+**TRAP — rebuild after any fixture change.** `Backend.Tests.csproj` COPIES `Fixtures/**/*.json` into
+`bin/Debug/net8.0/Fixtures/`, and `ExcelSpecContractTests` reads the copy. So if fixtures were regenerated (here, or by
+a frontend/shared agent) you MUST run `dotnet build Backend.Tests/Backend.Tests.csproj` before any `--no-build` test
+run, or the contract theory silently judges the OLD specs. A contract failure naming a dataIndex that the current
+`reportConfigs.ts` no longer contains is this trap, not a real defect — rebuild and re-run before reporting it.
 Confirm `index.json` has the expected number of entries when the prompt gives one.
 
 ## 4b. Known pre-existing failures (classify, never fix)

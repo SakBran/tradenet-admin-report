@@ -1262,12 +1262,12 @@
       "hasDateRange": true,
       "hasSingleDate": false,
       "hasCurrencyTotalsColumns": false,
-      "showRowNumber": false,
-      "rowNumberTitle": "No",
+      "showRowNumber": true,
+      "rowNumberTitle": "စဥ်",
       "isBespokePage": true,
       "isComposite": false,
       "hasExcelButton": true,
-      "columnCount": 18
+      "columnCount": 11
     },
     {
       "configKey": "DutyFreeShopDetailReport",

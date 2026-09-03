@@ -44,7 +44,7 @@
     },
     {
       "key": "MICPermitNo",
-      "dataIndex": "mICPermitNo",
+      "dataIndex": "micPermitNo",
       "title": "MICPermit No"
     },
     {

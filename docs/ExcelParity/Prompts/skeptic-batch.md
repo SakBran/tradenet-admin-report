@@ -1,5 +1,10 @@
 # Skeptic — a BATCH of controllers (read `_preamble.md`, then `Contract.md`)
 
+Your prompt gives you a `batchId` only. Read `docs/ExcelParity/verify-batches.json` and take the `controllers`
+of the entry whose `id` equals your `batchId` — those, and only those, are yours. Return one verdict per controller.
+Phase-1 already changed every controller; `docs/ExcelParity/impl-results.json` records what each agent claimed it did
+(`controllers.<Name>.status` / `.notes`). Treat those claims as the thing you are auditing, not as evidence.
+
 Read-only; never edit. You try to **REFUTE** that each listed report's Excel export matches its UI grid and the
 5 rules. Default to `refuted: true` when uncertain. Read the shared docs once, then judge each controller.
 Siblings share an `sp_*` file, so a flaw in one is usually a flaw in all — check that explicitly.
