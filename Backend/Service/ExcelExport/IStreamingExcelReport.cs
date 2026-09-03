@@ -2,17 +2,36 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using API.Model;
 
 namespace API.Service.ExcelExport
 {
     /// <summary>
     /// Where a report streams its rows. Backed by <see cref="StreamingExcelWriter"/>
-    /// in production; rows are written to disk a chunk at a time. Column headers are
-    /// inferred from the runtime type of the first appended row.
+    /// in production; rows are written to disk a chunk at a time. The column set comes
+    /// from the export's layout (built from the posted presentation spec, or declared by
+    /// the controller); only the legacy no-layout path infers it from the first row.
     /// </summary>
     public interface IExcelRowSink
     {
         void Append<T>(IReadOnlyList<T> rows);
+
+        /// <summary>
+        /// Switches to a composite sheet's <paramref name="sectionIndex"/>-th table
+        /// (<see cref="ExcelReportLayout.Sections"/>): writes its title and header row and
+        /// restarts its row numbering. A no-op for single-table reports.
+        /// </summary>
+        void BeginSection(int sectionIndex)
+        {
+        }
+
+        /// <summary>
+        /// Writes a trailing single-cell line under the data, e.g. a composite page's
+        /// "Total USD Value: 1,234.5678". A no-op for reports that never call it.
+        /// </summary>
+        void AppendNote(string text)
+        {
+        }
     }
 
     /// <summary>
@@ -44,6 +63,100 @@ namespace API.Service.ExcelExport
             CancellationToken cancellationToken);
     }
 
+    /// <summary>
+    /// Opt-in companion to <see cref="IStreamingExcelReport"/>. A report that implements
+    /// this controls its own Excel column list — header text, order and cell formats —
+    /// instead of having them built from the posted presentation spec. The standard
+    /// header block (title, From/To, Exported) is still added on top for every report.
+    ///
+    /// Mark the implementation <c>[NonAction]</c> on the controller, exactly like
+    /// <see cref="IStreamingExcelReport.WriteRowsAsync"/>, or MVC's ApiController
+    /// convention rejects it at startup as an unrouted action.
+    /// </summary>
+    public interface IExcelReportLayoutProvider
+    {
+        /// <param name="request">
+        /// The deserialized request DTO (<see cref="IStreamingExcelReport.ExcelRequestType"/>),
+        /// so the title can quote the report's own date range.
+        /// </param>
+        ExcelReportLayout GetExcelLayout(object request);
+    }
+
+    /// <summary>
+    /// Opt-out of the default footer-totals probe. Implement it when replaying the
+    /// report's <c>Post</c> would be wasteful or wrong (page-dependent totals, or a
+    /// probe path that times out) and compute the same numbers directly.
+    ///
+    /// Mark the implementation <c>[NonAction]</c> on the controller.
+    /// </summary>
+    public interface IExcelFooterTotalsProvider
+    {
+        Task<ReportFooterTotals?> GetExcelFooterTotalsAsync(object request, CancellationToken cancellationToken);
+    }
+
+    /// <summary>
+    /// Declares that this report has NO footer at all (the grid shows neither a Total row
+    /// nor per-currency rows), so the default resolver must not replay <c>Post</c> to look
+    /// for one. The probe is pure overhead there — it re-runs the report's query with
+    /// <c>IncludeTotalCount = true</c>, which is exactly the exact-count these streaming
+    /// paths avoid — and under <see cref="FooterTotalsPolicy.Required"/> a failure in it
+    /// fails the whole export for a footer that would have come out empty anyway.
+    ///
+    /// Implement it on the controller itself (no members to write). A report that HAS a
+    /// footer but must compute it without the probe implements
+    /// <see cref="IExcelFooterTotalsProvider"/> instead.
+    /// </summary>
+    public interface IExcelNoFooterReport
+    {
+    }
+
+    /// <summary>
+    /// Declares the row type a report appends when it cannot be inferred from the bare
+    /// <c>Post</c> action's <c>ActionResult&lt;ApiResult&lt;T&gt;&gt;</c>.
+    /// </summary>
+    public interface IExcelRowTypeProvider
+    {
+        Type ExcelRowType { get; }
+    }
+
+    /// <summary>
+    /// The grid's footer numbers for one export: the same shapes the JSON response
+    /// carries (<see cref="IReportTotals"/>), snapshotted before streaming starts.
+    /// </summary>
+    public sealed record ReportFooterTotals(
+        IReadOnlyDictionary<string, decimal>? ColumnTotals,
+        ReportCurrencyTotalsSummary? CurrencyTotals)
+    {
+        public bool IsEmpty => (ColumnTotals == null || ColumnTotals.Count == 0)
+            && (CurrencyTotals?.Currencies == null || CurrencyTotals.Currencies.Count == 0);
+    }
+
+    /// <summary>
+    /// Bumps the export cache key for one report. <see cref="ExcelExportJobService"/>
+    /// reuses an already-generated file for a closed date range whenever the request
+    /// hashes the same, so a change to the generated file's SHAPE (title text, column
+    /// set, header wording) must bump this or users keep receiving the old file until
+    /// it expires. Unversioned reports are version 1 and keep their existing hashes.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+    public sealed class ExcelFormatVersionAttribute : Attribute
+    {
+        public ExcelFormatVersionAttribute(int version) => Version = version;
+
+        public int Version { get; }
+    }
+
+    /// <summary>
+    /// The generation of the SHARED sheet shape (header block, footer rows, freeze
+    /// pane). Added to every report's <see cref="ExcelFormatVersionAttribute"/> when the
+    /// handler is registered, so one bump here invalidates every cached export at once.
+    /// Bump it whenever the shared shape changes again.
+    /// </summary>
+    public static class ExcelExportFormat
+    {
+        public const int Generation = 1;
+    }
+
     internal sealed class StreamingExcelWriterSink : IExcelRowSink
     {
         private readonly StreamingExcelWriter _writer;
@@ -51,5 +164,9 @@ namespace API.Service.ExcelExport
         public StreamingExcelWriterSink(StreamingExcelWriter writer) => _writer = writer;
 
         public void Append<T>(IReadOnlyList<T> rows) => _writer.AppendRows(rows);
+
+        public void BeginSection(int sectionIndex) => _writer.BeginSection(sectionIndex);
+
+        public void AppendNote(string text) => _writer.AppendNote(text);
     }
 }

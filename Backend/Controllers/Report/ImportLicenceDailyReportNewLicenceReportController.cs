@@ -94,7 +94,13 @@ namespace Backend.Controllers.Report
             TryCreateReportRequest(request, out var procedureRequest, out _);
             var rows = await sp_ImportLicenceDetailReport_Fast.GetAggregateRowsAsync(
                 _context, procedureRequest!, ReportAggregateDimension.Daily, includeSakhan: false);
-            sink.Append(rows);
+
+            // Same canonical ordering the JSON grid path applies (Post -> CreatePagedResultFromGroups
+            // -> Order, i.e. by Date then Currency), so the exported rows appear in the order the
+            // user saw on screen. Required here: GetAggregateRowsAsync -> AggregateInSqlAsync only
+            // GROUP BYs (or reads the indexed-view SP) and returns the groups unordered; it does
+            // fill TotalUSDValue for the Daily dimension, so the USD column is already populated.
+            sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Daily, includeSakhan: false));
         }
 
         private bool TryCreateReportRequest(

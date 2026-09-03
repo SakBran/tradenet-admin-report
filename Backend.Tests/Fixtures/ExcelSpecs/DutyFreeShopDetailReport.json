@@ -1,0 +1,80 @@
+{
+  "formatVersion": 1,
+  "configKey": "DutyFreeShopDetailReport",
+  "controllerName": "DutyFreeShopDetailReport",
+  "title": "Duty Free Shop Detail Report",
+  "fileName": "DutyFreeShopDetailReport.xlsx",
+  "headerLines": [
+    "Statement of Registered",
+    "Duty Free Shop",
+    "Ministry of Commerce",
+    "(01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "DutyFreeShopNo",
+      "dataIndex": "dutyFreeShopNo",
+      "title": "Duty Free Shop No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "Name",
+      "dataIndex": "name",
+      "title": "Name"
+    },
+    {
+      "key": "NRCNo",
+      "dataIndex": "nrcNo",
+      "title": "NRC No"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
+    },
+    {
+      "key": "DutyFreeShopAddress",
+      "dataIndex": "dutyFreeShopAddress",
+      "title": "Duty Free Shop Address",
+      "fallbackDataIndexes": [
+        "dutyFreeShopUnitLevel",
+        "dutyFreeShopStreetNumberStreetName",
+        "dutyFreeShopQuarterCityTownship",
+        "dutyFreeShopState",
+        "dutyFreeShopCountry",
+        "dutyFreeShopPostalCode"
+      ]
+    },
+    {
+      "key": "IssuedDate",
+      "dataIndex": "issuedDate",
+      "title": "Issued Date",
+      "dataType": "date"
+    },
+    {
+      "key": "EndDate",
+      "dataIndex": "endDate",
+      "title": "Valid Date",
+      "dataType": "date"
+    }
+  ]
+}

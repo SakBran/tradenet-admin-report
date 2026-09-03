@@ -1,0 +1,56 @@
+{
+  "formatVersion": 1,
+  "configKey": "MemberRegistrationReport",
+  "controllerName": "MemberRegistrationReport",
+  "title": "Member Registration Report",
+  "fileName": "MemberRegistrationReport.xlsx",
+  "headerLines": [
+    "Member Registration Report"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "ApplyType",
+      "dataIndex": "applyType",
+      "title": "Apply Type"
+    },
+    {
+      "key": "MemberCode",
+      "dataIndex": "memberCode",
+      "title": "Member Code"
+    },
+    {
+      "key": "Email",
+      "dataIndex": "email",
+      "title": "Email"
+    },
+    {
+      "key": "FullName",
+      "dataIndex": "fullName",
+      "title": "Full Name"
+    },
+    {
+      "key": "Mobile",
+      "dataIndex": "mobile1",
+      "title": "Mobile"
+    },
+    {
+      "key": "nrcNo",
+      "dataIndex": "nrcNo",
+      "title": "NRC No."
+    },
+    {
+      "key": "IssuedDate",
+      "dataIndex": "issuedDate",
+      "title": "Issued Date",
+      "dataType": "date"
+    },
+    {
+      "key": "ValidDate",
+      "dataIndex": "endDate",
+      "title": "Valid Date",
+      "dataType": "date"
+    }
+  ]
+}

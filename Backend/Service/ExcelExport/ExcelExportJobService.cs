@@ -1,8 +1,10 @@
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using API.DBContext;
+using API.Model;
 using API.Model.ExcelExport;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -41,8 +43,29 @@ namespace API.Service.ExcelExport
                 throw new InvalidOperationException($"No Excel export handler registered for report key '{reportKey}'.");
             }
 
+            // The presentation spec is part of the request payload, so it is hashed with
+            // it: a grid whose columns changed cannot be served a cached file of the old
+            // shape. It is also validated here defensively — the action filter is the
+            // primary gate, but nothing may reach the worker unsanitized.
+            var spec = (request as ReportQueryRequest)?.Excel;
+            if (spec != null)
+            {
+                var typedLayout = handler is ControllerStreamingExcelReportJobHandler { HasTypedLayout: true };
+                ExcelPresentationSpecValidator.ValidateAndSanitize(spec, requireColumns: !typedLayout);
+
+                // A spec from another report would name the job and the download after
+                // that report while exporting this one's rows (Contract §3).
+                if (!string.Equals(spec.ControllerName, reportKey, StringComparison.Ordinal))
+                {
+                    throw new ExcelPresentationSpecException(new[]
+                    {
+                        $"excel.controllerName: '{spec.ControllerName}' is not this report ('{reportKey}').",
+                    });
+                }
+            }
+
             var requestJson = JsonSerializer.Serialize(request, request.GetType(), JsonOptions);
-            var filterHash = ExcelExportHasher.ComputeHash(reportKey, requestJson);
+            var filterHash = ExcelExportHasher.ComputeHash(reportKey, requestJson, handler.FormatVersion);
             var now = DateTime.UtcNow;
             var isPeriodClosed = toDate.Date < DateTime.Today;
 
@@ -94,12 +117,15 @@ namespace API.Service.ExcelExport
             {
                 Id = id,
                 ReportKey = reportKey,
-                ReportTitle = handler.DefaultTitle,
+                ReportTitle = ExcelPresentationSpecValidator.SanitizeTitle(spec?.Title) ?? handler.DefaultTitle,
                 FilterHash = filterHash,
                 RequestJson = requestJson,
                 Status = ExcelExportJobStatus.Queued,
                 IsPeriodClosed = isPeriodClosed,
-                FileName = $"{handler.FileNameBase}_{now:yyyyMMdd_HHmmss}.xlsx",
+                // InvariantCulture: on a host whose default culture uses a non-Gregorian
+                // calendar the stamp would otherwise not be the Gregorian date.
+                FileName = (ExcelPresentationSpecValidator.SanitizeFileNameBase(spec?.FileName) ?? handler.FileNameBase)
+                    + "_" + now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture) + ".xlsx",
                 RequestedByUserName = requestedByUserName,
                 CreatedAtUtc = now,
                 ExpiresAtUtc = now.AddHours(_options.RetentionHours),

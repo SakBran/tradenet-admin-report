@@ -99,7 +99,12 @@ namespace Backend.Controllers.Report
         }
 
         // --- Async Excel export streaming (used by the background queue worker) ---
-        public string ExcelWorksheetTitle => "PaThaKaRegisteredBusinessOrganizationReport";
+        // The worksheet tab is the report's own title, verbatim from the page config
+        // (reportConfigs.ts:12541), so the tab and the sheet's title row agree. It used to
+        // be the un-spaced controller name, which is the class name rather than a name any
+        // user sees. (StreamingExcelWriter trims a tab to 27 chars, so it reads
+        // "PaThaKa Registered Business" instead of "PaThaKaRegisteredBusinessOr".)
+        public string ExcelWorksheetTitle => "PaThaKa Registered Business Organization Report";
         public Type ExcelRequestType => typeof(PaThaKaRegisteredBusinessOrganizationReportRequest);
 
         [NonAction]

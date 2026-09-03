@@ -1,0 +1,36 @@
+{
+  "formatVersion": 1,
+  "configKey": "ImportPermitBySellerCountryReport",
+  "controllerName": "ImportPermitBySellerCountryReport",
+  "title": "Import Permit By Seller Country Report",
+  "fileName": "ImportPermitBySellerCountryReport.xlsx",
+  "headerLines": [
+    "Ministry of Commerce",
+    "Directorate of Trade",
+    "List of Import Permit By Buyer Country From (01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "Country",
+      "dataIndex": "country",
+      "title": "Country"
+    },
+    {
+      "key": "NoOfLicences",
+      "dataIndex": "noOfLicences",
+      "title": "No of Licences"
+    },
+    {
+      "key": "TotalValue",
+      "dataIndex": "totalValue",
+      "title": "Total Value"
+    },
+    {
+      "key": "Currency",
+      "dataIndex": "currency",
+      "title": "Currency"
+    }
+  ]
+}

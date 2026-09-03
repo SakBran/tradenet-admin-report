@@ -78,7 +78,12 @@ namespace Backend.Controllers.Report
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
             var rows = await sp_ImportLicenceDetailReport_Fast.GetSectionRowsAsync(_context, procedureRequest!);
-            sink.Append(rows);
+
+            // Same ordering the JSON grid path applies (Post -> CreatePagedResultFromGroups ->
+            // Order), so the sheet rows come out in the order the user saw on screen. Required
+            // here: GetSectionRowsAsync is AggregateInSqlAsync(Section, includeSakhan: false) --
+            // the same groups Post reads, but returned unordered.
+            sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Section, includeSakhan: false));
         }
 
         private bool TryCreateReportRequest(

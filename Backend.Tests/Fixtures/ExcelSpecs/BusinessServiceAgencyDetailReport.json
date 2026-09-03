@@ -1,0 +1,62 @@
+{
+  "formatVersion": 1,
+  "configKey": "BusinessServiceAgencyDetailReport",
+  "controllerName": "BusinessServiceAgencyDetailReport",
+  "title": "Business Service Agency Detail Report",
+  "fileName": "BusinessServiceAgencyDetailReport.xlsx",
+  "headerLines": [
+    "Statement of Registered",
+    "Business Representative",
+    "Ministry of Commerce",
+    "(01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "BusinessServiceAgencyNo",
+      "dataIndex": "businessServiceAgencyNo",
+      "title": "Sa Ka No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
+    },
+    {
+      "key": "AuthorizeCompany",
+      "dataIndex": "authorizeCompany",
+      "title": "Agent of Authorize Company"
+    },
+    {
+      "key": "IssuedDate",
+      "dataIndex": "issuedDate",
+      "title": "Issued Date",
+      "dataType": "date"
+    },
+    {
+      "key": "EndDate",
+      "dataIndex": "endDate",
+      "title": "Valid Date",
+      "dataType": "date"
+    }
+  ]
+}

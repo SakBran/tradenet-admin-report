@@ -78,7 +78,10 @@ namespace Backend.Controllers.Report
             TryCreateReportRequest(request, out var procedureRequest, out _);
             var rows = await sp_ImportPermitDetailReport_Fast.GetAggregateRowsAsync(
                 _context, procedureRequest!, ReportAggregateDimension.Daily, includeSakhan: false);
-            sink.Append(rows);
+
+            // Same canonical ordering the JSON grid path applies (CreatePagedResultFromGroups -> Order),
+            // so the exported rows appear in the order the user saw on screen.
+            sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Daily, includeSakhan: false));
         }
 
         private bool TryCreateReportRequest(

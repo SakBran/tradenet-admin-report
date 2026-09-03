@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -26,10 +27,18 @@ namespace API.Service.ExcelExport
             "includeTotalCount"
         };
 
-        public static string ComputeHash(string reportKey, string requestJson)
+        /// <summary>
+        /// <paramref name="formatVersion"/> is the report's
+        /// <see cref="ExcelFormatVersionAttribute"/> value. Version 1 (the default) keeps
+        /// the original payload verbatim, so reports whose output has not changed keep
+        /// their existing hashes and their warm cache.
+        /// </summary>
+        public static string ComputeHash(string reportKey, string requestJson, int formatVersion = 1)
         {
             var canonical = Canonicalize(requestJson);
-            var payload = reportKey + "|" + canonical;
+            var payload = formatVersion <= 1
+                ? reportKey + "|" + canonical
+                : reportKey + "|v" + formatVersion.ToString(CultureInfo.InvariantCulture) + "|" + canonical;
             var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(payload));
             return Convert.ToHexString(bytes).ToLowerInvariant();
         }

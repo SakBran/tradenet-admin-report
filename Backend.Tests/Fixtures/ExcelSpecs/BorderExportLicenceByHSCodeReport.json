@@ -1,0 +1,39 @@
+{
+  "formatVersion": 1,
+  "configKey": "BorderExportLicenceByHSCodeReport",
+  "controllerName": "BorderExportLicenceByHSCodeReport",
+  "title": "Border Export Licence By HS Code Report",
+  "fileName": "BorderExportLicenceByHSCodeReport.xlsx",
+  "headerLines": [
+    "List of Border Export Licences By HS Code From (01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "hsCode",
+      "dataIndex": "hsCode",
+      "title": "HS Code"
+    },
+    {
+      "key": "Description",
+      "dataIndex": "hsDescription",
+      "title": "Description"
+    },
+    {
+      "key": "NoOfLicences",
+      "dataIndex": "noOfLicences",
+      "title": "No of Licences"
+    },
+    {
+      "key": "TotalValue",
+      "dataIndex": "totalValue",
+      "title": "Total Value"
+    },
+    {
+      "key": "Currency",
+      "dataIndex": "currency",
+      "title": "Currency"
+    }
+  ]
+}

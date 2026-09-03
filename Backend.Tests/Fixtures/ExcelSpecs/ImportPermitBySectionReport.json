@@ -1,0 +1,36 @@
+{
+  "formatVersion": 1,
+  "configKey": "ImportPermitBySectionReport",
+  "controllerName": "ImportPermitBySectionReport",
+  "title": "Import Permit By Section Report",
+  "fileName": "ImportPermitBySectionReport.xlsx",
+  "headerLines": [
+    "Ministry of Commerce",
+    "Directorate of Trade",
+    "List of Import Permit By Section From (01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "Section",
+      "dataIndex": "sectionName",
+      "title": "Section"
+    },
+    {
+      "key": "NoOfLicences",
+      "dataIndex": "noOfLicences",
+      "title": "No of Licences"
+    },
+    {
+      "key": "TotalValue",
+      "dataIndex": "totalValue",
+      "title": "Total Value"
+    },
+    {
+      "key": "Currency",
+      "dataIndex": "currency",
+      "title": "Currency"
+    }
+  ]
+}

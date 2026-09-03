@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace API.Model
 {
-    public class ApiResult<T>
+    public class ApiResult<T> : IReportTotals
     {
         private readonly bool? _hasNextPage;
 

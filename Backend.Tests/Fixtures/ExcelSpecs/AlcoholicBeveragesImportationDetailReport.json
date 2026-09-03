@@ -1,0 +1,102 @@
+{
+  "formatVersion": 1,
+  "configKey": "AlcoholicBeveragesImportationDetailReport",
+  "controllerName": "AlcoholicBeveragesImportationDetailReport",
+  "title": "Alcoholic Beverages Importation Detail Report",
+  "fileName": "AlcoholicBeveragesImportationDetailReport.xlsx",
+  "headerLines": [
+    "Statement of Registered",
+    "Alcoholic Beverages Importation",
+    "Ministry of Commerce",
+    "(01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "WineImportationNo",
+      "dataIndex": "wineImportationNo",
+      "title": "Alcoholic Beverages Importation No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
+    },
+    {
+      "key": "IssuedDate",
+      "dataIndex": "issuedDate",
+      "title": "Issued Date",
+      "dataType": "date"
+    },
+    {
+      "key": "EndDate",
+      "dataIndex": "endDate",
+      "title": "Valid Date",
+      "dataType": "date"
+    },
+    {
+      "key": "Name",
+      "dataIndex": "name",
+      "title": "Name"
+    },
+    {
+      "key": "NRCNo",
+      "dataIndex": "nrcNo",
+      "title": "NRC"
+    },
+    {
+      "key": "FL11Name",
+      "dataIndex": "fL11Name",
+      "title": "FL11 Name"
+    },
+    {
+      "key": "FL11NRCNo",
+      "dataIndex": "fL11NRCNo",
+      "title": "FL11 NRC"
+    },
+    {
+      "key": "FL4Name",
+      "dataIndex": "fL4Name",
+      "title": "FL4 Name"
+    },
+    {
+      "key": "FL4NRCNo",
+      "dataIndex": "fL4NRCNo",
+      "title": "FL4 NRC"
+    },
+    {
+      "key": "FL5Name",
+      "dataIndex": "fL5Name",
+      "title": "FL5 Name"
+    },
+    {
+      "key": "FL5NRCNo",
+      "dataIndex": "fL5NRCNo",
+      "title": "FL5 NRC"
+    },
+    {
+      "key": "WineType",
+      "dataIndex": "wineType",
+      "title": "Type of Alcoholic Beverages"
+    }
+  ]
+}

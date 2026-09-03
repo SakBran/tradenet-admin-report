@@ -78,7 +78,12 @@ namespace Backend.Controllers.Report
             TryCreateReportRequest(request, out var procedureRequest, out _);
             var rows = await sp_ImportLicenceDetailReport_Fast.GetAggregateRowsAsync(
                 _context, procedureRequest!, ReportAggregateDimension.Company, includeSakhan: false);
-            sink.Append(rows);
+
+            // Same canonical ordering the JSON grid path applies (CreateAggregateResultAsync ->
+            // CreatePagedResultFromGroups -> Order), so the exported rows appear in the order the
+            // user saw on screen. Required here: GetAggregateRowsAsync -> AggregateInSqlAsync only
+            // GROUP BYs (or reads the indexed-view SP) and returns the groups unordered.
+            sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Company, includeSakhan: false));
         }
 
         private bool TryCreateReportRequest(

@@ -1,0 +1,59 @@
+{
+  "formatVersion": 1,
+  "configKey": "ListOfDirectorsByCompanyRegistrationNo",
+  "controllerName": "ListOfDirectorsByCompanyRegistrationNo",
+  "title": "List of Directors By Company Registration No",
+  "fileName": "ListOfDirectorsByCompanyRegistrationNo.xlsx",
+  "headerLines": [
+    "List of Directors By Company Registration No"
+  ],
+  "showRowNumber": false,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
+    },
+    {
+      "key": "CompanyRegistrationDate",
+      "dataIndex": "companyRegistrationDate",
+      "title": "Company Registration Date",
+      "dataType": "date"
+    },
+    {
+      "key": "ValidDate",
+      "dataIndex": "endDate",
+      "title": "Valid Date",
+      "dataType": "date"
+    },
+    {
+      "key": "BusinessType",
+      "dataIndex": "businessType",
+      "title": "Business Type"
+    },
+    {
+      "key": "LineOfBusiness",
+      "dataIndex": "lineofBusiness",
+      "title": "Line of Business"
+    }
+  ]
+}

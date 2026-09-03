@@ -9,6 +9,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "test": "vitest run",
+    "fixtures:excel": "EXCEL_SPEC_FIXTURES=write vitest run src/Report/excel/exportExcelSpecFixtures.test.ts",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
@@ -43,8 +44,7 @@
     "react-responsive": "^10.0.1",
     "react-router-dom": "^7.6.2",
     "react-transition-group": "^4.4.5",
-    "redux-persist": "^6.0.0",
-    "xlsx": "^0.18.5"
+    "redux-persist": "^6.0.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",

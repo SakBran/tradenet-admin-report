@@ -1,0 +1,46 @@
+{
+  "formatVersion": 1,
+  "configKey": "OnlineFeesReport",
+  "controllerName": "OnlineFeesReport",
+  "title": "Online Fees Report",
+  "fileName": "OnlineFeesReport.xlsx",
+  "headerLines": [
+    "Online Fees Report (01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "EntryDate",
+      "dataIndex": "voucherDate",
+      "title": "Entry Date",
+      "dataType": "date"
+    },
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "TransactionTitle",
+      "dataIndex": "formType",
+      "title": "Transaction Title"
+    },
+    {
+      "key": "DeductedFees",
+      "dataIndex": "amount",
+      "title": "Deducted Fees",
+      "dataType": "number"
+    },
+    {
+      "key": "Remark",
+      "dataIndex": "remark",
+      "title": "Remark"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "controller": "AccountSummaryReport",
+    "dataIndex": "remark",
+    "reason": "RDLC-unbound blank column"
+  },
+  {
+    "controller": "BorderImportLicenceDetailReportPending",
+    "dataIndex": "approveDate",
+    "reason": "Old-RDLC 'Approve Date' column (asserted by reportConfigs.borderImportLicence.test.ts:86) that sp_ImportLicencePendingDetailReportResult does not expose - the pending projection has ApplicationDate/LicenceDate/LastDate only (Backend/StoredProcedureToLinq/sp_ImportLicencePendingDetailReport.cs:25-68). The grid renders N/A in the same cell, so the sheet is at grid parity; remove this entry when the pending query supplies ApproveDate like the non-pending Border detail one does."
+  },
+  {
+    "controller": "ReExportSummaryReport",
+    "dataIndex": "cancelCount",
+    "reason": "See newCount - the whole 6-column summary grid is unbound on this report."
+  },
+  {
+    "controller": "ReExportSummaryReport",
+    "dataIndex": "extensionCount",
+    "reason": "See newCount - the whole 6-column summary grid is unbound on this report."
+  },
+  {
+    "controller": "ReExportSummaryReport",
+    "dataIndex": "invalidCount",
+    "reason": "See newCount - the whole 6-column summary grid is unbound on this report."
+  },
+  {
+    "controller": "ReExportSummaryReport",
+    "dataIndex": "newCount",
+    "reason": "The config uses the shared 6-count summaryColumns (newReportConfigs.ts:209-216, backed by RegistrationSummaryRow) but this controller streams sp_ReExportReportResult, whose Summary branch emits one {ApplyType, ApplicationCount} row per apply type (sp_ReExportReport.cs:100-129) - no count properties at all. The grid is blank the same way, so the sheet is at grid parity; remove these 6 entries when the controller returns a pivoted summary row like its Wine/DutyFree/BSA siblings."
+  },
+  {
+    "controller": "ReExportSummaryReport",
+    "dataIndex": "totalNumber",
+    "reason": "See newCount - the whole 6-column summary grid is unbound on this report."
+  },
+  {
+    "controller": "ReExportSummaryReport",
+    "dataIndex": "validCount",
+    "reason": "See newCount - the whole 6-column summary grid is unbound on this report."
+  }
+]

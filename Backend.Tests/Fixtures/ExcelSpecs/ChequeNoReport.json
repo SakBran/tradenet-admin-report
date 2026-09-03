@@ -1,0 +1,37 @@
+{
+  "formatVersion": 1,
+  "configKey": "ChequeNoReport",
+  "controllerName": "ChequeNoReport",
+  "title": "Cheque No Report",
+  "fileName": "ChequeNoReport.xlsx",
+  "headerLines": [
+    "Cheque No Report (01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": false,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "ChequeId",
+      "dataIndex": "chequeId",
+      "title": "Cheque Id",
+      "dataType": "number"
+    },
+    {
+      "key": "ChequeNo",
+      "dataIndex": "chequeNo",
+      "title": "Cheque No"
+    },
+    {
+      "key": "Date",
+      "dataIndex": "date",
+      "title": "Date",
+      "dataType": "date"
+    },
+    {
+      "key": "Amount",
+      "dataIndex": "amount",
+      "title": "Amount",
+      "dataType": "number"
+    }
+  ]
+}

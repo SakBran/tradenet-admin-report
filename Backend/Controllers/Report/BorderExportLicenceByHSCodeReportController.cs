@@ -74,6 +74,16 @@ namespace Backend.Controllers.Report
             CancellationToken cancellationToken)
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
+
+            // Row order already equals the grid's. The grid pages through
+            // sp_HSCodeReport_pagination, which sorts "ORDER BY result.HSCode,
+            // result.CompanyName, result.Currency"; GetAggregateRowsAsync's
+            // AggregateQuery applies exactly that ORDER BY server-side, so both come
+            // back in the same DB-collation order. Re-sorting here with
+            // ReportAggregationService.OrderGroups(..., ReportAggregateDimension.HSCode,
+            // includeSakhan: false) would sort on the same three keys but with
+            // StringComparer.OrdinalIgnoreCase, trading the DB collation for ordinal
+            // semantics -- i.e. it could only move Excel rows AWAY from the grid order.
             var rows = await sp_HSCodeReport.GetAggregateRowsAsync(_context, procedureRequest!);
             sink.Append(rows);
         }

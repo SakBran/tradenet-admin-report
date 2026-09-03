@@ -1,0 +1,67 @@
+{
+  "formatVersion": 1,
+  "configKey": "ListOfValidAndInvalidCompany",
+  "controllerName": "ListOfValidAndInvalidCompany",
+  "title": "List of Valid and Invalid Company",
+  "fileName": "ListOfValidAndInvalidCompany.xlsx",
+  "headerLines": [
+    "Ministry of Commerce",
+    "Directorate of Trade",
+    "Valid Company Business Organization (15/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "CompanyRegistrationDate",
+      "dataIndex": "companyRegistrationDate",
+      "title": "Company Registration Date",
+      "dataType": "date"
+    },
+    {
+      "key": "IssuedDate",
+      "dataIndex": "issuedDate",
+      "title": "Issued Date",
+      "dataType": "date"
+    },
+    {
+      "key": "ValidDate",
+      "dataIndex": "endDate",
+      "title": "Valid Date",
+      "dataType": "date"
+    },
+    {
+      "key": "BusinessType",
+      "dataIndex": "businessType",
+      "title": "Business Type"
+    },
+    {
+      "key": "LineOfBusiness",
+      "dataIndex": "lineofBusiness",
+      "title": "Line of Business"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
+    }
+  ]
+}

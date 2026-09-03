@@ -65,7 +65,7 @@ namespace Backend.Controllers.Report
         }
 
         // --- Async Excel export streaming (used by the background queue worker) ---
-        public string ExcelWorksheetTitle => "Border Export Licence By Seller Country Report";
+        public string ExcelWorksheetTitle => "Border Export Licence By Buyer Country Report";
         public Type ExcelRequestType => typeof(BorderExportLicenceBySellerCountryReportRequest);
 
         [NonAction]
@@ -81,7 +81,9 @@ namespace Backend.Controllers.Report
             TryCreateReportRequest(request, out var procedureRequest, out _);
             var rows = await sp_ExportLicenceDetailReport_Fast.GetAggregateRowsAsync(
                 _context, procedureRequest!, ReportAggregateDimension.Country, includeSakhan: false);
-            sink.Append(rows);
+            // Same ordering the JSON grid path applies (CreatePagedResult -> Order), so the
+            // sheet rows come out in grid order.
+            sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Country, includeSakhan: false));
         }
 
         private bool TryCreateReportRequest(

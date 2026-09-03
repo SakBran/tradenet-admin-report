@@ -78,7 +78,13 @@ namespace Backend.Controllers.Report
             TryCreateReportRequest(request, out var procedureRequest, out _);
             var rows = await sp_ExportLicenceDetailReportV2.GetSummaryRowsAsync(
                 _context, procedureRequest!, ReportAggregateDimension.Company);
-            sink.Append(rows);
+
+            // sp_ExportLicenceSummaryReport has no ORDER BY, so these SQL groups arrive
+            // unordered; the JSON grid path orders them in CreatePagedResultFromGroups ->
+            // Order (sp_ExportLicenceDetailReportV2.CreateSummaryResultAsync passes
+            // includeSakhan: false). Apply the same ordering here so the sheet rows come
+            // out in the order the user saw on screen.
+            sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Company, includeSakhan: false));
         }
 
         private bool TryCreateReportRequest(

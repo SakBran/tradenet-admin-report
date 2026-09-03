@@ -1,0 +1,70 @@
+{
+  "formatVersion": 1,
+  "configKey": "WholeSaleDetailReport",
+  "controllerName": "WholeSaleDetailReport",
+  "title": "Whole Sale Detail Report",
+  "fileName": "WholeSaleDetailReport.xlsx",
+  "headerLines": [
+    "Statement of Registered",
+    "Whole Sale",
+    "Ministry of Commerce",
+    "(01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "WholeSaleRetailNo",
+      "dataIndex": "wholeSaleRetailNo",
+      "title": "Whole Sale No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
+    },
+    {
+      "key": "WholeSaleRetailAddress",
+      "dataIndex": "wholeSaleRetailAddress",
+      "title": "Whole Sale Address",
+      "fallbackDataIndexes": [
+        "wholeSaleRetailUnitLevel",
+        "wholeSaleRetailStreetNumberStreetName",
+        "wholeSaleRetailQuarterCityTownship",
+        "wholeSaleRetailState",
+        "wholeSaleRetailCountry",
+        "wholeSaleRetailostalCode"
+      ]
+    },
+    {
+      "key": "IssuedDate",
+      "dataIndex": "issuedDate",
+      "title": "Issued Date",
+      "dataType": "date"
+    },
+    {
+      "key": "EndDate",
+      "dataIndex": "endDate",
+      "title": "Valid Date",
+      "dataType": "date"
+    }
+  ]
+}

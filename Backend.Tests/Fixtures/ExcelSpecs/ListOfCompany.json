@@ -1,0 +1,124 @@
+{
+  "formatVersion": 1,
+  "configKey": "ListOfCompany",
+  "controllerName": "ListOfCompany",
+  "title": "List of Company",
+  "fileName": "ListOfCompany.xlsx",
+  "headerLines": [
+    "Ministry of Commerce",
+    "Directorate of Trade",
+    "Company Business Organization"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "OwnerName",
+      "dataIndex": "ownerName",
+      "title": "Owner Name"
+    },
+    {
+      "key": "OwnerNRCNo",
+      "dataIndex": "ownerNRC",
+      "title": "Owner NRC No"
+    },
+    {
+      "key": "CompanyRegistrationDate",
+      "dataIndex": "companyRegistrationDate",
+      "title": "Company Registration Date",
+      "dataType": "date"
+    },
+    {
+      "key": "ValidDate",
+      "dataIndex": "endDate",
+      "title": "Valid Date",
+      "dataType": "date"
+    },
+    {
+      "key": "BusinessType",
+      "dataIndex": "businessType",
+      "title": "Business Type"
+    },
+    {
+      "key": "LineOfBusiness",
+      "dataIndex": "lineofBusiness",
+      "title": "Line of Business"
+    },
+    {
+      "key": "MICPermitNo",
+      "dataIndex": "mICPermitNo",
+      "title": "MICPermit No"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
+    },
+    {
+      "key": "Mobile",
+      "dataIndex": "mobile1",
+      "title": "Mobile"
+    },
+    {
+      "key": "Fax",
+      "dataIndex": "fax",
+      "title": "Fax"
+    },
+    {
+      "key": "Email",
+      "dataIndex": "email",
+      "title": "Email"
+    },
+    {
+      "key": "Capital",
+      "dataIndex": "capital",
+      "title": "Capital",
+      "dataType": "number"
+    },
+    {
+      "key": "Currency",
+      "dataIndex": "currency",
+      "title": "Currency"
+    },
+    {
+      "key": "RegistrationTerm",
+      "dataIndex": "terms",
+      "title": "Registration Term",
+      "dataType": "number"
+    },
+    {
+      "key": "DecisionDate",
+      "dataIndex": "decisionDate",
+      "title": "Decision Date",
+      "dataType": "date"
+    },
+    {
+      "key": "DecisionMaker",
+      "dataIndex": "decisionName",
+      "title": "Decision Maker"
+    },
+    {
+      "key": "Status",
+      "dataIndex": "status",
+      "title": "Status"
+    }
+  ]
+}

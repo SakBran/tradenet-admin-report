@@ -1,0 +1,82 @@
+{
+  "formatVersion": 1,
+  "configKey": "AlcoholicBeveragesImportationRegistrationByVoucher",
+  "controllerName": "AlcoholicBeveragesImportationRegistrationByVoucher",
+  "title": "Alcoholic Beverages Importation Registration By Voucher",
+  "fileName": "AlcoholicBeveragesImportationRegistrationByVoucher.xlsx",
+  "headerLines": [
+    "Ministry of Commerce",
+    "Directorate of Trade",
+    "(01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "Date",
+      "dataIndex": "date",
+      "title": "Date",
+      "dataType": "date"
+    },
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
+    },
+    {
+      "key": "WineImportationNo",
+      "dataIndex": "wineImportationNo",
+      "title": "Alcoholic Beverages Importation No"
+    },
+    {
+      "key": "Name",
+      "dataIndex": "name",
+      "title": "Name"
+    },
+    {
+      "key": "NRCNo",
+      "dataIndex": "nrcNo",
+      "title": "NRC"
+    },
+    {
+      "key": "TotalAmount",
+      "dataIndex": "totalAmount",
+      "title": "Total Amount",
+      "dataType": "number"
+    },
+    {
+      "key": "PaymentType",
+      "dataIndex": "paymentType",
+      "title": "Payment Type"
+    },
+    {
+      "key": "VoucherNo",
+      "dataIndex": "voucherNo",
+      "title": "Voucher No"
+    },
+    {
+      "key": "VoucherDate",
+      "dataIndex": "voucherDate",
+      "title": "Voucher Date",
+      "dataType": "date"
+    }
+  ]
+}

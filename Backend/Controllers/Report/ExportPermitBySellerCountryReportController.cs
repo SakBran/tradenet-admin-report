@@ -62,7 +62,10 @@ namespace Backend.Controllers.Report
         }
 
         // --- Async Excel export streaming (used by the background queue worker) ---
-        public string ExcelWorksheetTitle => "Export Permit By Seller Country Report";
+        // The grid/config title (and the legacy ExportPermitByBuyerCountryReport.rdlc) say
+        // "Buyer Country" -- an export permit has a buyer, not a seller. The class name keeps the
+        // old route spelling; the sheet title must match what the user saw.
+        public string ExcelWorksheetTitle => "Export Permit By Buyer Country Report";
         public Type ExcelRequestType => typeof(ExportPermitBySellerCountryReportRequest);
 
         [NonAction]
@@ -78,7 +81,12 @@ namespace Backend.Controllers.Report
             TryCreateReportRequest(request, out var procedureRequest, out _);
             var rows = await sp_ExportPermitDetailReport_Fast.GetAggregateRowsAsync(
                 _context, procedureRequest!, ReportAggregateDimension.Country, includeSakhan: false);
-            sink.Append(rows);
+
+            // Same ordering the JSON grid path applies (CreateAggregateResultAsync ->
+            // CreatePagedResultFromGroups -> Order), so the sheet rows come out in the order the
+            // user saw on screen. Stated here at the append site because that guarantee must not
+            // depend on the helper keeping its own internal OrderGroups call.
+            sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Country, includeSakhan: false));
         }
 
         private bool TryCreateReportRequest(

@@ -52,6 +52,13 @@ namespace API.Service.ExcelExport
         /// <summary>Base download file name (no timestamp / extension).</summary>
         string FileNameBase { get; }
 
+        /// <summary>
+        /// Shape of the generated file, from <see cref="ExcelFormatVersionAttribute"/> on
+        /// the controller (1 when unset). Mixed into the dedup hash so that changing a
+        /// report's title or columns stops the queue reusing files in the old shape.
+        /// </summary>
+        int FormatVersion { get; }
+
         Task GenerateAsync(ExcelExportContext context);
     }
 

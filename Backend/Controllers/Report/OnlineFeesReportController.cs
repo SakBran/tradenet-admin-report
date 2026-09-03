@@ -18,7 +18,7 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class OnlineFeesReportController : ControllerBase, IStreamingExcelReport
+    public class OnlineFeesReportController : ControllerBase, IStreamingExcelReport, IExcelFooterTotalsProvider
     {
         private const string ReportKey = "OnlineFeesReport";
 
@@ -91,6 +91,47 @@ namespace Backend.Controllers.Report
         // --- Async Excel export streaming (used by the background queue worker) ---
         public string ExcelWorksheetTitle => "Online Fees Report";
         public Type ExcelRequestType => typeof(OnlineFeesReportRequest);
+
+        /// <summary>
+        /// The grid's Total row, computed directly instead of by replaying <see cref="Post"/>.
+        ///
+        /// This calls the SAME helper <c>Post</c> uses for the grid's <c>ColumnTotals</c>
+        /// (<c>sp_OnlineFeesReport.ExecuteColumnTotalsAsync</c> — one cross-page
+        /// <c>SUM(Amount)</c> over the whole filtered set, keyed "amount", which is the
+        /// Deducted Fees column's dataIndex), so the sheet's Total row is the grid's Total
+        /// row by construction rather than a second implementation that can drift.
+        ///
+        /// The default probe is opted out of because it sets <c>IncludeTotalCount = true</c>,
+        /// which makes <c>sp_OnlineFeesReport_pagination</c> add a <c>COUNT(*) OVER()</c>
+        /// (StoredProcedureMigrations/sp_OnlineFeesReport_pagination.sql:70) on top of the
+        /// AccountTransaction/AccountTransactionDetail/AccountTitle join and the eight
+        /// per-registration UNION branches — a second pass over the same rows the export is
+        /// already streaming, for a count the export never uses. Under
+        /// <c>FooterTotalsPolicy.Required</c> a slow probe fails the whole export job
+        /// (Contract §9: Online Fees is one of the reports with a cheap totals helper).
+        /// </summary>
+        [NonAction]
+        public async Task<ReportFooterTotals?> GetExcelFooterTotalsAsync(
+            object request,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!TryCreateReportRequest((OnlineFeesReportRequest)request, out var procedureRequest, out _))
+            {
+                // Unreachable in practice: the Excel action validates the same filters
+                // before enqueueing. Throwing mirrors the default probe, which fails the
+                // job when Post rejects the export's own filters, rather than quietly
+                // shipping a sheet with no footer.
+                throw new InvalidOperationException(
+                    "Online Fees Report footer totals: the export's stored FromDate/ToDate are invalid.");
+            }
+
+            var columnTotals = await sp_OnlineFeesReport.ExecuteColumnTotalsAsync(_context, procedureRequest!);
+
+            // No per-currency footer on this report: online fees are all MMK.
+            return new ReportFooterTotals(columnTotals, CurrencyTotals: null);
+        }
 
         [NonAction]
         public Task WriteRowsAsync(object request, IExcelRowSink sink, int chunkSize, CancellationToken cancellationToken)

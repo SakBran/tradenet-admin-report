@@ -1,0 +1,95 @@
+{
+  "formatVersion": 1,
+  "configKey": "DutyFreeShopRegistrationByVoucher",
+  "controllerName": "DutyFreeShopRegistrationByVoucher",
+  "title": "Duty Free Shop Registration By Voucher",
+  "fileName": "DutyFreeShopRegistrationByVoucher.xlsx",
+  "headerLines": [
+    "Ministry of Commerce",
+    "Directorate of Trade",
+    "(01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "Date",
+      "dataIndex": "date",
+      "title": "Date",
+      "dataType": "date"
+    },
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "Name",
+      "dataIndex": "name",
+      "title": "Name"
+    },
+    {
+      "key": "NRCNo",
+      "dataIndex": "nrcNo",
+      "title": "NRC No"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
+    },
+    {
+      "key": "DutyFreeShopNo",
+      "dataIndex": "dutyFreeShopNo",
+      "title": "Duty Free Shop No"
+    },
+    {
+      "key": "DutyFreeShopAddress",
+      "dataIndex": "dutyFreeShopAddress",
+      "title": "Duty Free Shop Address",
+      "fallbackDataIndexes": [
+        "dutyFreeShopUnitLevel",
+        "dutyFreeShopStreetNumberStreetName",
+        "dutyFreeShopQuarterCityTownship",
+        "dutyFreeShopState",
+        "dutyFreeShopCountry",
+        "dutyFreeShopPostalCode"
+      ]
+    },
+    {
+      "key": "TotalAmount",
+      "dataIndex": "totalAmount",
+      "title": "Total Amount",
+      "dataType": "number"
+    },
+    {
+      "key": "PaymentType",
+      "dataIndex": "paymentType",
+      "title": "Payment Type"
+    },
+    {
+      "key": "VoucherNo",
+      "dataIndex": "voucherNo",
+      "title": "Voucher No"
+    },
+    {
+      "key": "VoucherDate",
+      "dataIndex": "voucherDate",
+      "title": "Voucher Date",
+      "dataType": "date"
+    }
+  ]
+}

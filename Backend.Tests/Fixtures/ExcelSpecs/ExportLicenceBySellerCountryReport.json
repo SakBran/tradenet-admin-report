@@ -1,0 +1,34 @@
+{
+  "formatVersion": 1,
+  "configKey": "ExportLicenceBySellerCountryReport",
+  "controllerName": "ExportLicenceBySellerCountryReport",
+  "title": "Export Licence By Buyer Country Report",
+  "fileName": "ExportLicenceBySellerCountryReport.xlsx",
+  "headerLines": [
+    "List of Export Licences By Buyer Country From (01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "Country",
+      "dataIndex": "country",
+      "title": "Country"
+    },
+    {
+      "key": "NoOfLicences",
+      "dataIndex": "noOfLicences",
+      "title": "No of Licences"
+    },
+    {
+      "key": "TotalValue",
+      "dataIndex": "totalValue",
+      "title": "Total Value"
+    },
+    {
+      "key": "Currency",
+      "dataIndex": "currency",
+      "title": "Currency"
+    }
+  ]
+}

@@ -81,7 +81,11 @@ namespace Backend.Controllers.Report
             TryCreateReportRequest(request, out var procedureRequest, out _);
             var rows = await sp_ExportPermitDetailReport_Fast.GetAggregateRowsAsync(
                 _context, procedureRequest!, ReportAggregateDimension.Company, includeSakhan: false);
-            sink.Append(rows);
+
+            // Same ordering the JSON grid path applies (CreatePagedResultFromGroups -> Order), so the
+            // sheet rows come out in grid order. Stated here at the append site because that guarantee
+            // must not depend on the helper keeping its own internal OrderGroups call.
+            sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Company, includeSakhan: false));
         }
 
         private bool TryCreateReportRequest(

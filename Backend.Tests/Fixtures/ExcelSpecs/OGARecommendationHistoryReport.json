@@ -1,0 +1,56 @@
+{
+  "formatVersion": 1,
+  "configKey": "OGARecommendationHistoryReport",
+  "controllerName": "OGARecommendationHistoryReport",
+  "title": "OGA Recommendation History",
+  "fileName": "OGARecommendationHistoryReport.xlsx",
+  "headerLines": [
+    "Ministry of Commerce",
+    "Directorate of Trade",
+    "OGA Recommendation History"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "SDate",
+      "dataIndex": "sDate",
+      "title": "Date"
+    },
+    {
+      "key": "SarNo",
+      "dataIndex": "sarNo",
+      "title": "Letter No"
+    },
+    {
+      "key": "Allowance",
+      "dataIndex": "allowance",
+      "title": "Allowance"
+    },
+    {
+      "key": "LicenceNo",
+      "dataIndex": "licenceNo",
+      "title": "Licence No"
+    },
+    {
+      "key": "Remark",
+      "dataIndex": "remark",
+      "title": "Remark"
+    },
+    {
+      "key": "Balance",
+      "dataIndex": "balance",
+      "title": "Balance"
+    },
+    {
+      "key": "FullName",
+      "dataIndex": "fullName",
+      "title": "Full Name"
+    },
+    {
+      "key": "Position",
+      "dataIndex": "position",
+      "title": "Position"
+    }
+  ]
+}

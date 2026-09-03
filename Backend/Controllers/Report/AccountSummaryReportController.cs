@@ -19,15 +19,15 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class AccountSummaryReportController : ControllerBase, IStreamingExcelReport
+    // v2 = the exported sheet gained the RDLC title row and the grid's 8 columns.
+    [ExcelFormatVersion(2)]
+    public class AccountSummaryReportController
+        : ControllerBase, IStreamingExcelReport, IExcelReportLayoutProvider, IExcelFooterTotalsProvider
     {
         private const string ReportKey = "AccountSummaryReport";
 
         private const int DefaultPageSize = 10;
         private const int MaxPageSize = 1000;
-
-        // Excel worksheets allow 1,048,576 rows including the header.
-        private const int MaxExcelDataRows = 1_048_576 - 1;
 
         private readonly TradeNetDbContext _context;
         private readonly IExcelExportJobService _excelExportJobs;
@@ -112,6 +112,78 @@ namespace Backend.Controllers.Report
         public string ExcelWorksheetTitle => "Account Summary Report";
         public Type ExcelRequestType => typeof(AccountSummaryReportRequest);
 
+        /// <summary>
+        /// The exported sheet mirrors the grid and the old Tradenet 2.0 RDLC: a title
+        /// banner, then No / Entry Date / Company Registration No / Company Name /
+        /// Voucher No / Transaction Title / Deducted Fees / Remark.
+        /// </summary>
+        [NonAction]
+        public ExcelReportLayout GetExcelLayout(object request)
+        {
+            var typedRequest = (AccountSummaryReportRequest)request;
+
+            return new ExcelReportLayout
+            {
+                TitleLines = new[]
+                {
+                    ExcelReportTitle.DateRange("Account Summary Report", typedRequest.FromDate, typedRequest.ToDate),
+                },
+                TotalsRowLabel = "Total",
+                Columns = new[]
+                {
+                    ExcelColumn.RowNumber(),
+                    ExcelColumn.Date<sp_AccountSummaryReportResult>("Entry Date", row => row.VoucherDate),
+                    ExcelColumn.Text<sp_AccountSummaryReportResult>("Company Registration No", row => row.CompanyRegistrationNo, width: 24),
+                    ExcelColumn.Text<sp_AccountSummaryReportResult>("Company Name", row => row.CompanyName, width: 34),
+                    ExcelColumn.Text<sp_AccountSummaryReportResult>("Voucher No", row => row.VoucherNo, width: 16),
+                    ExcelColumn.Text<sp_AccountSummaryReportResult>("Transaction Title", row => row.TransactionTitle, width: 30),
+                    // Bound to "amount" so the footer builder places Post's
+                    // ColumnTotals["amount"] under this column instead of re-summing.
+                    ExcelColumn.Money<sp_AccountSummaryReportResult>("Deducted Fees", row => row.Amount, includeInTotals: true)
+                        .Bind("DeductedFees", "amount"),
+                    // Unbound in the old RDLC too — a header with a deliberately empty body.
+                    ExcelColumn.Blank("Remark", width: 18),
+                },
+            };
+        }
+
+        /// <summary>
+        /// The grid's footer number, without the default probe.
+        ///
+        /// Replaying <c>Post</c> with <c>IncludeTotalCount = true</c> would run the
+        /// pagination procedure's exact <c>COUNT(*)</c> over #rows — the very thing
+        /// <c>WriteRowsAsync</c> passes <c>includeTotalCount: false</c> to avoid, because
+        /// it is what times this report out.
+        ///
+        /// This calls the SAME helper <c>Post</c> uses for the grid's
+        /// <c>ColumnTotals</c> (<c>sp_AccountSummaryReport.ExecuteColumnTotalsAsync</c>, a
+        /// single cross-page SUM(Amount) over the filtered set), so the sheet's Total row is
+        /// the grid's Total row by construction. The layout binds the Deducted Fees column to
+        /// "amount", which is the key this dictionary carries.
+        /// </summary>
+        [NonAction]
+        public async Task<ReportFooterTotals?> GetExcelFooterTotalsAsync(
+            object request,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!TryCreateReportRequest((AccountSummaryReportRequest)request, out var procedureRequest, out _))
+            {
+                // Unreachable in practice: the Excel action validates the same filters
+                // before enqueueing. Throwing mirrors the default probe, which fails the
+                // job when Post rejects the export's own filters, rather than quietly
+                // shipping a sheet with no footer.
+                throw new InvalidOperationException(
+                    "Account Summary Report footer totals: the export's stored FromDate/ToDate are invalid.");
+            }
+
+            var columnTotals = await sp_AccountSummaryReport.ExecuteColumnTotalsAsync(_context, procedureRequest!);
+
+            // No per-currency footer on this report (fees are all MMK).
+            return new ReportFooterTotals(columnTotals, CurrencyTotals: null);
+        }
+
         [NonAction]
         public Task WriteRowsAsync(object request, IExcelRowSink sink, int chunkSize, CancellationToken cancellationToken)
             => WriteRowsAsync((AccountSummaryReportRequest)request, sink, chunkSize, cancellationToken);
@@ -123,7 +195,11 @@ namespace Backend.Controllers.Report
             CancellationToken cancellationToken)
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
-            await foreach (var chunk in sp_AccountSummaryReport.ExecuteQueryable(_context, procedureRequest!)
+
+            // includeTotalCount: false — the export needs every row, never the count, and
+            // the extra COUNT(*) over #rows is what makes this proc time out.
+            await foreach (var chunk in sp_AccountSummaryReport
+                .ExecuteQueryable(_context, procedureRequest!, includeTotalCount: false)
                 .AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
             {
                 sink.Append(chunk.Select(row => row.ToResult()).ToList());

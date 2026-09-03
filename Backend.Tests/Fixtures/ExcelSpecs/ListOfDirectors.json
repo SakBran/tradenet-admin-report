@@ -1,0 +1,49 @@
+{
+  "formatVersion": 1,
+  "configKey": "ListOfDirectors",
+  "controllerName": "ListOfDirectors",
+  "title": "List of Directors",
+  "fileName": "ListOfDirectors.xlsx",
+  "headerLines": [
+    "List of Directors"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "Name",
+      "dataIndex": "directorName",
+      "title": "Name"
+    },
+    {
+      "key": "Position",
+      "dataIndex": "directorPosition",
+      "title": "Position"
+    },
+    {
+      "key": "nrcNo",
+      "dataIndex": "directorNRC",
+      "title": "NRC No."
+    },
+    {
+      "key": "Nationality",
+      "dataIndex": "directorNationality",
+      "title": "Nationality"
+    },
+    {
+      "key": "Status",
+      "dataIndex": "directorBlackList",
+      "title": "Status"
+    }
+  ]
+}
