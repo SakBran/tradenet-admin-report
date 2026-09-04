@@ -370,7 +370,7 @@ BorderImportLicence.Id AS __k_Id
 		INNER JOIN Sakhan sakhan ON BorderImportLicence.SakhanId = sakhan.Id
 		WHERE ApplyType=''New'' AND BorderImportLicence.Status=''Approved'' AND CardType=''Pa Tha Ka''
 		AND ((@FromDate IS NULL) OR BorderImportLicence.CreatedDate >= @FromDate)
-		AND ((@ToDate IS NULL) OR BorderImportLicence.CreatedDate < DATEADD(day, 1, @ToDate))
+		AND ((@ToDate IS NULL) OR BorderImportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
 		AND BorderImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
 		AND BorderImportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportLicence.SakhanId ELSE @SakhanId END)
@@ -403,7 +403,7 @@ BorderImportLicence.Id AS __k_Id
 		INNER JOIN Sakhan sakhan ON BorderImportLicence.SakhanId = sakhan.Id
 		WHERE ApplyType=''New'' AND BorderImportLicence.Status=''Approved'' AND CardType=''Individual Trading''
 		AND ((@FromDate IS NULL) OR BorderImportLicence.CreatedDate >= @FromDate)
-		AND ((@ToDate IS NULL) OR BorderImportLicence.CreatedDate < DATEADD(day, 1, @ToDate))
+		AND ((@ToDate IS NULL) OR BorderImportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
 		AND BorderImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
 		AND BorderImportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportLicence.SakhanId ELSE @SakhanId END)

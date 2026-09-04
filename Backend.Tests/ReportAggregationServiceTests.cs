@@ -1,3 +1,4 @@
+using API.Model;
 using API.Service.Reports;
 
 namespace Backend.Tests;
@@ -160,5 +161,38 @@ public sealed class ReportAggregationServiceTests
             Array.Empty<AggregateSourceRow>(), ReportAggregateDimension.Section, includeSakhan: false);
 
         Assert.Empty(result);
+    }
+
+    [Fact]
+    public void Daily_groups_keep_all_data_while_using_ten_rows_per_page()
+    {
+        var groups = Enumerable.Range(1, 15)
+            .Select(day => new ReportAggregateResult
+            {
+                Date = $"{day:00}/01/2026",
+                Currency = "USD",
+                NoOfLicences = 1,
+                TotalValue = day,
+            })
+            .ToList();
+
+        var firstPage = ReportAggregationService.CreatePagedResultFromGroups(
+            groups,
+            ReportAggregateDimension.Daily,
+            includeSakhan: false,
+            new ReportQueryRequest { PageIndex = 0, PageSize = 10 });
+
+        var secondPage = ReportAggregationService.CreatePagedResultFromGroups(
+            groups,
+            ReportAggregateDimension.Daily,
+            includeSakhan: false,
+            new ReportQueryRequest { PageIndex = 1, PageSize = 10 });
+
+        Assert.Equal(10, firstPage.Data.Count);
+        Assert.Equal(15, firstPage.TotalCount);
+        Assert.True(firstPage.HasNextPage);
+        Assert.Equal(5, secondPage.Data.Count);
+        Assert.Equal(15, secondPage.TotalCount);
+        Assert.False(secondPage.HasNextPage);
     }
 }

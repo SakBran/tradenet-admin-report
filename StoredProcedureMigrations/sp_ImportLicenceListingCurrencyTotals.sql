@@ -23,18 +23,18 @@ BEGIN
     -- "Total Value" column, and "No of License" equals the row count per currency
     -- (= CountDistinct(LicenceNo), one grid row per licence).
     --
-    -- Date predicate uses < DATEADD(day, 1, @ToDate) to mirror sp_AmendReport_pagination
+    -- Date predicate normalizes @ToDate before adding one day to mirror sp_AmendReport_pagination
     -- (inclusive of the whole @ToDate day) so the footer count matches the grid TotalCount.
     --
     --   * New         -> sp_NewReport.ImportLicenceQuery (ApplyType='New'; New licences carry a
     --                   NULL AmendRemarkId, so NO AmendRemarkId predicate is applied).
     --   * Amend       -> sp_AmendReport_pagination (ApplyType='Amend' + the AmendRemarkId CASE,
-    --                   date predicate < DATEADD(day, 1, @ToDate)).
+    --                   date predicate < DATEADD(day, 1, CONVERT(date, @ToDate))).
     --   * Cancel      -> sp_CancelReport_pagination (ApplyType='Cancel'; NO AmendRemarkId, and the
     --                   cancel grid proc uses <= @ToDate, NOT DATEADD -- mirror it exactly).
     --   * ActualAmend -> sp_ActualAmendReport_pagination Import Licence branch (ApplyType='Actual Amend'
     --                   -- note the SPACE -- + the AmendRemarkId CASE, date predicate
-    --                   < DATEADD(day, 1, @ToDate); identical to the Amend branch except the literal).
+    --                   < DATEADD(day, 1, CONVERT(date, @ToDate)); identical to the Amend branch except the literal).
     -- OPTION (RECOMPILE) avoids the parameter-sniffing timeout the catch-all CASE
     -- predicates cause (see the pagination-count-recompile-timeout note).
 
@@ -52,7 +52,7 @@ BEGIN
                 INNER JOIN PaThaKa ON ImportLicence.PaThaKaId = PaThaKa.Id
                 INNER JOIN ExportImportSection section ON ImportLicence.ExportImportSectionId = section.Id
             WHERE ApplyType = 'Amend' AND ImportLicence.Status = 'Approved'
-                AND (ImportLicence.CreatedDate >= @FromDate AND ImportLicence.CreatedDate < DATEADD(day, 1, @ToDate))
+                AND (ImportLicence.CreatedDate >= @FromDate AND ImportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
                 AND ImportLicence.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN ImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
                 AND ImportLicence.AmendRemarkId = (CASE WHEN @AmendRemarkId = 0 THEN ImportLicence.AmendRemarkId ELSE @AmendRemarkId END)
@@ -88,7 +88,7 @@ BEGIN
     BEGIN
         -- Actual Amendment footer -> sp_ActualAmendReport_pagination Import Licence branch.
         -- Identical to the Amend branch except ApplyType = 'Actual Amend' (note the SPACE).
-        -- The grid proc applies the AmendRemarkId CASE and < DATEADD(day, 1, @ToDate), so mirror both.
+        -- The grid proc applies the AmendRemarkId CASE and a normalized exclusive upper bound, so mirror both.
         SELECT ISNULL(d.Currency, N'') AS Currency, COUNT(*) AS NoOfLicences, ISNULL(SUM(d.Amount), 0) AS TotalValue
         FROM (
             SELECT
@@ -101,7 +101,7 @@ BEGIN
                 INNER JOIN PaThaKa ON ImportLicence.PaThaKaId = PaThaKa.Id
                 INNER JOIN ExportImportSection section ON ImportLicence.ExportImportSectionId = section.Id
             WHERE ApplyType = 'Actual Amend' AND ImportLicence.Status = 'Approved'
-                AND (ImportLicence.CreatedDate >= @FromDate AND ImportLicence.CreatedDate < DATEADD(day, 1, @ToDate))
+                AND (ImportLicence.CreatedDate >= @FromDate AND ImportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
                 AND ImportLicence.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN ImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
                 AND ImportLicence.AmendRemarkId = (CASE WHEN @AmendRemarkId = 0 THEN ImportLicence.AmendRemarkId ELSE @AmendRemarkId END)
