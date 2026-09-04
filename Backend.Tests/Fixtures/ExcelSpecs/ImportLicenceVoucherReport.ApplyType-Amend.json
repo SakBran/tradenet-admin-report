@@ -102,7 +102,7 @@
     }
   ],
   "currencyTotalsColumns": {
-    "labelColumnKey": "LicenceNo",
+    "labelColumnKey": "OriginalLicenceNo",
     "valueColumnKey": "LicValue"
   }
 }

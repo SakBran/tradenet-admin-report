@@ -158,10 +158,31 @@ Extra in new (0): _None_
 
 Title: Border Export Licence Voucher Report
 Old source: `BorderVoucherReport.rdlc`
-Old columns (13): `No.`, `Sakhan`, `Licence No`, `Application Date`, `Application No`, `=Parameters!header2.Value`, `=Parameters!header3.Value`, `Company Registration No`, `Company Name`, `Voucher No`, `Voucher Date`, `Commodity Type`, `Total Amount`
-New columns (13): `No`, `Sakhan`, `Licence No`, `Application No`, `Licence Date`, `Company Registration No`, `Company Name`, `Lic Value`, `Currency`, `Voucher No`, `Voucher Date`, `Approved User`, `Total Amount`
-Need in new (4): `Application Date`, `=Parameters!header2.Value`, `=Parameters!header3.Value`, `Commodity Type`
-Extra in new (4): `Licence Date`, `Lic Value`, `Currency`, `Approved User`
+Old columns (11): `No.`, `Sakhan`, `Licence No`, `Application No`, `=Parameters!header2.Value`, `=Parameters!header3.Value`, `Company Registration No`, `Company Name`, `Voucher No`, `Voucher Date`, `Total Amount`
+New columns (12 + row number): `No`, `Sakhan`, `Licence No`, `Application Date`, `Application No`, `Licence No` (header2), `Licence Date` (header3), `Company Registration No`, `Company Name`, `Voucher No`, `Voucher Date`, `Commodity Type`, `Total Amount`
+Need in new (0): _None_
+Extra in new (2): `Application Date`, `Commodity Type`
+
+> **Corrected 2026-09-04.** The previous entry was wrong on both axes and is what let the
+> "Total Amount" regression through. Verified directly against the RDLC XML: `BorderVoucherReport.rdlc`
+> has 11 `<TablixColumn>` elements, a title cell with `ColSpan 11`, no `Application Date` column and no
+> `Commodity Type` column (`grep -ic commodity` = 0), and English-only headers (no non-ASCII text). The
+> old "13" list was the new config's column set with two fabricated entries; the old "New (13)" list was
+> the **non-border** `VoucherReport.rdlc` header set, not this report's config.
+>
+> - `Total Amount` (rdlc:1399) binds `=FORMAT(Fields!Amount.Value,"N0")` -> `sp_VoucherReport`'s `Amount`
+>   column = `AccountTransaction.TotalAmount`, the **MMK voucher fee**. It is NOT the proc's `TotalAmount`
+>   column (`SUM(BorderExportLicenceItem.Amount)`, the goods value in the licence's own currency). Binding
+>   the goods value here was the 2026-09 customer complaint (`CNY:4,305,000.0000` vs the old `100,000`).
+> - `Lic Value` / `Currency` / `Approved User` are **not** old columns of this report. The RDLC declares
+>   `LicenceValue`/`sLicenceValue`/`sCurrency` as fields (rdlc:88-99) and references them zero times.
+> - The `=Parameters!header2.Value` column (rdlc col 5) is **hidden** when `ApplyType="New"`
+>   (rdlc:1578) - the only `<Hidden>` expression in the file. The header3 / Licence Date column is not.
+> - Footer: one static row, `TOTAL` spanning columns 1-10 (rdlc:1457) +
+>   `=FORMAT(SUM(Fields!Amount.Value),"N0")` (rdlc:1521). Single MMK grand total, zero decimals,
+>   **no per-currency grouping** and no total on the goods value.
+> - Drill-down: **none**. `grep -rli drillthrough` over the whole `tradenet-2.0-admin` tree returns 0
+>   files, so the standing drill-down-parity rule is discharged with nothing owed.
 
 ### BorderExportPermitActualAmendmentReport
 

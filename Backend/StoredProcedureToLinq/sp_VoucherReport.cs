@@ -1,6 +1,8 @@
 using API.DBContext;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -176,6 +178,9 @@ public static class sp_VoucherReport
     /// FORMAT(SUM(Amount),"N0")) over the FULL filtered set, via the retained LINQ <see cref="Query"/>
     /// (same filter the page proc uses). Returns null — so the footer is simply omitted — if the
     /// query cannot be translated/run, rather than failing the whole report.
+    ///
+    /// A swallowed failure is logged: a missing footer looks identical to "this report has no
+    /// total", which is the same class of silently-wrong output the footer was added to fix.
     /// </summary>
     public static async Task<decimal?> ExecuteAmountTotalAsync(
         TradeNetDbContext db,
@@ -191,7 +196,45 @@ public static class sp_VoucherReport
         }
         catch (Exception ex) when (ex is InvalidOperationException or SqlException)
         {
+            LogAmountTotalFailure(db, request, ex);
             return null;
+        }
+    }
+
+    private static string SanitizeForLog(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        return value
+            .Replace("\r", string.Empty)
+            .Replace("\n", string.Empty);
+    }
+
+    private static void LogAmountTotalFailure(
+        TradeNetDbContext db,
+        sp_VoucherReportRequest request,
+        Exception ex)
+    {
+        try
+        {
+            db.GetService<ILoggerFactory>()
+                .CreateLogger("API.StoredProcedureToLinq.sp_VoucherReport")
+                .LogError(
+                    ex,
+                    "Voucher report Amount grand total failed for FormType={FormType} ApplyType={ApplyType} "
+                    + "{FromDate:yyyy-MM-dd}..{ToDate:yyyy-MM-dd}; the report will render without its TOTAL row.",
+                    SanitizeForLog(request.FormType),
+                    SanitizeForLog(request.ApplyType),
+                    request.FromDate,
+                    request.ToDate);
+        }
+        catch (InvalidOperationException)
+        {
+            // No logger factory on this context (unit tests / a bare DbContextOptions):
+            // never let diagnostics turn an omitted footer into a failed report.
         }
     }
 

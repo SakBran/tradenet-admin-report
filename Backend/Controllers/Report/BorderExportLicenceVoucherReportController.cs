@@ -18,6 +18,9 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // v2: the "Total Amount" column and the footer moved from the licence item (goods) value to
+    // the voucher Amount, matching BorderVoucherReport.rdlc:1399/1521.
+    [ExcelFormatVersion(2)]
     public class BorderExportLicenceVoucherReportController
         : ControllerBase, IStreamingExcelReport, IExcelFooterTotalsProvider
     {
@@ -67,12 +70,27 @@ namespace Backend.Controllers.Report
                     data, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
 
-            if (data.Count > 0)
+            // Legacy BorderVoucherReport.rdlc footer: ONE static row - TOTAL (ColSpan 10, rdlc:1457)
+            // + =FORMAT(SUM(Fields!Amount.Value),"N0") (rdlc:1521) = SUM(AccountTransaction.TotalAmount),
+            // the MMK voucher fee. NOT sp_ExportLicenceVoucherCurrencyTotals, which sums
+            // BorderExportLicenceItem.Amount (the goods value, in the licence's own currency) and
+            // has no column on this report - that mismatch was the reported bug.
+            //
+            // Gated on IncludeTotalCount so the fast first page is not blocked: CreateFastPageFromRows
+            // sets IsTotalCountExact = false, so the grid always follows up with an exact-count POST,
+            // and BasicTable picks the footer up from that response as lazyColumnTotals.
+            if (request.IncludeTotalCount && data.Count > 0)
             {
-                result.CurrencyTotals = await ExportLicenceListingCurrencyTotals.ExecuteVoucherAsync(
-                    _context, procedureRequest!.FormType, procedureRequest.FromDate, procedureRequest.ToDate,
-                    procedureRequest.ExportImportSectionId, procedureRequest.PaymentType, procedureRequest.ApplyType,
-                    procedureRequest.CompanyRegistrationNo, procedureRequest.SakhanId);
+                var amountTotal = await sp_VoucherReport.ExecuteAmountTotalAsync(_context, procedureRequest!);
+                if (amountTotal.HasValue)
+                {
+                    result.ColumnTotals = new Dictionary<string, decimal>
+                    {
+                        // Rounded to 0 dp to reproduce the rdlc's "N0"; keyed by the grid column's
+                        // dataIndex ("amount"), which is what BasicTable matches on.
+                        ["amount"] = decimal.Round(amountTotal.Value, 0),
+                    };
+                }
             }
 
             return Ok(result);
@@ -118,14 +136,14 @@ namespace Backend.Controllers.Report
         }
 
         /// <summary>
-        /// The grid's per-currency footer, computed directly instead of by replaying
-        /// <see cref="Post"/>.
+        /// The grid's footer, computed directly instead of by replaying <see cref="Post"/>.
         ///
-        /// This calls the SAME helper <c>Post</c> uses for the grid's
-        /// <c>CurrencyTotals</c> — <c>ExportLicenceListingCurrencyTotals.ExecuteVoucherAsync</c>
-        /// (<c>dbo.sp_ExportLicenceVoucherCurrencyTotals</c>) — with the same arguments, so the
+        /// This calls the SAME helper <c>Post</c> uses for the grid's <c>ColumnTotals</c> —
+        /// <see cref="sp_VoucherReport.ExecuteAmountTotalAsync"/> — with the same request, so the
         /// sheet's footer is the grid's footer by construction, not a second implementation
-        /// that can drift.
+        /// that can drift. It reproduces the legacy BorderVoucherReport.rdlc footer
+        /// (<c>=FORMAT(SUM(Fields!Amount.Value),"N0")</c>, rdlc:1521): one grand total of the
+        /// MMK voucher fee, no currency grouping.
         ///
         /// The default probe is opted out of because it sets <c>IncludeTotalCount = true</c>,
         /// which runs <c>sp_VoucherReport_pagination</c>'s Border Export Licence
@@ -136,8 +154,9 @@ namespace Backend.Controllers.Report
         /// never uses that count, and under <c>FooterTotalsPolicy.Required</c> a slow probe
         /// would fail the whole export job.
         ///
-        /// No <c>ColumnTotals</c> on this report: the grid shows only the per-currency rows
-        /// plus the grand TOTAL row.
+        /// No <c>CurrencyTotals</c> on this report: the old rdlc has no per-currency footer at
+        /// all (its only aggregate is the single TOTAL row at rdlc:1457/1521), and a per-currency
+        /// breakdown of an MMK-only payment column is not meaningful.
         /// </summary>
         [NonAction]
         public async Task<ReportFooterTotals?> GetExcelFooterTotalsAsync(
@@ -156,12 +175,13 @@ namespace Backend.Controllers.Report
                     "Border Export Licence Voucher Report footer totals: the export's stored FromDate/ToDate are invalid.");
             }
 
-            var currencyTotals = await ExportLicenceListingCurrencyTotals.ExecuteVoucherAsync(
-                _context, procedureRequest!.FormType, procedureRequest.FromDate, procedureRequest.ToDate,
-                procedureRequest.ExportImportSectionId, procedureRequest.PaymentType, procedureRequest.ApplyType,
-                procedureRequest.CompanyRegistrationNo, procedureRequest.SakhanId);
+            var amountTotal = await sp_VoucherReport.ExecuteAmountTotalAsync(_context, procedureRequest!);
 
-            return new ReportFooterTotals(ColumnTotals: null, CurrencyTotals: currencyTotals);
+            return new ReportFooterTotals(
+                ColumnTotals: amountTotal.HasValue
+                    ? new Dictionary<string, decimal> { ["amount"] = decimal.Round(amountTotal.Value, 0) }
+                    : null,
+                CurrencyTotals: null);
         }
 
         private bool TryCreateReportRequest(

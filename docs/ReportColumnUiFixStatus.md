@@ -14,8 +14,8 @@ A report is marked `Finished` when every old visible table header has a frontend
 ## Summary
 
 - Reports checked: 125
-- Finished: 114
-- Not finished: 11
+- Finished: 115
+- Not finished: 10
 
 ## Per-Report Status
 
@@ -161,13 +161,17 @@ Runtime dynamic headers needing manual label choice: _None_
 
 ### BorderExportLicenceVoucherReport
 
-Status: Not finished
+Status: Finished (2026-09-04, hand-edited)
 Old source: `BorderVoucherReport.rdlc`
 Table labels: Finished
 Filters: Finished
 Columns needing data/computed support: _None_
 Old aggregate labels kept on detail-backed columns: _None_
-Runtime dynamic headers needing manual label choice: `=Parameters!header2.Value`, `=Parameters!header3.Value`
+Runtime dynamic headers needing manual label choice: _None_ — `=Parameters!header2.Value` and
+`=Parameters!header3.Value` are resolved at runtime by `resolveImportLicenceVoucherColumns`
+(`Frontend/src/Report/config/reportConfigs.ts`), which reproduces `ReportsController.cs:9957-9981`
+string-for-string and, since 2026-09-04, also hides the header2 column for `ApplyType='New'` the way
+`BorderVoucherReport.rdlc:1578` does.
 
 ### BorderExportPermitActualAmendmentReport
 

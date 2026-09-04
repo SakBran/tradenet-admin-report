@@ -18,6 +18,9 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // v2: the LicenceNo (header2) column is now hidden for ApplyType='New', the way
+    // VoucherReport.rdlc:1883 does, so the sheet's column set changed.
+    [ExcelFormatVersion(2)]
     public class ImportLicenceVoucherReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ImportLicenceVoucherReport";

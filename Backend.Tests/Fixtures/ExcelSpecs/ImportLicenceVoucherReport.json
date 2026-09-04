@@ -27,11 +27,6 @@
       "dataType": "date"
     },
     {
-      "key": "LicenceNo",
-      "dataIndex": "licenceNo",
-      "title": "Licence No"
-    },
-    {
       "key": "ApplicationNo",
       "dataIndex": "applicationNo",
       "title": "Application No"
@@ -102,7 +97,7 @@
     }
   ],
   "currencyTotalsColumns": {
-    "labelColumnKey": "LicenceNo",
+    "labelColumnKey": "OriginalLicenceNo",
     "valueColumnKey": "LicValue"
   }
 }

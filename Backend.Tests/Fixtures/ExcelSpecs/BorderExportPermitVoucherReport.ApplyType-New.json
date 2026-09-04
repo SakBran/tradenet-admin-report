@@ -35,11 +35,6 @@
       "title": "Application No"
     },
     {
-      "key": "LicenceNo",
-      "dataIndex": "licenceNo",
-      "title": "Licence No"
-    },
-    {
       "key": "LicenceDate",
       "dataIndex": "sLicenceDate",
       "title": "Licence Date"
@@ -76,9 +71,5 @@
       "title": "Total Amount",
       "dataType": "number"
     }
-  ],
-  "currencyTotalsColumns": {
-    "labelColumnKey": "LicenceNo",
-    "valueColumnKey": "Amount"
-  }
+  ]
 }

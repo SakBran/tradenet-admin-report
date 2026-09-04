@@ -235,10 +235,11 @@ describe('Border Import Licence report configs', () => {
     expect(cfg.filters.find((filter) => filter.name === 'SakhanId')?.lookupName).toBe(
       'sakhans'
     );
-    expect(cfg.currencyTotalsColumns).toEqual({
-      labelColumnKey: 'LicenceNo',
-      valueColumnKey: 'Amount',
-    });
+    // Dead config removed: this controller populates no footer at all (no CurrencyTotals /
+    // ColumnTotals call), so a currencyTotalsColumns placement pointed at nothing. The old
+    // VoucherReport.rdlc's only aggregate is its single TOTAL row (:1709 + :1828
+    // =FORMAT(SUM(Fields!Amount.Value),"N0")), which this report still owes.
+    expect(cfg.currencyTotalsColumns).toBeUndefined();
     expect(
       resolvedForAmend.find((column) => column.key === 'LicenceNo')?.title
     ).toBe('Amendment No');

@@ -64,7 +64,16 @@ public static class ExportLicenceListingCurrencyTotals
         return RunAsync(db, sql, parameters);
     }
 
-    /// <summary>Voucher report footer (<c>dbo.sp_ExportLicenceVoucherCurrencyTotals</c>).</summary>
+    /// <summary>
+    /// Voucher report footer (<c>dbo.sp_ExportLicenceVoucherCurrencyTotals</c>).
+    ///
+    /// UNUSED since the 2026-09-04 "Total Amount" parity fix, and kept only as the record of what is
+    /// deployed. It sums {Border,}ExportLicenceItem.Amount -- the goods value, in the licence's own currency -- which is the
+    /// proc's <c>TotalAmount</c> column, NOT the <c>Amount</c> column the legacy
+    /// BorderVoucherReport.rdlc:1521 / VoucherReport.rdlc:1828 totals (<c>=FORMAT(SUM(Fields!Amount.Value),"N0")</c> = the MMK
+    /// voucher fee). Presenting its result as "Total Amount" is what the customer reported.
+    /// Voucher footers now come from <see cref="sp_VoucherReport.ExecuteAmountTotalAsync"/>.
+    /// </summary>
     public static Task<ReportCurrencyTotalsSummary> ExecuteVoucherAsync(
         TradeNetDbContext db,
         string formType,

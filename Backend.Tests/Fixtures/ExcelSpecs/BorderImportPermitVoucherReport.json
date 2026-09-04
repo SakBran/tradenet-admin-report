@@ -68,14 +68,10 @@
       "title": "Commodity Type"
     },
     {
-      "key": "TotalAmount",
-      "dataIndex": "totalAmount",
+      "key": "Amount",
+      "dataIndex": "amount",
       "title": "Total Amount",
       "dataType": "number"
     }
-  ],
-  "currencyTotalsColumns": {
-    "labelColumnKey": "LicenceNo",
-    "valueColumnKey": "TotalAmount"
-  }
+  ]
 }

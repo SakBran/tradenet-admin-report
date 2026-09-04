@@ -18,6 +18,9 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // v2: the "Total Amount" column moved from the permit item (goods) value to the voucher
+    // Amount, and the legacy TOTAL footer row was added (BorderVoucherReport.rdlc:1399/1521).
+    [ExcelFormatVersion(2)]
     public class BorderImportPermitVoucherReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "BorderImportPermitVoucherReport";
@@ -62,6 +65,27 @@ namespace Backend.Controllers.Report
                 : ApiResult<sp_VoucherReportResult>.CreateFastPageFromRows(
                     data, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
+
+            // Legacy BorderVoucherReport.rdlc footer: ONE static row - TOTAL + =FORMAT(SUM(Fields!Amount.Value),"N0")
+            // (rdlc:1457/1521) = SUM(AccountTransaction.TotalAmount), the MMK voucher fee.
+            // This report previously had no footer at all, while the old report has always shown one.
+            //
+            // Gated on IncludeTotalCount so the fast first page is not blocked: CreateFastPageFromRows
+            // sets IsTotalCountExact = false, so the grid always follows up with an exact-count POST,
+            // and BasicTable picks the footer up from that response as lazyColumnTotals.
+            if (request.IncludeTotalCount && data.Count > 0)
+            {
+                var amountTotal = await sp_VoucherReport.ExecuteAmountTotalAsync(_context, procedureRequest!);
+                if (amountTotal.HasValue)
+                {
+                    result.ColumnTotals = new Dictionary<string, decimal>
+                    {
+                        // Rounded to 0 dp to reproduce the rdlc's "N0"; keyed by the grid column's
+                        // dataIndex ("amount"), which is what BasicTable matches on.
+                        ["amount"] = decimal.Round(amountTotal.Value, 0),
+                    };
+                }
+            }
 
             return Ok(result);
         }

@@ -1,3 +1,8 @@
+-- NOT CALLED BY ANY REPORT as of 2026-09-04: the Export Licence / Border Export Licence Voucher
+-- footers now use the legacy single grand total of the voucher Amount
+-- (sp_VoucherReport.ExecuteAmountTotalAsync -> ColumnTotals["amount"]), because neither
+-- BorderVoucherReport.rdlc nor VoucherReport.rdlc has a per-currency footer at all. Kept as the
+-- record of what is deployed; not dropped, so no hand-applied migration is owed.
 CREATE OR ALTER PROCEDURE [dbo].[sp_ExportLicenceVoucherCurrencyTotals]
     @FormType nvarchar(50) = N'',
     @FromDate datetime = NULL,
@@ -19,8 +24,12 @@ BEGIN
     -- mirror sp_VoucherReport (ExportLicenceRows / BorderExportLicenceRows) -- PaymentDate range,
     -- PaymentType / section / company catch-all CASE predicates, ApplyType + Approved, the Users
     -- approver join -- so the footer lines up with the rows shown. Currency + licence value come
-    -- from the licence items (TOP 1 item currency + SUM of item amounts), matching the grid's
-    -- Currency / Total Amount (TotalAmount) columns. Border licences span the Pa Tha Ka
+    -- from the licence items (TOP 1 item currency + SUM of item amounts) -- i.e. the GOODS VALUE,
+    -- the proc's TotalAmount column. That is NOT the "Total Amount" the legacy
+    -- BorderVoucherReport.rdlc:1399/1521 shows and totals: the rdlc binds Fields!Amount, which is
+    -- AccountTransaction.TotalAmount, the MMK voucher fee. Do not wire this proc under a
+    -- "Total Amount" heading -- doing so was the 2026-09 customer complaint (a CNY goods value
+    -- shown where the old system showed the kyat fee). Border licences span the Pa Tha Ka
     -- (company = PaThaKa.CompanyRegistrationNo) and Individual Trading (company =
     -- IndividualTrading.TINNo) card types, both UNION ALL'd. @SakhanId only applies to the Border
     -- branch. OPTION (RECOMPILE) dodges the param-sniffing timeout.
