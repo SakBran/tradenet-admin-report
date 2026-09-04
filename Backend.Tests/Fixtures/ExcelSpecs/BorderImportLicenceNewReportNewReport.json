@@ -51,7 +51,7 @@
     {
       "key": "Currency",
       "dataIndex": "currency",
-      "title": "Currency"
+      "title": "Curency"
     },
     {
       "key": "TotalValue",
@@ -64,5 +64,9 @@
       "dataIndex": "auto",
       "title": "auto"
     }
-  ]
+  ],
+  "currencyTotalsColumns": {
+    "labelColumnKey": "LicenceNo",
+    "valueColumnKey": "TotalValue"
+  }
 }

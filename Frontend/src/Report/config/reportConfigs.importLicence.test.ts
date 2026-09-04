@@ -16,4 +16,25 @@ describe('Import Licence report configs', () => {
       'Total USD Value',
     ]);
   });
+
+  it('Actual Amendment report keeps the legacy columns and licence mapping', () => {
+    const config = reportConfigs.ImportLicenceActualAmendmentReport;
+
+    expect(config.showRowNumber).toBe(true);
+    expect(config.columns.map((column) => column.title)).toEqual([
+      'Section',
+      'Licence No',
+      'Licence Amendment No',
+      'Amendment Date',
+      'Company Registration No',
+      'Company Name',
+      'Company Address',
+      'Curency',
+      'HSCode',
+      'Total Value',
+    ]);
+    expect(config.columns.find((column) => column.title === 'Licence No')?.dataIndex).toBe(
+      'oldLicenceNo',
+    );
+  });
 });

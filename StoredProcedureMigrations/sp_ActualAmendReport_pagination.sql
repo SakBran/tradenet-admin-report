@@ -526,7 +526,7 @@ BorderImportPermit.Id AS __k_Id
 		INNER JOIN ExportImportSection section ON ImportLicence.ExportImportSectionId = section.Id
 		WHERE ApplyType=''Actual Amend'' AND ImportLicence.Status=''Approved''
 		AND ((@FromDate IS NULL) OR ImportLicence.CreatedDate >= @FromDate)
-		AND ((@ToDate IS NULL) OR ImportLicence.CreatedDate < DATEADD(day, 1, @ToDate))
+		AND ((@ToDate IS NULL) OR ImportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
 		AND ImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND ImportLicence.AmendRemarkId=(CASE WHEN @AmendRemarkId=0 then ImportLicence.AmendRemarkId ELSE @AmendRemarkId END)
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END) OPTION (RECOMPILE); '
@@ -561,7 +561,7 @@ ImportLicence.Id AS __k_Id
 		INNER JOIN ExportImportSection section ON ImportLicence.ExportImportSectionId = section.Id
 		WHERE ApplyType=''Actual Amend'' AND ImportLicence.Status=''Approved''
 		AND ((@FromDate IS NULL) OR ImportLicence.CreatedDate >= @FromDate)
-		AND ((@ToDate IS NULL) OR ImportLicence.CreatedDate < DATEADD(day, 1, @ToDate))
+		AND ((@ToDate IS NULL) OR ImportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
 		AND ImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND ImportLicence.AmendRemarkId=(CASE WHEN @AmendRemarkId=0 then ImportLicence.AmendRemarkId ELSE @AmendRemarkId END)
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
