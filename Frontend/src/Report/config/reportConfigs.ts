@@ -4571,6 +4571,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderImportLicenceNewReportNewReport: {
     controllerName: 'BorderImportLicenceNewReportNewReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
     title: 'Border Import Licence New Report (New Report )',
     apiRoute: 'BorderImportLicenceNewReportNewReport',
     excelRoute: 'BorderImportLicenceNewReportNewReport/Excel',
@@ -4578,46 +4579,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     initialSortColumn: 'Date',
     showRowNumber: true,
     filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'Auto',
-        label: 'Auto',
-        type: 'text',
-        defaultValue: '',
-      },
+      importLicenceDateRangeFilter,
+      borderImportLicenceSakhanFilter,
+      borderImportLicenceSectionFilter,
+      importLicenceCompanyRegistrationNoFilter,
+      importLicenceCompanyNameFilter,
     ],
     columns: [
       {
@@ -4661,7 +4627,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'Currency',
         dataIndex: 'currency',
-        title: 'Currency',
+        title: 'Curency',
       },
       {
         key: 'TotalValue',
@@ -9102,12 +9068,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'Currency',
         dataIndex: 'currency',
-        title: 'Currency',
+        title: 'Curency',
       },
       {
         key: 'hsCode',
         dataIndex: 'hsCode',
-        title: 'hsCode',
+        title: 'HSCode',
       },
       {
         key: 'TotalValue',
@@ -9490,9 +9456,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelRoute: 'ImportLicenceDailyReportNewLicenceReport/Excel',
     excelFileName: 'ImportLicenceDailyReportNewLicenceReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
-    // The old ImportLicenceByDailyReport.rdlc printed every (Date, Currency)
-    // row on one page; a 10-row first page reads as missing data next to it.
-    defaultPageSize: 1000,
     showRowNumber: true,
     filters: importLicenceDailyFilters,
     reportSubtitle: importLicenceRangeSubtitle(

@@ -63,6 +63,14 @@ namespace Backend.Controllers.Report
                     data, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
 
+            if (data.Count > 0)
+            {
+                result.CurrencyTotals = await BorderImportLicenceListingCurrencyTotals.ExecuteAsync(
+                    _context, procedureRequest!.FromDate, procedureRequest.ToDate,
+                    procedureRequest.ExportImportSectionId, procedureRequest.CompanyRegistrationNo,
+                    procedureRequest.SakhanId);
+            }
+
             return Ok(result);
         }
 
@@ -140,11 +148,14 @@ namespace Backend.Controllers.Report
             {
                 FormType = "Border Import Licence",
                 FromDate = request.FromDate,
-                ToDate = request.ToDate,
+                // The pagination procedure adds one day to this calendar date.
+                ToDate = request.ToDate.Date,
                 ExportImportSectionId = request.ExportImportSectionId,
-                CompanyRegistrationNo = request.CompanyRegistrationNo,
+                CompanyRegistrationNo = request.CompanyRegistrationNo?.Trim() ?? string.Empty,
                 SakhanId = request.SakhanId,
-                Auto = request.Auto,
+                // The old report has no Auto search filter, so an incoming stale value
+                // must not silently remove otherwise matching licences.
+                Auto = string.Empty,
             };
 
             return true;
@@ -157,9 +168,9 @@ namespace Backend.Controllers.Report
         public DateTime FromDate { get; set; }
         public DateTime ToDate { get; set; }
         public int ExportImportSectionId { get; set; }
-        public string CompanyRegistrationNo { get; set; } = string.Empty;
+        public string? CompanyRegistrationNo { get; set; }
         public int SakhanId { get; set; }
-        public string Auto { get; set; } = string.Empty;
+        public string? Auto { get; set; }
     }
 }
 

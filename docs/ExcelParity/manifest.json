@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "head": "37cec21008fe9bc6bca656bf1abc1c7c57c35b61",
+    "head": "9f6e1fe2a33ef30bd544ef211863b430ee711670",
     "plan": "docs/ExcelParity/Contract.md"
   },
   "counts": {
@@ -14,7 +14,7 @@
       "F": 10
     },
     "hasColumnTotals": 39,
-    "hasCurrencyTotals": 41,
+    "hasCurrencyTotals": 42,
     "both": 1,
     "aliases": 4,
     "variants": 5,
@@ -1798,8 +1798,11 @@
       ],
       "dateShapeDisagrees": false,
       "hasColumnTotals": false,
-      "hasCurrencyTotals": false,
-      "currencyTotalsColumns": null,
+      "hasCurrencyTotals": true,
+      "currencyTotalsColumns": {
+        "labelColumnKey": "LicenceNo",
+        "valueColumnKey": "TotalValue"
+      },
       "variants": [],
       "columnCount": 9,
       "bespokePage": null,

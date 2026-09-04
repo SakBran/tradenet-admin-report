@@ -183,6 +183,32 @@ describe('Border Import Licence report configs', () => {
     }
   });
 
+  it('New Report matches old filters, headers, and footer totals', () => {
+    const cfg = reportConfigs.BorderImportLicenceNewReportNewReport;
+
+    expect(cfg.filters.map((filter) => filter.name)).toEqual([
+      'dateRange',
+      'SakhanId',
+      'ExportImportSectionId',
+      'CompanyRegistrationNo',
+      'CompanyName',
+    ]);
+    expect(
+      cfg.filters.find((filter) => filter.name === 'ExportImportSectionId')?.lookupName
+    ).toBe('borderImportLicenceSections');
+    expect(cfg.filters.find((filter) => filter.name === 'CompanyName')?.type).toBe(
+      'readonlyText'
+    );
+    expect(cfg.columns.find((column) => column.key === 'Currency')?.title).toBe(
+      'Curency'
+    );
+    expect(cfg.columns.find((column) => column.key === 'Auto')?.title).toBe('auto');
+    expect(cfg.currencyTotalsColumns).toEqual({
+      labelColumnKey: 'LicenceNo',
+      valueColumnKey: 'TotalValue',
+    });
+  });
+
   it('voucher keeps old-admin filter shape, Sakhan, and dynamic headers', () => {
     const cfg = reportConfigs.BorderImportLicenceVoucherReport;
     const resolvedForAmend =

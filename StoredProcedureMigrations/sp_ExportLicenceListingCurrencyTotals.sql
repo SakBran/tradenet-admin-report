@@ -52,7 +52,7 @@ BEGIN
                     INNER JOIN ExportImportSection section ON BorderExportLicence.ExportImportSectionId = section.Id
                     INNER JOIN Sakhan sakhan ON BorderExportLicence.SakhanId = sakhan.Id
                 WHERE BorderExportLicence.ApplyType = @ApplyType AND BorderExportLicence.Status = 'Approved' AND BorderExportLicence.CardType = 'Pa Tha Ka'
-                    AND (BorderExportLicence.CreatedDate >= @FromDate AND BorderExportLicence.CreatedDate <= @ToDate)
+                    AND (BorderExportLicence.CreatedDate >= @FromDate AND BorderExportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
                     AND BorderExportLicence.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN BorderExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
                     AND (CASE WHEN @AmendRemarkId = 0 THEN (CASE WHEN BorderExportLicence.AmendRemarkId IS NOT NULL THEN 1 ELSE 0 END) ELSE (CASE WHEN BorderExportLicence.AmendRemarkId = @AmendRemarkId THEN 1 ELSE 0 END) END) = 1
                     AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
@@ -70,7 +70,7 @@ BEGIN
                     INNER JOIN ExportImportSection section ON BorderExportLicence.ExportImportSectionId = section.Id
                     INNER JOIN Sakhan sakhan ON BorderExportLicence.SakhanId = sakhan.Id
                 WHERE BorderExportLicence.ApplyType = @ApplyType AND BorderExportLicence.Status = 'Approved' AND BorderExportLicence.CardType = 'Individual Trading'
-                    AND (BorderExportLicence.CreatedDate >= @FromDate AND BorderExportLicence.CreatedDate <= @ToDate)
+                    AND (BorderExportLicence.CreatedDate >= @FromDate AND BorderExportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
                     AND BorderExportLicence.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN BorderExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
                     AND (CASE WHEN @AmendRemarkId = 0 THEN (CASE WHEN BorderExportLicence.AmendRemarkId IS NOT NULL THEN 1 ELSE 0 END) ELSE (CASE WHEN BorderExportLicence.AmendRemarkId = @AmendRemarkId THEN 1 ELSE 0 END) END) = 1
                     AND IndividualTrading.TINNo = (CASE WHEN @CompanyRegistrationNo = '' THEN IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
@@ -177,7 +177,7 @@ BEGIN
                     INNER JOIN PaThaKa ON ExportLicence.PaThaKaId = PaThaKa.Id
                     INNER JOIN ExportImportSection section ON ExportLicence.ExportImportSectionId = section.Id
                 WHERE ExportLicence.ApplyType = @ApplyType AND ExportLicence.Status = 'Approved'
-                    AND (ExportLicence.CreatedDate >= @FromDate AND ExportLicence.CreatedDate <= @ToDate)
+                    AND (ExportLicence.CreatedDate >= @FromDate AND ExportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
                     AND ExportLicence.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN ExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
                     AND (CASE WHEN @AmendRemarkId = 0 THEN (CASE WHEN ExportLicence.AmendRemarkId IS NOT NULL THEN 1 ELSE 0 END) ELSE (CASE WHEN ExportLicence.AmendRemarkId = @AmendRemarkId THEN 1 ELSE 0 END) END) = 1
                     AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)

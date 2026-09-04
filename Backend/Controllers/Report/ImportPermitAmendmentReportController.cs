@@ -155,7 +155,9 @@ namespace Backend.Controllers.Report
             {
                 FormType = "Import Permit",
                 FromDate = request.FromDate,
-                ToDate = ReportDateWindow.InclusiveEndOfDay(request.ToDate),
+                // The pagination procedure treats ToDate as a calendar date and adds one day.
+                // Strip the UI's end-of-day time so the next calendar day is not included.
+                ToDate = request.ToDate.Date,
                 ExportImportSectionId = request.ExportImportSectionId,
                 AmendRemarkId = request.AmendRemarkId,
                 CompanyRegistrationNo = request.CompanyRegistrationNo,

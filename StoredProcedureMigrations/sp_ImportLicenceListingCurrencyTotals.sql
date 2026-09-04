@@ -65,7 +65,7 @@ BEGIN
                     INNER JOIN ExportImportSection section ON BorderImportLicence.ExportImportSectionId = section.Id
                     INNER JOIN Sakhan sakhan ON BorderImportLicence.SakhanId = sakhan.Id
                 WHERE BorderImportLicence.ApplyType = @DbApplyType AND BorderImportLicence.Status = 'Approved' AND BorderImportLicence.CardType = 'Pa Tha Ka'
-                    AND (BorderImportLicence.CreatedDate >= @FromDate AND BorderImportLicence.CreatedDate <= @ToDate)
+                    AND (BorderImportLicence.CreatedDate >= @FromDate AND BorderImportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
                     AND BorderImportLicence.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
                     AND BorderImportLicence.AmendRemarkId = (CASE WHEN @AmendRemarkId = 0 THEN BorderImportLicence.AmendRemarkId ELSE @AmendRemarkId END)
                     AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
@@ -82,7 +82,7 @@ BEGIN
                     INNER JOIN ExportImportSection section ON BorderImportLicence.ExportImportSectionId = section.Id
                     INNER JOIN Sakhan sakhan ON BorderImportLicence.SakhanId = sakhan.Id
                 WHERE BorderImportLicence.ApplyType = @DbApplyType AND BorderImportLicence.Status = 'Approved' AND BorderImportLicence.CardType = 'Individual Trading'
-                    AND (BorderImportLicence.CreatedDate >= @FromDate AND BorderImportLicence.CreatedDate <= @ToDate)
+                    AND (BorderImportLicence.CreatedDate >= @FromDate AND BorderImportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
                     AND BorderImportLicence.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
                     AND BorderImportLicence.AmendRemarkId = (CASE WHEN @AmendRemarkId = 0 THEN BorderImportLicence.AmendRemarkId ELSE @AmendRemarkId END)
                     AND IndividualTrading.TINNo = (CASE WHEN @CompanyRegistrationNo = '' THEN IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
@@ -113,7 +113,7 @@ BEGIN
                 INNER JOIN PaThaKa ON ImportLicence.PaThaKaId = PaThaKa.Id
                 INNER JOIN ExportImportSection section ON ImportLicence.ExportImportSectionId = section.Id
             WHERE ApplyType = 'Amend' AND ImportLicence.Status = 'Approved'
-                AND (ImportLicence.CreatedDate >= @FromDate AND ImportLicence.CreatedDate <= @ToDate)
+                AND (ImportLicence.CreatedDate >= @FromDate AND ImportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
                 AND ImportLicence.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN ImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
                 AND ImportLicence.AmendRemarkId = (CASE WHEN @AmendRemarkId = 0 THEN ImportLicence.AmendRemarkId ELSE @AmendRemarkId END)
@@ -160,7 +160,7 @@ BEGIN
                 INNER JOIN PaThaKa ON ImportLicence.PaThaKaId = PaThaKa.Id
                 INNER JOIN ExportImportSection section ON ImportLicence.ExportImportSectionId = section.Id
             WHERE ApplyType = 'Actual Amend' AND ImportLicence.Status = 'Approved'
-                AND (ImportLicence.CreatedDate >= @FromDate AND ImportLicence.CreatedDate <= @ToDate)
+                AND (ImportLicence.CreatedDate >= @FromDate AND ImportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
                 AND ImportLicence.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN ImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
                 AND ImportLicence.AmendRemarkId = (CASE WHEN @AmendRemarkId = 0 THEN ImportLicence.AmendRemarkId ELSE @AmendRemarkId END)

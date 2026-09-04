@@ -1,6 +1,5 @@
 using System.Reflection;
 using API.Service.ExcelExport;
-using API.StoredProcedureToLinq;
 
 namespace Backend.Tests;
 
@@ -8,10 +7,12 @@ namespace Backend.Tests;
 /// Locks the Amend / Actual Amendment listing reports to the old Tradenet 2.0 date window.
 ///
 /// The old admin app called dbo.sp_AmendReport / dbo.sp_ActualAmendReport with
-/// @ToDate = "&lt;day&gt; 23:59:59" against procedures filtering CreatedDate &lt;= @ToDate.
-/// Commit e88c13e replaced that with "&lt; DATEADD(day, 1, @ToDate)", which — given the same
-/// 23:59:59 argument — admitted the whole NEXT day, so the new reports listed more rows than
-/// the old ones (customer complaint, 2026-09).
+/// @ToDate = "&lt;day&gt; 23:59:59". Commit e88c13e switched the procedures to
+/// "&lt; DATEADD(day, 1, @ToDate)", which — given that 23:59:59 argument — admitted the whole
+/// NEXT day, so the new reports listed more rows than the old ones (customer complaint, 2026-09).
+/// The window is now the selected calendar day on both sides: controllers pass
+/// request.ToDate.Date and every branch they reach filters
+/// "&lt; DATEADD(day, 1, CONVERT(date, @ToDate))".
 /// </summary>
 public sealed class AmendDateWindowContractTests
 {
@@ -28,22 +29,42 @@ public sealed class AmendDateWindowContractTests
     {
         var sql = ReadMigration(fileName);
 
-        Assert.DoesNotContain("CreatedDate < DATEADD", sql);
+        // The bare form (no CONVERT) is the bug: it adds a whole day to a 23:59:59 @ToDate.
+        Assert.DoesNotContain("CreatedDate < DATEADD(day, 1, @ToDate)", sql);
+        Assert.DoesNotContain("CreatedDate <= @ToDate)", sql);
         // 8 FormType branches, each with a COUNT part and a page part; the Border Licence
         // branches have two halves (Pa Tha Ka + Individual Trading) in both parts.
-        Assert.Equal(20, CountOccurrences(sql, "CreatedDate <= @ToDate)"));
+        // Table-qualified so the explanatory header comment is not counted.
+        Assert.Equal(20, CountOccurrences(sql, ".CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate))"));
     }
 
-    [Fact]
-    public void Footer_procedures_match_the_corrected_grid_window()
-    {
-        Assert.DoesNotContain("CreatedDate < DATEADD", ReadMigration("sp_ImportLicenceListingCurrencyTotals.sql"));
-        Assert.DoesNotContain("CreatedDate < DATEADD", ReadMigration("sp_ImportPermitListingCurrencyTotals.sql"));
-        Assert.DoesNotContain("CreatedDate < DATEADD", ReadMigration("sp_ExportLicenceListingCurrencyTotals.sql"));
+    [Theory]
+    // Every branch an Amend / Actual Amendment controller reaches must use the calendar-date form,
+    // because those controllers now send ToDate as a date: '<= @ToDate' would match only midnight.
+    [InlineData("sp_ExportLicenceListingCurrencyTotals.sql", 3)]
+    [InlineData("sp_ExportPermitListingCurrencyTotals.sql", 3)]
+    [InlineData("sp_ImportLicenceListingCurrencyTotals.sql", 4)]
+    [InlineData("sp_ImportPermitListingCurrencyTotals.sql", 3)]
+    public void Footer_branches_for_amend_reports_use_the_calendar_date_window(string fileName, int expected)
+        => Assert.Equal(expected, CountOccurrences(ReadMigration(fileName), "CONVERT(date, @ToDate)"));
 
-        // The Border Export Permit NEW sub-branch intentionally still uses DATEADD until its grid
-        // (sp_NewReport_pagination) is fixed in the same pass; the other two sub-branches are fixed.
-        Assert.Equal(1, CountOccurrences(ReadMigration("sp_ExportPermitListingCurrencyTotals.sql"), "CreatedDate < DATEADD"));
+    [Fact]
+    public void Only_the_border_export_permit_new_footer_still_carries_the_bare_dateadd_form()
+    {
+        // Its grid (sp_NewReport_pagination, Border Export Permit branch) still uses the bare form;
+        // the two must be flipped together, so the footer keeps mirroring its own grid until then.
+        foreach (var fileName in new[]
+                 {
+                     "sp_ExportLicenceListingCurrencyTotals.sql",
+                     "sp_ImportLicenceListingCurrencyTotals.sql",
+                     "sp_ImportPermitListingCurrencyTotals.sql",
+                 })
+        {
+            Assert.DoesNotContain("CreatedDate < DATEADD(day, 1, @ToDate)", ReadMigration(fileName));
+        }
+
+        Assert.Equal(1, CountOccurrences(
+            ReadMigration("sp_ExportPermitListingCurrencyTotals.sql"), "CreatedDate < DATEADD(day, 1, @ToDate)"));
     }
 
     [Fact]
@@ -89,7 +110,7 @@ public sealed class AmendDateWindowContractTests
                 var source = File.ReadAllText(Path.Combine(
                     RepositoryRoot, "Backend", "Controllers", "Report", name + ".cs"));
 
-                Assert.Contains("ToDate = ReportDateWindow.InclusiveEndOfDay(request.ToDate)", source);
+                Assert.Contains("ToDate = request.ToDate.Date,", source);
                 Assert.DoesNotContain("ToDate = request.ToDate,", source);
 
                 var type = typeof(API.DBContext.TradeNetDbContext).Assembly
@@ -100,19 +121,6 @@ public sealed class AmendDateWindowContractTests
             }
         }
     }
-
-    [Theory]
-    // A date-only ToDate becomes the whole day, exactly as the old app sent it.
-    [InlineData("2026-09-01T00:00:00", "2026-09-01T23:59:59")]
-    // Anything already carrying a time (what the UI sends) is left alone.
-    [InlineData("2026-09-01T23:59:59", "2026-09-01T23:59:59")]
-    [InlineData("2026-09-01T12:30:00", "2026-09-01T12:30:00")]
-    public void Inclusive_end_of_day_matches_the_old_admin_apps_to_date(string input, string expected)
-        => Assert.Equal(DateTime.Parse(expected), ReportDateWindow.InclusiveEndOfDay(DateTime.Parse(input)));
-
-    [Fact]
-    public void Inclusive_end_of_day_leaves_the_maximum_date_alone()
-        => Assert.Equal(DateTime.MaxValue, ReportDateWindow.InclusiveEndOfDay(DateTime.MaxValue));
 
     private static string ReadMigration(string fileName)
         => File.ReadAllText(Path.Combine(RepositoryRoot, "StoredProcedureMigrations", fileName));

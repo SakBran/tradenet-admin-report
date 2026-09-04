@@ -56,12 +56,12 @@
     {
       "key": "Currency",
       "dataIndex": "currency",
-      "title": "Currency"
+      "title": "Curency"
     },
     {
       "key": "hsCode",
       "dataIndex": "hsCode",
-      "title": "hsCode"
+      "title": "HSCode"
     },
     {
       "key": "TotalValue",
