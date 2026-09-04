@@ -87,9 +87,5 @@
       "title": "Total Amount",
       "dataType": "number"
     }
-  ],
-  "currencyTotalsColumns": {
-    "labelColumnKey": "LicenceNo",
-    "valueColumnKey": "Amount"
-  }
+  ]
 }

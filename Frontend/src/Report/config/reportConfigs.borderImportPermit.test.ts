@@ -111,12 +111,18 @@ describe('Border Import Permit report configs', () => {
     expect(cfg.filters.find((filter) => filter.name === 'SakhanId')?.lookupName).toBe(
       'sakhans'
     );
-    // The money column on this report is keyed 'TotalAmount' (reportConfigs.ts:6273);
-    // 'Amount' matched no column, so the grid rendered no per-currency value cell.
-    expect(cfg.currencyTotalsColumns).toEqual({
-      labelColumnKey: 'LicenceNo',
-      valueColumnKey: 'TotalAmount',
+    // "Total Amount" is the voucher fee (AccountTransaction.TotalAmount), which the old
+    // BorderVoucherReport.rdlc:1399 binds as Fields!Amount -- NOT the permit item/goods value
+    // the proc also returns as TotalAmount.
+    expect(cfg.columns.at(-1)).toEqual({
+      key: 'Amount',
+      dataIndex: 'amount',
+      title: 'Total Amount',
+      dataType: 'number',
     });
+    // No per-currency footer: the old rdlc's only aggregate is the single TOTAL row
+    // (rdlc:1457 + :1521 =FORMAT(SUM(Fields!Amount.Value),"N0")), served as ColumnTotals.
+    expect(cfg.currencyTotalsColumns).toBeUndefined();
   });
 
   it('HS Code report restores the old Import Section filter and drilldown carries it through', () => {

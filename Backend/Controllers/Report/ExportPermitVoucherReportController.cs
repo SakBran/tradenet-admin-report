@@ -18,6 +18,9 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // v2: the footer moved from the per-currency permit item (goods) value to the legacy single
+    // TOTAL of the voucher Amount (VoucherReport.rdlc:1828).
+    [ExcelFormatVersion(2)]
     public class ExportPermitVoucherReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ExportPermitVoucherReport";
@@ -66,12 +69,27 @@ namespace Backend.Controllers.Report
                     data, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
 
-            if (data.Count > 0)
+            // Legacy VoucherReport.rdlc footer: ONE static row - TOTAL + =FORMAT(SUM(Fields!Amount.Value),"N0")
+            // (rdlc:1709/1828) = SUM(AccountTransaction.TotalAmount), the MMK voucher fee.
+            // NOT sp_ExportPermitVoucherCurrencyTotals, which sums ExportPermitItem.Amount (the goods
+            // value, in the permit's own currency) - that printed a goods-value total under the fee
+            // column. Lic Value stays a plain column: the old rdlc never totals it.
+            //
+            // Gated on IncludeTotalCount so the fast first page is not blocked: CreateFastPageFromRows
+            // sets IsTotalCountExact = false, so the grid always follows up with an exact-count POST,
+            // and BasicTable picks the footer up from that response as lazyColumnTotals.
+            if (request.IncludeTotalCount && data.Count > 0)
             {
-                result.CurrencyTotals = await ExportPermitListingCurrencyTotals.ExecuteVoucherAsync(
-                    _context, procedureRequest!.FormType, procedureRequest.FromDate, procedureRequest.ToDate,
-                    procedureRequest.ExportImportSectionId, procedureRequest.PaymentType,
-                    procedureRequest.ApplyType, procedureRequest.CompanyRegistrationNo, procedureRequest.SakhanId);
+                var amountTotal = await sp_VoucherReport.ExecuteAmountTotalAsync(_context, procedureRequest!);
+                if (amountTotal.HasValue)
+                {
+                    result.ColumnTotals = new Dictionary<string, decimal>
+                    {
+                        // Rounded to 0 dp to reproduce the rdlc's "N0"; keyed by the grid column's
+                        // dataIndex ("amount"), which is what BasicTable matches on.
+                        ["amount"] = decimal.Round(amountTotal.Value, 0),
+                    };
+                }
             }
 
             return Ok(result);

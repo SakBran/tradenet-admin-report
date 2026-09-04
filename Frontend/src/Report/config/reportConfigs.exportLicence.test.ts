@@ -353,10 +353,11 @@ describe('Export Licence report configs', () => {
       cfg.columns.some((column) => column.key === 'CommodityType'),
       'voucher should keep Commodity Type per PM feedback'
     ).toBe(true);
-    expect(cfg.currencyTotalsColumns).toEqual({
-      labelColumnKey: 'LicenceNo',
-      valueColumnKey: 'Amount',
-    });
+    // Dead config removed: this controller populates no footer at all (no CurrencyTotals /
+    // ColumnTotals call), so a currencyTotalsColumns placement pointed at nothing. The old
+    // VoucherReport.rdlc's only aggregate is its single TOTAL row (:1709 + :1828
+    // =FORMAT(SUM(Fields!Amount.Value),"N0")), which this report still owes.
+    expect(cfg.currencyTotalsColumns).toBeUndefined();
   });
 
   it('new report keeps PM-requested auto filter and visible business columns', () => {

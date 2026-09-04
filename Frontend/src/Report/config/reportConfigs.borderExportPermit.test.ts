@@ -127,9 +127,16 @@ describe('Border Export Permit report configs', () => {
     expect(cfg.filters.find((filter) => filter.name === 'SakhanId')?.lookupName).toBe(
       'sakhans'
     );
-    expect(cfg.currencyTotalsColumns).toEqual({
-      labelColumnKey: 'LicenceNo',
-      valueColumnKey: 'Amount',
+    // No per-currency footer: sp_ExportPermitVoucherCurrencyTotals sums
+    // BorderExportPermitItem.Amount (the goods value), which printed a foreign-currency total
+    // under the fee column. The old rdlc's only aggregate is the single TOTAL row
+    // (BorderVoucherReport.rdlc:1457 + :1521), now served as ColumnTotals["amount"].
+    expect(cfg.currencyTotalsColumns).toBeUndefined();
+    expect(cfg.columns.at(-1)).toEqual({
+      key: 'Amount',
+      dataIndex: 'amount',
+      title: 'Total Amount',
+      dataType: 'number',
     });
     expect(
       resolvedForAmend.find((column) => column.key === 'LicenceNo')?.title

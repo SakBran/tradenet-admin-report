@@ -1,3 +1,10 @@
+-- NOT CALLED BY ANY REPORT as of 2026-09-04: the Export Permit / Border Export Permit Voucher
+-- footers now use the legacy single grand total of the voucher Amount
+-- (sp_VoucherReport.ExecuteAmountTotalAsync -> ColumnTotals["amount"]). The value this proc sums
+-- is {Border,}ExportPermitItem.Amount -- the GOODS VALUE in the permit's own currency -- which was
+-- being rendered under the "Total Amount" heading the old rdlc feeds from AccountTransaction
+-- .TotalAmount (the MMK fee, VoucherReport.rdlc:1828 / BorderVoucherReport.rdlc:1521). Kept as the
+-- record of what is deployed; not dropped, so no hand-applied migration is owed.
 CREATE OR ALTER PROCEDURE [dbo].[sp_ExportPermitVoucherCurrencyTotals]
     @FormType nvarchar(50) = N'',
     @FromDate datetime = NULL,

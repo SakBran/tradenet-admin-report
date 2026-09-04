@@ -646,11 +646,19 @@ const resolveImportLicenceVoucherColumns = (
     importLicenceVoucherHeaders[String(filters.ApplyType ?? 'New')] ??
     importLicenceVoucherHeaders.New;
 
+  // Old rdlc hides the header2 (Licence No) column for ApplyType="New":
+  // BorderVoucherReport.rdlc:1578 and VoucherReport.rdlc:1883 both carry exactly one
+  // <Hidden>=IIF(Fields!ApplyType.Value="New",True,False)</Hidden>, on that column only.
+  // Without this, ApplyType='New' renders two adjacent "Licence No" columns with identical
+  // values, because OriginalLicenceNo falls back to licenceNo when oldLicenceNo is empty.
+  const hideLicenceNo = String(filters.ApplyType ?? 'New') === 'New';
+
   return columns.map((column) => {
     if (column.key === 'LicenceNo') {
-      return { ...column, title: licenceNoTitle };
+      return { ...column, title: licenceNoTitle, hidden: hideLicenceNo };
     }
 
+    // The header3 (Licence Date) column stays visible for every ApplyType.
     if (column.key === 'LicenceDate') {
       return { ...column, title: licenceDateTitle };
     }
@@ -2111,7 +2119,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderExportLicenceVoucherReport: {
     controllerName: 'BorderExportLicenceVoucherReport',
-    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalAmount' },
     resolveColumns: resolveImportLicenceVoucherColumns,
     title: 'Border Export Licence Voucher Report',
     apiRoute: 'BorderExportLicenceVoucherReport',
@@ -2246,8 +2253,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Commodity Type',
       },
       {
-        key: 'TotalAmount',
-        dataIndex: 'totalAmount',
+        // Old BorderVoucherReport.rdlc col 11 "Total Amount" = FORMAT(Fields!Amount.Value,"N0")
+        // (rdlc:1399) -> AccountTransaction.TotalAmount, the MMK voucher fee. NOT the goods
+        // value, which the proc also returns as TotalAmount and the old rdlc never renders.
+        key: 'Amount',
+        dataIndex: 'amount',
         title: 'Total Amount',
         dataType: 'number',
       },
@@ -3477,7 +3487,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderExportPermitVoucherReport: {
     controllerName: 'BorderExportPermitVoucherReport',
-    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'Amount' },
     reportSubtitle: importLicenceRangeSubtitle('Border Export Permit Voucher List'),
     resolveColumns: resolveImportLicenceVoucherColumns,
     title: 'Border Export Permit Voucher Report',
@@ -4766,7 +4775,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderImportLicenceVoucherReport: {
     controllerName: 'BorderImportLicenceVoucherReport',
-    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'Amount' },
     title: 'Border Import Licence Voucher Report',
     apiRoute: 'BorderImportLicenceVoucherReport',
     excelRoute: 'BorderImportLicenceVoucherReport/Excel',
@@ -6103,9 +6111,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderImportPermitVoucherReport: {
     controllerName: 'BorderImportPermitVoucherReport',
-    // 'TotalAmount' is this report's money column ('Amount' matches nothing here, so the
-    // grid rendered no per-currency value cell at all).
-    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalAmount' },
     reportSubtitle: importLicenceRangeSubtitle('Border Import Permit Voucher List'),
     title: 'Border Import Permit Voucher Report',
     apiRoute: 'BorderImportPermitVoucherReport',
@@ -6234,8 +6239,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Commodity Type',
       },
       {
-        key: 'TotalAmount',
-        dataIndex: 'totalAmount',
+        // Old BorderVoucherReport.rdlc col 11 "Total Amount" = FORMAT(Fields!Amount.Value,"N0")
+        // (rdlc:1399) -> AccountTransaction.TotalAmount, the MMK voucher fee. NOT the goods
+        // value, which the proc also returns as TotalAmount and the old rdlc never renders.
+        key: 'Amount',
+        dataIndex: 'amount',
         title: 'Total Amount',
         dataType: 'number',
       },
@@ -7731,7 +7739,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ExportLicenceVoucherReport: {
     controllerName: 'ExportLicenceVoucherReport',
-    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'Amount' },
     resolveColumns: resolveImportLicenceVoucherColumns,
     title: 'Export Licence Voucher Report',
     apiRoute: 'ExportLicenceVoucherReport',
@@ -8886,7 +8893,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ExportPermitVoucherReport: {
     controllerName: 'ExportPermitVoucherReport',
-    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'Amount' },
     reportSubtitle: importLicenceRangeSubtitle('Export Permit Voucher List'),
     title: 'Export Permit Voucher Report',
     apiRoute: 'ExportPermitVoucherReport',
@@ -10140,7 +10146,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   ImportLicenceVoucherReport: {
     controllerName: 'ImportLicenceVoucherReport',
     reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
-    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'LicValue' },
+    // labelColumnKey is OriginalLicenceNo, not LicenceNo: the shared resolver hides the
+    // LicenceNo (header2) column for ApplyType='New' the way VoucherReport.rdlc:1883 does,
+    // so LicenceNo is not always present in the rendered/exported column set.
+    currencyTotalsColumns: { labelColumnKey: 'OriginalLicenceNo', valueColumnKey: 'LicValue' },
     title: 'Import Licence Voucher Report',
     apiRoute: 'ImportLicenceVoucherReport',
     excelRoute: 'ImportLicenceVoucherReport/Excel',

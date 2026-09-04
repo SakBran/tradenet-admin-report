@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "head": "9f6e1fe2a33ef30bd544ef211863b430ee711670",
+    "head": "8e9db035224518f98e76ccb3ec010c2eeac3db7d",
     "plan": "docs/ExcelParity/Contract.md"
   },
   "counts": {
@@ -13,8 +13,8 @@
       "E": 1,
       "F": 10
     },
-    "hasColumnTotals": 39,
-    "hasCurrencyTotals": 42,
+    "hasColumnTotals": 43,
+    "hasCurrencyTotals": 39,
     "both": 1,
     "aliases": 4,
     "variants": 5,
@@ -707,12 +707,9 @@
         "ToDate"
       ],
       "dateShapeDisagrees": false,
-      "hasColumnTotals": false,
-      "hasCurrencyTotals": true,
-      "currencyTotalsColumns": {
-        "labelColumnKey": "LicenceNo",
-        "valueColumnKey": "TotalAmount"
-      },
+      "hasColumnTotals": true,
+      "hasCurrencyTotals": false,
+      "currencyTotalsColumns": null,
       "variants": [
         {
           "applyType": "Amend",
@@ -787,7 +784,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderExportLicenceVoucherReport.json",
         "Backend.Tests/Fixtures/ExcelSpecs/BorderExportLicenceVoucherReport.ApplyType-Amend.json",
@@ -1237,12 +1234,9 @@
         "ToDate"
       ],
       "dateShapeDisagrees": false,
-      "hasColumnTotals": false,
-      "hasCurrencyTotals": true,
-      "currencyTotalsColumns": {
-        "labelColumnKey": "LicenceNo",
-        "valueColumnKey": "Amount"
-      },
+      "hasColumnTotals": true,
+      "hasCurrencyTotals": false,
+      "currencyTotalsColumns": null,
       "variants": [
         {
           "applyType": "Amend",
@@ -1317,7 +1311,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderExportPermitVoucherReport.json",
         "Backend.Tests/Fixtures/ExcelSpecs/BorderExportPermitVoucherReport.ApplyType-Amend.json",
@@ -1910,10 +1904,7 @@
       "dateShapeDisagrees": false,
       "hasColumnTotals": false,
       "hasCurrencyTotals": false,
-      "currencyTotalsColumns": {
-        "labelColumnKey": "LicenceNo",
-        "valueColumnKey": "Amount"
-      },
+      "currencyTotalsColumns": null,
       "variants": [
         {
           "applyType": "Amend",
@@ -2008,7 +1999,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderImportLicenceVoucherReport.json",
         "Backend.Tests/Fixtures/ExcelSpecs/BorderImportLicenceVoucherReport.ApplyType-Amend.json",
@@ -2455,18 +2446,15 @@
         "ToDate"
       ],
       "dateShapeDisagrees": false,
-      "hasColumnTotals": false,
+      "hasColumnTotals": true,
       "hasCurrencyTotals": false,
-      "currencyTotalsColumns": {
-        "labelColumnKey": "LicenceNo",
-        "valueColumnKey": "TotalAmount"
-      },
+      "currencyTotalsColumns": null,
       "variants": [],
       "columnCount": 12,
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderImportPermitVoucherReport.json"
       ]
@@ -3609,10 +3597,7 @@
       "dateShapeDisagrees": false,
       "hasColumnTotals": false,
       "hasCurrencyTotals": false,
-      "currencyTotalsColumns": {
-        "labelColumnKey": "LicenceNo",
-        "valueColumnKey": "Amount"
-      },
+      "currencyTotalsColumns": null,
       "variants": [
         {
           "applyType": "Amend",
@@ -3695,7 +3680,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ExportLicenceVoucherReport.json",
         "Backend.Tests/Fixtures/ExcelSpecs/ExportLicenceVoucherReport.ApplyType-Amend.json",
@@ -4138,18 +4123,15 @@
         "ToDate"
       ],
       "dateShapeDisagrees": false,
-      "hasColumnTotals": false,
-      "hasCurrencyTotals": true,
-      "currencyTotalsColumns": {
-        "labelColumnKey": "LicenceNo",
-        "valueColumnKey": "Amount"
-      },
+      "hasColumnTotals": true,
+      "hasCurrencyTotals": false,
+      "currencyTotalsColumns": null,
       "variants": [],
       "columnCount": 11,
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ExportPermitVoucherReport.json"
       ]
@@ -4777,7 +4759,7 @@
       "hasColumnTotals": true,
       "hasCurrencyTotals": true,
       "currencyTotalsColumns": {
-        "labelColumnKey": "LicenceNo",
+        "labelColumnKey": "OriginalLicenceNo",
         "valueColumnKey": "LicValue"
       },
       "variants": [
@@ -4870,7 +4852,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ImportLicenceVoucherReport.json",
         "Backend.Tests/Fixtures/ExcelSpecs/ImportLicenceVoucherReport.ApplyType-Amend.json",
