@@ -35,9 +35,14 @@ foreach ($f in $sqlFiles) { Write-Host "Applying: $f"; sqlcmd -S $sqlServer -d $
 
 ## What changed
 
-* Both listing grids now filter `CreatedDate <= @ToDate`, exactly like the original
-  `dbo.sp_ActualAmendReport` / `dbo.sp_AmendReport`. Callers pass `@ToDate` as `<day> 23:59:59`, so
-  the previous `< DATEADD(day, 1, @ToDate)` admitted the whole following day.
+* Both listing grids now filter `CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate))` in ALL eight
+  FormType branches, i.e. exactly the selected calendar day. The previous
+  `< DATEADD(day, 1, @ToDate)` admitted the whole FOLLOWING day because callers pass `@ToDate` with a
+  time. The controllers pass `request.ToDate.Date` to match (the convention introduced by PR #23 for
+  the Import Licence branches, extended here to every branch).
+* Every footer branch reached by an Amend / Actual Amendment report uses the same calendar-date form.
+  The New / Cancel branches keep `<= @ToDate` because their controllers still send 23:59:59 and those
+  branches mirror their own grids.
 * The Import Licence / Import Permit footer procedures gained trailing `@FormType` and `@SakhanId`
   parameters and Border branches, so Border Import Licence / Border Import Permit reports get the
   per-currency footer. Existing short-argument callers are unaffected.
@@ -77,6 +82,8 @@ EXEC dbo.sp_ImportLicenceListingCurrencyTotals N'ActualAmend', @f, @t, 0, N'', 0
 PROD, the customer's own window (the ORIGINAL procedure is the oracle — the new one must equal it):
 
 ```sql
+-- @t is the ORIGINAL procedure's inclusive end-of-day; the new procedures take a calendar date
+-- and are equivalent for either value.
 DECLARE @f datetime = '2026-08-01 00:00:00', @t datetime = '2026-09-01 23:59:59';
 EXEC dbo.sp_ActualAmendReport            N'Border Export Licence', @f, @t, 0, 0, N'', 5;                       -- expect 10 rows
 EXEC dbo.sp_ActualAmendReport_pagination N'Border Export Licence', @f, @t, 0, 0, N'', 5, NULL, NULL, 0, 0, 1;  -- expect 10 rows

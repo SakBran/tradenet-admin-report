@@ -2263,12 +2263,14 @@ PM-feedback follow-up on 2026-06-25:
 > system (customer complaint: Border Export Licence Actual Amendment, 1-Aug..1-Sep-2026, Sakhan MWD,
 > new 11 rows vs old 10, with a footer of 10).
 >
-> The rule is now `CreatedDate <= @ToDate` — byte-identical to the original `dbo.sp_AmendReport` /
-> `dbo.sp_ActualAmendReport` — plus `ReportDateWindow.InclusiveEndOfDay` in the controllers, which
-> promotes a date-only `ToDate` to `23:59:59` so date-only API callers still get the whole day.
-> Applied to `sp_ActualAmendReport_pagination`, `sp_AmendReport_pagination`,
-> `sp_ImportLicenceListingCurrencyTotals`, `sp_ImportPermitListingCurrencyTotals` and the
-> Amend / Actual Amend + Cancel sub-branches of `sp_ExportPermitListingCurrencyTotals`.
+> The rule is now `CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate))` — the selected calendar day
+> — with the controllers passing `request.ToDate.Date`. `CONVERT(date, ...)` is what makes it safe:
+> without it the same expression adds a day whenever `@ToDate` carries a time. Applied to all eight
+> FormType branches of `sp_ActualAmendReport_pagination` and `sp_AmendReport_pagination`, and to every
+> footer branch an Amend / Actual Amendment report reaches in
+> `sp_ExportLicenceListingCurrencyTotals`, `sp_ExportPermitListingCurrencyTotals`,
+> `sp_ImportLicenceListingCurrencyTotals` and `sp_ImportPermitListingCurrencyTotals`. New / Cancel
+> branches keep `<= @ToDate`: their controllers still send 23:59:59 and they mirror their own grids.
 >
 > Still carrying the raw `DATEADD(day, 1, @ToDate)` form (same latent extra-day bug, follow-up):
 > `sp_NewReport_pagination` (Border Import Licence / Border Export Permit / Border Import Permit
