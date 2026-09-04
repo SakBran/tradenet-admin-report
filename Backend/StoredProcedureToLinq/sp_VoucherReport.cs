@@ -201,6 +201,18 @@ public static class sp_VoucherReport
         }
     }
 
+    private static string SanitizeForLog(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        return value
+            .Replace("\r", string.Empty)
+            .Replace("\n", string.Empty);
+    }
+
     private static void LogAmountTotalFailure(
         TradeNetDbContext db,
         sp_VoucherReportRequest request,
@@ -214,8 +226,8 @@ public static class sp_VoucherReport
                     ex,
                     "Voucher report Amount grand total failed for FormType={FormType} ApplyType={ApplyType} "
                     + "{FromDate:yyyy-MM-dd}..{ToDate:yyyy-MM-dd}; the report will render without its TOTAL row.",
-                    request.FormType,
-                    request.ApplyType,
+                    SanitizeForLog(request.FormType),
+                    SanitizeForLog(request.ApplyType),
                     request.FromDate,
                     request.ToDate);
         }
