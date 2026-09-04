@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TradeNet Admin Report — How to Deploy Manually</title>
+<style>
+  :root{
+    --blue:#1d6fb8; --blue-dark:#114a7c; --green:#1b9e57; --amber:#e08e0b;
+    --red:#d6453d; --ink:#222; --grey:#5a6470; --line:#e2e6ea; --bg:#f5f7fa;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink); background:var(--bg); line-height:1.6; font-size:16px;
+  }
+  .wrap{max-width:920px; margin:0 auto; padding:0 20px 80px;}
+  header.hero{
+    background:linear-gradient(135deg,var(--blue),var(--blue-dark));
+    color:#fff; padding:38px 20px 30px; text-align:center;
+  }
+  header.hero h1{margin:0 0 6px; font-size:30px;}
+  header.hero p{margin:0; opacity:.92; font-size:16px;}
+  h2{font-size:23px; margin:46px 0 8px; padding-bottom:8px; border-bottom:3px solid var(--line);}
+  h3{font-size:18px; margin:26px 0 8px;}
+  p{margin:10px 0;}
+  code{background:#eef1f4; padding:2px 6px; border-radius:5px; font-family:"SF Mono",Consolas,Menlo,monospace; font-size:14px;}
+  a{color:var(--blue);}
+
+  .step{margin:24px 0; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden;
+        box-shadow:0 1px 3px rgba(0,0,0,.05);}
+  .step .head{display:flex; align-items:center; gap:14px; padding:16px 20px; background:#fbfcfd; border-bottom:1px solid var(--line);}
+  .step .num{flex:0 0 auto; width:40px; height:40px; border-radius:50%; background:var(--blue); color:#fff;
+             font-weight:700; font-size:20px; display:flex; align-items:center; justify-content:center;}
+  .step .head h3{margin:0;}
+  .step .body{padding:6px 20px 18px;}
+
+  .box{border-radius:10px; padding:14px 16px 14px 18px; margin:16px 0; border-left:6px solid;}
+  .box.info{background:#eaf4fb; border-color:var(--blue);}
+  .box.warn{background:#fdf4e3; border-color:var(--amber);}
+  .box.good{background:#e9f7ef; border-color:var(--green);}
+  .box.bad{background:#fdecea; border-color:var(--red);}
+  .box b{display:block; margin-bottom:3px;}
+  .box .ic{font-size:18px; margin-right:6px;}
+
+  pre{background:#1e2430; color:#e6edf3; padding:16px 18px; border-radius:10px; overflow-x:auto;
+      font-family:"SF Mono",Consolas,Menlo,monospace; font-size:13.5px; line-height:1.65; margin:14px 0;}
+  pre .c{color:#7d8aa0;}
+  pre .s{color:#a5e6a5;}
+  pre .bad{color:#ff9a94;}
+  pre .fill{background:#5a2d2d; color:#ffd5d0; padding:0 4px; border-radius:4px; font-weight:700;}
+
+  .diagram{background:#fff; border:1px solid var(--line); border-radius:12px; padding:22px; margin:18px 0;}
+  .flow{display:flex; align-items:center; gap:6px; margin:14px 0; flex-wrap:wrap; justify-content:center;}
+  .flow .node{background:#f7f9fb; border:1.5px solid var(--line); border-radius:10px;
+        padding:10px 14px; text-align:center; font-size:13.5px; font-weight:600; min-width:110px;}
+  .flow .arrow{color:var(--blue); font-weight:700; font-size:18px;}
+
+  table.check{width:100%; border-collapse:collapse; margin:14px 0; background:#fff; border:1px solid var(--line); border-radius:10px; overflow:hidden;}
+  table.check td{padding:11px 14px; border-bottom:1px solid var(--line); vertical-align:top;}
+  table.check td:first-child{width:34px; text-align:center; font-size:18px;}
+  table.check tr:last-child td{border-bottom:none;}
+
+  .toc{background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px 22px; margin:20px 0;}
+  .toc ol{margin:6px 0; padding-left:22px;}
+  .toc a{text-decoration:none;}
+  .toc a:hover{text-decoration:underline;}
+  footer{text-align:center; color:var(--grey); font-size:13px; margin-top:50px;}
+  .kbd{background:#fff; border:1px solid #c6ccd2; border-bottom-width:2px; border-radius:5px; padding:1px 7px; font-size:13px; font-family:monospace;}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>🚀 How to Deploy Manually — TradeNet Admin Report</h1>
+  <p>The exact commands <code>deploy.bat</code> / <code>deploy.ps1</code> run for you, typed out one at a time — so you understand every step.</p>
+</header>
+
+<div class="wrap">
+
+  <div class="box info">
+    <b><span class="ic">💡</span>Why manual?</b>
+    There's a script (<code>deploy.bat</code>) that does all of this automatically — but this guide
+    is for doing it <b>by hand, step by step</b>, so you learn exactly what "deploying" means:
+    pulling code, building it, and carefully copying the new files onto the live server without
+    breaking anything for users who are on the site right now.
+  </div>
+
+  <div class="toc">
+    <b>Steps in this guide</b>
+    <ol>
+      <li><a href="#before">Before you start</a></li>
+      <li><a href="#big">The big picture</a></li>
+      <li><a href="#backend">Part A — Deploy the Backend (API)</a></li>
+      <li><a href="#frontend">Part B — Deploy the Frontend (website)</a></li>
+      <li><a href="#confirm">Part C — Confirm it worked</a></li>
+      <li><a href="#confirm-target">⚠️ Confirm the real target folders/URLs first</a></li>
+      <li><a href="#trouble">If something goes wrong</a></li>
+      <li><a href="#quick">Quick reference — every command in order</a></li>
+    </ol>
+  </div>
+
+  <!-- ============ BEFORE YOU START ============ -->
+  <h2 id="before">✅ Before you start</h2>
+  <table class="check">
+    <tr><td>🖥️</td><td>You're on the <b>Build Server</b> (RDP session) with the repo already cloned there — this is the only machine wired up to reach the live server's folders.</td></tr>
+    <tr><td>🧰</td><td>You have a PowerShell window open, in the repo's root folder.</td></tr>
+    <tr><td>💾</td><td>Your code is committed and pushed to <code>main</code> on GitHub — you're about to pull and deploy <i>that</i>, not whatever is sitting unsaved on your laptop.</td></tr>
+    <tr><td>📋</td><td>You know the two real target folders (backend + frontend) and the health-check URL for the environment you're deploying to. See <a href="#confirm-target">Part C</a> below — ask your lead if unsure.</td></tr>
+  </table>
+
+  <!-- ============ BIG PICTURE ============ -->
+  <h2 id="big">🗺️ The big picture</h2>
+  <p>Deploying by hand is really just two independent jobs, done back to back — the API (backend) and the website (frontend):</p>
+  <div class="diagram">
+    <div class="flow">
+      <div class="node">Get latest code</div>
+      <div class="arrow">→</div>
+      <div class="node">Build backend</div>
+      <div class="arrow">→</div>
+      <div class="node">Pause API briefly</div>
+      <div class="arrow">→</div>
+      <div class="node">Copy new backend files in</div>
+      <div class="arrow">→</div>
+      <div class="node">Un-pause API</div>
+    </div>
+    <div class="flow">
+      <div class="node">Build frontend</div>
+      <div class="arrow">→</div>
+      <div class="node">Copy new website files in</div>
+      <div class="arrow">→</div>
+      <div class="node">Check it's alive</div>
+    </div>
+  </div>
+  <div class="box good">
+    <b><span class="ic">🩹</span>What "pause the API" means</b>
+    You drop a file called <code>app_offline.htm</code> into the live API's folder. This is a special
+    filename that IIS recognizes — it politely shuts down the running API and shows that page to
+    users instead of an error while you copy files in. Deleting that file afterwards brings the API
+    back to life. It's the standard, safe way to update a live IIS site without anyone seeing a crash.
+  </div>
+
+  <!-- ============ PART A: BACKEND ============ -->
+  <h2 id="backend">⚙️ Part A — Deploy the Backend (API)</h2>
+
+  <div class="step">
+    <div class="head"><div class="num">1</div><h3>Get the latest code</h3></div>
+    <div class="body">
+      <pre>cd "<span class="fill">path\to\repo</span>"
+git pull --ff-only</pre>
+      <div class="box warn">
+        <b><span class="ic">⚠️</span>If this fails</b>
+        It means there are local changes sitting in this repo folder that would get overwritten.
+        Run <code>git status</code> and ask a senior dev before discarding anything — don't guess.
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="head"><div class="num">2</div><h3>Build the backend</h3></div>
+    <div class="body">
+      <pre>cd Backend
+dotnet build API.csproj -c Release</pre>
+      <p>This just compiles the code and checks for errors. It doesn't touch the server yet.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="head"><div class="num">3</div><h3>Publish it to a local folder</h3></div>
+    <div class="body">
+      <pre>dotnet publish API.csproj -c Release -o ..\.deploy\backend-publish</pre>
+      <p>This packages everything the API needs to run into <code>.deploy\backend-publish</code> —
+         still just on this machine, nothing has gone to the live server yet.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="head"><div class="num">4</div><h3>Remove the settings files from that folder</h3></div>
+    <div class="body">
+      <pre>cd ..\.deploy\backend-publish
+Remove-Item appsettings.json -Force -ErrorAction SilentlyContinue
+Remove-Item appsettings.*.json -Force -ErrorAction SilentlyContinue</pre>
+      <div class="box bad">
+        <b><span class="ic">🔐</span>This step is not optional</b>
+        The live server's real <code>appsettings.json</code> holds the database password and secret
+        keys. If you copy your local one over it, you can break the live database connection or leak
+        secrets. Deleting it here means the copy step (next) simply won't touch whatever is already
+        on the server.
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="head"><div class="num">5</div><h3>Tell the live API to pause</h3></div>
+    <div class="body">
+      <pre>New-Item -Path "<span class="fill">BACKEND-TARGET-FOLDER</span>\app_offline.htm" -ItemType File -Force
+Start-Sleep -Seconds 5</pre>
+      <p>Users now briefly see a "Deploying an update…" page instead of the live app. The short wait
+         gives the running API time to fully shut down and release its files.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="head"><div class="num">6</div><h3>Copy the new backend files in</h3></div>
+    <div class="body">
+      <pre>robocopy "..\.deploy\backend-publish" "<span class="fill">BACKEND-TARGET-FOLDER</span>" /E /XF appsettings.json appsettings.*.json app_offline.htm</pre>
+      <p><code>/E</code> copies all files and subfolders. <code>/XF</code> means "exclude these
+         files" — so you never accidentally wipe out the server's real settings or the pause page
+         you just created.</p>
+      <div class="box info">
+        <b><span class="ic">ℹ️</span>Reading the result</b>
+        Robocopy prints an exit code. <b>0–7 = success</b> (even "1" is normal, it just means files
+        were copied). <b>8 or higher = something failed</b> — see <a href="#trouble">Troubleshooting</a>.
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="head"><div class="num">7</div><h3>Bring the API back online</h3></div>
+    <div class="body">
+      <pre>Remove-Item "<span class="fill">BACKEND-TARGET-FOLDER</span>\app_offline.htm" -Force</pre>
+      <p>The moment this file is gone, IIS lets the API start answering requests again — with your new code.</p>
+    </div>
+  </div>
+
+  <!-- ============ PART B: FRONTEND ============ -->
+  <h2 id="frontend">🖥️ Part B — Deploy the Frontend (website)</h2>
+
+  <div class="step">
+    <div class="head"><div class="num">8</div><h3>Point the build at the right API</h3></div>
+    <div class="body">
+      <pre>cd ..\..\Frontend
+$env:VITE_BASE_URL  = "https://<span class="fill">THE-REAL-API-ADDRESS</span>/api/"
+$env:VITE_IMAGE_URL = "https://<span class="fill">THE-REAL-API-ADDRESS</span>/Image/"
+$env:VITE_QR_URL    = "https://api.ecomreg.gov.mm/QR/"</pre>
+      <p>The website bakes these addresses into itself when it's built — this is how it knows which
+         API to talk to once it's live. Get the real API address from your lead (see
+         <a href="#confirm-target">below</a>) — don't leave it as <code>localhost</code>.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="head"><div class="num">9</div><h3>Build the website</h3></div>
+    <div class="body">
+      <pre>npm install --legacy-peer-deps
+npm run build</pre>
+      <p>This creates a <code>Frontend\dist</code> folder containing the finished, ready-to-publish website.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="head"><div class="num">10</div><h3>Copy the website files in</h3></div>
+    <div class="body">
+      <pre>robocopy "dist" "<span class="fill">FRONTEND-TARGET-FOLDER</span>" /E /XF web.config</pre>
+      <p>Same idea as the backend copy — <code>/XF web.config</code> protects the server's existing
+         config file from being overwritten by your local one.</p>
+      <div class="box info">
+        <b><span class="ic">ℹ️</span>No pause needed here</b>
+        Unlike the API, a website's static files can usually be swapped in directly without an
+        "offline" step — visitors just get the new files on their next page load.
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PART C: CONFIRM ============ -->
+  <h2 id="confirm">✅ Part C — Confirm it worked</h2>
+  <div class="step">
+    <div class="head"><div class="num">11</div><h3>Check the API is responding</h3></div>
+    <div class="body">
+      <pre>curl "https://<span class="fill">THE-REAL-HEALTH-URL</span>/health"</pre>
+      <p>You're looking for a quick, successful response (HTTP 200). If it hangs or errors, the API
+         may still be starting up — wait a minute and try again before assuming it failed.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="head"><div class="num">12</div><h3>Check the website in a browser</h3></div>
+    <div class="body">
+      <p>Open the live site and hard-refresh: <span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">R</span>.
+         Confirm reports load real data, not just a blank page.</p>
+    </div>
+  </div>
+
+  <!-- ============ CONFIRM TARGET ============ -->
+  <h2 id="confirm-target">⚠️ Confirm the real target folders/URLs first</h2>
+  <div class="box warn">
+    <b><span class="ic">🎯</span>Don't guess these values</b>
+    This guide uses placeholders like <code>BACKEND-TARGET-FOLDER</code>, <code>FRONTEND-TARGET-FOLDER</code>,
+    <code>THE-REAL-API-ADDRESS</code>, and <code>THE-REAL-HEALTH-URL</code> on purpose. Server folder
+    paths and addresses can change over time (for example, whenever an environment gets promoted
+    from testing to live) — <b>ask a senior dev for today's real values before your first manual
+    deploy</b>, and write them down somewhere for next time. Deploying to the wrong folder can mean
+    your changes go live on the wrong environment, or don't show up at all.
+  </div>
+
+  <!-- ============ TROUBLESHOOTING ============ -->
+  <h2 id="trouble">🩺 If something goes wrong</h2>
+  <table class="check">
+    <tr><td>❌</td><td><b><code>git pull</code> fails</b><br>
+        → Uncommitted changes are sitting in the repo folder on the Build Server. Run <code>git status</code>, ask a senior dev before discarding anything.</td></tr>
+    <tr><td>❌</td><td><b><code>dotnet build</code> or <code>dotnet publish</code> fails</b><br>
+        → Read the actual compiler error above the failure — it points at the file/line. Don't proceed to copying files if the build failed.</td></tr>
+    <tr><td>⏳</td><td><b>Copy step (robocopy) can't overwrite <code>API.dll</code></b><br>
+        → The old process hasn't fully released the file yet. Wait a few more seconds after dropping <code>app_offline.htm</code>, then retry the robocopy command alone (steps 5 already ran, no need to repeat them).</td></tr>
+    <tr><td>❌</td><td><b>Robocopy exits with code 8 or higher</b><br>
+        → A real copy failure (permissions, disk, or a locked file). Copy the console output and ask a senior dev — don't re-run repeatedly.</td></tr>
+    <tr><td>🔄</td><td><b>Everything copied fine but the site still looks old</b><br>
+        → Browser cache. Hard-refresh with <span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">R</span>.</td></tr>
+    <tr><td>❌</td><td><b>Forgot to delete <code>app_offline.htm</code> (step 7)</b><br>
+        → The site stays stuck on "Deploying an update…" forever. Go back and delete that file from the backend target folder.</td></tr>
+  </table>
+
+  <!-- ============ QUICK REFERENCE ============ -->
+  <h2 id="quick">📇 Quick reference — every command in order</h2>
+  <p>Once you've done this a few times and understand each step, here's the full sequence together
+     (still replace every <span class="fill" style="background:#5a2d2d;color:#ffd5d0;">red placeholder</span> with the real values first):</p>
+  <pre><span class="c"># --- Backend ---</span>
+cd "<span class="fill">path\to\repo</span>"
+git pull --ff-only
+cd Backend
+dotnet build API.csproj -c Release
+dotnet publish API.csproj -c Release -o ..\.deploy\backend-publish
+cd ..\.deploy\backend-publish
+Remove-Item appsettings.json -Force -ErrorAction SilentlyContinue
+Remove-Item appsettings.*.json -Force -ErrorAction SilentlyContinue
+New-Item -Path "<span class="fill">BACKEND-TARGET-FOLDER</span>\app_offline.htm" -ItemType File -Force
+Start-Sleep -Seconds 5
+robocopy "." "<span class="fill">BACKEND-TARGET-FOLDER</span>" /E /XF appsettings.json appsettings.*.json app_offline.htm
+Remove-Item "<span class="fill">BACKEND-TARGET-FOLDER</span>\app_offline.htm" -Force
+
+<span class="c"># --- Frontend ---</span>
+cd ..\..\Frontend
+$env:VITE_BASE_URL  = "https://<span class="fill">THE-REAL-API-ADDRESS</span>/api/"
+$env:VITE_IMAGE_URL = "https://<span class="fill">THE-REAL-API-ADDRESS</span>/Image/"
+$env:VITE_QR_URL    = "https://api.ecomreg.gov.mm/QR/"
+npm install --legacy-peer-deps
+npm run build
+robocopy "dist" "<span class="fill">FRONTEND-TARGET-FOLDER</span>" /E /XF web.config
+
+<span class="c"># --- Confirm ---</span>
+curl "https://<span class="fill">THE-REAL-HEALTH-URL</span>/health"</pre>
+
+  <footer>
+    Once you're confident with these manual steps, note that <code>deploy.bat</code> automates this
+    exact sequence for you (see <code>AutoDeploy.md</code> for the fully unattended watcher version).<br>
+    TradeNet Admin Report — Manual Deploy Guide · Steps based on: <code>deploy.bat</code>, <code>deploy.ps1</code>.
+  </footer>
+
+</div>
+</body>
+</html>

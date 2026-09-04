@@ -1,0 +1,9 @@
+# SHA-256 of the repository originals these copies were taken from (2026-09-04, commit e09b933).
+# Verify with:  shasum -a 256 -c checksums.txt   (run from StoredProcedureMigrations/)
+#
+df06b242e4eaa687112e8a86a868fd0d946cf140747f1286c55ea0667eca8717  sp_ActualAmendReport_pagination.sql
+ea16393ff0170c04ee8135eea7663397efd14ca98e2c3857a0af1297ddf0a1e0  sp_AmendReport_pagination.sql
+2dfbd3c7545779d913d85310d18be76b8e0b14f4770465b1aef8ab6dd1389376  sp_ExportLicenceListingCurrencyTotals.sql
+2e4e5e39134377ffe67918ad4b0c44b44b4aa7c4b4b25b3be9900e5edc52909f  sp_ExportPermitListingCurrencyTotals.sql
+77e09018295bda143286ad6020e141bb123f0f6f231d71ab5b96a14611d174b8  sp_ImportLicenceListingCurrencyTotals.sql
+c79ac44407bfb81759a3b02fc38c9f60181cd027b317b2e4763cf903e3ae4b75  sp_ImportPermitListingCurrencyTotals.sql

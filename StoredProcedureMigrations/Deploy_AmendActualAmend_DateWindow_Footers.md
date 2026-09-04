@@ -9,25 +9,25 @@ compatible with the currently deployed backend (new parameters are trailing and 
 old application keeps working against the new procedures. The reverse is not true for the new Border
 footers, which simply stay empty until the procedures land.
 
+**The six procedures, ready to run, are packaged in
+[`Deployments/2026-09-04_AmendActualAmendParity/`](Deployments/2026-09-04_AmendActualAmendParity/)**
+— numbered in run order, with a combined `00_RunAll.sql`, the before-and-after
+`VerifyDeployment.sql`, and `CaptureRollback.sql`. Read that folder's README on the server;
+this note is the background.
+
 Files to apply, in this order:
 
-1. `StoredProcedureMigrations/sp_ActualAmendReport_pagination.sql`
-2. `StoredProcedureMigrations/sp_AmendReport_pagination.sql`
-3. `StoredProcedureMigrations/sp_ExportPermitListingCurrencyTotals.sql`
-4. `StoredProcedureMigrations/sp_ImportLicenceListingCurrencyTotals.sql`
-5. `StoredProcedureMigrations/sp_ImportPermitListingCurrencyTotals.sql`
+1. `sp_ActualAmendReport_pagination.sql`
+2. `sp_AmendReport_pagination.sql`
+3. `sp_ExportLicenceListingCurrencyTotals.sql`
+4. `sp_ExportPermitListingCurrencyTotals.sql`
+5. `sp_ImportLicenceListingCurrencyTotals.sql`
+6. `sp_ImportPermitListingCurrencyTotals.sql`
 
 ```powershell
 $sqlServer = "<SERVER_NAME>,<PORT>"
-$database  = "TradeNetDB"
-$sqlFiles = @(
-  "StoredProcedureMigrations\sp_ActualAmendReport_pagination.sql",
-  "StoredProcedureMigrations\sp_AmendReport_pagination.sql",
-  "StoredProcedureMigrations\sp_ExportPermitListingCurrencyTotals.sql",
-  "StoredProcedureMigrations\sp_ImportLicenceListingCurrencyTotals.sql",
-  "StoredProcedureMigrations\sp_ImportPermitListingCurrencyTotals.sql"
-)
-foreach ($f in $sqlFiles) { Write-Host "Applying: $f"; sqlcmd -S $sqlServer -d $database -i $f -b }
+$folder    = "StoredProcedureMigrations\Deployments\2026-09-04_AmendActualAmendParity"
+sqlcmd -S $sqlServer -d TradeNetDB -b -i "$folder\00_RunAll.sql"
 ```
 
 `sqlcmd` sets `QUOTED_IDENTIFIER ON` by default. If you apply these through any other client, run
@@ -66,7 +66,9 @@ WHERE p.name IN ('sp_ActualAmendReport_pagination','sp_AmendReport_pagination',
                  'sp_ImportLicenceListingCurrencyTotals','sp_ImportPermitListingCurrencyTotals');
 ```
 
-Expected parameter counts after deployment: 12 / 12 / 8 / 8 / 10 / 8 (in the order listed above).
+Expected parameter counts after deployment, in the diagnostic's alphabetical order
+(ActualAmend grid, Amend grid, ExportLicence, ExportPermit, ImportLicence, ImportPermit):
+12 / 12 / 8 / 8 / 10 / 8.
 
 UAT parity (2025 data), the three numbers must agree:
 
