@@ -2253,6 +2253,32 @@ PM-feedback follow-up on 2026-06-25:
 - Fix applied and deployed:
   - Patched only the Border Export Permit branches in `StoredProcedureMigrations/sp_ExportPermitListingCurrencyTotals.sql`.
   - Date filtering now includes the whole selected ToDate with `CreatedDate < DATEADD(day, 1, @ToDate)`.
+
+> **Correction (2026-09-04).** The `< DATEADD(day, 1, @ToDate)` rule recorded here is WRONG for
+> application traffic and was reverted. It was introduced against a DB-side test that passed a
+> date-only `@ToDate` (`'2023-08-23'`), but neither caller does that: the front end sends
+> `ToDate` as `YYYY-MM-DDT23:59:59` (`GenericReportPage.toApiDate(..., 'end')`) and the old
+> Tradenet 2.0 admin sent `'<day> 23:59:59'`. With such a `@ToDate`, `DATEADD(day, 1, ...)` admits
+> the whole FOLLOWING day, so the Amend / Actual Amendment reports listed more rows than the old
+> system (customer complaint: Border Export Licence Actual Amendment, 1-Aug..1-Sep-2026, Sakhan MWD,
+> new 11 rows vs old 10, with a footer of 10).
+>
+> The rule is now `CreatedDate <= @ToDate` — byte-identical to the original `dbo.sp_AmendReport` /
+> `dbo.sp_ActualAmendReport` — plus `ReportDateWindow.InclusiveEndOfDay` in the controllers, which
+> promotes a date-only `ToDate` to `23:59:59` so date-only API callers still get the whole day.
+> Applied to `sp_ActualAmendReport_pagination`, `sp_AmendReport_pagination`,
+> `sp_ImportLicenceListingCurrencyTotals`, `sp_ImportPermitListingCurrencyTotals` and the
+> Amend / Actual Amend + Cancel sub-branches of `sp_ExportPermitListingCurrencyTotals`.
+>
+> Still carrying the raw `DATEADD(day, 1, @ToDate)` form (same latent extra-day bug, follow-up):
+> `sp_NewReport_pagination` (Border Import Licence / Border Export Permit / Border Import Permit
+> branches) and the Border Export Permit **New** sub-branch of `sp_ExportPermitListingCurrencyTotals`
+> which must be flipped together with it; `sp_VoucherReport_pagination` (Border Import Licence /
+> Border Export Permit, `PaymentDate`); `sp_BorderExportLicenceDetailReport_pagination`;
+> `sp_ExportLicenceDetailReport_pagination`; `sp_ExportPermitDetailReport_Fast_pagination`;
+> `sp_ImportLicenceDetailReport_pagination`; `sp_ExportPermitVoucherCurrencyTotals`.
+> The `< DATEADD(day, 1, CONVERT(date, @ToDate))` form used elsewhere (Cancel, Extension, ...) spans
+> exactly the ToDate day, adds no extra day, and needs no change.
   - Redeployed `StoredProcedureMigrations/sp_ExportPermitListingCurrencyTotals.sql` to `TradeNetDB`.
 - DB retest after deploy:
   - Selected Sakhan footer, `@SakhanId = 3`, `2023-08-23`: returned `USD`, `NoOfLicences = 1`, `TotalValue = 5500.0000`, elapsed about 589 ms including compile.
@@ -2309,6 +2335,8 @@ Latest Priority 2 update:
 - Updated the Export Licence branch in `sp_VoucherReport_pagination.sql`:
   - added `AccountTransaction.TransactionFormType='Export Licence'`;
   - changed date filtering to include the whole selected ToDate with `< DATEADD(day, 1, @ToDate)`;
+
+> **See the 2026-09-04 correction above: this rule was reverted to `<= @ToDate`.**
   - avoided a hard index-name hint so the procedure will not fail if another environment deploys the procedure before the index script.
 - Redeployed `StoredProcedureMigrations/sp_VoucherReport_pagination.sql` to `TradeNetDB`.
 - Follow-up field restore on 2026-06-25:

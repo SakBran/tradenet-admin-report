@@ -18,6 +18,10 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // Bumped 2026-09-04: the Amend / Actual Amend date-window fix changes WHICH rows an
+    // export contains for an unchanged request payload, so cached closed-period files
+    // must not be reused (see ExcelExportJobService).
+    [ExcelFormatVersion(2)]
     public class BorderExportPermitAmendmentReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "BorderExportPermitAmendmentReport";
@@ -147,7 +151,7 @@ namespace Backend.Controllers.Report
             {
                 FormType = "Border Export Permit",
                 FromDate = request.FromDate,
-                ToDate = request.ToDate,
+                ToDate = ReportDateWindow.InclusiveEndOfDay(request.ToDate),
                 ExportImportSectionId = request.ExportImportSectionId,
                 AmendRemarkId = request.AmendRemarkId,
                 CompanyRegistrationNo = request.CompanyRegistrationNo,

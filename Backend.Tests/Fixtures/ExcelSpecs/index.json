@@ -667,7 +667,7 @@
       "isBespokePage": false,
       "isComposite": false,
       "hasExcelButton": true,
-      "columnCount": 11
+      "columnCount": 10
     },
     {
       "configKey": "BorderImportLicenceAmendmentReport",
@@ -2236,7 +2236,7 @@
       "variant": null,
       "hasDateRange": true,
       "hasSingleDate": false,
-      "hasCurrencyTotalsColumns": false,
+      "hasCurrencyTotalsColumns": true,
       "showRowNumber": true,
       "rowNumberTitle": "No",
       "isBespokePage": false,

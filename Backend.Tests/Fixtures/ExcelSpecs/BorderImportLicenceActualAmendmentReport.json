@@ -22,8 +22,11 @@
     },
     {
       "key": "LicenceNo",
-      "dataIndex": "licenceNo",
-      "title": "Licence No"
+      "dataIndex": "oldLicenceNo",
+      "title": "Licence No",
+      "fallbackDataIndexes": [
+        "licenceNo"
+      ]
     },
     {
       "key": "LicenceAmendmentNo",
@@ -62,11 +65,6 @@
       "key": "Currency",
       "dataIndex": "currency",
       "title": "Currency"
-    },
-    {
-      "key": "hsCode",
-      "dataIndex": "hsCode",
-      "title": "hsCode"
     },
     {
       "key": "TotalValue",

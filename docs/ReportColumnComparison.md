@@ -39,10 +39,12 @@ Extra in new (0): _None_
 
 Title: Border Export Licence Actual Amendment Report
 Old source: `BorderAmendReport.rdlc`
-Old columns (12): `No.`, `Sakhan`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `HSCode`, `Total Value`
-New columns (12): `No`, `Sakhan`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `HSCode`, `Total Value`
+Old columns (11): `No.`, `Sakhan`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`
+New columns (11): `No`, `Sakhan`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Currency`, `Total Value`
 Need in new (0): _None_
 Extra in new (0): _None_
+_2026-09-04: old columns re-read from the RDLC. Neither `AmendReport.rdlc` nor `BorderAmendReport.rdlc` contains an HSCode textbox (`grep -ic hscode` = 0 on both), so the earlier `HSCode` entry here was a generator artefact. The old `Curency` header typo is counted as the same column as the new `Currency`. All eight reports now render the legacy per-currency footer, and `Licence No` binds to the ORIGINAL licence number (`oldLicenceNo`) while `Licence Amendment No` binds to the amendment number._
+
 
 ### BorderExportLicenceAmendmentReport
 
@@ -165,10 +167,12 @@ Extra in new (4): `Licence Date`, `Lic Value`, `Currency`, `Approved User`
 
 Title: Border Export Permit Actual Amendment Report
 Old source: `BorderAmendReport.rdlc`
-Old columns (12): `No.`, `Sakhan`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `HSCode`, `Total Value`
-New columns (12): `No`, `Sakhan`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `HSCode`, `Total Value`
+Old columns (11): `No.`, `Sakhan`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`
+New columns (12): `No`, `Sakhan`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Currency`, `HS Code`, `Total Value`
 Need in new (0): _None_
-Extra in new (0): _None_
+Extra in new (1): `HS Code`
+_2026-09-04: old columns re-read from the RDLC. Neither `AmendReport.rdlc` nor `BorderAmendReport.rdlc` contains an HSCode textbox (`grep -ic hscode` = 0 on both), so the earlier `HSCode` entry here was a generator artefact. The old `Curency` header typo is counted as the same column as the new `Currency`. All eight reports now render the legacy per-currency footer, and `Licence No` binds to the ORIGINAL licence number (`oldLicenceNo`) while `Licence Amendment No` binds to the amendment number._
+
 
 ### BorderExportPermitAmendmentReport
 
@@ -273,10 +277,12 @@ Extra in new (0): _None_
 
 Title: Border Import Licence Actual Amendment Report
 Old source: `BorderAmendReport.rdlc`
-Old columns (12): `No.`, `Sakhan`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `HSCode`, `Total Value`
-New columns (12): `No`, `Sakhan`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `HSCode`, `Total Value`
+Old columns (11): `No.`, `Sakhan`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`
+New columns (11): `No`, `Sakhan`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Currency`, `Total Value`
 Need in new (0): _None_
 Extra in new (0): _None_
+_2026-09-04: old columns re-read from the RDLC. Neither `AmendReport.rdlc` nor `BorderAmendReport.rdlc` contains an HSCode textbox (`grep -ic hscode` = 0 on both), so the earlier `HSCode` entry here was a generator artefact. The old `Curency` header typo is counted as the same column as the new `Currency`. All eight reports now render the legacy per-currency footer, and `Licence No` binds to the ORIGINAL licence number (`oldLicenceNo`) while `Licence Amendment No` binds to the amendment number._
+
 
 ### BorderImportLicenceAmendmentReport
 
@@ -416,11 +422,13 @@ Extra in new (0): _None_
 ### BorderImportPermitActualAmendmentReport
 
 Title: Border Import Permit Actual Amendment Report
-Old source: `AmendReport.rdlc`, `BorderAmendReport.rdlc`
-Old columns (12): `No.`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `HSCode`, `Total Value`, `Sakhan`
-New columns (12): `No`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `HSCode`, `Total Value`, `Sakhan`
+Old source: `BorderAmendReport.rdlc`
+Old columns (11): `No.`, `Sakhan`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`
+New columns (12): `No`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Currency`, `hsCode`, `Total Value`, `Sakhan`
 Need in new (0): _None_
-Extra in new (0): _None_
+Extra in new (1): `hsCode`
+_2026-09-04: old columns re-read from the RDLC. Neither `AmendReport.rdlc` nor `BorderAmendReport.rdlc` contains an HSCode textbox (`grep -ic hscode` = 0 on both), so the earlier `HSCode` entry here was a generator artefact. The old `Curency` header typo is counted as the same column as the new `Currency`. All eight reports now render the legacy per-currency footer, and `Licence No` binds to the ORIGINAL licence number (`oldLicenceNo`) while `Licence Amendment No` binds to the amendment number._
+
 
 ### BorderImportPermitAmendmentReport
 
@@ -570,10 +578,12 @@ Extra in new (0): _None_
 
 Title: Export Licence Actual Amendment Report
 Old source: `AmendReport.rdlc`
-Old columns (11): `No.`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `HSCode`, `Total Value`
-New columns (11): `No`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `HSCode`, `Total Value`
+Old columns (10): `No.`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`
+New columns (10): `No`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Currency`, `Total Value`
 Need in new (0): _None_
 Extra in new (0): _None_
+_2026-09-04: old columns re-read from the RDLC. Neither `AmendReport.rdlc` nor `BorderAmendReport.rdlc` contains an HSCode textbox (`grep -ic hscode` = 0 on both), so the earlier `HSCode` entry here was a generator artefact. The old `Curency` header typo is counted as the same column as the new `Currency`. All eight reports now render the legacy per-currency footer, and `Licence No` binds to the ORIGINAL licence number (`oldLicenceNo`) while `Licence Amendment No` binds to the amendment number._
+
 
 ### ExportLicenceAmendmentReport
 
@@ -696,10 +706,12 @@ Extra in new (0): _None_
 
 Title: Export Permit Actual Amendment Report
 Old source: `AmendReport.rdlc`
-Old columns (11): `No.`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `HSCode`, `Total Value`
-New columns (11): `No`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `HSCode`, `Total Value`
+Old columns (10): `No.`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`
+New columns (11): `No`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `HS Code`, `Currency`, `Total Value`
 Need in new (0): _None_
-Extra in new (0): _None_
+Extra in new (1): `HS Code`
+_2026-09-04: old columns re-read from the RDLC. Neither `AmendReport.rdlc` nor `BorderAmendReport.rdlc` contains an HSCode textbox (`grep -ic hscode` = 0 on both), so the earlier `HSCode` entry here was a generator artefact. The old `Curency` header typo is counted as the same column as the new `Currency`. All eight reports now render the legacy per-currency footer, and `Licence No` binds to the ORIGINAL licence number (`oldLicenceNo`) while `Licence Amendment No` binds to the amendment number._
+
 
 ### ExportPermitAmendmentReport
 
@@ -804,10 +816,12 @@ Extra in new (1): `Licence Date`
 
 Title: Import Licence Actual Amendment Report
 Old source: `AmendReport.rdlc`
-Old columns (11): `No.`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `HSCode`, `Total Value`
-New columns (11): `No`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `HSCode`, `Total Value`
+Old columns (10): `No.`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`
+New columns (11): `No`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Currency`, `hsCode`, `Total Value`
 Need in new (0): _None_
-Extra in new (0): _None_
+Extra in new (1): `hsCode`
+_2026-09-04: old columns re-read from the RDLC. Neither `AmendReport.rdlc` nor `BorderAmendReport.rdlc` contains an HSCode textbox (`grep -ic hscode` = 0 on both), so the earlier `HSCode` entry here was a generator artefact. The old `Curency` header typo is counted as the same column as the new `Currency`. All eight reports now render the legacy per-currency footer, and `Licence No` binds to the ORIGINAL licence number (`oldLicenceNo`) while `Licence Amendment No` binds to the amendment number._
+
 
 ### ImportLicenceAmendmentReport
 
@@ -948,10 +962,12 @@ Extra in new (0): _None_
 
 Title: Import Permit Actual Amendment Report
 Old source: `AmendReport.rdlc`
-Old columns (11): `No.`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `HSCode`, `Total Value`
-New columns (11): `No`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `HSCode`, `Total Value`
+Old columns (10): `No.`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`
+New columns (11): `No`, `Section`, `Licence No`, `Licence Amendment No`, `Amendment Date`, `Company Registration No`, `Company Name`, `Company Address`, `Currency`, `hsCode`, `Total Value`
 Need in new (0): _None_
-Extra in new (0): _None_
+Extra in new (1): `hsCode`
+_2026-09-04: old columns re-read from the RDLC. Neither `AmendReport.rdlc` nor `BorderAmendReport.rdlc` contains an HSCode textbox (`grep -ic hscode` = 0 on both), so the earlier `HSCode` entry here was a generator artefact. The old `Curency` header typo is counted as the same column as the new `Currency`. All eight reports now render the legacy per-currency footer, and `Licence No` binds to the ORIGINAL licence number (`oldLicenceNo`) while `Licence Amendment No` binds to the amendment number._
+
 
 ### ImportPermitAmendmentReport
 
@@ -1296,9 +1312,9 @@ The following current-config differences were verified directly against the old 
 | Border Export Permit Extension | Missing old readonly Company Name filter. |
 | Border Export Permit By HS Code | Old `Company Name` column is intentionally removed by newer customer feedback. |
 | Border Export Permit New Report | Missing old readonly Company Name filter and old `auto` output column. |
-| Export Licence Actual Amendment | Missing old HSCode column. |
-| Export Licence Amendment | Missing old HSCode column; adds feedback-requested Auto/None-Auto filter absent from old admin. |
-| Export Licence Cancellation | Missing old HSCode column. |
+| Export Licence Actual Amendment | ~~Missing old HSCode column~~ -> corrected 2026-09-04: the old AmendReport.rdlc has no HSCode column. |
+| Export Licence Amendment | ~~Missing old HSCode column~~ -> corrected 2026-09-04: the old AmendReport.rdlc has no HSCode column; adds feedback-requested Auto/None-Auto filter absent from old admin. |
+| Export Licence Cancellation | ~~Missing old HSCode column~~ -> corrected 2026-09-04: the old AmendReport.rdlc has no HSCode column. |
 | Export Licence By HS Code | Old `Company Name` column is intentionally removed by newer customer feedback. |
 | Export Licence New Report | Adds feedback-requested Auto/None-Auto filter absent from old admin. |
 

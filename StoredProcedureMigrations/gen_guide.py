@@ -4,7 +4,7 @@ in StoredProcedureMigrations/. Run from the repo root."""
 import glob, os, html
 
 ROOT = "StoredProcedureMigrations"
-GEN_DATE = "2026-06-10"
+GEN_DATE = "2026-09-04"
 
 # proc/view name -> (category, purpose, [views it NOEXPANDs])
 CAT_COLORS = {
@@ -22,14 +22,15 @@ PURPOSE = {
  "sp_ExportLicenceTotalValueReport_Fast_pagination": ("Export Licence","Export Licence Total-Value — fast paginated totals.",[]),
  "sp_ExportLicenceListingCurrencyTotals": ("Export Licence","Per-currency footer totals for Export/Border Export Licence New / Amend / Actual Amend / Cancel listings (by FormType; Border splits Pa Tha Ka + Individual Trading).",[]),
  "sp_ExportLicenceVoucherCurrencyTotals": ("Export Licence","Per-currency footer totals for the Export/Border Export Licence Voucher report.",[]),
- "sp_ImportPermitListingCurrencyTotals": ("Import Permit","Per-currency footer totals for Import Permit listing reports.",[]),
+ "sp_ImportPermitListingCurrencyTotals": ("Import Permit","Per-currency footer totals for New / Amend / Actual Amend listings, plus Border Import Permit via @FormType + @SakhanId.",[]),
  "sp_ImportPermitVoucherCurrencyTotals": ("Import Permit","Per-currency footer totals for the Import Permit Voucher report.",[]),
  "sp_ImportLicenceDetailReport_pagination": ("Import Licence","Import Licence Detail — paginated detail rows.",[]),
  "sp_ImportLicencePendingDetailReport_pagination": ("Import Licence","Import Licence Pending Detail — paginated. NEEDS QUOTED_IDENTIFIER/ANSI_NULLS ON (XML .value()).",[]),
  "sp_ImportLicenceDetailByLicenceReport_Indexed": ("Import Licence","Detail-by-Licence — reads the indexed view via NOEXPAND.",["vw_ImportLicenceItemTotalByCurrency"]),
  "sp_ImportLicenceSummaryReport_Indexed": ("Import Licence","Summary — reads the indexed view via NOEXPAND.",["vw_ImportLicenceItemTotalByCurrency"]),
- "sp_AmendReport_pagination": ("Shared listing","Amendment listing (FormType-branched across permit/licence families).",[]),
- "sp_ActualAmendReport_pagination": ("Shared listing","Actual-Amendment listing (FormType-branched).",[]),
+ "sp_AmendReport_pagination": ("Shared listing","Amendment listing (FormType-branched across permit/licence families); CreatedDate <= @ToDate mirrors dbo.sp_AmendReport.",[]),
+ "sp_ActualAmendReport_pagination": ("Shared listing","Actual-Amendment listing (FormType-branched); CreatedDate <= @ToDate mirrors dbo.sp_ActualAmendReport.",[]),
+    "sp_ImportLicenceListingCurrencyTotals": ("Import Licence","Per-currency footer totals for New / Amend / Cancel / Actual Amend listings, plus Border Import Licence (Pa Tha Ka + Individual Trading) via @FormType + @SakhanId.",[]),
  "sp_CancelReport_pagination": ("Shared listing","Cancellation listing (FormType-branched).",[]),
  "sp_ExtensionReport_pagination": ("Shared listing","Extension listing (FormType-branched).",[]),
  "sp_ExtensionReportCurrencyTotals": ("Shared listing","Per-currency footer totals for Extension reports.",[]),

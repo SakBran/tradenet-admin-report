@@ -27,6 +27,8 @@ public sealed class ImportLicenceListingCurrencyTotalRow
 ///   * "Cancel"      -> sp_CancelReport_pagination (ApplyType='Cancel', no AmendRemarkId, &lt;= ToDate)
 ///   * "ActualAmend" -> sp_ActualAmendReport_pagination (ApplyType='Actual Amend' + AmendRemarkId)
 ///   * "New" (else)  -> sp_NewReport.ImportLicenceQuery (ApplyType='New', no AmendRemarkId)
+/// Passing <c>formType</c> "Border Import Licence" (with the report's SakhanId) selects the
+/// BorderImportLicence branch, which unions the Pa Tha Ka and Individual Trading card types.
 /// </summary>
 public static class ImportLicenceListingCurrencyTotals
 {
@@ -40,14 +42,16 @@ public static class ImportLicenceListingCurrencyTotals
         string? companyRegistrationNo,
         int amendRemarkId,
         string? auto = null,
-        string? quota = null)
+        string? quota = null,
+        string? formType = null,
+        int sakhanId = 0)
     {
         ArgumentNullException.ThrowIfNull(db);
 
         // @auto / @quota are only used by the New branch (the New grid filters on them); the
         // Amend / ActualAmend / Cancel branches have no such grid filter, so those callers
         // leave them at '' and the proc ignores them.
-        var parameters = new[]
+        var parameters = new List<SqlParameter>
         {
             new SqlParameter("@ApplyType", applyType ?? string.Empty),
             new SqlParameter("@FromDate", fromDate),
@@ -59,11 +63,24 @@ public static class ImportLicenceListingCurrencyTotals
             new SqlParameter("@quota", quota ?? string.Empty),
         };
 
-        const string sql =
+        var sql =
             "EXEC dbo.sp_ImportLicenceListingCurrencyTotals @ApplyType, @FromDate, @ToDate, " +
             "@ExportImportSectionId, @CompanyRegistrationNo, @AmendRemarkId, @auto, @quota";
 
-        return RunAsync(db, sql, parameters);
+        // @FormType / @SakhanId are OPT-IN trailing parameters: they are appended to the positional
+        // EXEC only when a caller names its FormType (the Border reports). Legacy New / Amend /
+        // Cancel callers keep the short argument list, so they keep working against a database where
+        // the longer procedure has not been deployed yet. A Border caller hitting a not-yet-deployed
+        // procedure gets "too many arguments specified", which RunAsync turns into an empty footer --
+        // never a silently wrong one from a fall-through branch.
+        if (formType is not null)
+        {
+            parameters.Add(new SqlParameter("@FormType", formType));
+            parameters.Add(new SqlParameter("@SakhanId", sakhanId));
+            sql += ", @FormType, @SakhanId";
+        }
+
+        return RunAsync(db, sql, parameters.ToArray());
     }
 
     /// <summary>Voucher report footer (<c>dbo.sp_ImportLicenceVoucherCurrencyTotals</c>).</summary>

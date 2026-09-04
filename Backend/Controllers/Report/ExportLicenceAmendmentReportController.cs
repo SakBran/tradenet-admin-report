@@ -18,6 +18,10 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // Bumped 2026-09-04: the Amend / Actual Amend date-window fix changes WHICH rows an
+    // export contains for an unchanged request payload, so cached closed-period files
+    // must not be reused (see ExcelExportJobService).
+    [ExcelFormatVersion(2)]
     public class ExportLicenceAmendmentReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ExportLicenceAmendmentReport";
@@ -61,6 +65,14 @@ namespace Backend.Controllers.Report
                 : ApiResult<sp_AmendReportResult>.CreateFastPageFromRows(
                     data, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
+
+            if (data.Count > 0)
+            {
+                result.CurrencyTotals = await ExportLicenceListingCurrencyTotals.ExecuteAsync(
+                    _context, procedureRequest!.FormType, "Amend", procedureRequest.FromDate, procedureRequest.ToDate,
+                    procedureRequest.ExportImportSectionId, procedureRequest.CompanyRegistrationNo,
+                    procedureRequest.AmendRemarkId, procedureRequest.SakhanId);
+            }
 
             return Ok(result);
         }
@@ -139,7 +151,7 @@ namespace Backend.Controllers.Report
             {
                 FormType = "Export Licence",
                 FromDate = request.FromDate,
-                ToDate = request.ToDate,
+                ToDate = ReportDateWindow.InclusiveEndOfDay(request.ToDate),
                 ExportImportSectionId = request.ExportImportSectionId,
                 AmendRemarkId = request.AmendRemarkId,
                 CompanyRegistrationNo = request.CompanyRegistrationNo,

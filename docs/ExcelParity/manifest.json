@@ -1,24 +1,24 @@
 {
   "generatedFrom": {
-    "head": "261ec1030be55ee0a9af6fde42d65ff2565cb0af",
+    "head": "37cec21008fe9bc6bca656bf1abc1c7c57c35b61",
     "plan": "docs/ExcelParity/Contract.md"
   },
   "counts": {
     "total": 160,
     "byGroup": {
-      "A": 68,
-      "B": 33,
+      "A": 69,
+      "B": 32,
       "C": 44,
       "D": 4,
       "E": 1,
       "F": 10
     },
-    "hasColumnTotals": 43,
-    "hasCurrencyTotals": 34,
+    "hasColumnTotals": 39,
+    "hasCurrencyTotals": 41,
     "both": 1,
     "aliases": 4,
     "variants": 5,
-    "titleMismatch": 8,
+    "titleMismatch": 4,
     "bespokePages": 8
   },
   "excluded": [
@@ -235,7 +235,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderExportLicenceActualAmendmentReport.json"
       ]
@@ -274,7 +274,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderExportLicenceAmendmentReport.json"
       ]
@@ -399,8 +399,8 @@
       ],
       "aliasConfigKeys": [],
       "configTitle": "Border Export Licence By Buyer Country Report",
-      "excelWorksheetTitle": "Border Export Licence By Seller Country Report",
-      "titleMismatch": true,
+      "excelWorksheetTitle": "Border Export Licence By Buyer Country Report",
+      "titleMismatch": false,
       "subtitleSample": "List of Export Licences By Buyer Country From (01/02/2026) To (28/02/2026)",
       "reportHeading": [],
       "showRowNumber": true,
@@ -654,7 +654,7 @@
       "controllerFile": "Backend/Controllers/Report/BorderExportLicenceTotalValueLicencesReportController.cs",
       "requestType": "BorderExportLicenceTotalValueLicencesReportRequest",
       "group": "D",
-      "shape": "sp_ExportLicenceDetailReport_Fast.GetAggregateRowsAsync(, TotalValue, includeSakhan:false)",
+      "shape": "sp_ExportLicenceDetailReport_Fast.GetTotalValueLicencesSummaryAsync()",
       "configKeys": [
         "BorderExportLicenceTotalValueLicencesReport"
       ],
@@ -678,8 +678,8 @@
       "columnCount": 3,
       "bespokePage": "BorderExportLicenceTotalValueLicencesReport",
       "excelPagePattern": "bespoke-queue",
-      "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "hasLayoutProvider": true,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderExportLicenceTotalValueLicencesReport.json"
       ]
@@ -830,7 +830,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderExportPermitActualAmendmentReport.json"
       ]
@@ -869,7 +869,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderExportPermitAmendmentReport.json"
       ]
@@ -1350,17 +1350,17 @@
       ],
       "dateShapeDisagrees": false,
       "hasColumnTotals": false,
-      "hasCurrencyTotals": false,
+      "hasCurrencyTotals": true,
       "currencyTotalsColumns": {
         "labelColumnKey": "LicenceNo",
         "valueColumnKey": "TotalValue"
       },
       "variants": [],
-      "columnCount": 11,
+      "columnCount": 10,
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderImportLicenceActualAmendmentReport.json"
       ]
@@ -1389,7 +1389,7 @@
       ],
       "dateShapeDisagrees": false,
       "hasColumnTotals": false,
-      "hasCurrencyTotals": false,
+      "hasCurrencyTotals": true,
       "currencyTotalsColumns": {
         "labelColumnKey": "LicenceNo",
         "valueColumnKey": "TotalValue"
@@ -1399,7 +1399,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderImportLicenceAmendmentReport.json"
       ]
@@ -1852,7 +1852,7 @@
       "controllerFile": "Backend/Controllers/Report/BorderImportLicenceTotalValueLicencesReportController.cs",
       "requestType": "BorderImportLicenceTotalValueLicencesReportRequest",
       "group": "D",
-      "shape": "sp_ImportLicenceDetailReport_Fast.GetAggregateRowsAsync(, TotalValue, includeSakhan:false)",
+      "shape": "sp_ImportLicenceDetailReport_Fast.GetTotalValueLicencesSummaryAsync()",
       "configKeys": [
         "BorderImportLicenceTotalValueLicencesReport"
       ],
@@ -1876,8 +1876,8 @@
       "columnCount": 2,
       "bespokePage": "BorderImportLicenceTotalValueLicencesReport",
       "excelPagePattern": "bespoke-queue",
-      "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "hasLayoutProvider": true,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderImportLicenceTotalValueLicencesReport.json"
       ]
@@ -2038,7 +2038,7 @@
       ],
       "dateShapeDisagrees": false,
       "hasColumnTotals": false,
-      "hasCurrencyTotals": false,
+      "hasCurrencyTotals": true,
       "currencyTotalsColumns": {
         "labelColumnKey": "LicenceNo",
         "valueColumnKey": "TotalValue"
@@ -2048,7 +2048,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderImportPermitActualAmendmentReport.json"
       ]
@@ -2077,7 +2077,7 @@
       ],
       "dateShapeDisagrees": false,
       "hasColumnTotals": false,
-      "hasCurrencyTotals": false,
+      "hasCurrencyTotals": true,
       "currencyTotalsColumns": {
         "labelColumnKey": "LicenceNo",
         "valueColumnKey": "TotalValue"
@@ -2087,7 +2087,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderImportPermitAmendmentReport.json"
       ]
@@ -2456,7 +2456,7 @@
       "hasCurrencyTotals": false,
       "currencyTotalsColumns": {
         "labelColumnKey": "LicenceNo",
-        "valueColumnKey": "Amount"
+        "valueColumnKey": "TotalAmount"
       },
       "variants": [],
       "columnCount": 12,
@@ -3096,8 +3096,8 @@
       "reportKey": "ExportLicenceActualAmendmentReport",
       "controllerFile": "Backend/Controllers/Report/ExportLicenceActualAmendmentReportController.cs",
       "requestType": "ExportLicenceActualAmendmentReportRequest",
-      "group": "B",
-      "shape": "sp_ActualAmendReport.Query()",
+      "group": "A",
+      "shape": "sp_ActualAmendReport.ExecuteQueryable()",
       "configKeys": [
         "ExportLicenceActualAmendmentReport"
       ],
@@ -3115,7 +3115,7 @@
       ],
       "dateShapeDisagrees": false,
       "hasColumnTotals": false,
-      "hasCurrencyTotals": false,
+      "hasCurrencyTotals": true,
       "currencyTotalsColumns": {
         "labelColumnKey": "LicenceNo",
         "valueColumnKey": "TotalValue"
@@ -3125,7 +3125,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ExportLicenceActualAmendmentReport.json"
       ]
@@ -3154,7 +3154,7 @@
       ],
       "dateShapeDisagrees": false,
       "hasColumnTotals": false,
-      "hasCurrencyTotals": false,
+      "hasCurrencyTotals": true,
       "currencyTotalsColumns": {
         "labelColumnKey": "LicenceNo",
         "valueColumnKey": "TotalValue"
@@ -3164,7 +3164,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ExportLicenceAmendmentReport.json"
       ]
@@ -3551,7 +3551,7 @@
       "controllerFile": "Backend/Controllers/Report/ExportLicenceTotalValueLicencesReportController.cs",
       "requestType": "ExportLicenceTotalValueLicencesReportRequest",
       "group": "D",
-      "shape": "sp_ExportLicenceDetailReport_Fast.GetAggregateRowsAsync(, TotalValue, includeSakhan:false)",
+      "shape": "sp_ExportLicenceDetailReport_Fast.GetTotalValueLicencesSummaryAsync()",
       "configKeys": [
         "ExportLicenceTotalValueLicencesReport"
       ],
@@ -3575,8 +3575,8 @@
       "columnCount": 2,
       "bespokePage": "ExportLicenceTotalValueLicencesReport",
       "excelPagePattern": "bespoke-queue",
-      "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "hasLayoutProvider": true,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ExportLicenceTotalValueLicencesReport.json"
       ]
@@ -3735,7 +3735,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ExportPermitActualAmendmentReport.json"
       ]
@@ -3774,7 +3774,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ExportPermitAmendmentReport.json"
       ]
@@ -3863,8 +3863,8 @@
       ],
       "aliasConfigKeys": [],
       "configTitle": "Export Permit By Buyer Country Report",
-      "excelWorksheetTitle": "Export Permit By Seller Country Report",
-      "titleMismatch": true,
+      "excelWorksheetTitle": "Export Permit By Buyer Country Report",
+      "titleMismatch": false,
       "subtitleSample": "List of Export Permit By Buyer Country From (01/02/2026) To (28/02/2026)",
       "reportHeading": [],
       "showRowNumber": true,
@@ -4185,7 +4185,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ImportLicenceActualAmendmentReport.json"
       ]
@@ -4224,7 +4224,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ImportLicenceAmendmentReport.json"
       ]
@@ -4288,7 +4288,7 @@
         "ToDate"
       ],
       "dateShapeDisagrees": false,
-      "hasColumnTotals": true,
+      "hasColumnTotals": false,
       "hasCurrencyTotals": false,
       "currencyTotalsColumns": null,
       "variants": [],
@@ -4296,7 +4296,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ImportLicenceByMethodReport.json"
       ]
@@ -4324,7 +4324,7 @@
         "ToDate"
       ],
       "dateShapeDisagrees": false,
-      "hasColumnTotals": true,
+      "hasColumnTotals": false,
       "hasCurrencyTotals": false,
       "currencyTotalsColumns": null,
       "variants": [],
@@ -4332,7 +4332,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ImportLicenceBySectionReport.json"
       ]
@@ -4360,7 +4360,7 @@
         "ToDate"
       ],
       "dateShapeDisagrees": false,
-      "hasColumnTotals": true,
+      "hasColumnTotals": false,
       "hasCurrencyTotals": false,
       "currencyTotalsColumns": null,
       "variants": [],
@@ -4368,7 +4368,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ImportLicenceBySellerCountryReport.json"
       ]
@@ -4435,7 +4435,7 @@
         "ToDate"
       ],
       "dateShapeDisagrees": false,
-      "hasColumnTotals": true,
+      "hasColumnTotals": false,
       "hasCurrencyTotals": false,
       "currencyTotalsColumns": null,
       "variants": [],
@@ -4443,7 +4443,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ImportLicenceCompanyListReport.json"
       ]
@@ -4715,7 +4715,7 @@
       "controllerFile": "Backend/Controllers/Report/ImportLicenceTotalValueLicencesReportController.cs",
       "requestType": "ImportLicenceTotalValueLicencesReportRequest",
       "group": "D",
-      "shape": "sp_ImportLicenceDetailReport_Fast.GetAggregateRowsAsync(, TotalValue, includeSakhan:false)",
+      "shape": "sp_ImportLicenceDetailReport_Fast.GetTotalValueLicencesSummaryAsync()",
       "configKeys": [
         "ImportLicenceTotalValueLicencesReport"
       ],
@@ -4739,8 +4739,8 @@
       "columnCount": 2,
       "bespokePage": "ImportLicenceTotalValueLicencesReport",
       "excelPagePattern": "bespoke-queue",
-      "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "hasLayoutProvider": true,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ImportLicenceTotalValueLicencesReport.json"
       ]
@@ -4900,14 +4900,17 @@
       ],
       "dateShapeDisagrees": false,
       "hasColumnTotals": false,
-      "hasCurrencyTotals": false,
-      "currencyTotalsColumns": null,
+      "hasCurrencyTotals": true,
+      "currencyTotalsColumns": {
+        "labelColumnKey": "LicenceNo",
+        "valueColumnKey": "TotalValue"
+      },
       "variants": [],
       "columnCount": 10,
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ImportPermitActualAmendmentReport.json"
       ]
@@ -4949,7 +4952,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ImportPermitAmendmentReport.json"
       ]
@@ -5658,8 +5661,8 @@
       ],
       "aliasConfigKeys": [],
       "configTitle": "OGA Recommendation History",
-      "excelWorksheetTitle": "OGA Recommendation History Report",
-      "titleMismatch": true,
+      "excelWorksheetTitle": "OGA Recommendation History",
+      "titleMismatch": false,
       "subtitleSample": null,
       "reportHeading": [
         "Ministry of Commerce",
@@ -5768,8 +5771,8 @@
       ],
       "aliasConfigKeys": [],
       "configTitle": "PaThaKa Registered Business Organization Report",
-      "excelWorksheetTitle": "PaThaKaRegisteredBusinessOrganizationReport",
-      "titleMismatch": true,
+      "excelWorksheetTitle": "PaThaKa Registered Business Organization Report",
+      "titleMismatch": false,
       "subtitleSample": null,
       "reportHeading": [],
       "showRowNumber": true,

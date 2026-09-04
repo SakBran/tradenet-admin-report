@@ -34,11 +34,13 @@ public static class ImportPermitListingCurrencyTotals
         DateTime toDate,
         int exportImportSectionId,
         string? companyRegistrationNo,
-        int amendRemarkId)
+        int amendRemarkId,
+        string? formType = null,
+        int sakhanId = 0)
     {
         ArgumentNullException.ThrowIfNull(db);
 
-        var parameters = new[]
+        var parameters = new List<SqlParameter>
         {
             new SqlParameter("@ApplyType", applyType ?? string.Empty),
             new SqlParameter("@FromDate", fromDate),
@@ -48,11 +50,24 @@ public static class ImportPermitListingCurrencyTotals
             new SqlParameter("@AmendRemarkId", amendRemarkId),
         };
 
-        const string sql =
+        var sql =
             "EXEC dbo.sp_ImportPermitListingCurrencyTotals @ApplyType, @FromDate, @ToDate, " +
             "@ExportImportSectionId, @CompanyRegistrationNo, @AmendRemarkId";
 
-        return RunAsync(db, sql, parameters);
+        // @FormType / @SakhanId are OPT-IN trailing parameters: they are appended to the positional
+        // EXEC only when a caller names its FormType (the Border reports). Legacy New / Amend /
+        // Cancel callers keep the short argument list, so they keep working against a database where
+        // the longer procedure has not been deployed yet. A Border caller hitting a not-yet-deployed
+        // procedure gets "too many arguments specified", which RunAsync turns into an empty footer --
+        // never a silently wrong one from a fall-through branch.
+        if (formType is not null)
+        {
+            parameters.Add(new SqlParameter("@FormType", formType));
+            parameters.Add(new SqlParameter("@SakhanId", sakhanId));
+            sql += ", @FormType, @SakhanId";
+        }
+
+        return RunAsync(db, sql, parameters.ToArray());
     }
 
     /// <summary>Voucher report footer (<c>dbo.sp_ImportPermitVoucherCurrencyTotals</c>).</summary>

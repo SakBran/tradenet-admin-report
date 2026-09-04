@@ -11,6 +11,11 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    -- Callers name the Actual Amendment branch 'ActualAmend' while the database stores
+    -- 'Actual Amend' (WITH a space); @DbApplyType normalises the two spellings. Without it the
+    -- Export Permit / Border Export Permit Actual Amendment footers matched no rows at all.
+    DECLARE @DbApplyType nvarchar(20) = CASE WHEN @ApplyType = N'ActualAmend' THEN N'Actual Amend' ELSE @ApplyType END;
+
     -- Currency-grouped summary footer for the Export Permit / Border Export Permit
     -- New / Amendment / Actual Amendment / Cancellation listing reports (legacy RDLC
     -- "Currency" group: per-currency permit count + summed/first item value, plus the grand
@@ -32,7 +37,7 @@ BEGIN
 
     IF @FormType = N'Border Export Permit'
     BEGIN
-        IF @ApplyType = N'Amend' OR @ApplyType = N'ActualAmend'
+        IF @DbApplyType = N'Amend' OR @DbApplyType = N'Actual Amend'
         BEGIN
             SELECT ISNULL(d.Currency, N'') AS Currency, COUNT(*) AS NoOfLicences, ISNULL(SUM(d.Amount), 0) AS TotalValue
             FROM (
@@ -47,9 +52,8 @@ BEGIN
                     INNER JOIN PaThaKa ON BorderExportPermit.PaThaKaId = PaThaKa.Id
                     INNER JOIN ExportImportSection section ON BorderExportPermit.ExportImportSectionId = section.Id
                     INNER JOIN Sakhan sakhan ON BorderExportPermit.SakhanId = sakhan.Id
-                WHERE BorderExportPermit.ApplyType = @ApplyType AND BorderExportPermit.Status = 'Approved'
-                    AND ((@FromDate IS NULL) OR BorderExportPermit.CreatedDate >= @FromDate)
-                    AND ((@ToDate IS NULL) OR BorderExportPermit.CreatedDate < DATEADD(day, 1, @ToDate))
+                WHERE BorderExportPermit.ApplyType = @DbApplyType AND BorderExportPermit.Status = 'Approved'
+                    AND (BorderExportPermit.CreatedDate >= @FromDate AND BorderExportPermit.CreatedDate <= @ToDate)
                     AND BorderExportPermit.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN BorderExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
                     AND (CASE WHEN @AmendRemarkId = 0 THEN (CASE WHEN BorderExportPermit.AmendRemarkId IS NOT NULL THEN 1 ELSE 0 END) ELSE (CASE WHEN BorderExportPermit.AmendRemarkId = @AmendRemarkId THEN 1 ELSE 0 END) END) = 1
                     AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
@@ -74,8 +78,7 @@ BEGIN
                     INNER JOIN ExportImportSection section ON BorderExportPermit.ExportImportSectionId = section.Id
                     INNER JOIN Sakhan sakhan ON BorderExportPermit.SakhanId = sakhan.Id
                 WHERE BorderExportPermit.ApplyType = 'Cancel' AND BorderExportPermit.Status = 'Approved'
-                    AND ((@FromDate IS NULL) OR BorderExportPermit.CreatedDate >= @FromDate)
-                    AND ((@ToDate IS NULL) OR BorderExportPermit.CreatedDate < DATEADD(day, 1, @ToDate))
+                    AND (BorderExportPermit.CreatedDate >= @FromDate AND BorderExportPermit.CreatedDate <= @ToDate)
                     AND BorderExportPermit.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN BorderExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
                     AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
                     AND BorderExportPermit.SakhanId = (CASE WHEN @SakhanId = 0 THEN BorderExportPermit.SakhanId ELSE @SakhanId END)
@@ -98,6 +101,9 @@ BEGIN
                     INNER JOIN ExportImportSection section ON BorderExportPermit.ExportImportSectionId = section.Id
                     INNER JOIN Sakhan sakhan ON BorderExportPermit.SakhanId = sakhan.Id
                 WHERE BorderExportPermit.ApplyType = 'New' AND BorderExportPermit.Status = 'Approved'
+                    -- TODO(follow-up): still DATEADD because the Border Export Permit New GRID
+                    -- (sp_NewReport_pagination, Border Export Permit branch) has the same extra-day
+                    -- form; flip both together or this footer stops matching its grid.
                     AND ((@FromDate IS NULL) OR BorderExportPermit.CreatedDate >= @FromDate)
                     AND ((@ToDate IS NULL) OR BorderExportPermit.CreatedDate < DATEADD(day, 1, @ToDate))
                     AND BorderExportPermit.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN BorderExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
@@ -110,7 +116,7 @@ BEGIN
     END
     ELSE
     BEGIN
-        IF @ApplyType = N'Amend' OR @ApplyType = N'ActualAmend'
+        IF @DbApplyType = N'Amend' OR @DbApplyType = N'Actual Amend'
         BEGIN
             SELECT ISNULL(d.Currency, N'') AS Currency, COUNT(*) AS NoOfLicences, ISNULL(SUM(d.Amount), 0) AS TotalValue
             FROM (
@@ -124,7 +130,7 @@ BEGIN
                 FROM ExportPermit
                     INNER JOIN PaThaKa ON ExportPermit.PaThaKaId = PaThaKa.Id
                     INNER JOIN ExportImportSection section ON ExportPermit.ExportImportSectionId = section.Id
-                WHERE ExportPermit.ApplyType = @ApplyType AND ExportPermit.Status = 'Approved'
+                WHERE ExportPermit.ApplyType = @DbApplyType AND ExportPermit.Status = 'Approved'
                     AND (ExportPermit.CreatedDate >= @FromDate AND ExportPermit.CreatedDate <= @ToDate)
                     AND ExportPermit.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN ExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
                     AND (CASE WHEN @AmendRemarkId = 0 THEN (CASE WHEN ExportPermit.AmendRemarkId IS NOT NULL THEN 1 ELSE 0 END) ELSE (CASE WHEN ExportPermit.AmendRemarkId = @AmendRemarkId THEN 1 ELSE 0 END) END) = 1

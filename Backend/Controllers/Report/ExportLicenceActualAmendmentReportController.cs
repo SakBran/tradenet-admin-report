@@ -20,6 +20,10 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // Bumped 2026-09-04: the Amend / Actual Amend date-window fix changes WHICH rows an
+    // export contains for an unchanged request payload, so cached closed-period files
+    // must not be reused (see ExcelExportJobService).
+    [ExcelFormatVersion(2)]
     public class ExportLicenceActualAmendmentReportController : ControllerBase, IStreamingExcelReport
     {
         private const int DefaultPageSize = 10;
@@ -66,6 +70,14 @@ namespace Backend.Controllers.Report
                 : ApiResult<sp_ActualAmendReportResult>.CreateFastPageFromRows(
                     data, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
+
+            if (data.Count > 0)
+            {
+                result.CurrencyTotals = await ExportLicenceListingCurrencyTotals.ExecuteAsync(
+                    _context, procedureRequest!.FormType, "Actual Amend", procedureRequest.FromDate, procedureRequest.ToDate,
+                    procedureRequest.ExportImportSectionId, procedureRequest.CompanyRegistrationNo,
+                    procedureRequest.AmendRemarkId, procedureRequest.SakhanId);
+            }
 
             return Ok(result);
         }
@@ -125,10 +137,13 @@ namespace Backend.Controllers.Report
             CancellationToken cancellationToken)
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
-            var query = sp_ActualAmendReport.Query(_context, procedureRequest!);
-            await foreach (var chunk in query.AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
+            // Stream the SAME stored procedure the grid uses (the other 15 Amend / Actual Amend
+            // controllers already do). The legacy LINQ Query() path produced a different row order
+            // and was the one export not covered by the procedure's date-window parity fix.
+            await foreach (var chunk in sp_ActualAmendReport.ExecuteQueryable(_context, procedureRequest!)
+                .AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
             {
-                sink.Append(chunk);
+                sink.Append(chunk.Select(row => row.ToResult()).ToList());
             }
         }
 
@@ -168,7 +183,7 @@ namespace Backend.Controllers.Report
             {
                 FormType = "Export Licence",
                 FromDate = request.FromDate,
-                ToDate = request.ToDate,
+                ToDate = ReportDateWindow.InclusiveEndOfDay(request.ToDate),
                 ExportImportSectionId = request.ExportImportSectionId,
                 AmendRemarkId = request.AmendRemarkId,
                 CompanyRegistrationNo = request.CompanyRegistrationNo,

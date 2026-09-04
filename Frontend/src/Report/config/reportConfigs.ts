@@ -3640,8 +3640,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
+        fallbackDataIndexes: ['licenceNo'],
       },
       {
         key: 'LicenceAmendmentNo',
@@ -3680,11 +3681,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'Currency',
         dataIndex: 'currency',
         title: 'Currency',
-      },
-      {
-        key: 'hsCode',
-        dataIndex: 'hsCode',
-        title: 'hsCode',
       },
       {
         key: 'TotalValue',
@@ -4974,8 +4970,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
+        fallbackDataIndexes: ['licenceNo'],
       },
       {
         key: 'LicenceAmendmentNo',
@@ -6717,8 +6714,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
+        fallbackDataIndexes: ['licenceNo'],
       },
       {
         key: 'LicenceAmendmentNo',
@@ -10280,6 +10278,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   ImportPermitActualAmendmentReport: {
     controllerName: 'ImportPermitActualAmendmentReport',
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
     title: 'Import Permit Actual Amendment Report',
     apiRoute: 'ImportPermitActualAmendmentReport',
     excelRoute: 'ImportPermitActualAmendmentReport/Excel',
@@ -10332,8 +10331,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
       {
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
+        fallbackDataIndexes: ['licenceNo'],
       },
       {
         key: 'LicenceAmendmentNo',

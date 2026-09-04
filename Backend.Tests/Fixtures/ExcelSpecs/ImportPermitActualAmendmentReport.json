@@ -17,8 +17,11 @@
     },
     {
       "key": "LicenceNo",
-      "dataIndex": "licenceNo",
-      "title": "Licence No"
+      "dataIndex": "oldLicenceNo",
+      "title": "Licence No",
+      "fallbackDataIndexes": [
+        "licenceNo"
+      ]
     },
     {
       "key": "LicenceAmendmentNo",
@@ -69,5 +72,9 @@
       "title": "Total Value",
       "dataType": "number"
     }
-  ]
+  ],
+  "currencyTotalsColumns": {
+    "labelColumnKey": "LicenceNo",
+    "valueColumnKey": "TotalValue"
+  }
 }
