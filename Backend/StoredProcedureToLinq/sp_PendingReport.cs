@@ -130,6 +130,15 @@ public static class sp_PendingReport
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
+        // The Border Import pending endpoint must never build a query over the
+        // ordinary ImportLicence/ExportLicence tables. Keeping a dedicated query
+        // also makes its grid and streaming Excel paths independent of the
+        // currently deployed, incorrectly hard-coded pagination procedure.
+        if (request.FormType == "Border Import Licence")
+        {
+            return BorderImportLicenceQuery(db, request);
+        }
+
         var importCurrencyByLicence =
             from firstItem in
                 (from item in db.ImportLicenceItems
@@ -174,29 +183,6 @@ public static class sp_PendingReport
                  group item by item.ExportLicenceId into g
                  select new { LicenceId = g.Key, ItemId = g.Min(item => item.Id) })
             join item in db.ExportLicenceItems on grouped.ItemId equals item.Id
-            select new { grouped.LicenceId, item.Description, item.Hscode };
-
-        var borderImportCurrencyByLicence =
-            from firstItem in
-                (from item in db.BorderImportLicenceItems
-                 where db.Currencies.Any(currency => currency.Id == item.CurrencyId)
-                 group item by item.BorderImportLicenceId into grouped
-                 select new { LicenceId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
-            join item in db.BorderImportLicenceItems on firstItem.ItemId equals item.Id
-            join currency in db.Currencies on item.CurrencyId equals currency.Id
-            select new { firstItem.LicenceId, currency.Code };
-
-        var borderImportAmountByLicence =
-            from item in db.BorderImportLicenceItems
-            group item by item.BorderImportLicenceId into grouped
-            select new { LicenceId = grouped.Key, Amount = grouped.Sum(item => (decimal?)item.Amount) };
-
-        var borderImportFirstItemByLicence =
-            from grouped in
-                (from item in db.BorderImportLicenceItems
-                 group item by item.BorderImportLicenceId into g
-                 select new { LicenceId = g.Key, ItemId = g.Min(item => item.Id) })
-            join item in db.BorderImportLicenceItems on grouped.ItemId equals item.Id
             select new { grouped.LicenceId, item.Description, item.Hscode };
 
         return
@@ -260,19 +246,47 @@ public static class sp_PendingReport
                 Amount = amountRow.Amount ?? 0m,
                 CommodityType = licence.CommodityType,
                 HSCode = firstItemRow.Hscode
-            })
-            .Concat(
+            });
+    }
+
+    private static IQueryable<sp_PendingReportResult> BorderImportLicenceQuery(
+        TradeNetDbContext db,
+        sp_PendingReportRequest request)
+    {
+        var currencyByLicence =
+            from firstItem in
+                (from item in db.BorderImportLicenceItems
+                 where db.Currencies.Any(currency => currency.Id == item.CurrencyId)
+                 group item by item.BorderImportLicenceId into grouped
+                 select new { LicenceId = grouped.Key, ItemId = grouped.Min(item => item.Id) })
+            join item in db.BorderImportLicenceItems on firstItem.ItemId equals item.Id
+            join currency in db.Currencies on item.CurrencyId equals currency.Id
+            select new { firstItem.LicenceId, currency.Code };
+
+        var amountByLicence =
+            from item in db.BorderImportLicenceItems
+            group item by item.BorderImportLicenceId into grouped
+            select new { LicenceId = grouped.Key, Amount = grouped.Sum(item => (decimal?)item.Amount) };
+
+        var firstItemByLicence =
+            from grouped in
+                (from item in db.BorderImportLicenceItems
+                 group item by item.BorderImportLicenceId into g
+                 select new { LicenceId = g.Key, ItemId = g.Min(item => item.Id) })
+            join item in db.BorderImportLicenceItems on grouped.ItemId equals item.Id
+            select new { grouped.LicenceId, item.Description, item.Hscode };
+
+        return
             from licence in db.BorderImportLicences
             join paThaKa in db.PaThaKas on licence.PaThaKaId equals paThaKa.Id
             join section in db.ExportImportSections on licence.ExportImportSectionId equals section.Id
-            join currencyRow in borderImportCurrencyByLicence on licence.Id equals currencyRow.LicenceId into currencyJoin
+            join currencyRow in currencyByLicence on licence.Id equals currencyRow.LicenceId into currencyJoin
             from currencyRow in currencyJoin.DefaultIfEmpty()
-            join amountRow in borderImportAmountByLicence on licence.Id equals amountRow.LicenceId into amountJoin
+            join amountRow in amountByLicence on licence.Id equals amountRow.LicenceId into amountJoin
             from amountRow in amountJoin.DefaultIfEmpty()
-            join firstItemRow in borderImportFirstItemByLicence on licence.Id equals firstItemRow.LicenceId into firstItemJoin
+            join firstItemRow in firstItemByLicence on licence.Id equals firstItemRow.LicenceId into firstItemJoin
             from firstItemRow in firstItemJoin.DefaultIfEmpty()
-            where request.FormType == "Border Import Licence"
-                && (licence.Status == Pending || licence.Status == Reject)
+            where (licence.Status == Pending || licence.Status == Reject)
                 && licence.ApplicationDate >= request.FromDate
                 && licence.ApplicationDate <= request.ToDate
                 && (request.ExportImportSectionId == 0 || licence.ExportImportSectionId == request.ExportImportSectionId)
@@ -291,6 +305,6 @@ public static class sp_PendingReport
                 Amount = amountRow.Amount ?? 0m,
                 CommodityType = licence.CommodityType,
                 HSCode = firstItemRow.Hscode
-            });
+            };
     }
 }

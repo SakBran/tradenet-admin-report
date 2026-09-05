@@ -63,6 +63,23 @@ namespace Backend.Controllers.Report
                     data, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
 
+            // Legacy BorderVoucherReport.rdlc has one grand TOTAL under the
+            // AccountTransaction Amount column. Compute it over the complete
+            // filtered population, not only the current page.
+            if (data.Count > 0)
+            {
+                var amountTotal = await sp_VoucherReport.ExecuteAmountTotalAsync(
+                    _context,
+                    procedureRequest!);
+                if (amountTotal.HasValue)
+                {
+                    result.ColumnTotals = new Dictionary<string, decimal>
+                    {
+                        ["amount"] = decimal.Round(amountTotal.Value, 0),
+                    };
+                }
+            }
+
             return Ok(result);
         }
 
@@ -140,11 +157,17 @@ namespace Backend.Controllers.Report
             {
                 FormType = "Border Import Licence",
                 FromDate = request.FromDate,
-                ToDate = request.ToDate,
+                // The pagination procedure uses an exclusive next-day upper
+                // bound. Strip the UI's end-of-day time so it cannot add an
+                // unintended extra calendar day.
+                ToDate = request.ToDate.Date,
                 ExportImportSectionId = request.ExportImportSectionId,
                 PaymentType = request.PaymentType,
-                ApplyType = request.ApplyType,
-                CompanyRegistrationNo = request.CompanyRegistrationNo,
+                // The old filter has no All option; its first/default value is New.
+                ApplyType = string.IsNullOrWhiteSpace(request.ApplyType)
+                    ? "New"
+                    : request.ApplyType,
+                CompanyRegistrationNo = (request.CompanyRegistrationNo ?? string.Empty).Trim(),
                 SakhanId = request.SakhanId,
             };
 

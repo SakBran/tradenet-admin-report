@@ -25,11 +25,6 @@
       "dataType": "date"
     },
     {
-      "key": "LicenceNo",
-      "dataIndex": "licenceNo",
-      "title": "Licence No"
-    },
-    {
       "key": "ApplicationNo",
       "dataIndex": "applicationNo",
       "title": "Application No"
@@ -104,9 +99,5 @@
       "dataIndex": "sakhanCode",
       "title": "Sakhan"
     }
-  ],
-  "currencyTotalsColumns": {
-    "labelColumnKey": "LicenceNo",
-    "valueColumnKey": "Amount"
-  }
+  ]
 }

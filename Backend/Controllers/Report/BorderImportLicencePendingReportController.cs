@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading;
@@ -21,7 +20,6 @@ namespace Backend.Controllers.Report
     public class BorderImportLicencePendingReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "BorderImportLicencePendingReport";
-
         private const int DefaultPageSize = 10;
         private const int MaxPageSize = 1000;
 
@@ -42,26 +40,22 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
+            // The deployed pagination procedure is hard-coded to ImportLicence and
+            // ignores FormType. Use the retained legacy-compatible LINQ query so this
+            // endpoint reads BorderImportLicence even before a DB migration is deployed.
             var pageIndex = Math.Max(0, request!.PageIndex);
             var pageSize = request.PageSize <= 0
                 ? DefaultPageSize
                 : Math.Min(request.PageSize, MaxPageSize);
-
-            var sortColumn = string.IsNullOrWhiteSpace(request.SortColumn) ? null : request.SortColumn;
-            var sortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? null : request.SortOrder;
-
-            var rows = await sp_PendingReport.ExecuteAsync(
-                _context, procedureRequest!, sortColumn, sortOrder, pageIndex, pageSize, request.IncludeTotalCount);
-
-            var data = rows.Select(row => row.ToResult()).ToList();
-
-            var result = request.IncludeTotalCount
-                ? ApiResult<sp_PendingReportResult>.CreatePageFromRows(
-                    data, rows.Count > 0 ? (rows[0].TotalCount ?? 0) : 0, pageIndex, pageSize,
-                    request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery)
-                : ApiResult<sp_PendingReportResult>.CreateFastPageFromRows(
-                    data, pageIndex, pageSize,
-                    request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
+            var result = await ApiResult<sp_PendingReportResult>.CreateFastPageAsync(
+                sp_PendingReport.Query(_context, procedureRequest!),
+                pageIndex,
+                pageSize,
+                request.SortColumn,
+                request.SortOrder,
+                request.FilterColumn,
+                request.FilterQuery,
+                request.IncludeTotalCount);
 
             return Ok(result);
         }
@@ -98,10 +92,12 @@ namespace Backend.Controllers.Report
             CancellationToken cancellationToken)
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
-            await foreach (var chunk in sp_PendingReport.ExecuteQueryable(_context, procedureRequest!)
+            await foreach (var chunk in sp_PendingReport.Query(_context, procedureRequest!)
+                .OrderBy(row => row.ApplicationDate)
+                .ThenBy(row => row.ApplicationNo)
                 .AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
             {
-                sink.Append(chunk.Select(row => row.ToResult()).ToList());
+                sink.Append(chunk);
             }
         }
 

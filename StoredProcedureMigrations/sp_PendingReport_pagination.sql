@@ -27,6 +27,63 @@ BEGIN
     ELSE
         SET @ob = N'[ApplicationDate] ASC, [ApplicationNo] ASC';
 
+    -- The legacy Border Import Licence Pending report reads the border licence
+    -- and item tables. Keep this branch separate so @FormType can never fall
+    -- through to the ordinary ImportLicence query below.
+    IF @FormType = N'Border Import Licence'
+    BEGIN
+        DECLARE @borderCntPart nvarchar(max) = CASE WHEN @IncludeTotalCount = 1
+            THEN N'DECLARE @__total int; SELECT @__total = COUNT(*) FROM BorderImportLicence
+		INNER JOIN PaThaKa ON BorderImportLicence.PaThaKaId = PaThaKa.Id
+		INNER JOIN ExportImportSection section ON BorderImportLicence.ExportImportSectionId = section.Id
+		WHERE (BorderImportLicence.Status=''Pending'' or BorderImportLicence.Status=''Reject'')
+		AND (BorderImportLicence.ApplicationDate>=@FromDate AND BorderImportLicence.ApplicationDate<=@ToDate)
+		AND BorderImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END) OPTION (RECOMPILE); '
+            ELSE N'DECLARE @__total int = NULL; ' END;
+
+        DECLARE @borderSql nvarchar(max) = @borderCntPart + N'SELECT pg.*,
+        (SELECT top 1 currency.Code FROM BorderImportLicenceItem
+		INNER JOIN Currency currency ON BorderImportLicenceItem.CurrencyId = currency.Id
+		WHERE BorderImportLicenceItem.BorderImportLicenceId=pg.__k_Id) Currency,
+        (SELECT top 1 BorderImportLicenceItem.Description FROM BorderImportLicenceItem
+		WHERE BorderImportLicenceItem.BorderImportLicenceId=pg.__k_Id) AdditionalDescription,
+        (SELECT ISNULL(SUM(BorderImportLicenceItem.Amount),0) FROM BorderImportLicenceItem
+		WHERE BorderImportLicenceItem.BorderImportLicenceId=pg.__k_Id) Amount,
+        (SELECT top 1 BorderImportLicenceItem.HSCode FROM BorderImportLicenceItem
+		WHERE BorderImportLicenceItem.BorderImportLicenceId=pg.__k_Id) HSCode,
+        @__total AS TotalCount
+        FROM (
+            SELECT BorderImportLicence.Status,
+BorderImportLicence.ApplyType,
+BorderImportLicence.ApplicationDate,
+BorderImportLicence.ApplicationNo,
+section.Code SectionCode,
+section.Name SectionName,
+PaThaKa.CompanyRegistrationNo,
+PaThaKa.CompanyName,
+BorderImportLicence.CommodityType,
+BorderImportLicence.Id AS __k_Id
+            FROM BorderImportLicence
+		INNER JOIN PaThaKa ON BorderImportLicence.PaThaKaId = PaThaKa.Id
+		INNER JOIN ExportImportSection section ON BorderImportLicence.ExportImportSectionId = section.Id
+		WHERE (BorderImportLicence.Status=''Pending'' or BorderImportLicence.Status=''Reject'')
+		AND (BorderImportLicence.ApplicationDate>=@FromDate AND BorderImportLicence.ApplicationDate<=@ToDate)
+		AND BorderImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
+            ORDER BY ' + @ob + N' OFFSET @off ROWS FETCH NEXT @ps ROWS ONLY
+        ) pg
+        ORDER BY ' + @ob + N'
+        OPTION (RECOMPILE);';
+
+        EXEC sp_executesql @borderSql,
+            N'@FromDate datetime, @ToDate datetime, @ExportImportSectionId int, @off bigint, @ps bigint',
+            @FromDate=@FromDate,
+            @ToDate=@ToDate,
+            @ExportImportSectionId=@ExportImportSectionId,
+            @off=@off,
+            @ps=@ps;
+        RETURN;
+    END
+
     -- TotalCount only when requested, computed over the UN-paged base (no subqueries) as a separate scalar.
     DECLARE @cntpart nvarchar(max) = CASE WHEN @IncludeTotalCount = 1
         THEN N'DECLARE @__total int; SELECT @__total = COUNT(*) FROM ImportLicence

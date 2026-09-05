@@ -632,6 +632,8 @@ public static class sp_VoucherReport
         TradeNetDbContext db,
         sp_VoucherReportRequest request)
     {
+        var toDateExclusive = request.ToDate.Date.AddDays(1);
+
         var amountByLicence =
             from item in db.BorderImportLicenceItems
             group item by item.BorderImportLicenceId into grouped
@@ -660,7 +662,7 @@ public static class sp_VoucherReport
             from currencyRow in currencyJoin.DefaultIfEmpty()
             where account.IsPayment
                 && account.PaymentDate >= request.FromDate
-                && account.PaymentDate <= request.ToDate
+                && account.PaymentDate < toDateExclusive
                 && (request.ExportImportSectionId == 0 || licence.ExportImportSectionId == request.ExportImportSectionId)
                 && (request.PaymentType == string.Empty || account.PaymentType == request.PaymentType)
                 && licence.ApplyType == request.ApplyType
@@ -708,7 +710,7 @@ public static class sp_VoucherReport
             from currencyRow in currencyJoin.DefaultIfEmpty()
             where account.IsPayment
                 && account.PaymentDate >= request.FromDate
-                && account.PaymentDate <= request.ToDate
+                && account.PaymentDate < toDateExclusive
                 && (request.ExportImportSectionId == 0 || licence.ExportImportSectionId == request.ExportImportSectionId)
                 && (request.PaymentType == string.Empty || account.PaymentType == request.PaymentType)
                 && licence.ApplyType == request.ApplyType

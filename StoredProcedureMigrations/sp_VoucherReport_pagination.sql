@@ -408,10 +408,10 @@ BorderExportLicence.Id AS __k_Id
                 WHERE AccountTransaction.IsPayment=1
                 AND AccountTransaction.TransactionFormType='Border Import Licence'
                 AND ((@FromDate IS NULL) OR AccountTransaction.PaymentDate >= @FromDate)
-                AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate < DATEADD(day, 1, @ToDate))
+                AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
                 AND BorderImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND (@PaymentType='' OR AccountTransaction.PaymentType=@PaymentType)
-                AND (@ApplyType='' OR BorderImportLicence.ApplyType=@ApplyType) AND BorderImportLicence.Status='Approved' AND BorderImportLicence.CardType='Pa Tha Ka'
+                AND BorderImportLicence.ApplyType=@ApplyType AND BorderImportLicence.Status='Approved' AND BorderImportLicence.CardType='Pa Tha Ka'
                 AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
                 AND BorderImportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportLicence.SakhanId ELSE @SakhanId END)
                 UNION ALL
@@ -421,10 +421,10 @@ BorderExportLicence.Id AS __k_Id
                 WHERE AccountTransaction.IsPayment=1
                 AND AccountTransaction.TransactionFormType='Border Import Licence'
                 AND ((@FromDate IS NULL) OR AccountTransaction.PaymentDate >= @FromDate)
-                AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate < DATEADD(day, 1, @ToDate))
+                AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
                 AND BorderImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND (@PaymentType='' OR AccountTransaction.PaymentType=@PaymentType)
-                AND (@ApplyType='' OR BorderImportLicence.ApplyType=@ApplyType) AND BorderImportLicence.Status='Approved' AND BorderImportLicence.CardType='Individual Trading'
+                AND BorderImportLicence.ApplyType=@ApplyType AND BorderImportLicence.Status='Approved' AND BorderImportLicence.CardType='Individual Trading'
                 AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
                 AND BorderImportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportLicence.SakhanId ELSE @SakhanId END)
             ) tmp OPTION (RECOMPILE, MAXDOP 1);
@@ -469,10 +469,10 @@ BorderImportLicence.Id AS __k_Id
 		WHERE IsPayment=1
 		AND AccountTransaction.TransactionFormType=''Border Import Licence''
 		AND ((@FromDate IS NULL) OR AccountTransaction.PaymentDate >= @FromDate)
-		AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate < DATEADD(day, 1, @ToDate))
+		AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
 		AND BorderImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
-		AND (@ApplyType='''' OR BorderImportLicence.ApplyType=@ApplyType) AND BorderImportLicence.Status=''Approved'' AND BorderImportLicence.CardType=''Pa Tha Ka''
+		AND BorderImportLicence.ApplyType=@ApplyType AND BorderImportLicence.Status=''Approved'' AND BorderImportLicence.CardType=''Pa Tha Ka''
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
 		AND BorderImportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportLicence.SakhanId ELSE @SakhanId END)
 		UNION ALL
@@ -510,10 +510,10 @@ BorderImportLicence.Id AS __k_Id
 		WHERE IsPayment=1
 		AND AccountTransaction.TransactionFormType=''Border Import Licence''
 		AND ((@FromDate IS NULL) OR AccountTransaction.PaymentDate >= @FromDate)
-		AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate < DATEADD(day, 1, @ToDate))
+		AND ((@ToDate IS NULL) OR AccountTransaction.PaymentDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
 		AND BorderImportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then BorderImportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
 		AND AccountTransaction.PaymentType=(CASE WHEN @PaymentType='''' then AccountTransaction.PaymentType ELSE @PaymentType END)
-		AND (@ApplyType='''' OR BorderImportLicence.ApplyType=@ApplyType) AND BorderImportLicence.Status=''Approved'' AND BorderImportLicence.CardType=''Individual Trading''
+		AND BorderImportLicence.ApplyType=@ApplyType AND BorderImportLicence.Status=''Approved'' AND BorderImportLicence.CardType=''Individual Trading''
 		AND IndividualTrading.TINNo=(CASE WHEN @CompanyRegistrationNo='''' then IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
 		AND BorderImportLicence.SakhanId=(CASE WHEN @SakhanId=0 then BorderImportLicence.SakhanId ELSE @SakhanId END)
         ) u

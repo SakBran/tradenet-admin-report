@@ -526,9 +526,8 @@ const borderImportLicenceSakhanFilter: ReportFilterConfig = {
 
 const borderImportLicenceVoucherFilters: ReportFilterConfig[] = [
   importLicenceDateRangeFilter,
-  importLicenceFormTypeFilter,
   borderImportLicenceSectionFilter,
-  importLicenceVoucherApplyTypeFilter,
+  importLicenceVoucherApplyTypeFilterNew,
   importLicenceVoucherPaymentTypeFilter,
   importLicenceCompanyRegistrationNoFilter,
   importLicenceCompanyNameFilter,
@@ -657,6 +656,20 @@ const resolveImportLicenceVoucherColumns = (
 
     return column;
   });
+};
+
+const resolveBorderImportLicenceVoucherColumns = (
+  filters: Record<string, unknown>,
+  columns: ReportColumnConfig[]
+): ReportColumnConfig[] => {
+  const resolved = resolveImportLicenceVoucherColumns(filters, columns);
+
+  // BorderVoucherReport.rdlc hides its dynamic licence-number column for New.
+  // OriginalLicenceNo already falls back to the current licence number, leaving
+  // the single Licence No column shown by the old report.
+  return String(filters.ApplyType ?? 'New') === 'New'
+    ? resolved.filter((column) => column.key !== 'LicenceNo')
+    : resolved;
 };
 
 export const reportConfigs: Record<string, ReportPageConfig> = {
@@ -4654,30 +4667,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'BorderImportLicencePendingReport.xlsx',
     initialSortColumn: 'Status',
     showRowNumber: true,
-    filters: [
-      {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-      },
-    ],
+    filters: [importLicenceDateRangeFilter, borderImportLicenceSectionFilter],
     columns: [
       {
         key: 'Section',
@@ -4721,9 +4711,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Commodity Type',
       },
       {
-        key: 'hsCode',
+        key: 'HSCode',
         dataIndex: 'hsCode',
-        title: 'hsCode',
+        title: 'HSCode',
       },
       {
         key: 'AdditionalDescription',
@@ -4733,7 +4723,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'Currency',
         dataIndex: 'currency',
-        title: 'Currency',
+        title: 'Curency',
       },
       {
         key: 'TotalValue',
@@ -4770,7 +4760,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderImportLicenceVoucherReport: {
     controllerName: 'BorderImportLicenceVoucherReport',
-    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'Amount' },
     title: 'Border Import Licence Voucher Report',
     apiRoute: 'BorderImportLicenceVoucherReport',
     excelRoute: 'BorderImportLicenceVoucherReport/Excel',
@@ -4779,7 +4768,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     showRowNumber: true,
     filters: borderImportLicenceVoucherFilters,
     reportSubtitle: importLicenceRangeSubtitle('Import Licence Voucher List'),
-    resolveColumns: resolveImportLicenceVoucherColumns,
+    resolveColumns: resolveBorderImportLicenceVoucherColumns,
     columns: [
       {
         key: 'OriginalLicenceNo',

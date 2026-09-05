@@ -211,6 +211,8 @@ describe('Border Import Licence report configs', () => {
 
   it('voucher keeps old-admin filter shape, Sakhan, and dynamic headers', () => {
     const cfg = reportConfigs.BorderImportLicenceVoucherReport;
+    const resolvedForNew =
+      cfg.resolveColumns?.({ ApplyType: 'New' }, cfg.columns) ?? cfg.columns;
     const resolvedForAmend =
       cfg.resolveColumns?.({ ApplyType: 'Amend' }, cfg.columns) ?? cfg.columns;
     const resolvedForCancel =
@@ -218,7 +220,6 @@ describe('Border Import Licence report configs', () => {
 
     expect(cfg.filters.map((filter) => filter.name)).toEqual([
       'dateRange',
-      'FormType',
       'ExportImportSectionId',
       'ApplyType',
       'PaymentType',
@@ -229,28 +230,59 @@ describe('Border Import Licence report configs', () => {
     expect(
       cfg.filters.find((filter) => filter.name === 'ExportImportSectionId')?.lookupName
     ).toBe('borderImportLicenceSections');
-    expect(cfg.filters.find((filter) => filter.name === 'PaymentType')?.lookupName).toBe(
-      'paymentTypes'
-    );
+    expect(cfg.filters.find((filter) => filter.name === 'ApplyType')).toMatchObject({
+      defaultValue: 'New',
+      options: [
+        { label: 'New', value: 'New' },
+        { label: 'Amend', value: 'Amend' },
+        { label: 'Extension', value: 'Extension' },
+        { label: 'Cancel', value: 'Cancel' },
+        { label: 'Actual Amend', value: 'Actual Amend' },
+      ],
+    });
+    expect(cfg.filters.find((filter) => filter.name === 'PaymentType')?.options).toEqual([
+      { label: '--- All ---', value: '' },
+      { label: 'Cash', value: 'Cash' },
+      { label: 'MPU', value: 'MPU' },
+      { label: 'Citizen Pay', value: 'Citizen Pay' },
+    ]);
     expect(cfg.filters.find((filter) => filter.name === 'SakhanId')?.lookupName).toBe(
       'sakhans'
     );
-    expect(cfg.currencyTotalsColumns).toEqual({
-      labelColumnKey: 'LicenceNo',
-      valueColumnKey: 'Amount',
-    });
+    expect(cfg.currencyTotalsColumns).toBeUndefined();
+    expect(resolvedForNew.filter((column) => column.title === 'Licence No')).toHaveLength(1);
+    expect(resolvedForNew.some((column) => column.key === 'LicenceNo')).toBe(false);
     expect(
       resolvedForAmend.find((column) => column.key === 'LicenceNo')?.title
-    ).toBe('Amendment No');
+    ).toBe('Licence Amendment No');
     expect(
       resolvedForAmend.find((column) => column.key === 'LicenceDate')?.title
     ).toBe('Amendment Date');
     expect(
       resolvedForCancel.find((column) => column.key === 'LicenceNo')?.title
-    ).toBe('Cancellation No');
+    ).toBe('Licence Cancel No');
     expect(
       resolvedForCancel.find((column) => column.key === 'LicenceDate')?.title
     ).toBe('Cancellation Date');
+  });
+
+  it('pending report keeps only the old date and Border Import Section filters', () => {
+    const cfg = reportConfigs.BorderImportLicencePendingReport;
+
+    expect(cfg.filters.map((filter) => filter.name)).toEqual([
+      'dateRange',
+      'ExportImportSectionId',
+    ]);
+    expect(
+      cfg.filters.find((filter) => filter.name === 'ExportImportSectionId')?.lookupName
+    ).toBe('borderImportLicenceSections');
+    expect(cfg.columns.find((column) => column.key === 'HSCode')).toMatchObject({
+      dataIndex: 'hsCode',
+      title: 'HSCode',
+    });
+    expect(cfg.columns.find((column) => column.key === 'Currency')?.title).toBe(
+      'Curency'
+    );
   });
 
   it('HS Code report keeps Import Section, Start/End filter, Sakhan lookup, and detail drilldown', () => {

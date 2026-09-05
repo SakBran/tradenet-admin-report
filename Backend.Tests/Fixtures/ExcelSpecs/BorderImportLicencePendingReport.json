@@ -52,9 +52,9 @@
       "title": "Commodity Type"
     },
     {
-      "key": "hsCode",
+      "key": "HSCode",
       "dataIndex": "hsCode",
-      "title": "hsCode"
+      "title": "HSCode"
     },
     {
       "key": "AdditionalDescription",
@@ -64,7 +64,7 @@
     {
       "key": "Currency",
       "dataIndex": "currency",
-      "title": "Currency"
+      "title": "Curency"
     },
     {
       "key": "TotalValue",
