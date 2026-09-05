@@ -37,6 +37,9 @@ namespace API.Service.Reports
         /// <c>=CountDistinct(Fields!LicenceNo.Value)</c> with empty Total Value /
         /// Currency cells). Summing Total Value across rows is meaningless anyway:
         /// each row is one (group, currency) pair, so it adds USD to EUR to CNY.
+        /// A Daily report still gets its "Total USD Value" roll-up, which the legacy
+        /// footer does print (ImportPermitByDailyReport.rdlc:1200) because the
+        /// USD-normalised column is single-currency by construction.
         /// </summary>
         CountOnly,
     }
@@ -270,13 +273,11 @@ namespace API.Service.Reports
                 ["noOfLicences"] = groups.Sum(group => group.NoOfLicences),
             };
 
-            if (mode == ReportColumnTotalsMode.CountOnly)
+            if (mode != ReportColumnTotalsMode.CountOnly)
             {
-                // The legacy RDLC leaves Total Value (and the USD roll-up) blank.
-                return totals;
+                // CountOnly leaves the Total Value cell blank, as the legacy RDLC does.
+                totals["totalValue"] = groups.Sum(group => group.TotalValue ?? 0m);
             }
-
-            totals["totalValue"] = groups.Sum(group => group.TotalValue ?? 0m);
 
             if (dimension == ReportAggregateDimension.Daily)
             {

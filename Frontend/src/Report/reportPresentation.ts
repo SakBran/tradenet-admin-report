@@ -105,7 +105,7 @@ export const isLegacyReportViewer = (config: ReportPageConfig) =>
 
 /** Header text of the row-number column, exactly as the grid prints it. */
 export const resolveRowNumberTitle = (config: ReportPageConfig) =>
-  isLegacyReportViewer(config) ? 'No.' : 'No';
+  config.rowNumberTitle ?? (isLegacyReportViewer(config) ? 'No.' : 'No');
 
 /**
  * The columns the grid actually renders for these applied filters: the

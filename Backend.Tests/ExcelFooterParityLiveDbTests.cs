@@ -123,7 +123,7 @@ public sealed class ExcelFooterParityLiveDbTests
         // Column 1 (Entry Date) is the first data column with no total, which is where
         // BasicTable.tsx's totalLabelIndex puts the label. Index 5 is the LEGACY
         // WriteTotalsRow position (immediately left of the totalled column) — not this.
-        Assert.Equal("Total", row.Cells[1]?.Value);
+        Assert.Equal("TOTAL", row.Cells[1]?.Value);
         Assert.Equal(gridTotals.ColumnTotals!["amount"], row.Cells[6]?.Value);
     }
 

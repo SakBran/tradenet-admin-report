@@ -54,9 +54,10 @@ export interface ReportColumnConfig {
   dataType?: ReportColumnDataType;
   fallbackDataIndexes?: string[];
   /**
-   * Excel number format for a money column, when 2 decimals are not enough:
-   * '#,##0.0000' exports the legacy RDLC 4-decimal value format. Carried into the
-   * Excel presentation spec only; the grid formats money with `toFixed(2)`.
+   * Number format for a numeric column, when the `dataType` default is not the
+   * legacy one: '#,##0.0000' is the RDLC `FORMAT(..., "N4")` value format and
+   * '#,##0' is `"N0"`. Applied by the grid (BasicTable) and carried into the
+   * Excel presentation spec, so both surfaces print the same string.
    */
   numberFormat?: string;
   drilldown?: ReportColumnDrilldown;
@@ -124,6 +125,14 @@ export interface ReportPageConfig {
    * Used only where we are intentionally matching the old admin report UI.
    */
   legacyReportViewer?: boolean;
+  /**
+   * Header text of the row-number column, exactly as the legacy RDLC prints it.
+   * The RDLCs are not consistent: the listing reports use `No.`
+   * (VoucherReport.rdlc:253, CancelReport.rdlc:256) while the summary "By X"
+   * reports use `Sr.No.` (ImportPermitBySectionReport.rdlc:249). Overrides the
+   * `legacyReportViewer` default of `No.` / `No`.
+   */
+  rowNumberTitle?: string;
   /**
    * Optional centered heading lines shown above the report grid once filters
    * are applied (e.g. ['Ministry of Commerce', 'Directorate of Trade']),

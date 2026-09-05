@@ -127,7 +127,8 @@ public static class sp_ImportPermitDetailReport_Fast
         ReportQueryRequest pagingRequest,
         ReportAggregateDimension dimension,
         bool includeSakhan,
-        bool includeColumnTotals = false)
+        bool includeColumnTotals = false,
+        ReportColumnTotalsMode columnTotalsMode = ReportColumnTotalsMode.CountAndValue)
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
@@ -135,17 +136,41 @@ public static class sp_ImportPermitDetailReport_Fast
 
         var source = await AggregateSourceRowsAsync(db, request);
 
+        ApiResult<ReportAggregateResult> result;
+
         if (dimension == ReportAggregateDimension.Daily)
         {
             // Daily reports carry a "Total USD Value" column. Group, fill the FX conversion
             // (which needs DB access, unlike the in-memory CreatePagedResult), then page.
             var groups = ReportAggregationService.Aggregate(source, dimension, includeSakhan);
             await ReportUsdConversionService.FillDailyUsdValuesAsync(db, groups);
-            return ReportAggregationService.CreatePagedResultFromGroups(
-                groups, dimension, includeSakhan, pagingRequest, includeColumnTotals);
+            result = ReportAggregationService.CreatePagedResultFromGroups(
+                groups, dimension, includeSakhan, pagingRequest, includeColumnTotals, columnTotalsMode);
+        }
+        else
+        {
+            result = ReportAggregationService.CreatePagedResult(
+                source, dimension, includeSakhan, pagingRequest, includeColumnTotals, columnTotalsMode);
         }
 
-        return ReportAggregationService.CreatePagedResult(source, dimension, includeSakhan, pagingRequest, includeColumnTotals);
+        if (includeColumnTotals && result.ColumnTotals is not null)
+        {
+            // The legacy footer is =CountDistinct(Fields!LicenceNo.Value) over the WHOLE
+            // dataset (e.g. ImportPermitBySectionReport.rdlc:895), which is NOT the sum of
+            // the per-row counts: each grid row is one (group, currency) pair, so a permit
+            // with items in two currencies would otherwise be counted twice. `source` is
+            // already materialized, so this costs no extra query.
+            result.ColumnTotals = new Dictionary<string, decimal>(result.ColumnTotals)
+            {
+                ["noOfLicences"] = source
+                    .Select(row => row.LicenceNo)
+                    .Where(licenceNo => !string.IsNullOrEmpty(licenceNo))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Count(),
+            };
+        }
+
+        return result;
     }
 
     public static async Task<byte[]> CreateAggregateExcelWorkbookAsync(

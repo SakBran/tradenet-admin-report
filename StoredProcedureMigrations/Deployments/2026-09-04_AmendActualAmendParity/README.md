@@ -3,6 +3,14 @@
 **Six stored procedures to re-run on the server.** Everything needed is in this folder; the
 files are copies of the repository originals listed in `checksums.txt`.
 
+> **Re-synced 2026-09-05.** `sp_ImportPermitListingCurrencyTotals` has since gained a
+> `Cancel` branch (Import Permit round-1 parity), so `06_…` and the matching section of
+> `00_RunAll.sql` were re-copied from the repository original and `checksums.txt` updated —
+> a deployment copy must never be stale. If this folder has already been applied, the
+> `Cancel` branch ships again in
+> [2026-09-05_ImportPermitParityRound1](../2026-09-05_ImportPermitParityRound1/); running
+> either folder is enough, and running both is harmless (`CREATE OR ALTER`).
+
 Fixes the customer complaint that the new Actual Amendment reports do not match the old
 Tradenet 2.0 reports:
 

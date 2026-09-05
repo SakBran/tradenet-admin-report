@@ -189,25 +189,59 @@ public static partial class sp_HSCodeReport
         return await AggregateQuery(db, request).ToListAsync();
     }
 
+    /// <summary>
+    /// The LINQ twin of sp_HSCodeReport_pagination: used for the Excel streaming path and
+    /// whenever a section filter takes the report off the aggregate procedure. It must group
+    /// exactly as the procedure does, or the grid and the .xlsx disagree.
+    /// </summary>
     private static IQueryable<ReportAggregateResult> AggregateQuery(
         TradeNetDbContext db,
         sp_HSCodeReportRequest request)
     {
+        if (GroupsByCompany(request))
+        {
+            return Query(db, request)
+                .GroupBy(row => new
+                {
+                    row.HSCode,
+                    row.HSDescription,
+                    row.CompanyName,
+                    row.CompanyRegistrationNo,
+                    row.Currency
+                })
+                .Select(group => new ReportAggregateResult
+                {
+                    HSCode = group.Key.HSCode,
+                    HSDescription = group.Key.HSDescription,
+                    CompanyName = group.Key.CompanyName,
+                    CompanyRegistrationNo = group.Key.CompanyRegistrationNo,
+                    Currency = group.Key.Currency,
+                    NoOfLicences = group
+                        .Select(row => row.LicenceNo)
+                        .Distinct()
+                        .Count(),
+                    TotalValue = group.Sum(row => row.Amount),
+                    TotalUSDValue = null,
+                })
+                .OrderBy(row => row.HSCode)
+                .ThenBy(row => row.CompanyName)
+                .ThenBy(row => row.Currency);
+        }
+
         return Query(db, request)
             .GroupBy(row => new
             {
+                row.HSCodeId,
                 row.HSCode,
                 row.HSDescription,
-                row.CompanyName,
-                row.CompanyRegistrationNo,
                 row.Currency
             })
             .Select(group => new ReportAggregateResult
             {
                 HSCode = group.Key.HSCode,
                 HSDescription = group.Key.HSDescription,
-                CompanyName = group.Key.CompanyName,
-                CompanyRegistrationNo = group.Key.CompanyRegistrationNo,
+                CompanyName = null,
+                CompanyRegistrationNo = null,
                 Currency = group.Key.Currency,
                 NoOfLicences = group
                     .Select(row => row.LicenceNo)
@@ -217,9 +251,19 @@ public static partial class sp_HSCodeReport
                 TotalUSDValue = null,
             })
             .OrderBy(row => row.HSCode)
-            .ThenBy(row => row.CompanyName)
             .ThenBy(row => row.Currency);
     }
+
+    /// <summary>
+    /// Whether the buyer company belongs in the grouping key. The legacy HSCodeReport.rdlc row
+    /// group is (HSCodeId, Currency) — no company (rdlc:1152-1153) — while HSCodeDetailReport.rdlc
+    /// adds the company (rdlc:1263-1264). Import Permit has no detail report of its own, and
+    /// keeping the company in its key split one HS code into one invisible row per buyer, each
+    /// with a partial Total Value. The other form types still need it: their
+    /// *HSCodeDetailReport configs render Company Name off this same query.
+    /// </summary>
+    private static bool GroupsByCompany(sp_HSCodeReportRequest request)
+        => !string.Equals(request.FormType, "Import Permit", StringComparison.Ordinal);
 
     private static IQueryable<sp_HSCodeReportResult> ExportLicenceRows(
         TradeNetDbContext db,

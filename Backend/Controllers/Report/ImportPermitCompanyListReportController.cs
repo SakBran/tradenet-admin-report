@@ -16,6 +16,9 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // v2: the grand-total footer lost its Total Value cell (legacy parity), so cached
+    // closed-period .xlsx files must not be reused.
+    [ExcelFormatVersion(2)]
     public class ImportPermitCompanyListReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ImportPermitCompanyListReport";
@@ -39,7 +42,10 @@ namespace Backend.Controllers.Report
 
             var result = await sp_ImportPermitDetailReport_Fast.CreateAggregateResultAsync(
                 _context, procedureRequest!, request!, ReportAggregateDimension.Company, includeSakhan: false,
-                includeColumnTotals: true);
+                // The legacy TOTAL row prints only CountDistinct(LicenceNo) — the Total Value
+                // cell is blank, because each row is one (group, currency) pair and summing
+                // across currencies is meaningless (ImportPermitByCompanyReport.rdlc:839/893).
+                includeColumnTotals: true, columnTotalsMode: ReportColumnTotalsMode.CountOnly);
 
             return Ok(result);
         }

@@ -39,15 +39,23 @@ describe('Import Permit report configs', () => {
     }
   });
 
-  it('New / Amendment / Voucher have a currency-totals footer configured', () => {
+  it('New / Amendment / Extension / Cancellation have a currency-totals footer configured', () => {
     for (const key of [
       'ImportPermitNewReportNewReport',
       'ImportPermitAmendmentReport',
-      'ImportPermitVoucherReport',
       'ImportPermitExtensionReport',
+      // CancelReport.rdlc Tablix2 (:1557/:1611/:1723) is a per-currency footer too.
+      'ImportPermitCancellationReport',
     ]) {
       expect(reportConfigs[key].currencyTotalsColumns, `${key} currencyTotalsColumns`).toBeDefined();
     }
+  });
+
+  it('Voucher has NO currency footer: the old rdlc totals only the voucher fee', () => {
+    // VoucherReport.rdlc's single aggregate is =FORMAT(SUM(Fields!Amount.Value),"N0") at
+    // rdlc:1828 — a grand TOTAL of the MMK fee, with no per-currency block and nothing
+    // under Lic Value. The backend supplies it as ColumnTotals["amount"] instead.
+    expect(reportConfigs.ImportPermitVoucherReport.currencyTotalsColumns).toBeUndefined();
   });
 
   it('every drilldown targets a known report and carries only filters that exist on the source', () => {
@@ -79,16 +87,94 @@ describe('Import Permit report configs', () => {
     expect(indexes.has('exchangeRate')).toBe(true);
   });
 
-  it('Amendment / Cancellation / Extension "No." columns map to oldLicenceNo (not the licence no)', () => {
+  it('Amendment / Extension "No." columns map to oldLicenceNo (not the licence no)', () => {
     const cases: Array<[string, string]> = [
       ['ImportPermitAmendmentReport', 'LicenceAmendmentNo'],
-      ['ImportPermitCancellationReport', 'CancellationNo'],
       ['ImportPermitExtensionReport', 'ExtensionNo'],
     ];
     for (const [report, colKey] of cases) {
       const col = reportConfigs[report].columns.find((c) => c.key === colKey);
       expect(col, `${report}.${colKey}`).toBeDefined();
       expect(col!.dataIndex, `${report}.${colKey}`).toBe('oldLicenceNo');
+    }
+  });
+
+  it('Cancellation binds Licence No to oldLicenceNo and Cancellation No to licenceNo', () => {
+    // CancelReport.rdlc walks Tablix1 as header 'Licence No' (:366) -> =Fields!OldLicenceNo
+    // (:986) and 'Cancellation No' (:421) -> =Fields!LicenceNo (:1039). Every sibling
+    // cancellation config (Export Permit, Import Licence, Border Export *) does the same;
+    // Import Permit had the two the wrong way round.
+    const columns = reportConfigs.ImportPermitCancellationReport.columns;
+    expect(columns.find((c) => c.key === 'LicenceNo')?.dataIndex).toBe('oldLicenceNo');
+    expect(columns.find((c) => c.key === 'CancellationNo')?.dataIndex).toBe('licenceNo');
+  });
+
+  it('Cancellation has no HS Code column: the old rdlc has 11 columns and none is HS-related', () => {
+    const columns = reportConfigs.ImportPermitCancellationReport.columns;
+    expect(columns.some((c) => c.dataIndex === 'hsCode')).toBe(false);
+    expect(columns.map((c) => c.title)).toEqual([
+      'Section',
+      'Licence No',
+      'Cancellation No',
+      'Cancellation Date',
+      'Company Registration No',
+      'Company Name',
+      'Company Address',
+      'Currency',
+      'Total Value',
+      'Remark',
+    ]);
+  });
+
+  it('Voucher restores the Application Date and original Licence No columns', () => {
+    // VoucherReport.rdlc col 2 (header :308) renders
+    // =IIF(ApplyType="New", LicenceNo, OldLicenceNo) at :1068; commit 36eaa18 had deleted
+    // both that column and Application Date from this config.
+    const columns = reportConfigs.ImportPermitVoucherReport.columns;
+    expect(columns[0]).toMatchObject({
+      key: 'OriginalLicenceNo',
+      dataIndex: 'oldLicenceNo',
+      title: 'Licence No',
+    });
+    expect(columns[1]).toMatchObject({
+      key: 'ApplicationDate',
+      dataIndex: 'applicationDate',
+      title: 'Application Date',
+    });
+    // header2 / header3 are filled in per ApplyType by resolveColumns.
+    expect(reportConfigs.ImportPermitVoucherReport.resolveColumns).toBeDefined();
+  });
+
+  it('the summary reports do not expose the hidden Type / FormType field as a filter', () => {
+    // The old views render these as @Html.HiddenFor and the controllers hard-code them
+    // ("Oversea" / "Import Permit"), so a visible text box was both extra and dead.
+    for (const key of [
+      'ImportPermitBySectionReport',
+      'ImportPermitBySellerCountryReport',
+      'ImportPermitCompanyListReport',
+      'ImportPermitDailyReportNewPermitReport',
+      'ImportPermitByHSCodeReport',
+      'ImportPermitCancellationReport',
+      'ImportPermitVoucherReport',
+    ]) {
+      const names = reportConfigs[key].filters.map((f) => f.name);
+      expect(names, `${key} filters`).not.toContain('Type');
+      expect(names, `${key} filters`).not.toContain('FormType');
+    }
+  });
+
+  it('the By-X / Company List reports label the row-number column Sr.No. like the old rdlc', () => {
+    for (const key of [
+      'ImportPermitByHSCodeReport',
+      'ImportPermitBySectionReport',
+      'ImportPermitBySellerCountryReport',
+      'ImportPermitCompanyListReport',
+    ]) {
+      expect(reportConfigs[key].rowNumberTitle, `${key} rowNumberTitle`).toBe('Sr.No.');
+    }
+
+    for (const key of ['ImportPermitCancellationReport', 'ImportPermitVoucherReport']) {
+      expect(reportConfigs[key].rowNumberTitle, `${key} rowNumberTitle`).toBe('No.');
     }
   });
 

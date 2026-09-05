@@ -10,13 +10,8 @@
     "List of Import Permit Report (01/02/2026) To (28/02/2026)"
   ],
   "showRowNumber": true,
-  "rowNumberTitle": "No",
+  "rowNumberTitle": "No.",
   "columns": [
-    {
-      "key": "hsCode",
-      "dataIndex": "hsCode",
-      "title": "hsCode"
-    },
     {
       "key": "Section",
       "dataIndex": "sectionName",
@@ -24,12 +19,12 @@
     },
     {
       "key": "LicenceNo",
-      "dataIndex": "licenceNo",
+      "dataIndex": "oldLicenceNo",
       "title": "Licence No"
     },
     {
       "key": "CancellationNo",
-      "dataIndex": "oldLicenceNo",
+      "dataIndex": "licenceNo",
       "title": "Cancellation No"
     },
     {
@@ -69,12 +64,17 @@
       "key": "TotalValue",
       "dataIndex": "amount",
       "title": "Total Value",
-      "dataType": "number"
+      "dataType": "money",
+      "numberFormat": "#,##0.0000"
     },
     {
       "key": "Remark",
       "dataIndex": "remark",
       "title": "Remark"
     }
-  ]
+  ],
+  "currencyTotalsColumns": {
+    "labelColumnKey": "LicenceNo",
+    "valueColumnKey": "TotalValue"
+  }
 }

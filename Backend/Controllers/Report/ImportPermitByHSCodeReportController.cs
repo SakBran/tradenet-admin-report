@@ -16,6 +16,10 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // v2: rows are grouped on (HSCodeId, Currency) like HSCodeReport.rdlc:1152-1153 instead of
+    // additionally on the buyer company, so one HS code is one row again; cached closed-period
+    // .xlsx files must not be reused.
+    [ExcelFormatVersion(2)]
     public class ImportPermitByHSCodeReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ImportPermitByHSCodeReport";

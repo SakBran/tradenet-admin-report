@@ -40,6 +40,7 @@ const VOUCHER_CONFIG_KEYS = [
   'ExportLicenceVoucherReport',
   'ExportPermitVoucherReport',
   'ImportLicenceVoucherReport',
+  'ImportPermitVoucherReport',
 ];
 
 /**
@@ -244,8 +245,11 @@ describe('buildExcelPresentation', () => {
         const { spec } = specFor(testCase);
 
         expect(spec.showRowNumber).toBe(testCase.config.showRowNumber ?? true);
+        // An explicit rowNumberTitle wins (the "By X" rdlcs head this column 'Sr.No.');
+        // otherwise the legacy-viewer default applies.
         expect(spec.rowNumberTitle).toBe(
-          isLegacyReportViewer(testCase.config) ? 'No.' : 'No'
+          testCase.config.rowNumberTitle ??
+            (isLegacyReportViewer(testCase.config) ? 'No.' : 'No')
         );
       });
 

@@ -265,7 +265,9 @@ public sealed class StreamingExcelWriterTests
         var rows = doc.Descendants(ns + "row").ToList();
         var totalCells = rows[^1].Elements(ns + "c").ToList();
 
-        // Label sits immediately left of Deducted Fees.
+        // Label sits immediately left of Deducted Fees. This row comes from the layout's own
+        // TotalsRowLabel (AccountSummaryReportController.cs:131 sets it to "Total"), NOT from
+        // ExcelFooterBuilder, whose grid-footer label is the RDLC's "TOTAL".
         Assert.Equal("Total", totalCells[5].Descendants(ns + "t").First().Value);
         Assert.Equal("3001", totalCells[6].Element(ns + "v")?.Value);
         Assert.Single(doc.Descendants(ns + "row").Where(r => r.Descendants(ns + "t").Any(t => t.Value == "Total")));
@@ -478,20 +480,21 @@ public sealed class StreamingExcelWriterTests
         var ns = doc.Root!.Name.Namespace;
         var rows = doc.Descendants(ns + "row").ToList();
 
-        // 4 preamble + header + 2 data + Total + MMK + TOTAL
+        // 4 preamble + header + 2 data + column totals + MMK + grand total
         Assert.Equal(10, rows.Count);
-        // "Total" sits in the first data column with no total of its own (Entry Date),
+        // "TOTAL" sits in the first data column with no total of its own (Entry Date),
         // exactly where BasicTable's totalLabelIndex puts it — NOT immediately left of
         // the totalled column, which is where the legacy WriteTotalsRow used to put it.
-        Assert.Equal("Total", rows[7].Elements(ns + "c").ElementAt(1).Descendants(ns + "t").First().Value);
+        Assert.Equal("TOTAL", rows[7].Elements(ns + "c").ElementAt(1).Descendants(ns + "t").First().Value);
         Assert.Equal("3001", rows[7].Elements(ns + "c").ElementAt(6).Element(ns + "v")?.Value);
         Assert.Equal(
             "MMK:2 licence(s)",
             rows[8].Elements(ns + "c").ElementAt(1).Descendants(ns + "t").First().Value);
         Assert.Equal("TOTAL", rows[9].Elements(ns + "c").First().Descendants(ns + "t").First().Value);
 
-        // Exactly one "Total" label — the layout's own summed row must not also appear.
-        Assert.Single(doc.Descendants(ns + "t").Where(t => t.Value == "Total"));
+        // Exactly two "TOTAL" labels — the column-totals row and the currency grand row.
+        // A third would mean the layout's own summed row was written as well.
+        Assert.Equal(2, doc.Descendants(ns + "t").Count(t => t.Value == "TOTAL"));
         AssertRowIndexesAreSane(doc);
     }
 
