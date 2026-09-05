@@ -153,14 +153,22 @@ ExportPermit.Id AS __k_Id
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END) OPTION (RECOMPILE); '
             ELSE N'DECLARE @__total int = NULL; ' END;
 
+        -- Currency / HS Code / Total Value all come from ONE item: an explicit ORDER BY
+        -- (Id, UniqueId) on all three sub-selects. That is ExportLicenceItem's clustered PK,
+        -- and the key measured to reproduce the legacy sp_CancelReport (466/466 over
+        -- Aug-2025). The legacy bare TOP 1 returns whatever the plan's index order yields, so
+        -- the three sub-selects could each land on a different item. Do NOT copy the Export
+        -- Permit key (HSCodeId, ItemNo) here: the effective key differs per item table. The
+        -- Cancel branch of sp_ExportLicenceListingCurrencyTotals MUST use the identical
+        -- expression, or the footer stops being the sum of the rows on screen.
         SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM ExportLicenceItem
 		INNER JOIN Currency currency ON ExportLicenceItem.CurrencyId = currency.Id
-		WHERE ExportLicenceItem.ExportLicenceId=pg.__k_Id) Currency,
+		WHERE ExportLicenceItem.ExportLicenceId=pg.__k_Id ORDER BY ExportLicenceItem.Id, ExportLicenceItem.UniqueId) Currency,
         (SELECT top 1 HSCode.Code FROM ExportLicenceItem
 		INNER JOIN HSCode ON ExportLicenceItem.HSCodeId = HSCode.Id
-		WHERE ExportLicenceItem.ExportLicenceId=pg.__k_Id) HSCode,
+		WHERE ExportLicenceItem.ExportLicenceId=pg.__k_Id ORDER BY ExportLicenceItem.Id, ExportLicenceItem.UniqueId) HSCode,
         (SELECT top 1  ISNULL(ExportLicenceItem.Amount,0) FROM ExportLicenceItem
-		WHERE ExportLicenceItem.ExportLicenceId=pg.__k_Id) Amount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
+		WHERE ExportLicenceItem.ExportLicenceId=pg.__k_Id ORDER BY ExportLicenceItem.Id, ExportLicenceItem.UniqueId) Amount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
     FROM (
         SELECT ExportLicence.CreatedDate Date,
 section.Code SectionCode,

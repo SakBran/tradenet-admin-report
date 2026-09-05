@@ -198,12 +198,16 @@ BEGIN
             SELECT ISNULL(d.Currency, N'') AS Currency, COUNT(*) AS NoOfLicences, ISNULL(SUM(d.Amount), 0) AS TotalValue
             FROM (
                 SELECT
+                    -- Same item pick as the Cancel grid in sp_CancelReport_pagination: TOP 1
+                    -- ordered by (Id, UniqueId), the clustered PK. Both expressions must stay
+                    -- byte-identical or this footer stops being the sum of the visible rows.
                     (SELECT TOP 1 currency.Code FROM ExportLicenceItem
                         INNER JOIN Currency currency ON ExportLicenceItem.CurrencyId = currency.Id
-                        WHERE ExportLicenceItem.ExportLicenceId = ExportLicence.Id) AS Currency,
+                        WHERE ExportLicenceItem.ExportLicenceId = ExportLicence.Id
+                        ORDER BY ExportLicenceItem.Id, ExportLicenceItem.UniqueId) AS Currency,
                     (SELECT TOP 1 ExportLicenceItem.Amount FROM ExportLicenceItem
                         WHERE ExportLicenceItem.ExportLicenceId = ExportLicence.Id
-                        ORDER BY ExportLicenceItem.Id) AS Amount
+                        ORDER BY ExportLicenceItem.Id, ExportLicenceItem.UniqueId) AS Amount
                 FROM ExportLicence
                     INNER JOIN PaThaKa ON ExportLicence.PaThaKaId = PaThaKa.Id
                     INNER JOIN ExportImportSection section ON ExportLicence.ExportImportSectionId = section.Id
