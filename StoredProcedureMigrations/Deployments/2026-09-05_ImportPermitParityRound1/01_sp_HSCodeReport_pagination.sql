@@ -18,6 +18,13 @@ BEGIN
 	SET @HSCode = LTRIM(RTRIM(ISNULL(@HSCode, '')));
 	SET @FilterType = ISNULL(@FilterType, '');
 
+	-- The grid asks for one row MORE than a page so the caller can tell whether a next page
+	-- exists without paying for COUNT(*). That sentinel must widen the FETCH only -- it must
+	-- NOT widen the OFFSET. It used to be added by the caller to @PageSize itself, so page 2
+	-- started at row (pageSize+1)*1 and every page boundary silently swallowed one row: a
+	-- 31-row report showed 10+10+9 = 29. @FetchSize keeps the two apart.
+	DECLARE @FetchSize int = @PageSize + CASE WHEN @IncludeTotalCount = 0 THEN 1 ELSE 0 END;
+
 	IF(@FormType='Export Licence')
 	BEGIN
 		IF(@IncludeTotalCount=0)
@@ -43,7 +50,7 @@ BEGIN
 			)result
 			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
-			FETCH NEXT @PageSize ROWS ONLY
+			FETCH NEXT @FetchSize ROWS ONLY
 			OPTION (RECOMPILE, MAXDOP 1);
 
 			RETURN;
@@ -72,7 +79,7 @@ BEGIN
 			)result
 			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
-			FETCH NEXT @PageSize ROWS ONLY
+			FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 		END
 		ELSE
@@ -101,7 +108,7 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY
+				FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 			END
 			ELSE
@@ -128,7 +135,7 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY
+				FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 			END
 		END
@@ -158,7 +165,7 @@ BEGIN
 			)result
 			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
-			FETCH NEXT @PageSize ROWS ONLY
+			FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 		END
 		ELSE
@@ -187,7 +194,7 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY
+				FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 			END
 			ELSE
@@ -214,7 +221,7 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY
+				FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 			END
 		END
@@ -244,7 +251,7 @@ BEGIN
 			)result
 			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
-			FETCH NEXT @PageSize ROWS ONLY
+			FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 		END
 		ELSE
@@ -273,7 +280,7 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY
+				FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 			END
 			ELSE
@@ -300,7 +307,7 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY
+				FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 			END
 		END
@@ -338,7 +345,7 @@ BEGIN
 			)result
 			ORDER BY result.HSCode,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
-			FETCH NEXT @PageSize ROWS ONLY
+			FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 		END
 		ELSE
@@ -368,7 +375,7 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY
+				FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 			END
 			ELSE
@@ -396,7 +403,7 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY
+				FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 			END
 		END
@@ -439,7 +446,7 @@ BEGIN
 			)result
 			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
-			FETCH NEXT @PageSize ROWS ONLY
+			FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 		END
 		ELSE
@@ -482,7 +489,7 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY
+				FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 			END
 			ELSE
@@ -523,7 +530,7 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY
+				FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 			END
 		END
@@ -566,7 +573,7 @@ BEGIN
 			)result
 			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
-			FETCH NEXT @PageSize ROWS ONLY
+			FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 		END
 		ELSE
@@ -610,7 +617,7 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY
+				FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 			END
 			ELSE
@@ -652,7 +659,7 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY
+				FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 			END
 		END
@@ -683,7 +690,7 @@ BEGIN
 			)result
 			ORDER BY result.HSCode,result.CompanyName,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
-			FETCH NEXT @PageSize ROWS ONLY
+			FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 		END
 		ELSE
@@ -713,7 +720,7 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY
+				FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 			END
 			ELSE
@@ -741,20 +748,28 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY
+				FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 			END
 		END
 	END
 	ELSE IF(@FormType='Border Import Permit')
 	BEGIN
+		-- @HSCode='' is the By HS Code SUMMARY, whose legacy BorderHSCodeReport.rdlc row group is
+		-- (HSCodeId, Currency) with no company column (rdlc:1157-1169) -- so that sub-branch drops
+		-- the company from the key. Keeping it split one HS code into one row per buyer, each with
+		-- a partial Total Value (measured: 31 rows where the old grouping gives 16).
+		-- The Start/End sub-branches below KEEP the company: they also serve the HS Code detail
+		-- drill (BorderImportPermitHSCodeDetailReport), whose HSCodeDetailReport.rdlc does render
+		-- Company Name. sp_HSCodeReport.GroupsByCompany makes the identical split for the LINQ twin.
 		IF(@HSCode='')
 		BEGIN
-			SELECT result.HSCode,result.HSDescription,result.CompanyRegistrationNo,result.CompanyName,result.Currency,
+			SELECT result.HSCode,result.HSDescription,
+			CAST(NULL AS nvarchar(200)) CompanyRegistrationNo,CAST(NULL AS nvarchar(500)) CompanyName,result.Currency,
 			result.NoOfLicences,result.TotalValue,COUNT(*) OVER() TotalCount
 			FROM
 			(
-			SELECT tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency,
+			SELECT tmp.HSCodeId,tmp.HSCode,tmp.HSDescription,tmp.Currency,
 			COUNT(DISTINCT tmp.LicenceNo) NoOfLicences,SUM(tmp.Amount) TotalValue
 			FROM
 			(SELECT BorderImportPermit.SakhanId SakhanId,section.Code SectionCode,HSCodeId,HSCode.Code HSCode,HSCode.Description HSDescription,Amount,currency.Code Currency,
@@ -768,11 +783,11 @@ BEGIN
 			WHERE ApplyType='New' AND BorderImportPermit.Status='Approved'
 			AND (BorderImportPermit.LicenceDate>=@FromDate AND BorderImportPermit.LicenceDate<=@ToDate)
 			AND BorderImportPermit.SakhanId=(CASE WHEN @SakhanId=0 THEN BorderImportPermit.SakhanId ELSE @SakhanId END))tmp
-			GROUP BY tmp.HSCode,tmp.HSDescription,tmp.CompanyRegistrationNo,tmp.CompanyName,tmp.Currency
+			GROUP BY tmp.HSCodeId,tmp.HSCode,tmp.HSDescription,tmp.Currency
 			)result
-			ORDER BY result.HSCode,result.CompanyName,result.Currency
+			ORDER BY result.HSCode,result.Currency
 			OFFSET @PageIndex * @PageSize ROWS
-			FETCH NEXT @PageSize ROWS ONLY
+			FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 		END
 		ELSE
@@ -802,7 +817,7 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY
+				FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 			END
 			ELSE
@@ -830,7 +845,7 @@ BEGIN
 				)result
 				ORDER BY result.HSCode,result.CompanyName,result.Currency
 				OFFSET @PageIndex * @PageSize ROWS
-				FETCH NEXT @PageSize ROWS ONLY
+				FETCH NEXT @FetchSize ROWS ONLY
 		OPTION (RECOMPILE);
 			END
 		END

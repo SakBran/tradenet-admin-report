@@ -167,4 +167,46 @@ describe('Border Import Permit report configs', () => {
       'sakhans'
     );
   });
+  it('summary reports print on one page like the old RDLC', () => {
+    // The legacy report viewer scrolled every row on a single page. At the grid's 10-row
+    // default, Company List showed 10 of its 13 rows while the .xlsx (which never pages) had
+    // all 13 -- reported as "UI and Excel differ". These result sets are a handful of
+    // (group, currency) rows, so one page is both faithful and cheap.
+    const onePageReports = [
+      'BorderImportPermitByHSCodeReport',
+      'BorderImportPermitHSCodeDetailReport',
+      'BorderImportPermitBySectionReport',
+      'BorderImportPermitBySellerCountryReport',
+      'BorderImportPermitCompanyListReport',
+      'BorderImportPermitDailyReportNewPermitReport',
+    ] as const;
+
+    for (const key of onePageReports) {
+      expect(reportConfigs[key].defaultPageSize, key).toBe(1000);
+    }
+  });
+
+  it('By HS Code shows the old rdlc columns, without a company split', () => {
+    // BorderHSCodeReport.rdlc groups on (HSCodeId, Currency) and renders no company column
+    // (rdlc:1157-1169). Grouping by company as well split one HS code into a row per buyer,
+    // each carrying a partial Total Value. Company Name stays on the HS Code DETAIL drill,
+    // whose HSCodeDetailReport.rdlc does render it.
+    expect(
+      reportConfigs.BorderImportPermitByHSCodeReport.columns.map((column) => column.title)
+    ).toEqual(['HS Code', 'Description', 'No of Licences', 'Total Value', 'Currency']);
+
+    expect(
+      reportConfigs.BorderImportPermitHSCodeDetailReport.columns.map((column) => column.title)
+    ).toContain('Company Name');
+  });
+
+  it('New Report renders the legacy per-currency TOTAL block', () => {
+    // BorderNewReport.rdlc prints a second tablix: "<CUR>: n licence(s)" + summed Total Value
+    // per currency, then a grand "Total: n licence(s)". BasicTable renders that from
+    // currencyTotals, which the controller populates via sp_ImportPermitListingCurrencyTotals.
+    expect(reportConfigs.BorderImportPermitNewReportNewReport.currencyTotalsColumns).toEqual({
+      labelColumnKey: 'LicenceNo',
+      valueColumnKey: 'TotalValue',
+    });
+  });
 });

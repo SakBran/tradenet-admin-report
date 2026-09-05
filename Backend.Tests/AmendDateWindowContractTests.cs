@@ -41,24 +41,27 @@ public sealed class AmendDateWindowContractTests
     [Theory]
     // Every branch an Amend / Actual Amendment controller reaches must use the calendar-date form,
     // because those controllers now send ToDate as a date: '<= @ToDate' would match only midnight.
-    // 4: the three Amend/Actual Amend branches, plus the non-border New branch, which was
-    // brought onto the calendar-date form to mirror its own grid (sp_NewReport_pagination's
-    // Export Licence branch) when the New report's currency footer was wired up.
+    // 4: the three Amend/Actual Amend branches, plus a New branch. Each New branch was brought
+    // onto the calendar-date form to mirror its own grid in sp_NewReport_pagination when that
+    // report's currency footer was wired up — Export Licence and Import Licence first, then
+    // Border Export Permit and Border Import Permit (2026-09-05, Border Import Permit complaints).
     [InlineData("sp_ExportLicenceListingCurrencyTotals.sql", 4)]
-    [InlineData("sp_ExportPermitListingCurrencyTotals.sql", 3)]
+    [InlineData("sp_ExportPermitListingCurrencyTotals.sql", 4)]
     [InlineData("sp_ImportLicenceListingCurrencyTotals.sql", 4)]
-    [InlineData("sp_ImportPermitListingCurrencyTotals.sql", 3)]
+    [InlineData("sp_ImportPermitListingCurrencyTotals.sql", 4)]
     public void Footer_branches_for_amend_reports_use_the_calendar_date_window(string fileName, int expected)
         => Assert.Equal(expected, CountOccurrences(ReadMigration(fileName), "CONVERT(date, @ToDate)"));
 
     [Fact]
-    public void Only_the_border_export_permit_new_footer_still_carries_the_bare_dateadd_form()
+    public void No_footer_procedure_carries_the_bare_dateadd_form()
     {
-        // Its grid (sp_NewReport_pagination, Border Export Permit branch) still uses the bare form;
-        // the two must be flipped together, so the footer keeps mirroring its own grid until then.
+        // The bare form adds a whole day to a '23:59:59' @ToDate. The last holdout was the Border
+        // Export Permit New footer, kept in step with its own grid; both were flipped together
+        // once sp_NewReport_pagination's Border branches were corrected.
         foreach (var fileName in new[]
                  {
                      "sp_ExportLicenceListingCurrencyTotals.sql",
+                     "sp_ExportPermitListingCurrencyTotals.sql",
                      "sp_ImportLicenceListingCurrencyTotals.sql",
                      "sp_ImportPermitListingCurrencyTotals.sql",
                  })
@@ -66,8 +69,9 @@ public sealed class AmendDateWindowContractTests
             Assert.DoesNotContain("CreatedDate < DATEADD(day, 1, @ToDate)", ReadMigration(fileName));
         }
 
-        Assert.Equal(1, CountOccurrences(
-            ReadMigration("sp_ExportPermitListingCurrencyTotals.sql"), "CreatedDate < DATEADD(day, 1, @ToDate)"));
+        // ...and neither does the grid they mirror.
+        Assert.DoesNotContain(
+            "CreatedDate < DATEADD(day,1,@ToDate)", ReadMigration("sp_NewReport_pagination.sql"));
     }
 
     [Fact]

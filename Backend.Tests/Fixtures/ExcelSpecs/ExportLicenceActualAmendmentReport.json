@@ -62,6 +62,11 @@
       "title": "Currency"
     },
     {
+      "key": "HSCode",
+      "dataIndex": "hsCode",
+      "title": "HSCode"
+    },
+    {
       "key": "TotalValue",
       "dataIndex": "amount",
       "title": "Total Value",

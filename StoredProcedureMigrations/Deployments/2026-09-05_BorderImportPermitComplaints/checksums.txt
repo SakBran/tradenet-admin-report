@@ -1,5 +1,7 @@
 # SHA-256 of the repository originals these copies were taken from (2026-09-05).
 # Verify with:  shasum -a 256 -c checksums.txt   (run from StoredProcedureMigrations/)
 #
+be89b62ec90889570dfc9b861c5fb36c2f24e4f1de760ef6c82b52a4256ef0bd  sp_NewReport_pagination.sql
 7634f3449c2c8006e039b9c626b9a859386fdbf417caa889443f2abbbeebdd62  sp_HSCodeReport_pagination.sql
 b33761fddaf719b8e03dbeb8ac171401c563706c7f6c91c519f583802f606ab4  sp_ImportPermitListingCurrencyTotals.sql
+4a5b0ca6f37b4c327a0f8e1a0f931ec07cf29327f75c1d8fe7067c2246ef5d3a  sp_ExportPermitListingCurrencyTotals.sql

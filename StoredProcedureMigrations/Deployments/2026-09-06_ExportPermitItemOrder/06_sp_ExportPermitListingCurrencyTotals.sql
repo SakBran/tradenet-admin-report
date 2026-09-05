@@ -101,11 +101,12 @@ BEGIN
                     INNER JOIN ExportImportSection section ON BorderExportPermit.ExportImportSectionId = section.Id
                     INNER JOIN Sakhan sakhan ON BorderExportPermit.SakhanId = sakhan.Id
                 WHERE BorderExportPermit.ApplyType = 'New' AND BorderExportPermit.Status = 'Approved'
-                    -- TODO(follow-up): still DATEADD because the Border Export Permit New GRID
-                    -- (sp_NewReport_pagination, Border Export Permit branch) has the same extra-day
-                    -- form; flip both together or this footer stops matching its grid.
+                    -- Flipped to the calendar-date form together with its grid
+                    -- (sp_NewReport_pagination, Border Export Permit branch), which carried the
+                    -- same extra-day bug: DATEADD(day, 1, ...) over a '23:59:59' @ToDate reached
+                    -- a whole day further than the old sp_NewReport's 'CreatedDate <= @ToDate'.
                     AND ((@FromDate IS NULL) OR BorderExportPermit.CreatedDate >= @FromDate)
-                    AND ((@ToDate IS NULL) OR BorderExportPermit.CreatedDate < DATEADD(day, 1, @ToDate))
+                    AND ((@ToDate IS NULL) OR BorderExportPermit.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
                     AND BorderExportPermit.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN BorderExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
                     AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
                     AND BorderExportPermit.SakhanId = (CASE WHEN @SakhanId = 0 THEN BorderExportPermit.SakhanId ELSE @SakhanId END)
