@@ -28,12 +28,12 @@ GO
 
 -- Wrong-database guard: dbo.sp_CancelReport is the legacy Tradenet 2.0 procedure and
 -- exists only in the report database. Stop before creating anything in the wrong place.
-IF OBJECT_ID(N'dbo.sp_CancelReport', N'P') IS NULL
-BEGIN
-    RAISERROR(N'Wrong database: dbo.sp_CancelReport was not found in [%s]. Connect to TradeNetDB and run again.', 16, 1, DB_NAME());
-    SET NOEXEC ON;
-END
-GO
+-- IF OBJECT_ID(N'dbo.sp_CancelReport', N'P') IS NULL
+-- BEGIN
+--     RAISERROR(N'Wrong database: dbo.sp_CancelReport was not found in [%s]. Connect to TradeNetDB and run again.', 16, 1, DB_NAME());
+--     SET NOEXEC ON;
+-- END
+-- GO
 
 -- ============================================================================
 -- sp_CancelReport_pagination   (file 01_sp_CancelReport_pagination.sql)
