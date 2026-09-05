@@ -4,7 +4,12 @@ import { reportConfigs } from './reportConfigs';
 // The eight Actual Amendment listing reports render the old AmendReport.rdlc /
 // BorderAmendReport.rdlc layout: a per-currency footer, "Licence No" bound to the ORIGINAL
 // licence number (Fields!OldLicenceNo) and "Licence Amendment No" to the amendment number
-// (Fields!LicenceNo). Neither old RDLC has an HSCode column.
+// (Fields!LicenceNo).
+//
+// NB: an earlier version of this comment claimed neither old RDLC has an HSCode column.
+// That was read from the old-admin working tree, which sits on the 2022 `OGA_Terminate`
+// branch. Production (`origin/master`) AmendReport.rdlc:723 DOES have one, between Curency
+// and Total Value -- see reportConfigs.exportPermit.test.ts.
 const ACTUAL_AMEND_REPORTS = [
   'ExportLicenceActualAmendmentReport',
   'ImportLicenceActualAmendmentReport',

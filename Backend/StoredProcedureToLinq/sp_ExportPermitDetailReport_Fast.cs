@@ -128,7 +128,8 @@ public static class sp_ExportPermitDetailReport_Fast
         ReportQueryRequest pagingRequest,
         ReportAggregateDimension dimension,
         bool includeSakhan,
-        bool includeColumnTotals = false)
+        bool includeColumnTotals = false,
+        ReportColumnTotalsMode columnTotalsMode = ReportColumnTotalsMode.CountAndValue)
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
@@ -145,8 +146,25 @@ public static class sp_ExportPermitDetailReport_Fast
             await ReportUsdConversionService.FillDailyUsdValuesAsync(db, groups);
         }
 
-        return ReportAggregationService.CreatePagedResultFromGroups(
-            groups, dimension, includeSakhan, pagingRequest, includeColumnTotals);
+        var result = ReportAggregationService.CreatePagedResultFromGroups(
+            groups, dimension, includeSakhan, pagingRequest, includeColumnTotals, columnTotalsMode);
+
+        if (includeColumnTotals && columnTotalsMode == ReportColumnTotalsMode.CountOnly)
+        {
+            // The legacy footer is =CountDistinct(Fields!LicenceNo.Value) over the WHOLE
+            // dataset, which is not the sum of the per-row counts: each grid row is one
+            // (group, currency) pair, so a permit with items in two currencies is counted
+            // in two rows. Ask SQL for the true distinct count (one scalar over the wire).
+            result.ColumnTotals = new Dictionary<string, decimal>
+            {
+                ["noOfLicences"] = await Rows(db, request)
+                    .Select(row => row.LicenceNo)
+                    .Distinct()
+                    .CountAsync(),
+            };
+        }
+
+        return result;
     }
 
     public static async Task<byte[]> CreateAggregateExcelWorkbookAsync(

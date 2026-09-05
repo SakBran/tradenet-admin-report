@@ -54,11 +54,6 @@
       ]
     },
     {
-      "key": "HSCode",
-      "dataIndex": "hsCode",
-      "title": "HS Code"
-    },
-    {
       "key": "Currency",
       "dataIndex": "currency",
       "title": "Currency"
@@ -68,6 +63,11 @@
       "dataIndex": "amount",
       "title": "Total Value",
       "dataType": "number"
+    },
+    {
+      "key": "HSCode",
+      "dataIndex": "hsCode",
+      "title": "HS Code"
     },
     {
       "key": "Remark",

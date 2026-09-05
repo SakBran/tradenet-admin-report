@@ -32,12 +32,13 @@ const ALIAS_CONFIG_KEYS = [
   'ExportLicenceHSCodeDetailReport',
 ];
 
-/** The 5 configs whose column header texts depend on the ApplyType filter. */
+/** The 6 configs whose column header texts depend on the ApplyType filter. */
 const VOUCHER_CONFIG_KEYS = [
   'BorderExportLicenceVoucherReport',
   'BorderExportPermitVoucherReport',
   'BorderImportLicenceVoucherReport',
   'ExportLicenceVoucherReport',
+  'ExportPermitVoucherReport',
   'ImportLicenceVoucherReport',
 ];
 

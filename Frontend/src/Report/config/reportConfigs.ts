@@ -7918,14 +7918,16 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hsCode',
-        title: 'HS Code',
-      },
-      {
         key: 'Currency',
         dataIndex: 'currency',
         title: 'Currency',
+      },
+      {
+        // AmendReport.rdlc (origin/master) column 10: HSCode sits between Curency and
+        // Total Value, not before Currency.
+        key: 'HSCode',
+        dataIndex: 'hsCode',
+        title: 'HS Code',
       },
       {
         key: 'TotalValue',
@@ -8030,6 +8032,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'Currency',
         dataIndex: 'currency',
         title: 'Currency',
+      },
+      {
+        // AmendReport.rdlc (origin/master) column 10. The old app declares this column but
+        // never fills it -- Business/Reports.cs::GetAmendReport omits the HSCode assignment
+        // that GetActualAmendReport has -- so it renders blank there. Populated here.
+        key: 'HSCode',
+        dataIndex: 'hsCode',
+        title: 'HS Code',
       },
       {
         key: 'TotalValue',
@@ -8158,7 +8168,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         drilldown: {
           targetReportKey: 'ExportPermitDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId'],
-          rowParams: { ExportImportSectionId: 'exportImportSectionId' },
+          // The aggregate row exposes the section id as `sectionId`
+          // (ReportAggregationService.ReportAggregateResult.SectionId); the old
+          // `exportImportSectionId` matched nothing, so the drill carried undefined.
+          rowParams: { ExportImportSectionId: 'sectionId' },
           openInNewTab: true,
         },
       },
@@ -8334,11 +8347,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
-        key: 'HSCode',
-        dataIndex: 'hsCode',
-        title: 'HS Code',
-      },
-      {
         key: 'Currency',
         dataIndex: 'currency',
         title: 'Currency',
@@ -8348,6 +8356,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'amount',
         title: 'Total Value',
         dataType: 'number',
+      },
+      {
+        // CancelReport.rdlc (origin/master) renders HSCode TWICE -- at column 2 and again
+        // here at column 12. The duplicate is an old layout bug; we render it once, in the
+        // position that reads naturally beside Total Value.
+        key: 'HSCode',
+        dataIndex: 'hsCode',
+        title: 'HS Code',
       },
       {
         key: 'Remark',
@@ -8894,6 +8910,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   ExportPermitVoucherReport: {
     controllerName: 'ExportPermitVoucherReport',
     reportSubtitle: importLicenceRangeSubtitle('Export Permit Voucher List'),
+    resolveColumns: resolveImportLicenceVoucherColumns,
     title: 'Export Permit Voucher Report',
     apiRoute: 'ExportPermitVoucherReport',
     excelRoute: 'ExportPermitVoucherReport/Excel',
@@ -8956,11 +8973,29 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
     ],
+    // Column set + order mirror the PRODUCTION VoucherReport.rdlc
+    // (tradenet-2.0-admin origin/master, 17 columns) -- NOT the 2022 OGA_Terminate copy
+    // that the earlier audits read, which had 13 and lacked Application Date /
+    // Commodity Type / Total CIF / Exchange Rate.
     columns: [
       {
+        // rdlc:1321 =IIF(ApplyType="New", LicenceNo, OldLicenceNo)
+        key: 'OriginalLicenceNo',
+        dataIndex: 'oldLicenceNo',
+        title: 'Licence No',
+        fallbackDataIndexes: ['licenceNo'],
+      },
+      {
+        key: 'ApplicationDate',
+        dataIndex: 'applicationDate',
+        title: 'Application Date',
+        dataType: 'date',
+      },
+      {
+        // header2: retitled per ApplyType and hidden for 'New' by resolveColumns.
         key: 'LicenceNo',
         dataIndex: 'licenceNo',
-        title: 'Licence No',
+        title: '=Parameters!header2.Value',
       },
       {
         key: 'ApplicationNo',
@@ -8968,9 +9003,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Application No',
       },
       {
+        // header3: retitled per ApplyType by resolveColumns.
         key: 'LicenceDate',
         dataIndex: 'sLicenceDate',
-        title: 'Licence Date',
+        title: '=Parameters!header3.Value',
       },
       {
         key: 'CompanyRegistrationNo',
@@ -9007,6 +9043,26 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'ApprovedUser',
         dataIndex: 'approvedUser',
         title: 'Approved User',
+      },
+      {
+        key: 'CommodityType',
+        dataIndex: 'commodityType',
+        title: 'Commodity Type',
+      },
+      {
+        // Structurally 0 for Export Permit: the ExportPermit table has no TotalCIF /
+        // ExchangeRate column, so the old app's non-nullable decimals defaulted to 0 and
+        // the procedure selects a constant. Kept because the old report prints them.
+        key: 'TotalCIF',
+        dataIndex: 'totalCIF',
+        title: 'Total CIF',
+        dataType: 'number',
+      },
+      {
+        key: 'ExchangeRate',
+        dataIndex: 'exchangeRate',
+        title: 'Exchange Rate',
+        dataType: 'number',
       },
       {
         key: 'Amount',

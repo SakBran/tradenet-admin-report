@@ -24,6 +24,24 @@ namespace API.Service.Reports
     }
 
     /// <summary>
+    /// Which cells the grand-total footer row fills in.
+    /// </summary>
+    public enum ReportColumnTotalsMode
+    {
+        /// <summary>No of Licences + Total Value (the long-standing default).</summary>
+        CountAndValue,
+
+        /// <summary>
+        /// No of Licences only, leaving the Total Value cell blank -- what the legacy
+        /// By-X RDLCs do (e.g. ExportPermitBySectionReport.rdlc:887 is a bare
+        /// <c>=CountDistinct(Fields!LicenceNo.Value)</c> with empty Total Value /
+        /// Currency cells). Summing Total Value across rows is meaningless anyway:
+        /// each row is one (group, currency) pair, so it adds USD to EUR to CNY.
+        /// </summary>
+        CountOnly,
+    }
+
+    /// <summary>
     /// One detail line feeding an aggregate report. Each _Fast / HS Code source
     /// maps its own detail row onto this shape before grouping.
     /// </summary>
@@ -143,7 +161,8 @@ namespace API.Service.Reports
             ReportAggregateDimension dimension,
             bool includeSakhan,
             ReportQueryRequest pagingRequest,
-            bool includeColumnTotals = false)
+            bool includeColumnTotals = false,
+            ReportColumnTotalsMode columnTotalsMode = ReportColumnTotalsMode.CountAndValue)
         {
             ArgumentNullException.ThrowIfNull(pagingRequest);
 
@@ -171,7 +190,7 @@ namespace API.Service.Reports
 
             if (includeColumnTotals)
             {
-                result.ColumnTotals = BuildColumnTotals(aggregated, dimension);
+                result.ColumnTotals = BuildColumnTotals(aggregated, dimension, columnTotalsMode);
             }
 
             return result;
@@ -200,7 +219,8 @@ namespace API.Service.Reports
             ReportAggregateDimension dimension,
             bool includeSakhan,
             ReportQueryRequest pagingRequest,
-            bool includeColumnTotals = false)
+            bool includeColumnTotals = false,
+            ReportColumnTotalsMode columnTotalsMode = ReportColumnTotalsMode.CountAndValue)
         {
             ArgumentNullException.ThrowIfNull(grouped);
             ArgumentNullException.ThrowIfNull(pagingRequest);
@@ -229,7 +249,7 @@ namespace API.Service.Reports
 
             if (includeColumnTotals)
             {
-                result.ColumnTotals = BuildColumnTotals(ordered, dimension);
+                result.ColumnTotals = BuildColumnTotals(ordered, dimension, columnTotalsMode);
             }
 
             return result;
@@ -242,13 +262,21 @@ namespace API.Service.Reports
         /// </summary>
         private static Dictionary<string, decimal> BuildColumnTotals(
             IReadOnlyList<ReportAggregateResult> groups,
-            ReportAggregateDimension dimension)
+            ReportAggregateDimension dimension,
+            ReportColumnTotalsMode mode = ReportColumnTotalsMode.CountAndValue)
         {
             var totals = new Dictionary<string, decimal>
             {
                 ["noOfLicences"] = groups.Sum(group => group.NoOfLicences),
-                ["totalValue"] = groups.Sum(group => group.TotalValue ?? 0m),
             };
+
+            if (mode == ReportColumnTotalsMode.CountOnly)
+            {
+                // The legacy RDLC leaves Total Value (and the USD roll-up) blank.
+                return totals;
+            }
+
+            totals["totalValue"] = groups.Sum(group => group.TotalValue ?? 0m);
 
             if (dimension == ReportAggregateDimension.Daily)
             {

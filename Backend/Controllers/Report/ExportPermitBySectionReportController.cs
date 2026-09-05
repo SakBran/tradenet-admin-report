@@ -16,6 +16,9 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // v2: the grand-total footer lost its Total Value cell (legacy parity), so cached
+    // closed-period .xlsx files must not be reused.
+    [ExcelFormatVersion(2)]
     public class ExportPermitBySectionReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ExportPermitBySectionReport";
@@ -39,7 +42,10 @@ namespace Backend.Controllers.Report
 
             var result = await sp_ExportPermitDetailReport_Fast.CreateAggregateResultAsync(
                 _context, procedureRequest!, request!, ReportAggregateDimension.Section, includeSakhan: false,
-                includeColumnTotals: true);
+                // Legacy footer (ExportPermitBySectionReport.rdlc:887) prints ONLY =CountDistinct(LicenceNo) under
+                // "No of Licences" and leaves Total Value / Currency blank -- summing Total Value
+                // across the (group, currency) rows would add USD to EUR to CNY.
+                includeColumnTotals: true, columnTotalsMode: ReportColumnTotalsMode.CountOnly);
 
             return Ok(result);
         }

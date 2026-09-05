@@ -21,7 +21,9 @@ namespace Backend.Controllers.Report
     // Bumped 2026-09-04: the Amend / Actual Amend date-window fix changes WHICH rows an
     // export contains for an unchanged request payload, so cached closed-period files
     // must not be reused (see ExcelExportJobService).
-    [ExcelFormatVersion(2)]
+    // v3: HS Code column added / repositioned to match AmendReport.rdlc column 10
+    // (origin/master); the sheet's column set changes, so cached files must not be reused.
+    [ExcelFormatVersion(3)]
     public class ExportPermitActualAmendmentReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ExportPermitActualAmendmentReport";

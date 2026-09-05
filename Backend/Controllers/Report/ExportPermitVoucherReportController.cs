@@ -20,7 +20,9 @@ namespace Backend.Controllers.Report
     [Route("api/[controller]")]
     // v2: the footer moved from the per-currency permit item (goods) value to the legacy single
     // TOTAL of the voucher Amount (VoucherReport.rdlc:1828).
-    [ExcelFormatVersion(2)]
+    // v3: restored the production VoucherReport.rdlc's full 17-column layout (Application Date,
+    // Commodity Type, Total CIF, Exchange Rate); earlier audits read a stale 2022 copy of the rdlc.
+    [ExcelFormatVersion(3)]
     public class ExportPermitVoucherReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ExportPermitVoucherReport";

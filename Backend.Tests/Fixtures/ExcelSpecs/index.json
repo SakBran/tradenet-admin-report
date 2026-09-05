@@ -1747,7 +1747,7 @@
       "isBespokePage": false,
       "isComposite": false,
       "hasExcelButton": true,
-      "columnCount": 9
+      "columnCount": 10
     },
     {
       "configKey": "ExportPermitByHSCodeReport",
@@ -1887,6 +1887,81 @@
     {
       "configKey": "ExportPermitVoucherReport",
       "controllerName": "ExportPermitVoucherReport",
+      "file": "ExportPermitVoucherReport.ApplyType-Actual_Amend.json",
+      "variant": "Actual Amend",
+      "hasDateRange": true,
+      "hasSingleDate": false,
+      "hasCurrencyTotalsColumns": false,
+      "showRowNumber": true,
+      "rowNumberTitle": "No",
+      "isBespokePage": false,
+      "isComposite": false,
+      "hasExcelButton": true,
+      "columnCount": 16
+    },
+    {
+      "configKey": "ExportPermitVoucherReport",
+      "controllerName": "ExportPermitVoucherReport",
+      "file": "ExportPermitVoucherReport.ApplyType-Amend.json",
+      "variant": "Amend",
+      "hasDateRange": true,
+      "hasSingleDate": false,
+      "hasCurrencyTotalsColumns": false,
+      "showRowNumber": true,
+      "rowNumberTitle": "No",
+      "isBespokePage": false,
+      "isComposite": false,
+      "hasExcelButton": true,
+      "columnCount": 16
+    },
+    {
+      "configKey": "ExportPermitVoucherReport",
+      "controllerName": "ExportPermitVoucherReport",
+      "file": "ExportPermitVoucherReport.ApplyType-Cancel.json",
+      "variant": "Cancel",
+      "hasDateRange": true,
+      "hasSingleDate": false,
+      "hasCurrencyTotalsColumns": false,
+      "showRowNumber": true,
+      "rowNumberTitle": "No",
+      "isBespokePage": false,
+      "isComposite": false,
+      "hasExcelButton": true,
+      "columnCount": 16
+    },
+    {
+      "configKey": "ExportPermitVoucherReport",
+      "controllerName": "ExportPermitVoucherReport",
+      "file": "ExportPermitVoucherReport.ApplyType-Extension.json",
+      "variant": "Extension",
+      "hasDateRange": true,
+      "hasSingleDate": false,
+      "hasCurrencyTotalsColumns": false,
+      "showRowNumber": true,
+      "rowNumberTitle": "No",
+      "isBespokePage": false,
+      "isComposite": false,
+      "hasExcelButton": true,
+      "columnCount": 16
+    },
+    {
+      "configKey": "ExportPermitVoucherReport",
+      "controllerName": "ExportPermitVoucherReport",
+      "file": "ExportPermitVoucherReport.ApplyType-New.json",
+      "variant": "New",
+      "hasDateRange": true,
+      "hasSingleDate": false,
+      "hasCurrencyTotalsColumns": false,
+      "showRowNumber": true,
+      "rowNumberTitle": "No",
+      "isBespokePage": false,
+      "isComposite": false,
+      "hasExcelButton": true,
+      "columnCount": 15
+    },
+    {
+      "configKey": "ExportPermitVoucherReport",
+      "controllerName": "ExportPermitVoucherReport",
       "file": "ExportPermitVoucherReport.json",
       "variant": null,
       "hasDateRange": true,
@@ -1897,7 +1972,7 @@
       "isBespokePage": false,
       "isComposite": false,
       "hasExcelButton": true,
-      "columnCount": 11
+      "columnCount": 15
     },
     {
       "configKey": "ImportLicenceActualAmendmentReport",
