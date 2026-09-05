@@ -62,7 +62,7 @@
     {
       "key": "hsCode",
       "dataIndex": "hsCode",
-      "title": "hsCode"
+      "title": "HSCode"
     },
     {
       "key": "Quota",

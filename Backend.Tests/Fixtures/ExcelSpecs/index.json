@@ -1522,7 +1522,7 @@
       "isBespokePage": false,
       "isComposite": false,
       "hasExcelButton": true,
-      "columnCount": 10
+      "columnCount": 11
     },
     {
       "configKey": "ExportLicenceCompanyListReport",

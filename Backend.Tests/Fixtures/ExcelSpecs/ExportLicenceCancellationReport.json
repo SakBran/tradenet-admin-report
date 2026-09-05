@@ -17,7 +17,7 @@
     },
     {
       "key": "LicenceNo",
-      "dataIndex": "licenceNo",
+      "dataIndex": "oldLicenceNo",
       "title": "Licence No"
     },
     {
@@ -62,7 +62,13 @@
       "key": "TotalValue",
       "dataIndex": "amount",
       "title": "Total Value",
-      "dataType": "number"
+      "dataType": "number",
+      "numberFormat": "#,##0.0000"
+    },
+    {
+      "key": "HSCode",
+      "dataIndex": "hsCode",
+      "title": "HS Code"
     },
     {
       "key": "Remark",

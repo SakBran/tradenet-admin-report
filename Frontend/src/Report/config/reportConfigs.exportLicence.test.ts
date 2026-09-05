@@ -238,9 +238,10 @@ describe('Export Licence report configs', () => {
         'CompanyName',
         'Auto',
       ],
+      // No FormType, same as the New report: ExportLicenceCancelReport.cshtml keeps it
+      // hidden and the controller hardcodes "Export Licence".
       ExportLicenceCancellationReport: [
         'dateRange',
-        'FormType',
         'ExportImportSectionId',
         'CompanyRegistrationNo',
         'CompanyName',
@@ -311,16 +312,46 @@ describe('Export Licence report configs', () => {
   });
 
   it('action reports hide the old HSCode column where the old RDLC did not show it', () => {
+    // Cancellation is NOT in this list: CancelReport.rdlc on tradenet-2.0-admin
+    // origin/master shows HSCode at rdlc:391 and again at rdlc:955. The earlier
+    // exclusion came from the repo's stale 2022 working tree.
     for (const key of [
       'ExportLicenceActualAmendmentReport',
       'ExportLicenceAmendmentReport',
-      'ExportLicenceCancellationReport',
     ]) {
       expect(
         reportConfigs[key].columns.some((column) => column.dataIndex === 'hsCode'),
         `${key} should not show hsCode`
       ).toBe(false);
     }
+  });
+
+  it('cancellation matches CancelReport.rdlc: HS Code once, Licence No is the original', () => {
+    const cfg = reportConfigs.ExportLicenceCancellationReport;
+    const column = (key: string) => cfg.columns.find((c) => c.key === key);
+
+    // rdlc:1229 "Licence No" = OldLicenceNo, rdlc:1282 "Cancellation No" = LicenceNo.
+    expect(column('LicenceNo')?.dataIndex).toBe('oldLicenceNo');
+    expect(column('CancellationNo')?.dataIndex).toBe('licenceNo');
+
+    // rdlc:391 + rdlc:955 render HSCode twice; we render it once, beside Total Value.
+    expect(cfg.columns.filter((c) => c.dataIndex === 'hsCode')).toHaveLength(1);
+    expect(cfg.columns.slice(-4).map((c) => c.key)).toEqual([
+      'Currency',
+      'TotalValue',
+      'HSCode',
+      'Remark',
+    ]);
+
+    // rdlc:1600 is =Fields!Amount.Value with no <Format>, so decimal(18,4) prints 4 dp.
+    expect(column('TotalValue')?.numberFormat).toBe('#,##0.0000');
+
+    // The per-currency footer (rdlc Tablix2) must land on real columns.
+    expect(column(cfg.currencyTotalsColumns!.labelColumnKey)).toBeDefined();
+    expect(column(cfg.currencyTotalsColumns!.valueColumnKey)).toBeDefined();
+
+    // The pager needs a real total, or there is no last page to jump to.
+    expect(cfg.eagerTotalCount).toBe(true);
   });
 
   it('voucher keeps dynamic licence headers and no Sakhan filter', () => {

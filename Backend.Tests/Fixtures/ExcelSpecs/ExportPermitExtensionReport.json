@@ -17,7 +17,7 @@
     },
     {
       "key": "LicenceNo",
-      "dataIndex": "licenceNo",
+      "dataIndex": "oldLicenceNo",
       "title": "Licence No"
     },
     {
