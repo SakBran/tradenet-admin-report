@@ -202,8 +202,7 @@ public static class sp_ExportLicenceDetailReportV2
                 CONVERT(nvarchar(36), licence.Id) AS LicenceId,
                 licence.CreatedDate,
                 licence.IssuedDate AS LicenceDate,
-                licence.ExportLicenceNo AS LicenceNo,
-                CAST(COUNT_BIG(*) OVER() AS int) AS TotalCount
+                licence.ExportLicenceNo AS LicenceNo
             FROM dbo.ExportLicence AS licence WITH (INDEX(IX_ExportLicence_Report_NewDetail_Page))
             INNER JOIN dbo.PaThaKa AS paThaKa ON paThaKa.Id = licence.PaThaKaId
             INNER JOIN dbo.PaThaKaType AS paThaKaType ON paThaKa.PaThaKaTypeId = paThaKaType.Id
@@ -285,7 +284,9 @@ public static class sp_ExportLicenceDetailReportV2
         var itemKeySql = itemDetailsCovered ? coveredItemKeySql : safeItemKeySql;
 
         var selectedKeys = new List<ExportLicenceDetailItemKey>();
-        var totalCount = licences.Count == 0 ? 0 : licences[0].TotalCount;
+        var totalCount = licences.Count == 0
+            ? 0
+            : await ExecuteExactItemCountAsync(db, filterParameters, cancellationToken);
 
         foreach (var licence in licences)
         {
@@ -313,6 +314,54 @@ public static class sp_ExportLicenceDetailReportV2
         }
 
         return rows;
+    }
+
+    /// <summary>
+    /// The grid's row count, at ITEM grain — one row per ExportLicenceItem, which is what the
+    /// page above expands each licence into, and what the old report and the Excel export
+    /// (<see cref="sp_ExportLicenceDetailReport_Fast"/>'s RowKeys) both count. The licence-key
+    /// seek cannot produce this itself: it paginates licences, so joining ExportLicenceItem
+    /// into it would multiply its keys and break the per-licence item expansion.
+    /// Same join shape as <see cref="CreateCurrencyTotalsAsync"/>, which already runs on every
+    /// page load, so this adds no new access pattern.
+    /// </summary>
+    private static async Task<int> ExecuteExactItemCountAsync(
+        TradeNetDbContext db,
+        SqlParameter[] filterParameters,
+        CancellationToken cancellationToken)
+    {
+        const string itemCountSql = """
+            SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+            SELECT CAST(COUNT_BIG(*) AS int) AS Value
+            FROM dbo.ExportLicence AS licence WITH (INDEX(IX_ExportLicence_Report_NewDetail_Page))
+            INNER JOIN dbo.PaThaKa AS paThaKa ON paThaKa.Id = licence.PaThaKaId
+            INNER JOIN dbo.PaThaKaType AS paThaKaType ON paThaKa.PaThaKaTypeId = paThaKaType.Id
+            INNER JOIN dbo.ExportLicenceItem AS item WITH (INDEX(IX_ExportLicenceItem_Report_Licence_Page))
+                ON item.ExportLicenceId = licence.Id
+            WHERE licence.ApplyType = N'New'
+              AND licence.Status = N'Approved'
+              AND licence.CreatedDate >= @FromDate
+              AND licence.CreatedDate <= @ToDate
+              AND (@CompanyRegistrationNo = N'' OR paThaKa.CompanyRegistrationNo = @CompanyRegistrationNo)
+              AND (@PaThaKaTypeId = 0 OR paThaKaType.Id = @PaThaKaTypeId)
+              AND (@ExportImportSectionId = 0 OR licence.ExportImportSectionId = @ExportImportSectionId)
+              AND (@ExportImportMethodId = 0 OR licence.ExportImportMethodId = @ExportImportMethodId)
+              AND (@ExportImportIncotermId = 0 OR licence.ExportImportIncotermId = @ExportImportIncotermId)
+              AND (@BuyerCountryId = 0 OR licence.BuyerCountryId = @BuyerCountryId)
+              AND (
+                  @Auto = N''
+                  OR (@Auto = N'auto' AND licence.[auto] = N'auto')
+                  OR (@Auto = N'none-auto' AND (licence.[auto] IS NULL OR licence.[auto] <> N'auto'))
+              )
+            OPTION (RECOMPILE, MAXDOP 1);
+            """;
+
+        var counts = await db.Database
+            .SqlQueryRaw<ExportLicenceDetailCountRow>(itemCountSql, CloneFilterParameters(filterParameters))
+            .ToListAsync(cancellationToken);
+
+        return counts.FirstOrDefault()?.Value ?? 0;
     }
 
     private static async Task<sp_ExportLicenceDetailReportRow?> FetchDetailRowAsync(
@@ -682,7 +731,11 @@ public static class sp_ExportLicenceDetailReportV2
         public DateTime CreatedDate { get; set; }
         public DateTime? LicenceDate { get; set; }
         public string? LicenceNo { get; set; }
-        public int TotalCount { get; set; }
+    }
+
+    private sealed class ExportLicenceDetailCountRow
+    {
+        public int Value { get; set; }
     }
 
     private sealed class ExportLicenceDetailCurrencyTotalRow

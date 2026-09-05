@@ -197,18 +197,16 @@ describe('Export Licence report configs', () => {
     ).toBe('List of Export Licences By Detail From (01/02/2026) To (03/02/2026)');
   });
 
-  it('Detail report exposes the Auto / None Auto filter', () => {
-    const autoFilter = reportConfigs.ExportLicenceDetailReport.filters.find(
-      (filter) => filter.name === 'Auto'
-    );
-
-    expect(autoFilter?.label).toBe('Auto / None Auto');
-    expect(autoFilter?.type).toBe('select');
-    expect(autoFilter?.defaultValue).toBe('');
-    expect(autoFilter?.options).toEqual([
-      { label: '--- All ---', value: '' },
-      { label: 'auto', value: 'auto' },
-      { label: 'none-auto', value: 'none-auto' },
+  it('Detail report keeps the old filter box: no Buyer Country, no Auto / None Auto', () => {
+    // ExportLicenceDetailReport.cshtml never offered either box. The BuyerCountryId / Auto
+    // request fields stay on the DTO for drill-downs; only the visible controls are gone.
+    expect(reportConfigs.ExportLicenceDetailReport.filters.map((filter) => filter.name)).toEqual([
+      'dateRange',
+      'PaThaKaTypeId',
+      'ExportImportSectionId',
+      'ExportImportMethodId',
+      'ExportImportIncotermId',
+      'CompanyRegistrationNo',
     ]);
   });
 
@@ -236,7 +234,6 @@ describe('Export Licence report configs', () => {
         'AmendRemarkId',
         'CompanyRegistrationNo',
         'CompanyName',
-        'Auto',
       ],
       // No FormType, same as the New report: ExportLicenceCancelReport.cshtml keeps it
       // hidden and the controller hardcodes "Export Licence".
@@ -315,15 +312,33 @@ describe('Export Licence report configs', () => {
     // Cancellation is NOT in this list: CancelReport.rdlc on tradenet-2.0-admin
     // origin/master shows HSCode at rdlc:391 and again at rdlc:955. The earlier
     // exclusion came from the repo's stale 2022 working tree.
-    for (const key of [
-      'ExportLicenceActualAmendmentReport',
-      'ExportLicenceAmendmentReport',
-    ]) {
-      expect(
-        reportConfigs[key].columns.some((column) => column.dataIndex === 'hsCode'),
-        `${key} should not show hsCode`
-      ).toBe(false);
-    }
+    // Actual Amendment is no longer in this list either -- the customer asked for an HSCode
+    // column on it (2026-09-05), a deliberate addition over ActualAmendReport.rdlc.
+    expect(
+      reportConfigs.ExportLicenceAmendmentReport.columns.some(
+        (column) => column.dataIndex === 'hsCode'
+      )
+    ).toBe(false);
+  });
+
+  it('Actual Amendment shows HSCode and the parent licence number', () => {
+    const cfg = reportConfigs.ExportLicenceActualAmendmentReport;
+    const column = (key: string) => cfg.columns.find((c) => c.key === key);
+
+    // Customer-requested extra column; sp_ActualAmendReport_pagination already selects it as a
+    // TOP 1 scalar subquery, so it adds no rows.
+    expect(column('HSCode')?.dataIndex).toBe('hsCode');
+    expect(column('LicenceNo')?.dataIndex).toBe('oldLicenceNo');
+    expect(column('LicenceAmendmentNo')?.dataIndex).toBe('licenceNo');
+  });
+
+  it('Amendment Licence No is the parent licence, not the amendment number', () => {
+    const cfg = reportConfigs.ExportLicenceAmendmentReport;
+    const column = (key: string) => cfg.columns.find((c) => c.key === key);
+
+    expect(column('LicenceNo')?.dataIndex).toBe('oldLicenceNo');
+    expect(column('LicenceNo')?.fallbackDataIndexes).toEqual(['licenceNo']);
+    expect(column('LicenceAmendmentNo')?.dataIndex).toBe('licenceNo');
   });
 
   it('cancellation matches CancelReport.rdlc: HS Code once, Licence No is the original', () => {

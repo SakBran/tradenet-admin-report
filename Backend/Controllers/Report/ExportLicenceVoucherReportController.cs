@@ -20,7 +20,9 @@ namespace Backend.Controllers.Report
     [Route("api/[controller]")]
     // v2: the LicenceNo (header2) column is now hidden for ApplyType='New', the way
     // VoucherReport.rdlc:1883 does, so the sheet's column set changed.
-    [ExcelFormatVersion(2)]
+    // v3: the export now carries the Total Amount footer. The job cache keys on the request
+    // payload + this version, so an unchanged filter set would keep serving the footer-less .xlsx.
+    [ExcelFormatVersion(3)]
     public class ExportLicenceVoucherReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ExportLicenceVoucherReport";
@@ -49,19 +51,39 @@ namespace Backend.Controllers.Report
             var sortColumn = string.IsNullOrWhiteSpace(request.SortColumn) ? null : request.SortColumn;
             var sortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? null : request.SortOrder;
 
-            var includeTotalCount = false;
-
             var rows = await sp_VoucherReport.ExecuteAsync(
-                _context, procedureRequest!, sortColumn, sortOrder, pageIndex, pageSize, includeTotalCount);
+                _context, procedureRequest!, sortColumn, sortOrder, pageIndex, pageSize, request.IncludeTotalCount);
             var data = rows.Select(row => row.ToResult()).ToList();
 
-            var result = includeTotalCount
+            var result = request.IncludeTotalCount
                 ? ApiResult<sp_VoucherReportResult>.CreatePageFromRows(
                     data, rows.Count > 0 ? (rows[0].TotalCount ?? 0) : 0, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery)
                 : ApiResult<sp_VoucherReportResult>.CreateFastPageFromRows(
                     data, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
+
+            // Legacy VoucherReport.rdlc footer: ONE static row - TOTAL + =FORMAT(SUM(Fields!Amount.Value),"N0")
+            // = SUM(AccountTransaction.TotalAmount), the MMK voucher fee. NOT the goods value that
+            // sp_ExportLicenceVoucherCurrencyTotals sums - that would print a licence-value total under
+            // the fee column. Lic Value stays a plain column: the old rdlc never totals it.
+            //
+            // Gated on IncludeTotalCount so the fast first page is not blocked: CreateFastPageFromRows
+            // sets IsTotalCountExact = false, so the grid always follows up with an exact-count POST,
+            // and BasicTable picks the footer up from that response as lazyColumnTotals.
+            if (request.IncludeTotalCount && data.Count > 0)
+            {
+                var amountTotal = await sp_VoucherReport.ExecuteAmountTotalAsync(_context, procedureRequest!);
+                if (amountTotal.HasValue)
+                {
+                    result.ColumnTotals = new Dictionary<string, decimal>
+                    {
+                        // Rounded to 0 dp to reproduce the rdlc's "N0"; keyed by the grid column's
+                        // dataIndex ("amount"), which is what BasicTable matches on.
+                        ["amount"] = decimal.Round(amountTotal.Value, 0),
+                    };
+                }
+            }
 
             return Ok(result);
         }

@@ -391,6 +391,9 @@ const exportLicenceVoucherFilters: ReportFilterConfig[] = [
   importLicenceCompanyNameFilter,
 ];
 
+// No Auto / None Auto box: ExportLicenceAmendmentReportRequest has no Auto property and
+// sp_AmendReport_pagination's Export Licence branch has no @auto predicate, so the dropdown
+// was a visible no-op.
 const exportLicenceAmendFilters: ReportFilterConfig[] = [
   importLicenceDateRangeFilter,
   importLicenceFormTypeFilter,
@@ -398,7 +401,6 @@ const exportLicenceAmendFilters: ReportFilterConfig[] = [
   importLicenceAmendRemarkFilter,
   importLicenceCompanyRegistrationNoFilter,
   importLicenceCompanyNameFilter,
-  importLicenceAutoFilter,
 ];
 
 const exportLicenceActualAmendFilters: ReportFilterConfig[] = [
@@ -6747,6 +6749,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Currency',
       },
       {
+        key: 'HSCode',
+        dataIndex: 'hsCode',
+        title: 'HSCode',
+      },
+      {
         key: 'TotalValue',
         dataIndex: 'amount',
         title: 'Total Value',
@@ -6772,9 +6779,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Section',
       },
       {
+        // "Licence No" is the parent licence (OldLicenceNo); the amend number belongs to the
+        // Licence Amendment No column below.
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
+        fallbackDataIndexes: ['licenceNo'],
       },
       {
         key: 'LicenceAmendmentNo',
@@ -7431,22 +7441,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ...exportLicenceIncotermFilter,
       },
       {
-        ...exportLicenceBuyerCountryFilter,
-      },
-      {
         ...importLicenceCompanyRegistrationNoFilter,
       },
-      {
-        name: 'Auto',
-        label: 'Auto / None Auto',
-        type: 'select',
-        defaultValue: '',
-        options: [
-          { label: '--- All ---', value: '' },
-          { label: 'auto', value: 'auto' },
-          { label: 'none-auto', value: 'none-auto' },
-        ],
-      },
+      // No Buyer Country / Auto boxes: ExportLicenceDetailReport.cshtml never had them. The
+      // BuyerCountryId / Auto request fields stay on the DTO -- the By-Buyer-Country and
+      // summary reports still carry them in on drill-down.
     ],
     columns: [
       {

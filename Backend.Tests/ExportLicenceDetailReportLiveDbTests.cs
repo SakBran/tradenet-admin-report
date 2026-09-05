@@ -1,9 +1,11 @@
+using System.Data;
 using API.DBContext;
 using API.Model;
 using API.Service.Reports;
 using API.StoredProcedureToLinq;
 using Backend.Controllers.Report;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Xunit.Abstractions;
 
@@ -81,6 +83,10 @@ public sealed class ExportLicenceDetailReportLiveDbTests(ITestOutputHelper outpu
             pageSize: 10,
             requireRows: false);
 
+    // The grid renders one row per licence ITEM, so its total has to be the item count. It used to
+    // report the licence count instead (454 where the old report and the Excel export both said
+    // 1967). The oracle counts items per licence with a correlated subquery - a different
+    // formulation from the report's own join - so it fails if the grain regresses again.
     [Fact]
     public async Task Detail_page_may_1_to_may_2_2025_exact_count_matches_live_db()
         => await AssertDetailPageLoads(
@@ -89,7 +95,7 @@ public sealed class ExportLicenceDetailReportLiveDbTests(ITestOutputHelper outpu
             toDate: new DateTime(2025, 5, 2, 23, 59, 59),
             pageSize: 10,
             requireRows: false,
-            expectedTotalCount: 2420,
+            assertItemGrainTotal: true,
             requireItemValues: true);
 
     [Theory]
@@ -147,7 +153,7 @@ public sealed class ExportLicenceDetailReportLiveDbTests(ITestOutputHelper outpu
         DateTime toDate,
         int pageSize,
         bool requireRows = true,
-        int? expectedTotalCount = null,
+        bool assertItemGrainTotal = false,
         bool requireItemValues = false)
     {
         var db = TryConnect();
@@ -191,10 +197,12 @@ public sealed class ExportLicenceDetailReportLiveDbTests(ITestOutputHelper outpu
                 Assert.True(api.TotalCount >= api.Data.Count);
             }
 
-            if (expectedTotalCount.HasValue)
+            if (assertItemGrainTotal)
             {
+                var itemRows = await CountDetailItemRowsAsync(db, fromDate, toDate);
+                output.WriteLine($"oracle item rows={itemRows}");
                 Assert.True(api.IsTotalCountExact);
-                Assert.Equal(expectedTotalCount.Value, api.TotalCount);
+                Assert.Equal(itemRows, api.TotalCount);
             }
 
             if (requireItemValues)
@@ -211,6 +219,49 @@ public sealed class ExportLicenceDetailReportLiveDbTests(ITestOutputHelper outpu
 
             Assert.All(api.Data, row => Assert.False(string.IsNullOrWhiteSpace(row.LicenceNo)));
         }
+    }
+
+    /// <summary>
+    /// Rows the detail grid should show for this window, counted independently of the report's own
+    /// SQL: per licence, how many items it has, summed.
+    /// </summary>
+    private static async Task<int> CountDetailItemRowsAsync(
+        TradeNetDbContext db,
+        DateTime fromDate,
+        DateTime toDate)
+    {
+        var connection = db.Database.GetDbConnection();
+        if (connection.State != ConnectionState.Open)
+        {
+            await connection.OpenAsync();
+        }
+
+        await using var command = connection.CreateCommand();
+        command.CommandTimeout = 180;
+        command.CommandText =
+                """
+                SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+                SELECT CAST(COALESCE(SUM(licence.ItemCount), 0) AS int) AS Value
+                FROM (
+                    SELECT (
+                        SELECT COUNT_BIG(*)
+                        FROM dbo.ExportLicenceItem AS item
+                        WHERE item.ExportLicenceId = l.Id
+                    ) AS ItemCount
+                    FROM dbo.ExportLicence AS l
+                    INNER JOIN dbo.PaThaKa AS p ON p.Id = l.PaThaKaId
+                    WHERE l.ApplyType = N'New'
+                      AND l.Status = N'Approved'
+                      AND l.CreatedDate >= @FromDate
+                      AND l.CreatedDate <= @ToDate
+                ) AS licence
+                OPTION (RECOMPILE);
+                """;
+        command.Parameters.Add(new SqlParameter("@FromDate", fromDate));
+        command.Parameters.Add(new SqlParameter("@ToDate", toDate));
+
+        return (int)(await command.ExecuteScalarAsync() ?? 0);
     }
 
     private static void Set(object target, string propertyName, object value)

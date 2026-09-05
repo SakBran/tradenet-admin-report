@@ -64,8 +64,7 @@ public sealed class ExportLicenceDetailReportContractTests
     public void Ui_filters_are_accepted_by_export_licence_detail_request()
     {
         var config = ExtractReportConfig("ExportLicenceDetailReport");
-        var filterNames = Regex.Matches(config, @"name:\s*'(?<name>[^']+)'")
-            .Select(match => match.Groups["name"].Value)
+        var filterNames = ExtractFilterNames(config)
             .Where(name => name != "dateRange")
             .ToArray();
 
@@ -77,21 +76,28 @@ public sealed class ExportLicenceDetailReportContractTests
         Assert.Contains("FromDate", requestFields);
         Assert.Contains("ToDate", requestFields);
         Assert.DoesNotContain(filterNames, name => !requestFields.Contains(name));
+        // Buyer Country and Auto are gone from the box (ExportLicenceDetailReport.cshtml never
+        // had them) but stay on the request DTO: the By-Buyer-Country and summary reports carry
+        // them in on drill-down.
         Assert.Equal(
             [
                 "PaThaKaTypeId",
                 "ExportImportSectionId",
                 "ExportImportMethodId",
                 "ExportImportIncotermId",
-                "BuyerCountryId",
                 "CompanyRegistrationNo",
-                "Auto",
             ],
             filterNames);
+        Assert.Contains("BuyerCountryId", requestFields);
+        Assert.Contains("Auto", requestFields);
         Assert.Contains("lookupName: 'exportLicenceSections'", config);
-        Assert.Contains("lookupName: 'exportLicenceMethods'", config);
-        Assert.Contains("lookupName: 'exportLicenceIncoterms'", config);
         Assert.Contains("defaultDateRangeMonths: 3", config);
+
+        // Method and Incoterms come in as spreads, so their lookups live on the shared consts.
+        Assert.Contains("...exportLicenceMethodFilter", config);
+        Assert.Contains("...exportLicenceIncotermFilter", config);
+        Assert.Contains("lookupName: 'exportLicenceMethods'", ExtractSharedFilter("exportLicenceMethodFilter"));
+        Assert.Contains("lookupName: 'exportLicenceIncoterms'", ExtractSharedFilter("exportLicenceIncotermFilter"));
     }
 
     [Fact]
@@ -176,7 +182,12 @@ public sealed class ExportLicenceDetailReportContractTests
         Assert.Contains("@Auto", v2Source);
         Assert.Contains("@Auto = N'auto' AND licence.[auto] = N'auto'", v2Source);
         Assert.Contains("@Auto = N'none-auto' AND (licence.[auto] IS NULL OR licence.[auto] <> N'auto')", v2Source);
-        Assert.Contains("CAST(COUNT_BIG(*) OVER() AS int) AS TotalCount", v2Source);
+        // The grid counts ITEM rows, the grain it actually renders and the grain the old report
+        // and the Excel export use. A windowed count over the licence-key seek counted licences,
+        // which under-reported the total by the average items-per-licence.
+        Assert.Contains("ExecuteExactItemCountAsync", v2Source);
+        Assert.Contains("INNER JOIN dbo.ExportLicenceItem AS item", v2Source);
+        Assert.DoesNotContain("CAST(COUNT_BIG(*) OVER() AS int) AS TotalCount", v2Source);
         Assert.Contains("OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY", v2Source);
         Assert.Contains("CreateCurrencyTotalsAsync", v2Source);
         Assert.Contains("GROUP BY currency.Code", v2Source);
@@ -336,6 +347,47 @@ public sealed class ExportLicenceDetailReportContractTests
                 return new ReportColumn(dataIndex, title, fallbackIndexes);
             })
             .ToArray();
+    }
+
+    /// <summary>
+    /// Filter names in declaration order. A filter is written either inline (<c>name: 'X'</c>) or as
+    /// a spread of a shared const (<c>...exportLicenceMethodFilter</c>); reading only the inline form
+    /// silently misses most of the box.
+    /// </summary>
+    private static string[] ExtractFilterNames(string config)
+    {
+        var filtersIndex = config.IndexOf("filters:", StringComparison.Ordinal);
+        Assert.True(filtersIndex >= 0, "config has no filters array.");
+
+        var openBracket = config.IndexOf('[', filtersIndex);
+        var closeBracket = FindMatching(config, openBracket, '[', ']');
+        var filters = config[openBracket..(closeBracket + 1)];
+
+        return Regex.Matches(filters, @"name:\s*'(?<name>[^']+)'|\.\.\.(?<spread>\w+)")
+            .Select(match => match.Groups["name"].Success
+                ? match.Groups["name"].Value
+                : ResolveSharedFilterName(match.Groups["spread"].Value))
+            .ToArray();
+    }
+
+    private static string ResolveSharedFilterName(string constName)
+    {
+        var name = Regex.Match(ExtractSharedFilter(constName), @"name:\s*'(?<name>[^']+)'");
+        Assert.True(name.Success, $"{constName} has no name.");
+        return name.Groups["name"].Value;
+    }
+
+    /// <summary>The declaration body of a shared <c>ReportFilterConfig</c> const.</summary>
+    private static string ExtractSharedFilter(string constName)
+    {
+        var source = File.ReadAllText(Path.Combine(
+            RepositoryRoot, "Frontend", "src", "Report", "config", "reportConfigs.ts"));
+        var declaration = source.IndexOf($"const {constName}", StringComparison.Ordinal);
+        Assert.True(declaration >= 0, $"{constName} is not declared in reportConfigs.ts.");
+
+        var openBrace = source.IndexOf('{', declaration);
+        var closeBrace = FindMatching(source, openBrace, '{', '}');
+        return source[openBrace..(closeBrace + 1)];
     }
 
     private static string ExtractReportConfig(string reportKey)
