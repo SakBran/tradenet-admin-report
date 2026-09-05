@@ -1,7 +1,11 @@
 using API.StoredProcedureToLinq;
 using API.DBContext;
+using API.Model;
 using Backend.Controllers.Report;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Xunit.Abstractions;
 
 namespace Backend.Tests;
 
@@ -149,5 +153,89 @@ public sealed class BorderImportLicenceVoucherAndPendingFeedbackTests
             return directory?.FullName
                 ?? throw new DirectoryNotFoundException("Could not locate repository root.");
         }
+    }
+}
+
+public sealed class BorderImportLicenceUatIntegrationTests(ITestOutputHelper output)
+{
+    [Fact]
+    [Trait("Category", "LiveDatabase")]
+    public async Task Voucher_and_pending_controllers_return_the_expected_UAT_results()
+    {
+        var connectionString = Environment.GetEnvironmentVariable(
+            "TRADENET_REPORT_TEST_CONNECTION_STRING");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            output.WriteLine(
+                "SKIPPED: set TRADENET_REPORT_TEST_CONNECTION_STRING to the UAT TradeNetDB.");
+            return;
+        }
+
+        var connection = new SqlConnectionStringBuilder(connectionString);
+        Assert.Equal("TradeNetDB", connection.InitialCatalog);
+        Assert.Contains(
+            connection.DataSource,
+            new[] { "100.64.91.190", "203.81.66.111,14330" });
+
+        var options = new DbContextOptionsBuilder<TradeNetDbContext>()
+            .UseSqlServer(connection.ConnectionString, sql => sql.CommandTimeout(180))
+            .Options;
+        await using var db = new TradeNetDbContext(options);
+        Assert.True(await db.Database.CanConnectAsync());
+
+        var fromDate = new DateTime(2026, 1, 1);
+        var toDate = new DateTime(2026, 1, 5, 23, 59, 59);
+
+        var voucherController = new BorderImportLicenceVoucherReportController(db, null!);
+        var voucherResponse = await voucherController.Post(
+            new BorderImportLicenceVoucherReportRequest
+            {
+                FromDate = fromDate,
+                ToDate = toDate,
+                ApplyType = string.Empty,
+                PageIndex = 0,
+                PageSize = 10,
+                IncludeTotalCount = true,
+            });
+        var voucherOk = Assert.IsType<OkObjectResult>(voucherResponse.Result);
+        var voucher = Assert.IsType<ApiResult<sp_VoucherReportResult>>(voucherOk.Value);
+
+        Assert.Equal(122, voucher.TotalCount);
+        Assert.Equal(10, voucher.Data.Count);
+        Assert.All(voucher.Data, row => Assert.Equal("New", row.ApplyType));
+        Assert.All(
+            voucher.Data,
+            row => Assert.InRange(row.Date!.Value, fromDate, toDate));
+        Assert.NotNull(voucher.ColumnTotals);
+        Assert.True(voucher.ColumnTotals.TryGetValue("amount", out var amountTotal));
+        Assert.True(amountTotal > 0);
+
+        var pendingController = new BorderImportLicencePendingReportController(db, null!);
+        var pendingResponse = await pendingController.Post(
+            new BorderImportLicencePendingReportRequest
+            {
+                FromDate = fromDate,
+                ToDate = toDate,
+                PageIndex = 0,
+                PageSize = 10,
+                IncludeTotalCount = true,
+                SortColumn = "Status",
+                SortOrder = "ASC",
+            });
+        var pendingOk = Assert.IsType<OkObjectResult>(pendingResponse.Result);
+        var pending = Assert.IsType<ApiResult<sp_PendingReportResult>>(pendingOk.Value);
+
+        Assert.Equal(562, pending.TotalCount);
+        Assert.Equal(10, pending.Data.Count);
+        Assert.All(
+            pending.Data,
+            row => Assert.Contains(row.Status, new[] { "Pending", "Reject" }));
+        Assert.All(
+            pending.Data,
+            row => Assert.InRange(row.ApplicationDate, fromDate, toDate));
+
+        output.WriteLine(
+            $"Voucher total={voucher.TotalCount}, amount={amountTotal}; " +
+            $"Pending total={pending.TotalCount}.");
     }
 }

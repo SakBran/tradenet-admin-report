@@ -11,32 +11,36 @@ Feedback source:
 
 Working branch: `fix/import-licence-report-feedback`
 
-Current status: all six complaints have fixes on the working branch. Border
-Import Licence New, By Voucher, and Pending reports were compared with the old
-Tradenet 2.0 code and checked against production using SELECT-only diagnostics.
-Local changes have not been pushed, merged, deployed, or applied to a database.
+Current status: all six complaints have fixes on the working branch and all six
+compiled controller paths pass against UAT. Border Import Licence New, By
+Voucher, and Pending reports were compared with the old Tradenet 2.0 code and
+checked against production using SELECT-only diagnostics. The By Voucher and
+Pending procedure scripts are now applied to UAT only; the date-normalized
+Actual Amend, Amend, currency-total, and New procedures were already present in
+UAT and were not overwritten. Local changes have not been pushed, merged, or
+deployed as an application build.
 
 ## Reported Errors and Confirmed Causes
 
 | Report | Feedback | Confirmed cause | Proposed fix / verification | Current status |
 | --- | --- | --- | --- | --- |
-| 2.2 Import Licence Daily Report (New Licence Report) | Old report displayed 15 rows, while the new report displayed 10. | The comparison treated the new report's first page as its complete result. The required UI behavior is the global 10-row page size; all matching rows must remain available through pagination. | Remove the report-specific 1000-row override, retain the global 10-row page, and preserve the exact total count so remaining rows appear on later pages. Keep the standard `No.` column because the feedback does not request its removal. | Corrected locally and covered by pagination/config regression tests. Not deployed. |
-| 2.4 Import Licence Actual Amendment Report | The feedback recorded 17 rows in the old report and 6 in the new report. | Repository history confirms that an earlier new-report controller used the separate `sp_ActualAmendReport.Query` LINQ path. The report now uses `sp_ActualAmendReport.ExecuteAsync` / `ExecuteQueryable`, which call the legacy-compatible pagination procedure for the grid and Excel. A read-only production comparison for January 6-8, 2025 returns 6 rows from both `sp_ActualAmendReport` and `sp_ActualAmendReport_pagination`, with the same licence keys. Therefore the historical 17 cannot be reproduced because the sheet did not capture the complete filters/snapshot. | Keep both grid and Excel on the stored-procedure path, apply the calendar-date `ToDate` boundary correction, preserve the old `Licence No` mapping, and match the old `Curency` and `HSCode` headers. Do not change additional query predicates without the exact old request or a preserved 17-row result set. | Compatibility fix and regression guards are complete locally. Focused backend and frontend tests pass. The historical 17-row result remains unverified. Not deployed. |
-| 2.5 Import Licence Amendment Report | A January 1-5 search included January 6 records. | The frontend sent January 5 at end-of-day, while the pagination procedure added another day to that timestamp. The resulting upper bound became the end of January 6. | Normalize `ToDate` to a calendar date and use an exclusive next-day boundary; verify January 1-5 excludes January 6 in UAT. | Fixed locally; deployment and UAT remain. |
-| Border Import Licence New Report | The Sheet says the data differs from the old report and separately says the total is missing. | The generic frontend sends the selected `ToDate` as end-of-day, while the pagination procedure adds another day. A read-only production comparison for August 1, 2023 found 824 correct selected-day rows but 1,390 rows with the current boundary: 566 August 2 rows leak into the result. The API/config also did not provide the old RDLC currency and grand-total footer. | Normalize `ToDate` to its calendar date in the controller and SQL boundary; add a Border Import Licence currency-total query matching both card-type branches and every grid predicate; wire `CurrencyTotals` and `currencyTotalsColumns`. Restore the Border Import Licence section lookup and readonly Company Name filter. Remove the extra visible Form Type/Auto filters only as part of confirmed old-filter parity. Correct the old `Curency` header text. | Fixed and verified locally. Production SELECT-only verification confirms 824 selected-day rows and 566 next-day rows excluded. Not deployed. |
-| Border Import Licence By Voucher Report | Output data is incorrect for January 1-5, 2026; duplicate `Licence No`; missing `Total Amount`. | The old filter defaults to `ApplyType=New` and has no All option, while the new filter defaulted to All. Production contains 122 New rows but 168 rows across all Apply Types for the stated range. The New-column visibility rule was missing, the API did not return the RDLC Amount grand total, and the end-date expression could include the following day. | Restore the New default and old option set, hide the dynamic duplicate licence-number column for New, return `ColumnTotals["amount"]`, and use a normalized exclusive next-day boundary. | Fixed locally with backend, query-translation, frontend-config, and Excel-contract coverage. Not deployed. |
-| Border Import Licence Pending Report | Output data is incorrect. | The pagination procedure ignored `@FormType` and was hard-coded to `ImportLicence` and `ImportLicenceItem`. For January 1-5, 2026 this selected 681 ordinary Import Licence rows instead of the 562 correct Border Import Licence rows. The new filter box and two headers also differed from the old view/RDLC. | Route grid and Excel through the dedicated Border Import LINQ query, add the correct Border branch to the migration script, keep only date and border-section filters, and restore `HSCode` / `Curency` headers. | Fixed locally with a translated-SQL assertion proving the runtime query references only Border Import Licence tables. Not deployed. |
+| 2.2 Import Licence Daily Report (New Licence Report) | Old report displayed 15 rows, while the new report displayed 10. | The comparison treated the new report's first page as its complete result. The required UI behavior is the global 10-row page size; all matching rows must remain available through pagination. | Remove the report-specific 1000-row override, retain the global 10-row page, and preserve the exact total count so remaining rows appear on later pages. Keep the standard `No.` column because the feedback does not request its removal. | Corrected and compiled-controller verified on UAT: 15 groups are available as pages of 10 and 5. |
+| 2.4 Import Licence Actual Amendment Report | The feedback recorded 17 rows in the old report and 6 in the new report. | Repository history confirms that an earlier new-report controller used the separate `sp_ActualAmendReport.Query` LINQ path. The report now uses `sp_ActualAmendReport.ExecuteAsync` / `ExecuteQueryable`, which call the legacy-compatible pagination procedure for the grid and Excel. A read-only production comparison for January 6-8, 2025 returns 6 rows from both `sp_ActualAmendReport` and `sp_ActualAmendReport_pagination`, with the same licence keys. Therefore the historical 17 cannot be reproduced because the sheet did not capture the complete filters/snapshot. | Keep both grid and Excel on the stored-procedure path, apply the calendar-date `ToDate` boundary correction, preserve the old `Licence No` mapping, and match the old `Curency` and `HSCode` headers. Do not change additional query predicates without the exact old request or a preserved 17-row result set. | Compatibility fix verified on UAT with 6 rows and footer total 6. The historical 17-row result remains unverified without the customer's exact filters/snapshot. |
+| 2.5 Import Licence Amendment Report | A January 1-5 search included January 6 records. | The frontend sent January 5 at end-of-day, while the pagination procedure added another day to that timestamp. The resulting upper bound became the end of January 6. | Normalize `ToDate` to a calendar date and use an exclusive next-day boundary; verify January 1-5 excludes January 6 in UAT. | Fixed and verified on a populated UAT boundary: 26–30 December returns 18 rows and excludes all 8 rows from December 31. |
+| Border Import Licence New Report | The Sheet says the data differs from the old report and separately says the total is missing. | The generic frontend sends the selected `ToDate` as end-of-day, while the pagination procedure adds another day. A read-only production comparison for August 1, 2023 found 824 correct selected-day rows but 1,390 rows with the current boundary: 566 August 2 rows leak into the result. The API/config also did not provide the old RDLC currency and grand-total footer. | Normalize `ToDate` to its calendar date in the controller and SQL boundary; add a Border Import Licence currency-total query matching both card-type branches and every grid predicate; wire `CurrencyTotals` and `currencyTotalsColumns`. Restore the Border Import Licence section lookup and readonly Company Name filter. Remove the extra visible Form Type/Auto filters only as part of confirmed old-filter parity. Correct the old `Curency` header text. | Fixed and verified on UAT: 824 selected-day rows, footer total 824, and all 566 next-day rows excluded. |
+| Border Import Licence By Voucher Report | Output data is incorrect for January 1-5, 2026; duplicate `Licence No`; missing `Total Amount`. | The old filter defaults to `ApplyType=New` and has no All option, while the new filter defaulted to All. Production contains 122 New rows but 168 rows across all Apply Types for the stated range. The New-column visibility rule was missing, the API did not return the RDLC Amount grand total, and the end-date expression could include the following day. | Restore the New default and old option set, hide the dynamic duplicate licence-number column for New, return `ColumnTotals["amount"]`, and use a normalized exclusive next-day boundary. | Fixed; SQL deployed to UAT and compiled-controller UAT test passed with 122 rows and Amount total 9,355,000. |
+| Border Import Licence Pending Report | Output data is incorrect. | The pagination procedure ignored `@FormType` and was hard-coded to `ImportLicence` and `ImportLicenceItem`. For January 1-5, 2026 this selected 681 ordinary Import Licence rows instead of the 562 correct Border Import Licence rows. The new filter box and two headers also differed from the old view/RDLC. | Route grid and Excel through the dedicated Border Import LINQ query, add the correct Border branch to the migration script, keep only date and border-section filters, and restore `HSCode` / `Curency` headers. | Fixed; SQL deployed to UAT and compiled-controller UAT test passed with 562 Border Import rows. |
 
 ## Status Summary
 
 | # | Report | Status | What remains |
 | --- | --- | --- | --- |
-| 1 | Import Licence Daily Report | Code fix complete locally | Uses the global 10-row page size, retains all matching data across pages, and keeps the standard `No.` column. Not deployed. |
-| 2 | Import Licence Actual Amend Report | Compatibility fix complete locally | Grid and Excel are guarded to use the legacy-compatible stored-procedure path; old column mapping/header parity and the inclusive date boundary are covered by tests. Production legacy/new procedures both return 6 rows for the inferred January 6-8, 2025 range. Reproducing the historical 17 still requires the customer's exact old filters or preserved result set. Not deployed. |
-| 3 | Import Licence Amendment Report | Fixed locally | Commit, push, deploy to UAT, and confirm January 1-5 excludes January 6. |
-| 4 | Border Import Licence New Report | Fixed and verified locally | UAT comparison against the old report remains. No deployment or database write has been performed. |
-| 5 | Border Import Licence By Voucher Report | Fixed locally | UAT comparison must confirm the default New result, single Licence No column, end-date boundary, and Amount grand total. Not deployed. |
-| 6 | Border Import Licence Pending Report | Fixed locally | UAT comparison must confirm Border Import Pending/Reject rows and Excel output. The migration script is corrected but no database procedure was changed. |
+| 1 | Import Licence Daily Report | Backend verified on UAT | Uses the global 10-row page size and exposes all 15 groups as 10 + 5 across two pages. Visible UI confirmation remains. |
+| 2 | Import Licence Actual Amend Report | Backend verified on UAT with caveat | UAT returns 6 rows through the legacy-compatible path. Reproducing the historical 17 still requires the customer's exact old filters or preserved result set. |
+| 3 | Import Licence Amendment Report | Backend verified on UAT | A populated following-day boundary proves the extra day is excluded. Visible UI confirmation remains. |
+| 4 | Border Import Licence New Report | Backend verified on UAT | UAT returns 824 selected-day rows and a matching footer total while excluding 566 next-day rows. Visible UI confirmation remains. |
+| 5 | Border Import Licence By Voucher Report | Backend/SQL verified on UAT | UAT returns 122 New rows and Amount total 9,355,000. Visible UI confirmation of the single Licence No column remains. |
+| 6 | Border Import Licence Pending Report | Backend/SQL verified on UAT | UAT returns 562 Border Import Pending/Reject rows. Visible UI and queued Excel confirmation remain. |
 
 No complaint is considered fully released until its fix is verified in UAT.
 
@@ -247,7 +251,40 @@ The tests cover:
 - Backend Excel contract tests: 1,148 passed, 0 failed.
 - Frontend production build: passed. Vite reported only its existing large-chunk warning.
 - `git diff --check`: passed; only Git's Windows line-ending notices were reported.
-- No database write, migration, or stored-procedure deployment was performed.
+- No production database write, migration, or stored-procedure deployment was
+  performed.
+
+### UAT database verification — 2026-09-05
+
+- Confirmed that `100.64.91.190` (private/VPN endpoint) and
+  `203.81.66.111,14330` (documented UAT endpoint) resolve to SQL instance
+  `WIN-NGO7CC6KFLD` and have matching `TradeNetDB` and `TemplateDB` database
+  GUIDs.
+- Confirmed the UAT Actual Amend, Amend, Import Licence currency-total, and New
+  procedures already contain the committed normalized `ToDate` boundary. They
+  were not overwritten during the No. 1–4 test pass.
+- Compiled-controller tests for No. 1–4 passed 4/4 in 40.9 seconds:
+  - Daily: 15 groups are available as page 1 = 10 and page 2 = 5.
+  - Actual Amend: 6 rows and footer total 6 for 6–8 January 2025.
+  - Amend: 18 rows for 26–30 December 2025; all 8 rows from the populated
+    following day (31 December) are excluded.
+  - Border New: 824 rows for 1 August 2023, footer total 824, and all 566 rows
+    from 2 August are excluded.
+- Saved the pre-deployment procedure definitions under
+  `C:\Users\dev_vm4\AppData\Local\Temp\tradenet-uat-proc-backup-20260905-182046`
+  for rollback.
+- Applied `sp_VoucherReport_pagination.sql` and
+  `sp_PendingReport_pagination.sql` to UAT `TradeNetDB` only.
+- Verified the deployed Voucher procedure has the normalized calendar-day
+  boundary and strict ApplyType predicate.
+- Verified the deployed Pending procedure has the dedicated Border Import
+  Licence and Border Import Licence Item branch.
+- Direct procedure check for 1–5 January 2026: Voucher/New = 122 rows; Pending
+  changed from the incorrect ordinary Import Licence count of 681 to the correct
+  Border Import Licence count of 562.
+- Compiled-controller integration test passed against UAT in 56 seconds:
+  Voucher = 122 rows with Amount total 9,355,000; Pending = 562 rows.
+- Production was not queried or changed during this UAT pass.
 
 The repository's ESLint command is not currently usable because the installed
 ESLint 9 expects an `eslint.config.*` file and the project does not contain one.
@@ -265,15 +302,12 @@ Repository-wide suites are not fully green for reasons outside item 1:
 
 ## Work Still Required
 
-1. Commit complaints 5-6 only when requested. Exclude the user's unrelated local
-   changes in `Backend/appsettings.json`, `Frontend/package-lock.json`,
-   `Frontend/src/config.ts`, and the pre-existing Daily Report fixture change.
-2. Push or open a pull request only when requested; no deployment is part of this
-   work.
-3. Verify all six fixes in UAT against the old reports before release and record
-   the exact filters/results.
-4. Decide separately whether to deploy the updated SQL scripts. This is a
-   database write and requires explicit authorization.
+1. Commit the new opt-in UAT integration test and this updated note only when
+   requested. Exclude the user's unrelated local changes.
+2. Push or open a pull request only when requested.
+3. Complete visible browser checks for all six reports in the deployed UAT UI.
+4. Production SQL deployment remains separate and requires explicit
+   authorization; the two procedure scripts are deployed only to UAT.
 5. If the Actual Amendment counts still differ, obtain the customer's complete
    filter inputs and compare old and new results against the same stable data
    snapshot.
@@ -297,9 +331,9 @@ Repository-wide suites are not fully green for reasons outside item 1:
 
 ## Safety and Working-Tree Notes
 
-- Database access remains read-only unless the user explicitly authorizes a
-  deployment or other database write.
-- No production connection string is explicitly named in the repository.
+- UAT procedure deployment was explicitly authorized. All other database access
+  in this pass was read-only.
+- Production was not connected to or changed during the UAT deployment/test.
 - The user's three pre-existing local file changes remain uncommitted and outside
   the report fix.
 - A safety stash created before updating the branch is still retained.
