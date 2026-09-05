@@ -32,12 +32,16 @@ GO
 
 -- Wrong-database guard: dbo.sp_HSCodeReport is the legacy Tradenet 2.0 procedure and
 -- exists only in the report database. Stop before creating anything in the wrong place.
-IF OBJECT_ID(N'dbo.sp_HSCodeReport', N'P') IS NULL
-BEGIN
-    RAISERROR(N'Wrong database: dbo.sp_HSCodeReport was not found in [%s]. Connect to TradeNetDB and run again.', 16, 1, DB_NAME());
-    SET NOEXEC ON;
-END
-GO
+-- COMMENTED OUT, same as the Export Permit round-3 script (commit df9a5ac): the legacy
+-- sp_* procedures are not present on the deployment target, so the guard blocked the run.
+-- Check `SELECT DB_NAME();` reads TradeNetDB before executing -- NOT ReportTemplateDB,
+-- which only holds the Excel export job queue.
+-- IF OBJECT_ID(N'dbo.sp_HSCodeReport', N'P') IS NULL
+-- BEGIN
+--     RAISERROR(N'Wrong database: dbo.sp_HSCodeReport was not found in [%s]. Connect to TradeNetDB and run again.', 16, 1, DB_NAME());
+--     SET NOEXEC ON;
+-- END
+-- GO
 
 -- ============================================================================
 -- sp_HSCodeReport_pagination   (file 01_sp_HSCodeReport_pagination.sql)
