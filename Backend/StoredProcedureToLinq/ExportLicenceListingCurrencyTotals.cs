@@ -31,7 +31,17 @@ public sealed class ExportLicenceListingCurrencyTotalRow
 /// </summary>
 public static class ExportLicenceListingCurrencyTotals
 {
-    /// <summary>New / Amendment / Actual Amendment / Cancellation listing footer (<c>dbo.sp_ExportLicenceListingCurrencyTotals</c>).</summary>
+    /// <summary>
+    /// New / Amendment / Actual Amendment / Cancellation listing footer
+    /// (<c>dbo.sp_ExportLicenceListingCurrencyTotals</c>).
+    ///
+    /// <paramref name="auto"/> is the New reports' Auto / None-Auto dropdown, and is the proc's
+    /// LAST parameter: the longer positional EXEC is emitted only when a caller supplies it, so
+    /// the Amend / Actual Amend / Cancel callers keep the 8-argument form and are unaffected if
+    /// the proc on the server is still the 8-parameter version. A New caller against that stale
+    /// proc gets Error 8144 -> the <see cref="RunAsync"/> catch -> an empty footer, never a
+    /// silently unfiltered number.
+    /// </summary>
     public static Task<ReportCurrencyTotalsSummary> ExecuteAsync(
         TradeNetDbContext db,
         string formType,
@@ -41,27 +51,34 @@ public static class ExportLicenceListingCurrencyTotals
         int exportImportSectionId,
         string? companyRegistrationNo,
         int amendRemarkId,
-        int sakhanId)
+        int sakhanId,
+        string? auto = null)
     {
         ArgumentNullException.ThrowIfNull(db);
 
-        var parameters = new[]
+        var parameters = new List<SqlParameter>
         {
-            new SqlParameter("@FormType", formType ?? string.Empty),
-            new SqlParameter("@ApplyType", applyType ?? string.Empty),
-            new SqlParameter("@FromDate", fromDate),
-            new SqlParameter("@ToDate", toDate),
-            new SqlParameter("@ExportImportSectionId", exportImportSectionId),
-            new SqlParameter("@CompanyRegistrationNo", companyRegistrationNo ?? string.Empty),
-            new SqlParameter("@AmendRemarkId", amendRemarkId),
-            new SqlParameter("@SakhanId", sakhanId),
+            new("@FormType", formType ?? string.Empty),
+            new("@ApplyType", applyType ?? string.Empty),
+            new("@FromDate", fromDate),
+            new("@ToDate", toDate),
+            new("@ExportImportSectionId", exportImportSectionId),
+            new("@CompanyRegistrationNo", companyRegistrationNo ?? string.Empty),
+            new("@AmendRemarkId", amendRemarkId),
+            new("@SakhanId", sakhanId),
         };
 
-        const string sql =
+        var sql =
             "EXEC dbo.sp_ExportLicenceListingCurrencyTotals @FormType, @ApplyType, @FromDate, @ToDate, " +
             "@ExportImportSectionId, @CompanyRegistrationNo, @AmendRemarkId, @SakhanId";
 
-        return RunAsync(db, sql, parameters);
+        if (auto != null)
+        {
+            parameters.Add(new SqlParameter("@auto", auto));
+            sql += ", @auto";
+        }
+
+        return RunAsync(db, sql, parameters.ToArray());
     }
 
     /// <summary>

@@ -18,6 +18,10 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // v2: CancelReport.rdlc's per-currency footer and its HS Code column both arrive here, and the
+    // deterministic TOP 1 can change Currency / HS Code / Total Value for a multi-item licence, so
+    // a cached .xlsx from before this change must not be reused.
+    [ExcelFormatVersion(2)]
     public class ExportLicenceCancellationReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ExportLicenceCancellationReport";
@@ -57,6 +61,20 @@ namespace Backend.Controllers.Report
                 : ApiResult<sp_CancelReportResult>.CreateFastPageFromRows(
                     data, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
+
+            // CancelReport.rdlc's Tablix2: one "<CUR>: N licence(s)" + summed Total Value row per
+            // currency (rdlc:1855, rdlc:1909), plus the grand "Total: N licence(s)" whose amount
+            // cell is blank (rdlc:1967, rdlc:2021). Tied to the exact-count request so a fast page
+            // never pays for the totals query; this report asks for the exact count up front
+            // (eagerTotalCount), so the footer arrives with the first page. The Excel export gets
+            // it too: ExcelFooterTotalsResolver replays this action with IncludeTotalCount = true.
+            if (request.IncludeTotalCount && data.Count > 0)
+            {
+                result.CurrencyTotals = await ExportLicenceListingCurrencyTotals.ExecuteAsync(
+                    _context, procedureRequest!.FormType, "Cancel", procedureRequest.FromDate, procedureRequest.ToDate,
+                    procedureRequest.ExportImportSectionId, procedureRequest.CompanyRegistrationNo,
+                    0, procedureRequest.SakhanId);
+            }
 
             return Ok(result);
         }

@@ -55,6 +55,9 @@ export interface BasicTableColumn<T extends AnyObject = AnyObject> {
 const isNumericColumn = (dataType?: string) =>
   dataType === 'number' || dataType === 'money';
 
+/** How many times the background exact-count request is retried after it throws. */
+const MaxCountAttempts = 3;
+
 export type TableFunctionType = (api: string) => Promise<PaginationType>;
 
 interface PropsType<T extends AnyObject = AnyObject> {
@@ -84,6 +87,11 @@ interface PropsType<T extends AnyObject = AnyObject> {
   emptyText?: string;
   enabled?: boolean;
   lazyTotalCount?: boolean;
+  /**
+   * Ask for the exact total in the grid's own page request instead of waiting
+   * for the background count. See `ReportPageConfig.eagerTotalCount`.
+   */
+  eagerTotalCount?: boolean;
   /**
    * Controls the Excel button's enabled state independently of `enabled`
    * (which gates the grid fetch). Defaults to `enabled` so callers that only
@@ -170,6 +178,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   emptyText = 'No data',
   enabled = true,
   lazyTotalCount = true,
+  eagerTotalCount = false,
   excelEnabled = enabled,
   idleText = 'Set filters, then click Filter to load data',
   showRowNumber = true,
@@ -224,6 +233,10 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
     useState<PaginationType<T>['currencyTotals']>(undefined);
   const [lazyColumnTotals, setLazyColumnTotals] =
     useState<PaginationType<T>['columnTotals']>(undefined);
+  // Retries of the background exact-count request. It used to be fired exactly once
+  // per filter set with its failure swallowed, so a single timeout left the pager
+  // stuck on a lower-bound estimate — with no last page to jump to — for good.
+  const [countAttempt, setCountAttempt] = useState(0);
 
   const shouldShowActions =
     showActions ??
@@ -267,9 +280,12 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
       try {
         // Report (fetchData) path: request a "fast page" that skips the
         // expensive COUNT(*) so the grid paints immediately; the exact total is
-        // fetched lazily below. The legacy fetch/api path keeps the exact count.
+        // fetched lazily below. A report whose count is cheap opts out with
+        // `eagerTotalCount` and gets the exact total (and its footer) with the
+        // page itself, so the pager can offer a last page straight away. The
+        // legacy fetch/api path keeps the exact count.
         const result = fetchData
-          ? await fetchData({ ...query, includeTotalCount: false })
+          ? await fetchData({ ...query, includeTotalCount: eagerTotalCount })
           : await fetch!(buildLegacyUrl(api!, query));
 
         setData(result ?? emptyPage<T>());
@@ -292,6 +308,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
     setLazyCurrencyTotals(undefined);
     setLazyColumnTotals(undefined);
     countedFilterSig.current = null;
+    setCountAttempt(0);
   }, [filterSig]);
 
   // Lazy total count (partial delivery). Only fires when the rows came back as an
@@ -307,6 +324,13 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
       return;
     }
     if (countedFilterSig.current === filterSig) {
+      return;
+    }
+    // A request that THREW is retried, up to MaxCountAttempts: one timeout used to
+    // strand the pager on its lower-bound estimate permanently, with no last page.
+    // A request that SUCCEEDS but answers "not exact" is never retried -- that is a
+    // deliberate server-side skip and retrying it would loop forever.
+    if (countAttempt >= MaxCountAttempts) {
       return;
     }
     countedFilterSig.current = filterSig;
@@ -325,7 +349,15 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
     fetchData(countQuery)
       .then((result) => {
         if (!cancelled && result) {
-          setExactTotalCount(result.totalCount ?? null);
+          // Only latch a count the server says is exact. A controller that skips the
+          // exact count (a deliberate timeout guard on some wide reports) answers this
+          // request with another lower-bound estimate -- on page 1 that estimate is 2,
+          // which would collapse the pager to a single page and strand the user there.
+          // Ignoring it keeps the fast page's estimate, the "of at least N (calculating
+          // total)" label, and a working next-page button.
+          if (result.isTotalCountExact !== false) {
+            setExactTotalCount(result.totalCount ?? null);
+          }
           // Heavy drill lists defer the per-currency footer to this request.
           if (result.currencyTotals) {
             setLazyCurrencyTotals(result.currencyTotals);
@@ -336,20 +368,38 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
         }
       })
       .catch(() => {
-        // Leave the estimated total from the fast page in place on failure.
+        // Leave the estimated total from the fast page in place, but release the
+        // latch so the next render tries again -- a single timeout used to strand
+        // this filter set on the estimate for as long as the page stayed open.
+        if (cancelled) {
+          return;
+        }
+        countedFilterSig.current = null;
+        setCountAttempt((attempt) => attempt + 1);
       });
 
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, fetchData, lazyTotalCount, data.isTotalCountExact, filterSig]);
+  }, [
+    enabled,
+    fetchData,
+    lazyTotalCount,
+    data.isTotalCountExact,
+    filterSig,
+    countAttempt,
+  ]);
 
   // Pager shows the exact total once it arrives, otherwise the fast page's
   // lower-bound estimate so Ant Pagination can still expose the next page.
   const displayTotalCount = exactTotalCount ?? data.totalCount;
   const isEstimatedTotalCount =
     data.isTotalCountExact === false && exactTotalCount === null;
+  // Once the retries are spent the total is not "calculating" any more -- saying so
+  // would be a label that never resolves.
+  const gaveUpOnTotalCount =
+    isEstimatedTotalCount && countAttempt >= MaxCountAttempts;
 
   // Excel is always server-side now: every report page passes `onExcel`, which
   // enqueues a job carrying the presentation spec. The old client-side
@@ -770,11 +820,15 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
         <div className="pagination">
           <Pagination
             showSizeChanger
-            showTotal={(total, range) =>
-              isEstimatedTotalCount
+            showTotal={(total, range) => {
+              if (gaveUpOnTotalCount) {
+                return `${range[0]}-${range[1]} of at least ${total}`;
+              }
+
+              return isEstimatedTotalCount
                 ? `${range[0]}-${range[1]} of at least ${total} (calculating total)`
-                : `${range[0]}-${range[1]} of ${total} total`
-            }
+                : `${range[0]}-${range[1]} of ${total} total`;
+            }}
             pageSizeOptions={[10, 20, 50, 100, 1000]}
             defaultPageSize={initialPageSize}
             onShowSizeChange={(_, size) => {

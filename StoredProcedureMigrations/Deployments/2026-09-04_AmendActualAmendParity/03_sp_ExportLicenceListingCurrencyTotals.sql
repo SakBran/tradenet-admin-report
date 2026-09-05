@@ -6,7 +6,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_ExportLicenceListingCurrencyTotals]
     @ExportImportSectionId int = 0,
     @CompanyRegistrationNo nvarchar(50) = N'',
     @AmendRemarkId int = 0,
-    @SakhanId int = 0
+    @SakhanId int = 0,
+    @auto nvarchar(50) = N''
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -21,7 +22,12 @@ BEGIN
     -- BorderExportLicenceQuery use). The per-licence projection and WHERE clauses are kept in step
     -- with those grids so the footer always matches the rows shown:
     --   * New                 -> grid shows SUM(item.Amount); New licences carry a NULL
-    --                            AmendRemarkId so NO AmendRemarkId predicate is applied.
+    --                            AmendRemarkId so NO AmendRemarkId predicate is applied. Both New
+    --                            grids also expose the Auto / None-Auto dropdown, so @auto is
+    --                            applied here in each grid's OWN form: the non-border grid uses
+    --                            "(@auto='' OR auto=@auto)" (keeps NULL auto when unfiltered) while
+    --                            the border grid uses the CASE form (drops NULL auto). Mirroring
+    --                            them exactly is what keeps the footer count equal to the grid's.
     --   * Amend / ActualAmend -> grid shows the FIRST item's Amount (TOP 1 by item Id) + the
     --                            AmendRemarkId CASE (AmendRemarkId IS NOT NULL when
     --                            @AmendRemarkId = 0). ApplyType is matched via @ApplyType so the
@@ -139,6 +145,7 @@ BEGIN
                     AND BorderExportLicence.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN BorderExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
                     AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
                     AND BorderExportLicence.SakhanId = (CASE WHEN @SakhanId = 0 THEN BorderExportLicence.SakhanId ELSE @SakhanId END)
+                    AND BorderExportLicence.auto = (CASE WHEN @auto = N'' THEN BorderExportLicence.auto ELSE @auto END)
                 UNION ALL
                 SELECT
                     (SELECT TOP 1 currency.Code FROM BorderExportLicenceItem
@@ -155,6 +162,7 @@ BEGIN
                     AND BorderExportLicence.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN BorderExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
                     AND IndividualTrading.TINNo = (CASE WHEN @CompanyRegistrationNo = '' THEN IndividualTrading.TINNo ELSE @CompanyRegistrationNo END)
                     AND BorderExportLicence.SakhanId = (CASE WHEN @SakhanId = 0 THEN BorderExportLicence.SakhanId ELSE @SakhanId END)
+                    AND BorderExportLicence.auto = (CASE WHEN @auto = N'' THEN BorderExportLicence.auto ELSE @auto END)
             ) d
             GROUP BY ISNULL(d.Currency, N'')
             OPTION (RECOMPILE);
@@ -221,9 +229,10 @@ BEGIN
                     INNER JOIN PaThaKa ON ExportLicence.PaThaKaId = PaThaKa.Id
                     INNER JOIN ExportImportSection section ON ExportLicence.ExportImportSectionId = section.Id
                 WHERE ExportLicence.ApplyType = 'New' AND ExportLicence.Status = 'Approved'
-                    AND (ExportLicence.CreatedDate >= @FromDate AND ExportLicence.CreatedDate <= @ToDate)
+                    AND (ExportLicence.CreatedDate >= @FromDate AND ExportLicence.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
                     AND ExportLicence.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN ExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)
                     AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+                    AND (@auto = N'' OR ExportLicence.auto = @auto)
             ) d
             GROUP BY ISNULL(d.Currency, N'')
             OPTION (RECOMPILE);

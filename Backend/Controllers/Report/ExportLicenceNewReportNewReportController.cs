@@ -18,6 +18,9 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // 2: the export now carries the per-currency Total footer. The job cache keys on the request
+    // payload + this version, so an unchanged filter set would keep serving the footer-less .xlsx.
+    [ExcelFormatVersion(2)]
     public class ExportLicenceNewReportNewReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ExportLicenceNewReportNewReport";
@@ -45,19 +48,34 @@ namespace Backend.Controllers.Report
             var pageSize = request.PageSize <= 0 ? DefaultPageSize : Math.Min(request.PageSize, MaxPageSize);
             var sortColumn = string.IsNullOrWhiteSpace(request.SortColumn) ? null : request.SortColumn;
             var sortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? null : request.SortOrder;
-            const bool includeTotalCount = false;
 
             var rows = await sp_NewReport.ExecuteAsync(
-                _context, procedureRequest!, sortColumn, sortOrder, pageIndex, pageSize, includeTotalCount);
+                _context, procedureRequest!, sortColumn, sortOrder, pageIndex, pageSize, request.IncludeTotalCount);
             var data = rows.Select(row => row.ToResult()).ToList();
 
-            var result = includeTotalCount
+            var result = request.IncludeTotalCount
                 ? ApiResult<sp_NewReportResult>.CreatePageFromRows(
                     data, rows.Count > 0 ? (rows[0].TotalCount ?? 0) : 0, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery)
                 : ApiResult<sp_NewReportResult>.CreateFastPageFromRows(
                     data, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
+
+            // The legacy NewLicenceReport.rdlc "Currency" group footer: one
+            // "<CUR>: N licence(s)" + summed Total Value row per currency, plus the grand
+            // "Total: N licence(s)". Deferred to the exact-count request (the grid's one lazy
+            // round trip per Filter click, which BasicTable merges into the footer) so the first
+            // page still renders without paying for the wide COUNT + the totals query. The Excel
+            // export gets it too: ExcelFooterTotalsResolver replays this action with
+            // IncludeTotalCount = true.
+            if (request.IncludeTotalCount && data.Count > 0)
+            {
+                result.CurrencyTotals = await ExportLicenceListingCurrencyTotals.ExecuteAsync(
+                    _context, procedureRequest!.FormType, "New",
+                    procedureRequest.FromDate, procedureRequest.ToDate,
+                    procedureRequest.ExportImportSectionId, procedureRequest.CompanyRegistrationNo,
+                    0, procedureRequest.SakhanId, procedureRequest.Auto ?? string.Empty);
+            }
 
             return Ok(result);
         }

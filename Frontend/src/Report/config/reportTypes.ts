@@ -113,6 +113,18 @@ export interface ReportPageConfig {
   showRowNumber?: boolean;
   disableLazyTotalCount?: boolean;
   /**
+   * Ask for the exact `COUNT(*)` in the grid's own page request instead of
+   * letting it arrive later from the background count.
+   *
+   * The grid normally requests a "fast page" that skips the count, so the pager
+   * only knows there is *one more* page and Ant Design cannot offer a last page
+   * until the background count lands — and if that single request fails, it
+   * never does. Set this on a report whose count is cheap enough to sit on the
+   * critical path; the background count then skips itself, because the page
+   * already came back with `isTotalCountExact: true`.
+   */
+  eagerTotalCount?: boolean;
+  /**
    * Initial rows-per-page for the result grid (default 10). The legacy RDLC
    * reports printed every row on one scrolling page, so the small summary
    * reports (Daily / By X) set this high enough that a normal date range fits

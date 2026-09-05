@@ -1,3 +1,54 @@
+/* =====================================================================================
+   Export Licence New Report currency-footer deployment - 2026-09-05
+   One procedure. Run this file, or 01_sp_ExportLicenceListingCurrencyTotals.sql - they
+   are the same definition. PROCEDURE FIRST, APPLICATION SECOND.
+
+   Target database: TradeNetDB  (NOT ReportTemplateDB - that one only holds the Excel
+   export job queue; deploying report procedures into it is a known trap.)
+
+   Why: the Export Licence New Report showed no Total footer in the UI or in Excel
+   (customer complaint, 2026-09). The footer branch already existed here but was never
+   called, and it did not mirror its grid. Two changes:
+
+     * new trailing parameter @auto (the New reports' Auto / None-Auto dropdown), applied
+       in the non-border New branch as "(@auto='' OR ExportLicence.auto=@auto)" and in the
+       border New branch as the CASE form - each copied from that branch's own grid in
+       sp_NewReport_pagination, because the two forms differ on NULL auto;
+     * the non-border New branch's date window moved from "CreatedDate <= @ToDate" to
+       "< DATEADD(day, 1, CONVERT(date, @ToDate))", which is what its grid uses.
+
+   The parameter is appended LAST and defaults to N'', so the currently deployed 8-argument
+   callers (Amendment / Actual Amendment / Cancellation) keep working against this version
+   unchanged. Deploy this BEFORE the application: the new backend passes 9 arguments for the
+   New report, and against the old 8-parameter procedure that raises Error 8144, which the
+   C# wrapper swallows into an empty footer.
+
+   Generated from the repository file of the same name; see README.md in this folder.
+   ===================================================================================== */
+
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+USE [TradeNetDB];
+GO
+
+-- Wrong-database guard: dbo.sp_CancelReport is the legacy Tradenet 2.0 procedure and
+-- exists only in the report database. Stop before creating anything in the wrong place.
+IF OBJECT_ID(N'dbo.sp_CancelReport', N'P') IS NULL
+BEGIN
+    RAISERROR(N'Wrong database: dbo.sp_CancelReport was not found in [%s]. Connect to TradeNetDB and run again.', 16, 1, DB_NAME());
+    SET NOEXEC ON;
+END
+GO
+
+-- ============================================================================
+-- sp_ExportLicenceListingCurrencyTotals
+--   (file 01_sp_ExportLicenceListingCurrencyTotals.sql)
+-- ============================================================================
+PRINT N'Applying sp_ExportLicenceListingCurrencyTotals ...';
+GO
+
 CREATE OR ALTER PROCEDURE [dbo].[sp_ExportLicenceListingCurrencyTotals]
     @FormType nvarchar(50) = N'',
     @ApplyType nvarchar(20) = N'',
@@ -239,3 +290,10 @@ BEGIN
         END
     END
 END
+
+GO
+
+SET NOEXEC OFF;
+GO
+PRINT N'Done.';
+GO

@@ -41,7 +41,10 @@ public sealed class AmendDateWindowContractTests
     [Theory]
     // Every branch an Amend / Actual Amendment controller reaches must use the calendar-date form,
     // because those controllers now send ToDate as a date: '<= @ToDate' would match only midnight.
-    [InlineData("sp_ExportLicenceListingCurrencyTotals.sql", 3)]
+    // 4: the three Amend/Actual Amend branches, plus the non-border New branch, which was
+    // brought onto the calendar-date form to mirror its own grid (sp_NewReport_pagination's
+    // Export Licence branch) when the New report's currency footer was wired up.
+    [InlineData("sp_ExportLicenceListingCurrencyTotals.sql", 4)]
     [InlineData("sp_ExportPermitListingCurrencyTotals.sql", 3)]
     [InlineData("sp_ImportLicenceListingCurrencyTotals.sql", 4)]
     [InlineData("sp_ImportPermitListingCurrencyTotals.sql", 3)]

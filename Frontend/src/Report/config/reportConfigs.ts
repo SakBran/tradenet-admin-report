@@ -418,13 +418,25 @@ const exportLicenceActionFilters: ReportFilterConfig[] = [
   importLicenceCompanyNameFilter,
 ];
 
+// No Form Type box: the old ExportLicenceNewReport.cshtml carried FormType as a hidden field,
+// and ExportLicenceNewReportNewReportController hardcodes FormType = "Export Licence" and never
+// reads request.FormType -- so the input was a visible no-op.
 const exportLicenceNewFilters: ReportFilterConfig[] = [
   importLicenceDateRangeFilter,
-  importLicenceFormTypeFilter,
   exportLicenceSectionFilter,
   importLicenceCompanyRegistrationNoFilter,
   importLicenceCompanyNameFilter,
   importLicenceAutoFilter,
+];
+
+// Same reason as exportLicenceNewFilters: the old ExportLicenceCancelReport.cshtml exposes only
+// From/To Date, the Export Section dropdown, Company Registration No and a readonly Company Name;
+// FormType is an @Html.HiddenFor, and the controller hardcodes FormType = "Export Licence".
+const exportLicenceCancellationFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  exportLicenceSectionFilter,
+  importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
 ];
 
 const importLicenceHSCodeFilters: ReportFilterConfig[] = [
@@ -4528,8 +4540,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Section',
       },
       {
+        // BorderExtensionReport.rdlc:374/993 - "Licence No" is the parent licence
+        // (OldLicenceNo), not the extension's own E-number.
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
       },
       {
@@ -5956,8 +5970,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Section',
       },
       {
+        // BorderExtensionReport.rdlc:374/993 - "Licence No" is the parent permit
+        // (OldLicenceNo), not the extension's own E-number.
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
       },
       {
@@ -7130,7 +7146,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ExportLicenceCancellationReport.xlsx',
     initialSortColumn: 'Date',
     showRowNumber: true,
-    filters: exportLicenceActionFilters,
+    // The exact row count comes back with the page itself: the legacy report printed every
+    // cancellation on one scrolling page, so a pager that cannot reach the last page reads as
+    // missing data. The count is a three-table join with OPTION (RECOMPILE) over a few hundred
+    // rows a month, so it is cheap enough to sit on the critical path.
+    eagerTotalCount: true,
+    filters: exportLicenceCancellationFilters,
     columns: [
       {
         key: 'Section',
@@ -7138,11 +7159,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Section',
       },
       {
+        // rdlc:1229 -- "Licence No" is the ORIGINAL licence, =Fields!OldLicenceNo.Value.
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
       },
       {
+        // rdlc:1282 -- "Cancellation No" is =Fields!LicenceNo.Value.
         key: 'CancellationNo',
         dataIndex: 'licenceNo',
         title: 'Cancellation No',
@@ -7181,10 +7204,21 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Currency',
       },
       {
+        // rdlc:1600 -- =Fields!Amount.Value with no <Format>, so decimal(18,4) prints 4 dp.
         key: 'TotalValue',
         dataIndex: 'amount',
         title: 'Total Value',
         dataType: 'number',
+        numberFormat: '#,##0.0000',
+      },
+      {
+        // CancelReport.rdlc (origin/master) renders HSCode TWICE -- at column 2 (rdlc:391)
+        // and again here at column 12 (rdlc:955), both bound to =Fields!HSCode.Value. The
+        // duplicate is an old layout bug; we render it once, beside Total Value, as the
+        // Export Permit twin does.
+        key: 'HSCode',
+        dataIndex: 'hsCode',
+        title: 'HS Code',
       },
       {
         key: 'Remark',
@@ -7584,8 +7618,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Section',
       },
       {
+        // ExtensionReport.rdlc:303/868 - "Licence No" is the parent licence
+        // (OldLicenceNo), not the extension's own E-number.
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
       },
       {
@@ -7698,7 +7734,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'hsCode',
         dataIndex: 'hsCode',
-        title: 'hsCode',
+        // NewLicenceReport.rdlc labels this column "HSCode"; 'hsCode' was the raw key.
+        title: 'HSCode',
       },
       {
         key: 'Quota',
@@ -8762,8 +8799,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Section',
       },
       {
+        // ExtensionReport.rdlc:303/868 - "Licence No" is the parent permit
+        // (OldLicenceNo), not the extension's own E-number.
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
       },
       {

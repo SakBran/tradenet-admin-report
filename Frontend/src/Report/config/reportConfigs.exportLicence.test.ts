@@ -252,9 +252,10 @@ describe('Export Licence report configs', () => {
         'CompanyRegistrationNo',
         'CompanyName',
       ],
+      // No FormType: the old view kept it hidden and the controller hardcodes
+      // "Export Licence", so the box filtered nothing.
       ExportLicenceNewReportNewReport: [
         'dateRange',
-        'FormType',
         'ExportImportSectionId',
         'CompanyRegistrationNo',
         'CompanyName',
@@ -360,12 +361,16 @@ describe('Export Licence report configs', () => {
     expect(cfg.currencyTotalsColumns).toBeUndefined();
   });
 
+  // Extension report Licence No / Extension No bindings live in
+  // reportConfigs.extension.test.ts, which covers the whole Extension family at once.
+
   it('new report keeps PM-requested auto filter and visible business columns', () => {
     const cfg = reportConfigs.ExportLicenceNewReportNewReport;
 
+    // FormType is absent by design: the old ExportLicenceNewReport.cshtml kept it hidden and
+    // the controller hardcodes "Export Licence", so a visible box filtered nothing.
     expect(cfg.filters.map((filter) => filter.name)).toEqual([
       'dateRange',
-      'FormType',
       'ExportImportSectionId',
       'CompanyRegistrationNo',
       'CompanyName',
@@ -373,6 +378,13 @@ describe('Export Licence report configs', () => {
     ]);
 
     expect(cfg.filters.some((filter) => filter.name === 'SakhanId')).toBe(false);
+
+    // NewLicenceReport.rdlc's Currency row-group footer: the controller populates
+    // CurrencyTotals, so this placement must stay wired.
+    expect(cfg.currencyTotalsColumns).toEqual({
+      labelColumnKey: 'LicenceNo',
+      valueColumnKey: 'TotalValue',
+    });
     expect(
       cfg.columns.map((column) => column.key)
     ).toEqual([

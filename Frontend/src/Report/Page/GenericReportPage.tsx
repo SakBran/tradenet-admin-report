@@ -978,6 +978,7 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
         initialSortOrder="desc"
         initialPageSize={config.defaultPageSize ?? 10}
         lazyTotalCount={!config.disableLazyTotalCount}
+        eagerTotalCount={config.eagerTotalCount ?? false}
         excelFileName={config.excelFileName}
         showRowNumber={config.showRowNumber ?? true}
         rowNumberTitle={resolveRowNumberTitle(config)}
