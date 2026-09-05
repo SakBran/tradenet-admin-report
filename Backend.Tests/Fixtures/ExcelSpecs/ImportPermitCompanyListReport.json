@@ -10,7 +10,7 @@
     "List of Import Permit By Company (01/02/2026) To (28/02/2026)"
   ],
   "showRowNumber": true,
-  "rowNumberTitle": "No",
+  "rowNumberTitle": "Sr.No.",
   "columns": [
     {
       "key": "CompanyName",
@@ -25,7 +25,9 @@
     {
       "key": "TotalValue",
       "dataIndex": "totalValue",
-      "title": "Total Value"
+      "title": "Total Value",
+      "dataType": "money",
+      "numberFormat": "#,##0.0000"
     },
     {
       "key": "Currency",

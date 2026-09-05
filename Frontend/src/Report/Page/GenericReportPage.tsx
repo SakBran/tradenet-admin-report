@@ -98,8 +98,17 @@ const idFilterLookups: Record<string, LookupFilterConfig> = {
   SellerCountryId: { lookupName: 'countries', label: 'Seller Country' },
 };
 
+/**
+ * A NULL DateTime that came back through a non-nullable result property (e.g.
+ * `ApplicationDate = ApplicationDate ?? default` in sp_VoucherReport) serialises as
+ * .NET's DateTime.MinValue, which is truthy and parses fine — so guard it explicitly
+ * or the cell shows "0001-01-01" instead of an empty value.
+ */
+const isDefaultDateTime = (value: unknown) =>
+  value?.toString().startsWith('0001-01-01') ?? false;
+
 const formatDate = (value: unknown) => {
-  if (!value) {
+  if (!value || isDefaultDateTime(value)) {
     return 'N/A';
   }
 
@@ -108,7 +117,7 @@ const formatDate = (value: unknown) => {
 };
 
 const formatDateTime = (value: unknown) => {
-  if (!value) {
+  if (!value || isDefaultDateTime(value)) {
     return 'N/A';
   }
 
@@ -134,6 +143,35 @@ const formatMoney = (value: unknown) => {
   const parsed = Number(value?.toString().replace(/,/g, ''));
   return Number.isFinite(parsed) ? parsed.toFixed(2) : value?.toString() ?? 'N/A';
 };
+
+/**
+ * Legacy RDLC `FORMAT(..., "Nx")` rendering for a numeric cell, driven by the
+ * column's `numberFormat`: thousands separators plus the fixed decimal count the
+ * format string carries ('#,##0.0000' -> 4, '#,##0' -> 0). Keeps the grid and the
+ * Excel sheet — which gets the same `numberFormat` via the presentation spec —
+ * printing the identical string.
+ */
+const decimalsInNumberFormat = (numberFormat: string) =>
+  numberFormat.split('.')[1]?.length ?? 0;
+
+const formatWithNumberFormat =
+  (numberFormat: string) =>
+  (value: unknown): string => {
+    if (!hasValue(value)) {
+      return 'N/A';
+    }
+
+    const parsed = Number(value?.toString().replace(/,/g, ''));
+    if (!Number.isFinite(parsed)) {
+      return value?.toString() ?? 'N/A';
+    }
+
+    const decimals = decimalsInNumberFormat(numberFormat);
+    return parsed.toLocaleString('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
+  };
 
 const toTransactionAmountNumber = (value: unknown) => {
   const raw = value?.toString().replace(/,/g, '').trim() ?? '';
@@ -322,6 +360,12 @@ const toTableColumn = (
       render: (value, row) =>
         formatMoney(hasValue(value) ? value : getAmountDiff(row)),
     };
+  }
+
+  // An explicit numberFormat wins over the dataType default: the legacy reports
+  // print money as N4 (FORMAT(Sum(Amount),"N4")) or N0, not toFixed(2).
+  if (column.numberFormat) {
+    return { ...column, render: formatWithNumberFormat(column.numberFormat) };
   }
 
   if (column.fallbackDataIndexes?.length) {

@@ -27,6 +27,11 @@
       "dataType": "date"
     },
     {
+      "key": "LicenceNo",
+      "dataIndex": "licenceNo",
+      "title": "Licence Extension No"
+    },
+    {
       "key": "ApplicationNo",
       "dataIndex": "applicationNo",
       "title": "Application No"
@@ -34,7 +39,7 @@
     {
       "key": "LicenceDate",
       "dataIndex": "sLicenceDate",
-      "title": "Licence Date"
+      "title": "Extension Date"
     },
     {
       "key": "CompanyRegistrationNo",

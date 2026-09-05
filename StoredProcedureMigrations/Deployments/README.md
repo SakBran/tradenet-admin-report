@@ -24,3 +24,5 @@ from its original, so a snapshot can never quietly go stale.
 | Release | Contents |
 |---|---|
 | [2026-09-04_AmendActualAmendParity](2026-09-04_AmendActualAmendParity/) | 6 procedures — Amend / Actual Amendment date window and per-currency footers |
+| [2026-09-05_ExportPermitRound3](2026-09-05_ExportPermitRound3/) | 2 procedures — Export Permit Cancellation `TOP 1` ordering and Voucher `TotalCIF`/`ExchangeRate` zeros |
+| [2026-09-05_ImportPermitParityRound1](2026-09-05_ImportPermitParityRound1/) | 2 procedures — Import Permit By HS Code grouping and the Cancellation per-currency footer |

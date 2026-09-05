@@ -10533,6 +10533,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportPermitByHSCodeReport.xlsx',
     initialSortColumn: 'hsCode',
     showRowNumber: true,
+    // Old HSCodeReport.rdlc:162 heads the row-number column 'Sr.No.'.
+    rowNumberTitle: 'Sr.No.',
+    // Old filter box (Views/Reports/ImportPermitByHSCodeReport.cshtml:26-63): From Date,
+    // To Date, Import Section, Filter By, HS Code. FormType is a hidden field there (:21)
+    // and the controller hard-codes FormType = "Import Permit".
     filters: [
       {
         name: 'dateRange',
@@ -10545,10 +10550,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         required: true,
       },
       {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
+        name: 'ExportImportSectionId',
+        label: 'Import Section',
+        type: 'number',
+        defaultValue: 0,
+        lookupName: 'importPermitSections',
       },
       {
         name: 'FilterType',
@@ -10575,8 +10581,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'HS Code',
         drilldown: {
           targetReportKey: 'ImportPermitByHSCodeReport',
-          carryFilters: ['FromDate', 'ToDate', 'FilterType'],
+          carryFilters: ['FromDate', 'ToDate', 'FilterType', 'ExportImportSectionId'],
           rowParams: { hsCode: 'hsCode' },
+          // Old rdlc:573 drills through with window.open(..., '_blank').
+          openInNewTab: true,
         },
       },
       {
@@ -10593,6 +10601,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'TotalValue',
         dataIndex: 'totalValue',
         title: 'Total Value',
+        // Old rdlc:698 renders =FORMAT(Sum(Fields!Amount.Value),"N4").
+        dataType: 'money',
+        numberFormat: '#,##0.0000',
       },
       {
         key: 'Currency',
@@ -10610,6 +10621,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportPermitBySectionReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
+    // Old ImportPermitBySectionReport.rdlc:249 heads the row-number column 'Sr.No.'.
+    rowNumberTitle: 'Sr.No.',
+    // Old filter box (Views/Reports/ImportPermitBySectionReport.cshtml:25-53): From Date,
+    // To Date, EIR Card Type, Import Section. `Type` is a hidden field there (:21) and the
+    // controller hard-codes Type = "Oversea", so it is not a user filter.
     filters: [
       {
         name: 'dateRange',
@@ -10622,16 +10638,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         required: true,
       },
       {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
         name: 'PaThaKaTypeId',
         label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'paThaKaTypes',
       },
       {
         name: 'ExportImportSectionId',
@@ -10649,8 +10660,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Section',
         drilldown: {
           targetReportKey: 'ImportPermitDetailReport',
-          carryFilters: ['FromDate', 'ToDate', 'Type', 'PaThaKaTypeId'],
+          carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId'],
           rowParams: { ExportImportSectionId: 'sectionId' },
+          // Old rdlc:598 drills through with window.open(..., '_blank').
+          openInNewTab: true,
         },
       },
       {
@@ -10662,6 +10675,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'TotalValue',
         dataIndex: 'totalValue',
         title: 'Total Value',
+        // 'money' + '#,##0.0000' is the Money4 cell format in the .xlsx and the grid's
+        // N4 render, matching old rdlc:676 =FORMAT(Sum(Fields!Amount.Value),"N4").
+        dataType: 'money',
+        numberFormat: '#,##0.0000',
       },
       {
         key: 'Currency',
@@ -10679,6 +10696,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportPermitBySellerCountryReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
+    // Old ImportPermitBySellerCountryReport.rdlc:249 heads the row-number column 'Sr.No.'.
+    rowNumberTitle: 'Sr.No.',
+    // Old filter box (Views/Reports/ImportPermitBySellerCountryReport.cshtml:25-60): From
+    // Date, To Date, EIR Card Type, Import Section, Seller Country. `Type` is hidden (:21).
     filters: [
       {
         name: 'dateRange',
@@ -10691,16 +10712,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         required: true,
       },
       {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
         name: 'PaThaKaTypeId',
         label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'paThaKaTypes',
       },
       {
         name: 'ExportImportSectionId',
@@ -10714,6 +10730,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Seller Country',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'countries',
       },
     ],
     reportSubtitle: importLicenceRangeSubtitle('List of Import Permit By Buyer Country', true),
@@ -10724,8 +10741,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Country',
         drilldown: {
           targetReportKey: 'ImportPermitDetailReport',
-          carryFilters: ['FromDate', 'ToDate', 'Type', 'PaThaKaTypeId', 'ExportImportSectionId'],
+          carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId'],
           rowParams: { SellerCountryId: 'countryId' },
+          openInNewTab: true,
         },
       },
       {
@@ -10737,6 +10755,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'TotalValue',
         dataIndex: 'totalValue',
         title: 'Total Value',
+        // 'money' + '#,##0.0000' is the Money4 cell format in the .xlsx and the grid's
+        // N4 render, matching old rdlc:667 =FORMAT(Sum(Fields!Amount.Value),"N4").
+        dataType: 'money',
+        numberFormat: '#,##0.0000',
       },
       {
         key: 'Currency',
@@ -10748,12 +10770,21 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   ImportPermitCancellationReport: {
     controllerName: 'ImportPermitCancellationReport',
     reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
+    // Old CancelReport.rdlc Tablix2 (:1497-1857) groups on Currency (:1837): one
+    // "<CUR>:N licence(s)" (:1557) + "<CUR>:Sum(Amount) N4" (:1611) row per currency,
+    // then a grand "Total:N licence(s)" (:1723) with the money cell blank (:1778).
+    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'TotalValue' },
     title: 'Import Permit Cancellation Report',
     apiRoute: 'ImportPermitCancellationReport',
     excelRoute: 'ImportPermitCancellationReport/Excel',
     excelFileName: 'ImportPermitCancellationReport.xlsx',
     initialSortColumn: 'Date',
     showRowNumber: true,
+    // Old CancelReport.rdlc:256 heads the row-number column 'No.'.
+    rowNumberTitle: 'No.',
+    // Old filter box (Views/Reports/ImportPermitCancelReport.cshtml:25-61): From Date,
+    // To Date, Import Section, Company Registration No, readonly Company Name. FormType is
+    // a hidden field there (:21) and the controller hard-codes FormType = "Import Permit".
     filters: [
       {
         name: 'dateRange',
@@ -10764,12 +10795,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         fromLabel: 'From Date',
         toLabel: 'To Date',
         required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
       },
       {
         name: 'ExportImportSectionId',
@@ -10784,27 +10809,29 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'text',
         defaultValue: '',
       },
+      importLicenceCompanyNameFilter,
     ],
     reportSubtitle: importLicenceRangeSubtitle('List of Import Permit Report'),
+    // Old CancelReport.rdlc Tablix1 has exactly 11 columns (headers at :256, :311, :366,
+    // :421, :476, :531/:545, :600, :655, :710, :765, :820) and no HS Code column at all —
+    // the previous leading `hsCode` column was not in the old report.
     columns: [
-      {
-        key: 'hsCode',
-        dataIndex: 'hsCode',
-        title: 'hsCode',
-      },
       {
         key: 'Section',
         dataIndex: 'sectionName',
         title: 'Section',
       },
       {
+        // Old rdlc binds header 'Licence No' (:366) to =Fields!OldLicenceNo.Value (:986)
+        // and 'Cancellation No' (:421) to =Fields!LicenceNo.Value (:1039) — the new config
+        // had the two the wrong way round.
         key: 'LicenceNo',
-        dataIndex: 'licenceNo',
+        dataIndex: 'oldLicenceNo',
         title: 'Licence No',
       },
       {
         key: 'CancellationNo',
-        dataIndex: 'oldLicenceNo',
+        dataIndex: 'licenceNo',
         title: 'Cancellation No',
       },
       {
@@ -10836,6 +10863,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         ],
       },
       {
+        // Old rdlc:710 misspells this header 'Curency'; keeping the correct spelling
+        // rather than reproducing the typo.
         key: 'Currency',
         dataIndex: 'currency',
         title: 'Currency',
@@ -10844,7 +10873,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'TotalValue',
         dataIndex: 'amount',
         title: 'Total Value',
-        dataType: 'number',
+        // The per-currency footer prints FORMAT(Sum(Amount),"N4") (rdlc:1611), so the
+        // column it sits under uses the same 4-decimal format.
+        dataType: 'money',
+        numberFormat: '#,##0.0000',
       },
       {
         key: 'Remark',
@@ -10862,6 +10894,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportPermitCompanyListReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
+    // Old ImportPermitByCompanyReport.rdlc:249 heads the row-number column 'Sr.No.'.
+    rowNumberTitle: 'Sr.No.',
+    // Old filter box (Views/Reports/ImportPermitByCompanyReport.cshtml:25-66): From Date,
+    // To Date, EIR Card Type, Import Section, Company Registration No, readonly Company
+    // Name. `Type` is hidden (:21) and the controller hard-codes Type = "Oversea".
     filters: [
       {
         name: 'dateRange',
@@ -10874,16 +10911,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         required: true,
       },
       {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
         name: 'PaThaKaTypeId',
         label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'paThaKaTypes',
       },
       {
         name: 'ExportImportSectionId',
@@ -10898,6 +10930,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'text',
         defaultValue: '',
       },
+      importLicenceCompanyNameFilter,
     ],
     reportSubtitle: importLicenceRangeSubtitle('List of Import Permit By Company'),
     columns: [
@@ -10907,8 +10940,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Company Name',
         drilldown: {
           targetReportKey: 'ImportPermitDetailReport',
-          carryFilters: ['FromDate', 'ToDate', 'Type', 'PaThaKaTypeId', 'ExportImportSectionId'],
+          carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId'],
           rowParams: { CompanyRegistrationNo: 'companyRegistrationNo' },
+          openInNewTab: true,
         },
       },
       {
@@ -10920,6 +10954,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'TotalValue',
         dataIndex: 'totalValue',
         title: 'Total Value',
+        // 'money' + '#,##0.0000' is the Money4 cell format in the .xlsx and the grid's
+        // N4 render, matching old rdlc:667 =FORMAT(Sum(Fields!Amount.Value),"N4").
+        dataType: 'money',
+        numberFormat: '#,##0.0000',
       },
       {
         key: 'Currency',
@@ -10950,18 +10988,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         required: true,
       },
       {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'PaThaKaTypeId',
-        label: 'EIR Card Type',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
         name: 'ExportImportSectionId',
         label: 'Import Section',
         type: 'number',
@@ -10969,11 +10995,19 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         lookupName: 'importPermitSections',
       },
       {
+        name: 'PaThaKaTypeId',
+        label: 'EIR Card Type',
+        type: 'number',
+        defaultValue: 0,
+        lookupName: 'paThaKaTypes',
+      },
+      {
         name: 'CompanyRegistrationNo',
         label: 'Company Registration No',
         type: 'text',
         defaultValue: '',
       },
+      importLicenceCompanyNameFilter,
     ],
     reportSubtitle: importLicenceRangeSubtitle('List of Import Permit By Daily', true),
     columns: [
@@ -10992,6 +11026,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'TotalValue',
         dataIndex: 'totalValue',
         title: 'Total Value',
+        dataType: 'money',
+        // Old ImportPermitByDailyReport.rdlc:760 = FORMAT(Sum(Fields!Amount.Value),"N4").
+        numberFormat: '#,##0.0000',
       },
       {
         key: 'Currency',
@@ -11002,7 +11039,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'TotalUSDValue',
         dataIndex: 'totalUSDValue',
         title: 'Total USD Value',
-        dataType: 'number',
+        dataType: 'money',
+        // Old rdlc:866 = FORMAT(Sum(Fields!totalUSDAmount.Value), "N4").
+        numberFormat: '#,##0.0000',
       },
     ],
   },
@@ -11015,6 +11054,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportPermitDetailReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
+    // Old filter box (Views/Reports/ImportPermitDetailReport.cshtml:28-56): From Date,
+    // To Date, EIR Card Type, Import Section. `Type` is a hidden field there (:21) and
+    // ImportPermitDetailReportController.cs:120 hard-codes Type = "Oversea". This is the
+    // report the By-X drill-downs land on, so its filter box must match theirs.
     filters: [
       {
         name: 'dateRange',
@@ -11027,16 +11070,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         required: true,
       },
       {
-        name: 'Type',
-        label: 'Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
         name: 'PaThaKaTypeId',
         label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'paThaKaTypes',
       },
       {
         name: 'ExportImportSectionId',
@@ -11045,6 +11083,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
         lookupName: 'importPermitSections',
       },
+      // No Seller Country / Company Registration No box: the old view has none either,
+      // and a drill-down's params reach the request whether or not a filter box exists
+      // for them (see the drill effect in Report/Page/GenericReportPage.tsx).
     ],
     reportSubtitle: importLicenceRangeSubtitle('List of Import Permit By Detail', true),
     columns: [
@@ -11389,13 +11430,21 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   ImportPermitVoucherReport: {
     controllerName: 'ImportPermitVoucherReport',
     reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
-    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'LicValue' },
+    // No currencyTotalsColumns: VoucherReport.rdlc has a single TOTAL row summing the
+    // voucher fee (rdlc:1828), and no per-currency block anywhere in the file.
     title: 'Import Permit Voucher Report',
     apiRoute: 'ImportPermitVoucherReport',
     excelRoute: 'ImportPermitVoucherReport/Excel',
     excelFileName: 'ImportPermitVoucherReport.xlsx',
     initialSortColumn: 'ApplicationNo',
     showRowNumber: true,
+    // Old VoucherReport.rdlc:253 heads the row-number column 'No.'.
+    rowNumberTitle: 'No.',
+    resolveColumns: resolveImportLicenceVoucherColumns,
+    // Old filter box (Views/Reports/ImportPermitVoucherReport.cshtml:25-72): From Date,
+    // To Date, Import Section, Apply Type, Payment Type, Company Registration No, readonly
+    // Company Name. FormType is a hidden field there (:21) and the controller hard-codes
+    // FormType = "Import Permit".
     filters: [
       {
         name: 'dateRange',
@@ -11406,12 +11455,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         fromLabel: 'From Date',
         toLabel: 'To Date',
         required: true,
-      },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
       },
       {
         name: 'ExportImportSectionId',
@@ -11452,13 +11495,34 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'text',
         defaultValue: '',
       },
+      importLicenceCompanyNameFilter,
     ],
     reportSubtitle: importLicenceRangeSubtitle('Import Permit Voucher List'),
+    // Column order mirrors VoucherReport.rdlc (headers at :253, :308, :363, :418, :473,
+    // :528, :597, :652, :721, :790, :845, :900, :955) and its sibling
+    // ImportLicenceVoucherReport, which was already brought to parity.
     columns: [
       {
+        // Old rdlc col 2 (header 'Licence No', :308) renders
+        // =IIF(ApplyType="New", LicenceNo, OldLicenceNo) at :1068 — the original licence.
+        key: 'OriginalLicenceNo',
+        dataIndex: 'oldLicenceNo',
+        title: 'Licence No',
+        fallbackDataIndexes: ['licenceNo'],
+      },
+      {
+        key: 'ApplicationDate',
+        dataIndex: 'applicationDate',
+        title: 'Application Date',
+        dataType: 'date',
+      },
+      {
+        // Old rdlc col 3 header is =Parameters!header2.Value, set per ApplyType at
+        // ReportsController.cs:8240-8260; resolveImportLicenceVoucherColumns fills it in
+        // and hides the column for ApplyType='New' (rdlc:1883).
         key: 'LicenceNo',
         dataIndex: 'licenceNo',
-        title: 'Licence No',
+        title: '=Parameters!header2.Value',
       },
       {
         key: 'ApplicationNo',
@@ -11466,9 +11530,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Application No',
       },
       {
+        // Old rdlc col 5 header is =Parameters!header3.Value (ReportsController.cs:8241-8261).
         key: 'LicenceDate',
         dataIndex: 'sLicenceDate',
-        title: 'Licence Date',
+        title: '=Parameters!header3.Value',
       },
       {
         key: 'CompanyRegistrationNo',
@@ -11484,7 +11549,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'LicValue',
         dataIndex: 'totalAmount',
         title: 'Lic Value',
-        dataType: 'number',
+        dataType: 'money',
+        // Old sLicenceValue = TotalAmount.ToString("N4") (Business/Reports.cs:1577).
+        numberFormat: '#,##0.0000',
       },
       {
         key: 'Currency',
@@ -11507,12 +11574,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Approved User',
       },
       {
-        key: 'Amount',
-        dataIndex: 'amount',
-        title: 'Total Amount',
-        dataType: 'number',
-      },
-      {
         key: 'CommodityType',
         dataIndex: 'commodityType',
         title: 'Commodity Type',
@@ -11528,6 +11589,15 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'exchangeRate',
         title: 'Exchange Rate',
         dataType: 'number',
+      },
+      {
+        // The MMK voucher fee (AccountTransaction.TotalAmount), the only column the old
+        // TOTAL row sums: =FORMAT(SUM(Fields!Amount.Value),"N0") at rdlc:1828.
+        key: 'Amount',
+        dataIndex: 'amount',
+        title: 'Total Amount',
+        dataType: 'number',
+        numberFormat: '#,##0',
       },
     ],
   },

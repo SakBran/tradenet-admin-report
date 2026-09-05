@@ -65,7 +65,7 @@ public sealed class ExcelFooterBuilderTests
         var row = Assert.Single(ExcelFooterBuilder.Build(Layout(), totals, 10));
 
         // [No, Currency, CompanyName, NoOfLicences, TotalValue]
-        Assert.Equal([null, "Total", null, 7m, 1290.5m], Values(row));
+        Assert.Equal([null, "TOTAL", null, 7m, 1290.5m], Values(row));
         Assert.Equal(ExcelCellFormat.Number, row.Cells[3]!.Format);
         Assert.Equal(ExcelCellFormat.Money, row.Cells[4]!.Format);
     }
@@ -132,7 +132,7 @@ public sealed class ExcelFooterBuilderTests
         var rows = ExcelFooterBuilder.Build(Layout(), totals, 10);
 
         Assert.Equal(4, rows.Count);
-        Assert.Equal("Total", rows[0].Cells[1]!.Value);
+        Assert.Equal("TOTAL", rows[0].Cells[1]!.Value);
         Assert.Equal("USD:3 licence(s)", rows[1].Cells[1]!.Value);
         Assert.Equal("Total:7 licence(s)", rows[3].Cells[1]!.Value);
     }

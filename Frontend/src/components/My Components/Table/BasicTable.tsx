@@ -41,6 +41,12 @@ export interface BasicTableColumn<T extends AnyObject = AnyObject> {
   hidden?: boolean;
   width?: number | string;
   dataType?: 'string' | 'number' | 'date' | 'dateTime' | 'boolean' | 'money';
+  /**
+   * Legacy RDLC `FORMAT(..., "Nx")` string for a numeric column ('#,##0.0000' /
+   * '#,##0'). Cells are rendered by the caller's `render`; the grand-total footer
+   * reads it here so the total prints with the same decimals as the column.
+   */
+  numberFormat?: string;
   render?: (value: unknown, row: T, rowIndex: number) => React.ReactNode;
   /** When set, the cell renders as a clickable link that drills into another report. */
   drilldown?: ReportColumnDrilldown;
@@ -455,8 +461,19 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
     });
   const formatColumnTotalValue = (
     value: number,
-    dataType?: BasicTableColumn<T>['dataType']
+    dataType?: BasicTableColumn<T>['dataType'],
+    numberFormat?: string
   ) => {
+    // An explicit RDLC number format wins, so the footer total prints with the
+    // same decimals as the column it sits under.
+    if (numberFormat) {
+      const decimals = numberFormat.split('.')[1]?.length ?? 0;
+      return Number(value).toLocaleString('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      });
+    }
+
     if (dataType === 'money') {
       return Number(value).toLocaleString('en-US', {
         minimumFractionDigits: 2,
@@ -652,7 +669,11 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
                             }
                             style={{ fontWeight: 700 }}
                           >
-                            {formatColumnTotalValue(total, column.dataType)}
+                            {formatColumnTotalValue(
+                              total,
+                              column.dataType,
+                              column.numberFormat
+                            )}
                           </td>
                         );
                       }
@@ -660,7 +681,9 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
                       if (index === totalLabelIndex) {
                         return (
                           <td key={key} style={{ fontWeight: 700 }}>
-                            Total
+                            {/* Legacy RDLC grand-total label, e.g.
+                                ImportPermitBySectionReport.rdlc:841 */}
+                            TOTAL
                           </td>
                         );
                       }

@@ -18,6 +18,10 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // v2: restored the legacy per-currency TOTAL footer, dropped the HS Code column the old
+    // rdlc never had and un-swapped Licence No / Cancellation No, so cached closed-period
+    // .xlsx files must not be reused.
+    [ExcelFormatVersion(2)]
     public class ImportPermitCancellationReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ImportPermitCancellationReport";
@@ -65,6 +69,19 @@ namespace Backend.Controllers.Report
                 : ApiResult<sp_CancelReportResult>.CreateFastPageFromRows(
                     data, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
+
+            if (data.Count > 0)
+            {
+                // Legacy CancelReport.rdlc Tablix2 (:1497-1857): per currency,
+                // "<CUR>:N licence(s)" (:1557) + "<CUR>:FORMAT(Sum(Amount),'N4')" (:1611),
+                // then the grand "Total:N licence(s)" (:1723) the C# wrapper adds.
+                // Cancellations carry no amend remark, so pass amendRemarkId: 0 (the proc's
+                // Cancel branch ignores it). Reuses sp_ImportPermitListingCurrencyTotals.
+                result.CurrencyTotals = await ImportPermitListingCurrencyTotals.ExecuteAsync(
+                    _context, "Cancel", procedureRequest!.FromDate, procedureRequest.ToDate,
+                    procedureRequest.ExportImportSectionId, procedureRequest.CompanyRegistrationNo,
+                    amendRemarkId: 0);
+            }
 
             return Ok(result);
         }

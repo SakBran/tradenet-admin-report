@@ -134,7 +134,8 @@ namespace API.Service.ExcelExport
                 }
                 else if (i == labelIndex)
                 {
-                    cells[i] = new ExcelFooterCell("Total");
+                    // Legacy RDLC grand-total label (ImportPermitBySectionReport.rdlc:841).
+                    cells[i] = new ExcelFooterCell("TOTAL");
                 }
             }
 

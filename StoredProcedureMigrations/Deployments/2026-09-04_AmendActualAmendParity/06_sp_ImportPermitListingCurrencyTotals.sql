@@ -21,6 +21,8 @@ BEGIN
     --   * ActualAmend -> sp_ActualAmendReport_pagination Import Permit branch (ApplyType='Actual Amend'
     --                   -- note the SPACE -- + the AmendRemarkId CASE). That grid shows the FIRST
     --                   item's amount, so this branch uses TOP 1, NOT the SUM the Amend branch uses.
+    --   * Cancel      -> sp_CancelReport.ImportPermitQuery (ApplyType='Cancel'). Also a FIRST-item
+    --                   grid, so TOP 1 again; no AmendRemarkId predicate.
     --   * @FormType = 'Border Import Permit' -> the BorderImportPermit table (Pa Tha Ka only, plus the
     --                   Sakhan join/filter). Border New footers are not implemented and return an
     --                   empty set rather than falling through to the non-border branches.
@@ -91,6 +93,38 @@ BEGIN
                 AND (ImportPermit.CreatedDate >= @FromDate AND ImportPermit.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
                 AND ImportPermit.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN ImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND ImportPermit.AmendRemarkId = (CASE WHEN @AmendRemarkId = 0 THEN ImportPermit.AmendRemarkId ELSE @AmendRemarkId END)
+                AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+        ) d
+        GROUP BY ISNULL(d.Currency, N'')
+        OPTION (RECOMPILE);
+    END
+    ELSE IF @DbApplyType = N'Cancel'
+    BEGIN
+        -- Cancellation footer (CancelReport.rdlc Tablix2): per currency,
+        -- "<CUR>:CountDistinct(LicenceNo) licence(s)" (:1557) and
+        -- "<CUR>:FORMAT(Sum(Amount),'N4')" (:1611). The grid shows the FIRST item's amount
+        -- (sp_CancelReport.ImportPermitQuery takes MIN(ImportPermitItem.Id)), so this branch
+        -- uses TOP 1 like the ActualAmend branch, not the Amend branch's SUM. The count is
+        -- COUNT(DISTINCT ImportPermitNo) because the rdlc aggregate is CountDistinct, not Count.
+        SELECT ISNULL(d.Currency, N'') AS Currency,
+               COUNT(DISTINCT d.LicenceNo) AS NoOfLicences,
+               ISNULL(SUM(d.Amount), 0) AS TotalValue
+        FROM (
+            SELECT
+                ImportPermit.ImportPermitNo AS LicenceNo,
+                (SELECT TOP 1 currency.Code FROM ImportPermitItem
+                    INNER JOIN Currency currency ON ImportPermitItem.CurrencyId = currency.Id
+                    WHERE ImportPermitItem.ImportPermitId = ImportPermit.Id
+                    ORDER BY ImportPermitItem.Id) AS Currency,
+                (SELECT TOP 1 ISNULL(ImportPermitItem.Amount, 0) FROM ImportPermitItem
+                    WHERE ImportPermitItem.ImportPermitId = ImportPermit.Id
+                    ORDER BY ImportPermitItem.Id) AS Amount
+            FROM ImportPermit
+                INNER JOIN PaThaKa ON ImportPermit.PaThaKaId = PaThaKa.Id
+                INNER JOIN ExportImportSection section ON ImportPermit.ExportImportSectionId = section.Id
+            WHERE ImportPermit.ApplyType = 'Cancel' AND ImportPermit.Status = 'Approved'
+                AND (ImportPermit.CreatedDate >= @FromDate AND ImportPermit.CreatedDate <= @ToDate)
+                AND ImportPermit.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN ImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
                 AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
         ) d
         GROUP BY ISNULL(d.Currency, N'')
