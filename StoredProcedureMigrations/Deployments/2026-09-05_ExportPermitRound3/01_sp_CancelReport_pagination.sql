@@ -94,19 +94,24 @@ ImportPermit.Id AS __k_Id
 		AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='''' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END) OPTION (RECOMPILE); '
             ELSE N'DECLARE @__total int = NULL; ' END;
 
-        -- ORDER BY ExportPermitItem.Id on all three sub-selects: the original procedure's bare
-        -- TOP 1 is non-deterministic, so on a multi-item permit Currency, HSCode and Amount
-        -- could each come from a DIFFERENT item, and the grid could disagree with the footer
-        -- (sp_ExportPermitListingCurrencyTotals already orders by Id). Lowest Id is what an
-        -- unordered TOP 1 returns in practice, so this pins the existing behaviour.
+        -- ORDER BY HSCodeId, ItemNo on all three sub-selects. The legacy sp_CancelReport's
+        -- bare TOP 1 is non-deterministic: it returns whatever the plan's index order yields,
+        -- which is the IX_ExportPermitItem_ReportCover seek order (ExportPermitId, HSCodeId,
+        -- ItemNo). Measured against the legacy procedure over 2025, this key reproduces it on
+        -- 17/17 Export Permit cancellations; ORDER BY ItemNo scores 16/17 and ORDER BY Id
+        -- 14/17 -- Id is a char(36) GUID string with no relation to item order. (An earlier
+        -- pass ordered by Id and produced the customer-reported 5,769.2300 / USD:10,038.1050
+        -- where the old report shows 27,230.7600 / USD:33,835.1200.)
+        -- sp_ExportPermitListingCurrencyTotals must use the IDENTICAL expression or the
+        -- footer stops being the sum of the rows on screen.
         SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM ExportPermitItem
 		INNER JOIN Currency currency ON ExportPermitItem.CurrencyId = currency.Id
-		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id ORDER BY ExportPermitItem.Id) Currency,
+		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) Currency,
         (SELECT top 1 HSCode.Code FROM ExportPermitItem
 		INNER JOIN HSCode ON ExportPermitItem.HSCodeId = HSCode.Id
-		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id ORDER BY ExportPermitItem.Id) HSCode,
+		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) HSCode,
         (SELECT top 1  ISNULL(ExportPermitItem.Amount,0) FROM ExportPermitItem
-		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id ORDER BY ExportPermitItem.Id) Amount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
+		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) Amount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
     FROM (
         SELECT ExportPermit.CreatedDate Date,
 section.Code SectionCode,

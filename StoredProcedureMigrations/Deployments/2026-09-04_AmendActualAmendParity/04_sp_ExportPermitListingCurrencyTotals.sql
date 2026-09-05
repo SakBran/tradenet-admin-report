@@ -123,10 +123,11 @@ BEGIN
                 SELECT
                     (SELECT TOP 1 currency.Code FROM ExportPermitItem
                         INNER JOIN Currency currency ON ExportPermitItem.CurrencyId = currency.Id
-                        WHERE ExportPermitItem.ExportPermitId = ExportPermit.Id) AS Currency,
+                        WHERE ExportPermitItem.ExportPermitId = ExportPermit.Id
+                        ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) AS Currency,
                     (SELECT TOP 1 ExportPermitItem.Amount FROM ExportPermitItem
                         WHERE ExportPermitItem.ExportPermitId = ExportPermit.Id
-                        ORDER BY ExportPermitItem.Id) AS Amount
+                        ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) AS Amount
                 FROM ExportPermit
                     INNER JOIN PaThaKa ON ExportPermit.PaThaKaId = PaThaKa.Id
                     INNER JOIN ExportImportSection section ON ExportPermit.ExportImportSectionId = section.Id
@@ -146,10 +147,11 @@ BEGIN
                 SELECT
                     (SELECT TOP 1 currency.Code FROM ExportPermitItem
                         INNER JOIN Currency currency ON ExportPermitItem.CurrencyId = currency.Id
-                        WHERE ExportPermitItem.ExportPermitId = ExportPermit.Id) AS Currency,
+                        WHERE ExportPermitItem.ExportPermitId = ExportPermit.Id
+                        ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) AS Currency,
                     (SELECT TOP 1 ExportPermitItem.Amount FROM ExportPermitItem
                         WHERE ExportPermitItem.ExportPermitId = ExportPermit.Id
-                        ORDER BY ExportPermitItem.Id) AS Amount
+                        ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) AS Amount
                 FROM ExportPermit
                     INNER JOIN PaThaKa ON ExportPermit.PaThaKaId = PaThaKa.Id
                     INNER JOIN ExportImportSection section ON ExportPermit.ExportImportSectionId = section.Id
@@ -168,7 +170,11 @@ BEGIN
                 SELECT
                     (SELECT TOP 1 currency.Code FROM ExportPermitItem
                         INNER JOIN Currency currency ON ExportPermitItem.CurrencyId = currency.Id
-                        WHERE ExportPermitItem.ExportPermitId = ExportPermit.Id) AS Currency,
+                        WHERE ExportPermitItem.ExportPermitId = ExportPermit.Id
+                        ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) AS Currency,
+                    -- New / Extension sum every item (matching the legacy sp_NewReport /
+                    -- sp_ExtensionReport and the grid procedures), so no ORDER BY here: a
+                    -- scalar aggregate cannot be ordered by a column outside its select list.
                     (SELECT ISNULL(SUM(ExportPermitItem.Amount), 0) FROM ExportPermitItem
                         WHERE ExportPermitItem.ExportPermitId = ExportPermit.Id) AS Amount
                 FROM ExportPermit

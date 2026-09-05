@@ -20,7 +20,9 @@ namespace Backend.Controllers.Report
     [Route("api/[controller]")]
     // v2: HS Code moved to CancelReport.rdlc's position beside Total Value, and the row values
     // themselves change once the deterministic TOP 1 lands, so cached .xlsx must not be reused.
-    [ExcelFormatVersion(2)]
+    // Bumped 2026-09-06: the Export Permit item key moved to (HSCodeId, ItemNo), so Currency /
+    // HS Code / Total Value change value for multi-item permits, and Total Value now prints 4 dp.
+    [ExcelFormatVersion(3)]
     public class ExportPermitCancellationReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ExportPermitCancellationReport";

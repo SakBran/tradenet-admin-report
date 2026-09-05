@@ -192,12 +192,12 @@ ImportPermit.Id AS __k_Id
 
         SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM ExportPermitItem
 		INNER JOIN Currency currency ON ExportPermitItem.CurrencyId = currency.Id
-		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id) Currency,
+		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) Currency,
         (SELECT top 1 HSCode.Code FROM ExportPermitItem
 		INNER JOIN HSCode ON ExportPermitItem.HSCodeId = HSCode.Id
-		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id) HSCode,
+		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) HSCode,
         (SELECT top 1 ISNULL(ExportPermitItem.Amount,0) FROM ExportPermitItem
-		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id) Amount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
+		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) Amount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
     FROM (
         SELECT ExportPermit.CreatedDate Date,
 section.Code SectionCode,
@@ -781,12 +781,12 @@ ImportPermit.Id AS __k_Id
 
         SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM ExportPermitItem
 		INNER JOIN Currency currency ON ExportPermitItem.CurrencyId = currency.Id
-		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id) Currency,
+		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) Currency,
         (SELECT top 1 HSCode.Code FROM ExportPermitItem
 		INNER JOIN HSCode ON ExportPermitItem.HSCodeId = HSCode.Id
-		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id) HSCode,
+		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) HSCode,
         (SELECT top 1 ISNULL(ExportPermitItem.Amount,0) FROM ExportPermitItem
-		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id) Amount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
+		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) Amount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
     FROM (
         SELECT ExportPermit.CreatedDate Date,
 section.Code SectionCode,
@@ -1575,10 +1575,11 @@ BEGIN
                 SELECT
                     (SELECT TOP 1 currency.Code FROM ExportPermitItem
                         INNER JOIN Currency currency ON ExportPermitItem.CurrencyId = currency.Id
-                        WHERE ExportPermitItem.ExportPermitId = ExportPermit.Id) AS Currency,
+                        WHERE ExportPermitItem.ExportPermitId = ExportPermit.Id
+                        ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) AS Currency,
                     (SELECT TOP 1 ExportPermitItem.Amount FROM ExportPermitItem
                         WHERE ExportPermitItem.ExportPermitId = ExportPermit.Id
-                        ORDER BY ExportPermitItem.Id) AS Amount
+                        ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) AS Amount
                 FROM ExportPermit
                     INNER JOIN PaThaKa ON ExportPermit.PaThaKaId = PaThaKa.Id
                     INNER JOIN ExportImportSection section ON ExportPermit.ExportImportSectionId = section.Id
@@ -1598,10 +1599,11 @@ BEGIN
                 SELECT
                     (SELECT TOP 1 currency.Code FROM ExportPermitItem
                         INNER JOIN Currency currency ON ExportPermitItem.CurrencyId = currency.Id
-                        WHERE ExportPermitItem.ExportPermitId = ExportPermit.Id) AS Currency,
+                        WHERE ExportPermitItem.ExportPermitId = ExportPermit.Id
+                        ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) AS Currency,
                     (SELECT TOP 1 ExportPermitItem.Amount FROM ExportPermitItem
                         WHERE ExportPermitItem.ExportPermitId = ExportPermit.Id
-                        ORDER BY ExportPermitItem.Id) AS Amount
+                        ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) AS Amount
                 FROM ExportPermit
                     INNER JOIN PaThaKa ON ExportPermit.PaThaKaId = PaThaKa.Id
                     INNER JOIN ExportImportSection section ON ExportPermit.ExportImportSectionId = section.Id
@@ -1620,7 +1622,11 @@ BEGIN
                 SELECT
                     (SELECT TOP 1 currency.Code FROM ExportPermitItem
                         INNER JOIN Currency currency ON ExportPermitItem.CurrencyId = currency.Id
-                        WHERE ExportPermitItem.ExportPermitId = ExportPermit.Id) AS Currency,
+                        WHERE ExportPermitItem.ExportPermitId = ExportPermit.Id
+                        ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) AS Currency,
+                    -- New / Extension sum every item (matching the legacy sp_NewReport /
+                    -- sp_ExtensionReport and the grid procedures), so no ORDER BY here: a
+                    -- scalar aggregate cannot be ordered by a column outside its select list.
                     (SELECT ISNULL(SUM(ExportPermitItem.Amount), 0) FROM ExportPermitItem
                         WHERE ExportPermitItem.ExportPermitId = ExportPermit.Id) AS Amount
                 FROM ExportPermit

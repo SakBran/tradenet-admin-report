@@ -1,0 +1,10 @@
+# SHA-256 of the repository originals these copies were taken from (2026-09-06).
+# Verify with:  shasum -a 256 -c checksums.txt   (run from StoredProcedureMigrations/)
+#
+3aa6c69b3c94168fed021509ef8d62e487abf52afa2139dd50659410b980747b  sp_CancelReport_pagination.sql
+a203db4fe58d8ac16583abe6e6afe4cd4f6a74ce5071e01bd1b511f49a0002f5  sp_AmendReport_pagination.sql
+f406894f345b145e834e92bdea4294fadb1d7b289e7c911132a07e58740d35e5  sp_ActualAmendReport_pagination.sql
+a7f1b0941c7459822fc56da1f8e0f48d84bc0ac1f97981b6003a1f13c7b6df0a  sp_NewReport_pagination.sql
+e215e1c79bdf810e710a9ed8f1353810887c1ddbbdbd1a9abe8a54278d045915  sp_ExtensionReport_pagination.sql
+ffc6340265fa2743f8b59c2274c33b970c0590d51ef0f78994167bc0b1a5ba73  sp_ExportPermitListingCurrencyTotals.sql
+9891cb7216d7a26a6b07f9b618409378a7fc4b83ca50ce6fbf09c47cb4d681bd  sp_ExtensionReportCurrencyTotals.sql

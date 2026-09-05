@@ -62,7 +62,8 @@
       "key": "TotalValue",
       "dataIndex": "amount",
       "title": "Total Value",
-      "dataType": "number"
+      "dataType": "number",
+      "numberFormat": "#,##0.0000"
     }
   ],
   "currencyTotalsColumns": {

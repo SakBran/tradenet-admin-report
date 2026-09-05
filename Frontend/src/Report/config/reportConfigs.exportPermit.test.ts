@@ -97,6 +97,26 @@ describe('Export Permit report configs (production RDLC parity)', () => {
     ]);
   });
 
+  it('money columns print four decimals, as the legacy RDLC does', () => {
+    // The old cells are `=Fields!Amount.Value` with NO <Format> element, so a decimal(18,4)
+    // renders four decimals; without numberFormat the grid prints the raw JSON number and
+    // 5769.2300 collapses to "5769.23". Same string in the grid and the .xlsx.
+    const expected: Record<string, string> = {
+      ExportPermitCancellationReport: 'Total Value',
+      ExportPermitAmendmentReport: 'Total Value',
+      ExportPermitActualAmendmentReport: 'Total Value',
+      ExportPermitNewReportNewReport: 'Total Value',
+      ExportPermitExtensionReport: 'Total Value',
+      ExportPermitVoucherReport: 'Lic Value',
+    };
+
+    for (const [key, title] of Object.entries(expected)) {
+      const column = reportConfigs[key].columns.find((candidate) => candidate.title === title);
+      expect(column, `${key} has a ${title} column`).toBeDefined();
+      expect(column?.numberFormat, `${key} ${title}`).toBe('#,##0.0000');
+    }
+  });
+
   it('By Section drill-down reads the section id the aggregate row actually carries', () => {
     // ReportAggregateResult exposes SectionId -> `sectionId`; `exportImportSectionId`
     // matched nothing, so the drill silently carried undefined.

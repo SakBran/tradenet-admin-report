@@ -22,7 +22,9 @@ namespace Backend.Controllers.Report
     // TOTAL of the voucher Amount (VoucherReport.rdlc:1828).
     // v3: restored the production VoucherReport.rdlc's full 17-column layout (Application Date,
     // Commodity Type, Total CIF, Exchange Rate); earlier audits read a stale 2022 copy of the rdlc.
-    [ExcelFormatVersion(3)]
+    // Bumped 2026-09-06: the Export Permit item key moved to (HSCodeId, ItemNo), so Currency /
+    // HS Code / Total Value change value for multi-item permits, and Total Value now prints 4 dp.
+    [ExcelFormatVersion(4)]
     public class ExportPermitVoucherReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ExportPermitVoucherReport";

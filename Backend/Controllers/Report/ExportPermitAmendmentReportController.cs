@@ -23,7 +23,9 @@ namespace Backend.Controllers.Report
     // must not be reused (see ExcelExportJobService).
     // v3: HS Code column added / repositioned to match AmendReport.rdlc column 10
     // (origin/master); the sheet's column set changes, so cached files must not be reused.
-    [ExcelFormatVersion(3)]
+    // Bumped 2026-09-06: the Export Permit item key moved to (HSCodeId, ItemNo), so Currency /
+    // HS Code / Total Value change value for multi-item permits, and Total Value now prints 4 dp.
+    [ExcelFormatVersion(4)]
     public class ExportPermitAmendmentReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ExportPermitAmendmentReport";

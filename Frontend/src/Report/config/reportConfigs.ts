@@ -7934,6 +7934,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'amount',
         title: 'Total Value',
         dataType: 'number',
+        numberFormat: '#,##0.0000',
       },
     ],
   },
@@ -8046,6 +8047,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'amount',
         title: 'Total Value',
         dataType: 'number',
+        numberFormat: '#,##0.0000',
       },
     ],
   },
@@ -8356,6 +8358,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'amount',
         title: 'Total Value',
         dataType: 'number',
+        numberFormat: '#,##0.0000',
       },
       {
         // CancelReport.rdlc (origin/master) renders HSCode TWICE -- at column 2 and again
@@ -8806,6 +8809,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'amount',
         title: 'Total Value',
         dataType: 'number',
+        numberFormat: '#,##0.0000',
       },
     ],
   },
@@ -8904,6 +8908,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'amount',
         title: 'Total Value',
         dataType: 'number',
+        numberFormat: '#,##0.0000',
       },
     ],
   },
@@ -9023,6 +9028,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'totalAmount',
         title: 'Lic Value',
         dataType: 'number',
+        numberFormat: '#,##0.0000',
       },
       {
         key: 'Currency',

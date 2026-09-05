@@ -53,7 +53,8 @@
       "key": "LicValue",
       "dataIndex": "totalAmount",
       "title": "Lic Value",
-      "dataType": "number"
+      "dataType": "number",
+      "numberFormat": "#,##0.0000"
     },
     {
       "key": "Currency",

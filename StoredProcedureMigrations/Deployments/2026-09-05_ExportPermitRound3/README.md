@@ -1,5 +1,11 @@
 # Export Permit round-3 parity — 2026-09-05
 
+> **SUPERSEDED for the Cancellation half.** This folder originally ordered the `TOP 1`
+> sub-selects by `ExportPermitItem.Id`, which is a `char(36)` GUID string and the wrong key —
+> it produced the customer-reported `5,769.2300` / `USD:10,038.1050`. The copies here now carry
+> the corrected `ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo`; run
+> `../2026-09-06_ExportPermitItemOrder/` instead, which covers this and the sibling procedures.
+
 Customer complaints on the non-Border Export Permit reports 5.1 / 5.5–5.8 / 5.10–5.11.
 Most of the fix is application code and rides the normal deploy; **these two procedures do
 not** — stored procedures here are applied by hand.
@@ -8,7 +14,7 @@ not** — stored procedures here are applied by hand.
 
 | File | Procedure | Change |
 |---|---|---|
-| `01_sp_CancelReport_pagination.sql` | `sp_CancelReport_pagination` | Export Permit branch: `ORDER BY ExportPermitItem.Id` on the three `TOP 1` sub-selects (Currency / HSCode / Amount) |
+| `01_sp_CancelReport_pagination.sql` | `sp_CancelReport_pagination` | Export Permit branch: an explicit `ORDER BY` on the three `TOP 1` sub-selects (Currency / HSCode / Amount) |
 | `02_sp_VoucherReport_pagination.sql` | `sp_VoucherReport_pagination` | Export Permit branch: `ExchangeRate` / `TotalCIF` emit `0` instead of `NULL` |
 
 `00_RunAll.sql` applies both in order. `CaptureRollback.sql` first, `VerifyDeployment.sql`

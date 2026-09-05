@@ -46,6 +46,7 @@ GO
 -- ============================================================================
 -- sp_HSCodeReport_pagination   (file 01_sp_HSCodeReport_pagination.sql)
 -- ============================================================================
+PRINT N'Applying sp_HSCodeReport_pagination ...';
 GO
 
 CREATE OR ALTER PROCEDURE [dbo].[sp_HSCodeReport_pagination]
@@ -888,11 +889,14 @@ BEGIN
 END
 GO
 
+
+
 GO
 
 -- ============================================================================
 -- sp_ImportPermitListingCurrencyTotals   (file 02_sp_ImportPermitListingCurrencyTotals.sql)
 -- ============================================================================
+PRINT N'Applying sp_ImportPermitListingCurrencyTotals ...';
 GO
 
 CREATE OR ALTER PROCEDURE [dbo].[sp_ImportPermitListingCurrencyTotals]

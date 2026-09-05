@@ -159,12 +159,12 @@ ImportPermit.Id AS __k_Id
 
         SET @sql = @cntpart + N'SELECT pg.*,(SELECT top 1 currency.Code FROM ExportPermitItem
 		INNER JOIN Currency currency ON ExportPermitItem.CurrencyId = currency.Id
-		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id) Currency,
+		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) Currency,
         (SELECT top 1 HSCode.Code FROM ExportPermitItem
 		INNER JOIN HSCode ON ExportPermitItem.HSCodeId = HSCode.Id
-		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id) HSCode,
+		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) HSCode,
         (SELECT top 1 ISNULL(ExportPermitItem.Amount,0) FROM ExportPermitItem
-		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id) Amount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
+		WHERE ExportPermitItem.ExportPermitId=pg.__k_Id ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo) Amount, CAST(NULL AS int) SakhanId, CAST(NULL AS nvarchar(50)) SakhanCode, CAST(NULL AS nvarchar(200)) SakhanName, @__total AS TotalCount
     FROM (
         SELECT ExportPermit.CreatedDate Date,
 section.Code SectionCode,

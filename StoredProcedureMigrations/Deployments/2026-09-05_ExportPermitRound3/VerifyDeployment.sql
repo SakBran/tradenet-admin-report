@@ -17,8 +17,10 @@ SELECT
     p.name,
     p.modify_date,
     m.uses_quoted_identifier,
-    CASE WHEN OBJECT_DEFINITION(p.object_id) LIKE '%ExportPermitId=pg.__k_Id ORDER BY ExportPermitItem.Id%'
-         THEN 'ordered' ELSE 'unordered (stale)' END AS cancel_top1,
+    -- The item key moved to (HSCodeId, ItemNo) on 2026-09-06 -- ORDER BY Id was the wrong key
+    -- and produced the customer-reported 5,769.2300. See ../2026-09-06_ExportPermitItemOrder/.
+    CASE WHEN OBJECT_DEFINITION(p.object_id) LIKE '%ORDER BY ExportPermitItem.HSCodeId, ExportPermitItem.ItemNo%'
+         THEN 'ordered' ELSE 'unordered or wrong key (stale)' END AS cancel_top1,
     CASE WHEN OBJECT_DEFINITION(p.object_id) LIKE '%CAST(0 AS decimal(38,6)) ExchangeRate%'
          THEN 'zero' ELSE 'null (stale)' END AS voucher_cif
 FROM sys.procedures p
