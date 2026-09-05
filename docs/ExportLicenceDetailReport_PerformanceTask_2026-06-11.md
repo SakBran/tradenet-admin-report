@@ -1,5 +1,11 @@
 # Export Licence Detail Report Performance Task
 
+> **Superseded 2026-09-05.** The inline seek described here paged licences while counting items
+> (empty pages past licences/PageSize) and was replaced by `dbo.sp_ExportLicenceDetailReportV3_pagination`,
+> the legacy procedure's query paginated at item grain. See
+> `docs/ExportLicenceDetailReport_LegacyParity_2026-09-05.md`. `sp_ExportLicenceDetailReportV2_pagination.sql`
+> no longer exists.
+
 Date: 2026-06-11
 
 ## Scope

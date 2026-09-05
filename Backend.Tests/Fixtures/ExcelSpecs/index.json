@@ -1561,7 +1561,7 @@
       "variant": null,
       "hasDateRange": true,
       "hasSingleDate": false,
-      "hasCurrencyTotalsColumns": true,
+      "hasCurrencyTotalsColumns": false,
       "showRowNumber": true,
       "rowNumberTitle": "No",
       "isBespokePage": false,

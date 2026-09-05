@@ -159,9 +159,5 @@
       "dataIndex": "conditions",
       "title": "Conditions"
     }
-  ],
-  "currencyTotalsColumns": {
-    "labelColumnKey": "LicenceNo",
-    "valueColumnKey": "Value"
-  }
+  ]
 }

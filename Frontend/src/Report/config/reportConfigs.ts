@@ -7404,7 +7404,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'ExportLicenceDetailReport',
     excelRoute: 'ExportLicenceDetailReport/Excel',
     excelFileName: 'ExportLicenceDetailReport.xlsx',
-    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'Value' },
+    // ExportLicenceDetailReport.rdlc has no total row, so no footer. The grid is served by the
+    // legacy procedure paginated at item grain; its count is a COUNT(*) over the materialised
+    // key table, cheap enough to ride with the page so the pager is exact on first paint.
+    eagerTotalCount: true,
     initialSortColumn: 'licenceDate',
     showRowNumber: true,
     reportSubtitle: importLicenceRangeSubtitle('List of Export Licences By Detail', true),
