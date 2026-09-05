@@ -540,10 +540,14 @@ namespace Backend.Controllers
                     item.Id.ToString()))
                 .ToListAsync();
 
+        // Tradenet 2.0 filtered this list on IsDeleted only (tradenet-2.0-api
+        // SakhanRepository.GetAll), so a retired border station that still has permits stayed
+        // selectable there. Filtering on IsActive here made those permits unreachable in the new
+        // reports -- the filter box could no longer express a search the old one could.
         private Task<List<ReportLookupOption>> GetSakhans() =>
             _context.Sakhans
                 .AsNoTracking()
-                .Where(item => item.IsActive && !item.IsDeleted)
+                .Where(item => !item.IsDeleted)
                 .OrderBy(item => item.SortOrder)
                 .ThenBy(item => item.Name)
                 .Select(item => new ReportLookupOption(item.Id, item.Code ?? string.Empty, item.Name ?? string.Empty))

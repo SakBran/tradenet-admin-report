@@ -5152,6 +5152,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelRoute: 'BorderImportPermitByHSCodeReport/Excel',
     excelFileName: 'BorderImportPermitByHSCodeReport.xlsx',
     initialSortColumn: 'SakhanId',
+    // Legacy RDLC printed every row on one scrolling page; these summaries are a
+    // handful of (group, currency) rows, so a 10-row page looked like missing data
+    // next to the old report (Company List: 13 rows, page 1 showed 10).
+    defaultPageSize: 1000,
     showRowNumber: true,
     filters: [
       {
@@ -5232,11 +5236,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'currency',
         title: 'Currency',
       },
-      {
-        key: 'CompanyName',
-        dataIndex: 'companyName',
-        title: 'Company Name',
-      },
     ],
   },
   BorderImportPermitHSCodeDetailReport: {
@@ -5247,6 +5246,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelRoute: 'BorderImportPermitByHSCodeReport/Excel',
     excelFileName: 'BorderImportPermitHSCodeDetailReport.xlsx',
     initialSortColumn: 'hsCode',
+    // Legacy RDLC printed every row on one scrolling page; these summaries are a
+    // handful of (group, currency) rows, so a 10-row page looked like missing data
+    // next to the old report (Company List: 13 rows, page 1 showed 10).
+    defaultPageSize: 1000,
     showRowNumber: true,
     filters: [
       importLicenceDateRangeFilter,
@@ -5277,6 +5280,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelRoute: 'BorderImportPermitBySectionReport/Excel',
     excelFileName: 'BorderImportPermitBySectionReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
+    // Legacy RDLC printed every row on one scrolling page; these summaries are a
+    // handful of (group, currency) rows, so a 10-row page looked like missing data
+    // next to the old report (Company List: 13 rows, page 1 showed 10).
+    defaultPageSize: 1000,
     showRowNumber: true,
     filters: [
       {
@@ -5357,6 +5364,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelRoute: 'BorderImportPermitBySellerCountryReport/Excel',
     excelFileName: 'BorderImportPermitBySellerCountryReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
+    // Legacy RDLC printed every row on one scrolling page; these summaries are a
+    // handful of (group, currency) rows, so a 10-row page looked like missing data
+    // next to the old report (Company List: 13 rows, page 1 showed 10).
+    defaultPageSize: 1000,
     showRowNumber: true,
     filters: [
       {
@@ -5560,6 +5571,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelRoute: 'BorderImportPermitCompanyListReport/Excel',
     excelFileName: 'BorderImportPermitCompanyListReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
+    // Legacy RDLC printed every row on one scrolling page; these summaries are a
+    // handful of (group, currency) rows, so a 10-row page looked like missing data
+    // next to the old report (Company List: 13 rows, page 1 showed 10).
+    defaultPageSize: 1000,
     showRowNumber: true,
     filters: [
       {
@@ -7404,7 +7419,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'ExportLicenceDetailReport',
     excelRoute: 'ExportLicenceDetailReport/Excel',
     excelFileName: 'ExportLicenceDetailReport.xlsx',
-    currencyTotalsColumns: { labelColumnKey: 'LicenceNo', valueColumnKey: 'Value' },
+    // ExportLicenceDetailReport.rdlc has no total row, so no footer. The grid is served by the
+    // legacy procedure paginated at item grain; its count is a COUNT(*) over the materialised
+    // key table, cheap enough to ride with the page so the pager is exact on first paint.
+    eagerTotalCount: true,
     initialSortColumn: 'licenceDate',
     showRowNumber: true,
     reportSubtitle: importLicenceRangeSubtitle('List of Export Licences By Detail', true),

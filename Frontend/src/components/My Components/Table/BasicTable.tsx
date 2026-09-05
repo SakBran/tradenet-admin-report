@@ -238,6 +238,21 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   // stuck on a lower-bound estimate — with no last page to jump to — for good.
   const [countAttempt, setCountAttempt] = useState(0);
 
+  // Applying new filters must send the grid back to page 1. `GenericReportPage`
+  // only bumps `refreshKey` (it passes it as a prop, not as React's `key`, so this
+  // component is never remounted), and the pager was the only writer of `pageIndex`
+  // — so re-filtering from a deep page re-requested that same page against the new,
+  // usually smaller result set and the user saw an empty grid. That is what the
+  // "Sakhan filter shows no data" reports were: Border Import Permit Detail goes
+  // from 70 rows (7 pages) to 20 (2 pages) once a Sakhan is picked.
+  // Adjusted during render rather than in an effect so the reset lands before the
+  // load effect below runs; an effect would fire one wasted request for the old page.
+  const [lastRefreshKey, setLastRefreshKey] = useState(refreshKey);
+  if (refreshKey !== lastRefreshKey) {
+    setLastRefreshKey(refreshKey);
+    setPageIndex(0);
+  }
+
   const shouldShowActions =
     showActions ??
     Boolean(actionComponent || (!fetchData && (displayData ?? []).includes('id')));

@@ -61,6 +61,15 @@ oracle above will show which rows the new query adds.
 
 ## 2. Method of Export / Incoterms return no rows for a specific value
 
+> **Resolved 2026-09-05 — it was not data.** The grid paged *licences* while counting *items*, and
+> `BasicTable` never reset the page index on a new Search, so choosing a Method / Incoterm while on
+> page ≥ 2 asked for licences that did not exist and rendered "no data". The SQL predicates were
+> correct all along (UAT: Method = CMP → 2343 rows, Incoterms = CIF → 10, both equal to the legacy
+> procedure). Fixed by `sp_ExportLicenceDetailReportV3_pagination` (item-grain paging) and the
+> `BasicTable` page reset; see `docs/ExportLicenceDetailReport_LegacyParity_2026-09-05.md`. The
+> diagnostic below is kept for reference.
+
+
 No code defect found at any layer: the dropdowns send the numeric lookup `Id`
 (`ReportLookupsController.GetExportLicenceMethods` / `GetExportLicenceIncoterms`, scoped to
 `Type='Export' AND IsOversea`), and both the grid (`sp_ExportLicenceDetailReportV2`) and the

@@ -90,11 +90,16 @@ public static partial class sp_HSCodeReport
         {
             var pageIndex = Math.Max(0, pagingRequest.PageIndex);
             var pageSize = pagingRequest.PageSize <= 0 ? 10 : Math.Min(pagingRequest.PageSize, 1000);
+            // Pass the REAL page size. The "one row more than a page" sentinel that
+            // CreateFastPageFromRows needs is added inside the procedure (@FetchSize), because
+            // inflating @PageSize here also inflated its OFFSET -- page 2 started at row 12 of a
+            // 10-row page, so one row vanished at every page boundary and a 31-row report only
+            // ever showed 29.
             var rows = await ExecuteAggregateStoredProcedureAsync(
                 db,
                 request,
                 pageIndex,
-                pagingRequest.IncludeTotalCount ? pageSize : pageSize + 1,
+                pageSize,
                 pagingRequest.IncludeTotalCount);
 
             var data = rows.Select(row => new ReportAggregateResult
@@ -109,13 +114,18 @@ public static partial class sp_HSCodeReport
                 TotalUSDValue = null,
             }).ToList();
 
-            if (pagingRequest.IncludeTotalCount)
+            // Every branch except Export Licence computes COUNT(*) OVER() whether or not the
+            // caller asked for it, so the exact total is usually sitting in the rows already and
+            // the grid may as well have a working pager instead of a lower-bound estimate. It
+            // also makes the page independent of the next-page sentinel, so this code is correct
+            // against a database that has not had @FetchSize deployed yet.
+            var totalCount = rows.FirstOrDefault()?.TotalCount;
+            if (totalCount.HasValue)
             {
-                var totalCount = rows.FirstOrDefault()?.TotalCount ?? 0;
-
                 var aggregateResult = ApiResult<ReportAggregateResult>.CreatePageFromRows(
-                    data,
-                    totalCount,
+                    // Trim the sentinel row a @FetchSize procedure adds to a fast page.
+                    data.Count > pageSize ? data.Take(pageSize).ToList() : data,
+                    totalCount.Value,
                     pageIndex,
                     pageSize,
                     null,
@@ -126,6 +136,8 @@ public static partial class sp_HSCodeReport
                 return aggregateResult;
             }
 
+            // Export Licence's @IncludeTotalCount=0 branch returns no count; fall back to the
+            // sentinel, which that branch supplies via @FetchSize.
             var fastAggregateResult = ApiResult<ReportAggregateResult>.CreateFastPageFromRows(
                 data,
                 pageIndex,
@@ -259,11 +271,30 @@ public static partial class sp_HSCodeReport
     /// group is (HSCodeId, Currency) — no company (rdlc:1152-1153) — while HSCodeDetailReport.rdlc
     /// adds the company (rdlc:1263-1264). Import Permit has no detail report of its own, and
     /// keeping the company in its key split one HS code into one invisible row per buyer, each
-    /// with a partial Total Value. The other form types still need it: their
-    /// *HSCodeDetailReport configs render Company Name off this same query.
+    /// with a partial Total Value. Border Import Permit has both surfaces, so it decides per
+    /// request. The remaining form types always need it: their *HSCodeDetailReport configs
+    /// render Company Name off this same query.
     /// </summary>
     private static bool GroupsByCompany(sp_HSCodeReportRequest request)
-        => !string.Equals(request.FormType, "Import Permit", StringComparison.Ordinal);
+    {
+        if (string.Equals(request.FormType, "Import Permit", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        // Border Import Permit serves BOTH surfaces off this one query: the By HS Code summary
+        // (BorderHSCodeReport.rdlc, grouped on HSCodeId+Currency, no company column) and the HS
+        // Code detail drill (BorderImportPermitHSCodeDetailReport -> HSCodeDetailReport.rdlc,
+        // which does render Company Name). The drill always carries an HS code, so an empty
+        // HSCode is the summary. sp_HSCodeReport_pagination's Border Import Permit branch makes
+        // exactly the same split -- keep the two in step or the grid and the .xlsx disagree.
+        if (string.Equals(request.FormType, "Border Import Permit", StringComparison.Ordinal))
+        {
+            return !string.IsNullOrEmpty(request.HSCode);
+        }
+
+        return true;
+    }
 
     private static IQueryable<sp_HSCodeReportResult> ExportLicenceRows(
         TradeNetDbContext db,

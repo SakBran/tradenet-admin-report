@@ -4,7 +4,7 @@ in StoredProcedureMigrations/. Run from the repo root."""
 import glob, os, html
 
 ROOT = "StoredProcedureMigrations"
-GEN_DATE = "2026-09-04"
+GEN_DATE = "2026-09-05"
 
 # proc/view name -> (category, purpose, [views it NOEXPANDs])
 CAT_COLORS = {
@@ -19,6 +19,7 @@ PURPOSE = {
  "sp_ExportPermitListingCurrencyTotals": ("Export Permit","Per-currency footer totals for New / Amend / Actual Amend / Cancel listings (both families, by FormType).",[]),
  "sp_ExportPermitVoucherCurrencyTotals": ("Export Permit","Per-currency footer totals for the Export/Border Export Permit Voucher report.",[]),
  "sp_ExportLicenceDetailReport_Pagination": ("Export Licence","Export Licence Detail — paginated detail rows.",[]),
+ "sp_ExportLicenceDetailReportV3_pagination": ("Export Licence","Export Licence Detail grid — the legacy dbo.sp_ExportLicenceDetailReport (Oversea) query verbatim, paged at item grain via temp-table keys. NEEDS QUOTED_IDENTIFIER ON (XML .value()).",[]),
  "sp_ExportLicenceTotalValueReport_Fast_pagination": ("Export Licence","Export Licence Total-Value — fast paginated totals.",[]),
  "sp_ExportLicenceListingCurrencyTotals": ("Export Licence","Per-currency footer totals for Export/Border Export Licence New / Amend / Actual Amend / Cancel listings (by FormType; Border splits Pa Tha Ka + Individual Trading).",[]),
  "sp_ExportLicenceVoucherCurrencyTotals": ("Export Licence","Per-currency footer totals for the Export/Border Export Licence Voucher report.",[]),

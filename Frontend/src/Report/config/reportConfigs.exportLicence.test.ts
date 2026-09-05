@@ -210,11 +210,14 @@ describe('Export Licence report configs', () => {
     ]);
   });
 
-  it('Detail report renders currency totals under Licence No and Value', () => {
-    expect(reportConfigs.ExportLicenceDetailReport.currencyTotalsColumns).toEqual({
-      labelColumnKey: 'LicenceNo',
-      valueColumnKey: 'Value',
-    });
+  it('Detail report has no footer (ExportLicenceDetailReport.rdlc has no total row)', () => {
+    expect(reportConfigs.ExportLicenceDetailReport.currencyTotalsColumns).toBeUndefined();
+  });
+
+  it('Detail report asks for the exact item count with the page', () => {
+    // The legacy-shaped procedure counts its materialised key table, so the count is cheap
+    // and the pager is right on first paint (no lower-bound estimate, no stranded last page).
+    expect(reportConfigs.ExportLicenceDetailReport.eagerTotalCount).toBe(true);
   });
 
   it('action reports keep the old oversea filter shape and do not expose Sakhan', () => {

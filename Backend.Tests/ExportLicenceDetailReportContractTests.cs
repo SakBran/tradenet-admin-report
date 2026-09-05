@@ -118,13 +118,15 @@ public sealed class ExportLicenceDetailReportContractTests
     }
 
     [Fact]
-    public void Pagination_stored_procedure_returns_columns_required_by_api_row()
+    public void Pagination_stored_procedure_is_the_legacy_query_paginated_at_item_grain()
     {
         var sql = File.ReadAllText(Path.Combine(
             RepositoryRoot,
             "StoredProcedureMigrations",
-            "sp_ExportLicenceDetailReportV2_pagination.sql"));
+            "sp_ExportLicenceDetailReportV3_pagination.sql"));
 
+        // EF maps SqlQueryRaw<sp_ExportLicenceDetailReportRow> by column name and throws on a
+        // missing one, so every DTO property must be a result column.
         var requiredColumns = typeof(sp_ExportLicenceDetailReportRow)
             .GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Select(property => property.Name)
@@ -135,17 +137,53 @@ public sealed class ExportLicenceDetailReportContractTests
             Assert.Matches($@"\b{Regex.Escape(column)}\b", sql);
         }
 
-        Assert.Contains("sp_ExportLicenceDetailReportV2_Pagination", sql);
+        Assert.Contains("CREATE OR ALTER PROCEDURE [dbo].[sp_ExportLicenceDetailReportV3_pagination]", sql);
+        Assert.Contains("@Total AS TotalCount", sql);
+
+        // The whole point: the legacy dbo.sp_ExportLicenceDetailReport ('Oversea') predicates,
+        // verbatim -- same status filter, same CreatedDate <= @ToDate window (not the extra-day
+        // DATEADD form), same CASE WHEN @X = 0 filters, and the join-only incoterm INNER JOIN
+        // that drops a licence with no incoterm row exactly as the old report did.
+        Assert.Contains("WHERE ApplyType='New'", sql);
+        Assert.Contains("AND ExportLicence.Status='Approved'", sql);
+        Assert.Contains("AND (ExportLicence.CreatedDate>=@FromDate AND ExportLicence.CreatedDate<=@ToDate)", sql);
+        Assert.Contains("AND PaThaKa.CompanyRegistrationNo=(CASE WHEN @CompanyRegistrationNo='' then PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)", sql);
+        Assert.Contains("AND paThaKaType.Id=(CASE WHEN @PaThaKaTypeId=0 then paThaKaType.Id ELSE @PaThaKaTypeId END)", sql);
+        Assert.Contains("AND ExportLicence.ExportImportSectionId=(CASE WHEN @ExportImportSectionId=0 then ExportLicence.ExportImportSectionId ELSE @ExportImportSectionId END)", sql);
+        Assert.Contains("AND ExportLicence.ExportImportMethodId=(CASE WHEN @ExportImportMethodId=0 then ExportLicence.ExportImportMethodId ELSE @ExportImportMethodId END)", sql);
+        Assert.Contains("AND ExportLicence.ExportImportIncotermId=(CASE WHEN @ExportImportIncotermId=0 then ExportLicence.ExportImportIncotermId ELSE @ExportImportIncotermId END)", sql);
+        Assert.Contains("AND ExportLicence.BuyerCountryId=(CASE WHEN @BuyerCountryId=0 then ExportLicence.BuyerCountryId ELSE @BuyerCountryId END)", sql);
+        Assert.Contains("INNER JOIN ExportImportIncoterm incoterm ON incoterm.Id = ExportLicence.ExportImportIncotermId", sql);
+        Assert.DoesNotContain("DATEADD", sql);
+
+        // Item grain: the page and the count both come from the licence x item key table.
+        Assert.Contains("INNER JOIN ExportLicenceItem ON l.LicenceId = ExportLicenceItem.ExportLicenceId", sql);
+        Assert.Contains("DECLARE @Total int = (SELECT COUNT(*) FROM #K);", sql);
+        Assert.Contains("OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY", sql);
+        Assert.Contains("INTO #P", sql);
+
+        // Legacy select list, verbatim.
+        Assert.Contains("HSCode.Code HSCode,HSCode.Description+' '+ExportLicenceItem.Description HSDescription,", sql);
+        Assert.Contains(".value('substring(text()[1], 2)', 'varchar(max)') as PortofExport", sql);
+        Assert.Contains(".value('substring(text()[1], 2)', 'varchar(max)') as DestinationCountry", sql);
+        Assert.Contains("ExportLicence.Remark Conditions", sql);
+        Assert.Contains("ExportLicence.ApplicationNo,ExportLicence.ApplicationDate,ExportLicence.CommodityType", sql);
+
+        // XML .value() needs QUOTED_IDENTIFIER ON at CREATE time; no dynamic SQL (nvarchar(4000) trap).
+        Assert.Contains("SET QUOTED_IDENTIFIER ON;", sql);
+        Assert.DoesNotContain("sp_executesql", sql);
         Assert.DoesNotContain("@Type", sql);
         Assert.DoesNotContain("BorderExportLicence", sql);
-        Assert.Contains("licence.ApplicationNo", sql);
-        Assert.Contains("licence.ApplicationDate", sql);
-        Assert.Contains("licence.CommodityType", sql);
-        Assert.Contains("@__total AS TotalCount", sql);
+
+        // The inline-seek era's DB artifact (licence-grain COUNT) is gone for good.
+        Assert.False(File.Exists(Path.Combine(
+            RepositoryRoot,
+            "StoredProcedureMigrations",
+            "sp_ExportLicenceDetailReportV2_pagination.sql")));
     }
 
     [Fact]
-    public void Runtime_uses_page_first_inline_sql_for_ui_detail_load()
+    public void Runtime_grid_is_the_legacy_procedure_paginated_at_item_grain()
     {
         var controllerSource = File.ReadAllText(Path.Combine(
             RepositoryRoot,
@@ -163,41 +201,36 @@ public sealed class ExportLicenceDetailReportContractTests
             "Backend",
             "StoredProcedureToLinq",
             "sp_ExportLicenceDetailReportV2.cs"));
+        var v3Source = File.ReadAllText(Path.Combine(
+            RepositoryRoot,
+            "Backend",
+            "StoredProcedureToLinq",
+            "sp_ExportLicenceDetailReportV3.cs"));
 
-        Assert.Contains("sp_ExportLicenceDetailReportV2.CreatePagedResultAsync", controllerSource);
-        Assert.Contains("result.CurrencyTotals = await sp_ExportLicenceDetailReportV2.CreateCurrencyTotalsAsync", controllerSource);
+        // Grid: the legacy-shaped procedure. No footer of any kind -- the RDLC has no total row.
+        Assert.Contains("sp_ExportLicenceDetailReportV3.CreatePagedResultAsync", controllerSource);
+        Assert.DoesNotContain("CurrencyTotals", controllerSource);
+        Assert.DoesNotContain("ColumnTotals", controllerSource);
+        Assert.Contains("IExcelNoFooterReport", controllerSource);
+        Assert.Contains("[ExcelFormatVersion(2)]", controllerSource);
+        // Excel rows keep the item-grain LINQ stream (already equal to the old report's count).
         Assert.Contains("sp_ExportLicenceDetailReport_Fast.StreamResolvedChunksAsync", controllerSource);
-        Assert.Contains("ExecuteSeekedAsync", v2Source);
-        Assert.Contains("IX_ExportLicence_Report_NewDetail_Page", v2Source);
-        Assert.Contains("IX_ExportLicenceItem_Report_Licence_Page", v2Source);
-        Assert.Contains("FetchDetailRowAsync", v2Source);
-        Assert.Contains("FetchItemDetailAsync", v2Source);
-        Assert.Contains("IsItemPageIndexCoveredAsync", v2Source);
-        Assert.Contains("itemDetailsCovered ? coveredItemKeySql : safeItemKeySql", v2Source);
-        Assert.Contains("HSCode = hsCode.Code", v2Source);
-        Assert.Contains("Price = item.Price", v2Source);
-        Assert.Contains("Quantity = item.Quantity", v2Source);
-        Assert.Contains("Amount = item.Amount", v2Source);
-        Assert.Contains("FetchDelimitedLookupNamesAsync", v2Source);
-        Assert.Contains("@Auto", v2Source);
-        Assert.Contains("@Auto = N'auto' AND licence.[auto] = N'auto'", v2Source);
-        Assert.Contains("@Auto = N'none-auto' AND (licence.[auto] IS NULL OR licence.[auto] <> N'auto')", v2Source);
-        // The grid counts ITEM rows, the grain it actually renders and the grain the old report
-        // and the Excel export use. A windowed count over the licence-key seek counted licences,
-        // which under-reported the total by the average items-per-licence.
-        Assert.Contains("ExecuteExactItemCountAsync", v2Source);
-        Assert.Contains("INNER JOIN dbo.ExportLicenceItem AS item", v2Source);
-        Assert.DoesNotContain("CAST(COUNT_BIG(*) OVER() AS int) AS TotalCount", v2Source);
-        Assert.Contains("OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY", v2Source);
-        Assert.Contains("CreateCurrencyTotalsAsync", v2Source);
-        Assert.Contains("GROUP BY currency.Code", v2Source);
-        Assert.Contains("DelimitedLookupTable.PortOfDischarge", v2Source);
-        Assert.Contains("DelimitedLookupTable.Countries", v2Source);
-        Assert.Contains("ORDER BY item.HSCode, item.ItemNo, item.Id", v2Source);
-        Assert.DoesNotContain("sp_ExportLicenceDetailReport_Pagination", v2Source);
-        Assert.DoesNotContain("CreateUniqueIdentifierParameter", v2Source);
-        Assert.DoesNotContain("SqlQueryRaw<sp_ExportLicenceDetailReportRow>", v2Source);
-        Assert.DoesNotContain("[EnumeratorCancellation]", v2Source);
+
+        Assert.Contains("EXEC dbo.sp_ExportLicenceDetailReportV3_pagination", v3Source);
+        Assert.Contains("SqlQueryRaw<sp_ExportLicenceDetailReportRow>", v3Source);
+        // Procedures are hand-deployed while the app auto-deploys: until the procedure exists the
+        // grid falls back to the item-grain LINQ page (same rows, slower) instead of a 500.
+        Assert.Contains("ProcedureNotFound = 2812", v3Source);
+        Assert.Contains("catch (SqlException ex) when (ex.Number == ProcedureNotFound)", v3Source);
+        Assert.Contains("sp_ExportLicenceDetailReport_Fast.CreatePagedResultAsync(db, cache, request, pagingRequest)", v3Source);
+
+        // The inline seek that paged licences while counting items is gone; V2 keeps only the
+        // summary helpers the By-X / Daily controllers use.
+        Assert.DoesNotContain("ExecuteSeekedAsync", v2Source);
+        Assert.DoesNotContain("CreateCurrencyTotalsAsync", v2Source);
+        Assert.DoesNotContain("SqlQueryRaw", v2Source);
+        Assert.DoesNotContain("OFFSET @Offset ROWS", v2Source);
+
         Assert.Contains("var rows = await Rows(db, request).ToListAsync();", fastSource);
         Assert.DoesNotContain("var pageRows = await ExecuteAsync", fastSource);
     }

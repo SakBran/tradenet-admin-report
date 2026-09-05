@@ -17,7 +17,11 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class ExportLicenceDetailReportController : ControllerBase, IStreamingExcelReport
+    // The old ExportLicenceDetailReport.rdlc has no total row, so neither the grid nor the
+    // .xlsx gets a footer; the version bump makes the export queue drop the cached file that
+    // still carried one.
+    [ExcelFormatVersion(2)]
+    public class ExportLicenceDetailReportController : ControllerBase, IStreamingExcelReport, IExcelNoFooterReport
     {
         private const string ReportKey = "ExportLicenceDetailReport";
 
@@ -40,14 +44,10 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var result = await sp_ExportLicenceDetailReportV2.CreatePagedResultAsync(
-                _context, procedureRequest!, request!);
-
-            if (result.Data.Count > 0)
-            {
-                result.CurrencyTotals = await sp_ExportLicenceDetailReportV2.CreateCurrencyTotalsAsync(
-                    _context, procedureRequest!);
-            }
+            // dbo.sp_ExportLicenceDetailReportV3_pagination = the legacy dbo.sp_ExportLicenceDetailReport
+            // query verbatim, paged at item grain; the row set is the old report's row set.
+            var result = await sp_ExportLicenceDetailReportV3.CreatePagedResultAsync(
+                _context, _cache, procedureRequest!, request!, HttpContext.RequestAborted);
 
             return Ok(result);
         }

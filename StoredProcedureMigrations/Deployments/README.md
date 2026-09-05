@@ -27,4 +27,6 @@ from its original, so a snapshot can never quietly go stale.
 | [2026-09-05_ExportPermitRound3](2026-09-05_ExportPermitRound3/) | 2 procedures — Export Permit Cancellation `TOP 1` ordering and Voucher `TotalCIF`/`ExchangeRate` zeros |
 | [2026-09-05_ImportPermitParityRound1](2026-09-05_ImportPermitParityRound1/) | 2 procedures — Import Permit By HS Code grouping and the Cancellation per-currency footer |
 | [2026-09-06_ExportLicenceCancelParity](2026-09-06_ExportLicenceCancelParity/) | 2 procedures — Export Licence Cancellation item order `(Id, UniqueId)`, so grid and footer pick the same item |
+| [2026-09-05_ExportLicenceDetailLegacyParity](2026-09-05_ExportLicenceDetailLegacyParity/) | 1 NEW procedure — `sp_ExportLicenceDetailReportV3_pagination`, the legacy Export Licence Detail query paginated at item grain (the grid's rows now equal the old report's) |
 | [2026-09-06_ExportPermitItemOrder](2026-09-06_ExportPermitItemOrder/) | 7 procedures — Export Permit item order `(HSCodeId, ItemNo)`; supersedes the Export Permit half of `2026-09-05_ExportPermitRound3` |
+| [2026-09-05_BorderImportPermitComplaints](2026-09-05_BorderImportPermitComplaints/) | 4 procedures — Border Import Permit HS Code paging and grouping, the New Report TOTAL footer, and the New-branch date window; re-syncs the two procedures also shipped by `2026-09-05_ImportPermitParityRound1` |

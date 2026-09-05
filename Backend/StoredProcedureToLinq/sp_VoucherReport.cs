@@ -116,6 +116,7 @@ public sealed class sp_VoucherReportRow
 public static class sp_VoucherReport
 {
     private const string Approved = "Approved";
+    private const string BorderImportPermitFormType = "Border Import Permit";
     private const string PaThaKaCardType = "Pa Tha Ka";
     private const string IndividualTradingCardType = "Individual Trading";
 
@@ -885,6 +886,12 @@ public static class sp_VoucherReport
             join currencyRow in currencyByPermit on permit.Id equals currencyRow.PermitId into currencyJoin
             from currencyRow in currencyJoin.DefaultIfEmpty()
             where account.IsPayment
+                // AccountTransaction.TransactionId is only unique WITHIN a form type, so without
+                // this discriminator a Border Import Permit could pick up another form's payment
+                // rows. The stored procedure has always carried it
+                // (sp_VoucherReport_pagination.sql, Border Import Permit branch); this LINQ twin --
+                // which serves the footer total -- did not.
+                && account.TransactionFormType == BorderImportPermitFormType
                 && account.PaymentDate >= request.FromDate
                 && account.PaymentDate <= request.ToDate
                 && (request.ExportImportSectionId == 0 || permit.ExportImportSectionId == request.ExportImportSectionId)

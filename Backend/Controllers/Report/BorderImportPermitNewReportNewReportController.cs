@@ -18,6 +18,10 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // v2: the legacy per-currency TOTAL block (BorderNewReport.rdlc's second tablix) is now
+    // returned, so the .xlsx gains footer rows. The export cache keys on the request payload,
+    // so without this bump an unchanged payload would keep serving the footer-less workbook.
+    [ExcelFormatVersion(2)]
     public class BorderImportPermitNewReportNewReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "BorderImportPermitNewReportNewReport";
@@ -62,6 +66,19 @@ namespace Backend.Controllers.Report
                 : ApiResult<sp_NewReportResult>.CreateFastPageFromRows(
                     data, pageIndex, pageSize,
                     request.SortColumn, request.SortOrder, request.FilterColumn, request.FilterQuery);
+
+            // BorderNewReport.rdlc prints a second tablix beside the grid: one
+            // "<CUR>: n licence(s)" + summed-Total-Value row per currency, then a grand
+            // "TOTAL / Total: n licence(s)". This controller was the only one of the eight
+            // *NewReportNewReport controllers that never populated it, so both the grid footer
+            // and the .xlsx footer (which is resolved by replaying this same action) were empty.
+            if (data.Count > 0)
+            {
+                result.CurrencyTotals = await ImportPermitListingCurrencyTotals.ExecuteAsync(
+                    _context, "New", procedureRequest!.FromDate, procedureRequest.ToDate,
+                    procedureRequest.ExportImportSectionId, procedureRequest.CompanyRegistrationNo,
+                    amendRemarkId: 0, formType: procedureRequest.FormType, sakhanId: procedureRequest.SakhanId);
+            }
 
             return Ok(result);
         }

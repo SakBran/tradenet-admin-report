@@ -1553,11 +1553,12 @@ BEGIN
                     INNER JOIN ExportImportSection section ON BorderExportPermit.ExportImportSectionId = section.Id
                     INNER JOIN Sakhan sakhan ON BorderExportPermit.SakhanId = sakhan.Id
                 WHERE BorderExportPermit.ApplyType = 'New' AND BorderExportPermit.Status = 'Approved'
-                    -- TODO(follow-up): still DATEADD because the Border Export Permit New GRID
-                    -- (sp_NewReport_pagination, Border Export Permit branch) has the same extra-day
-                    -- form; flip both together or this footer stops matching its grid.
+                    -- Flipped to the calendar-date form together with its grid
+                    -- (sp_NewReport_pagination, Border Export Permit branch), which carried the
+                    -- same extra-day bug: DATEADD(day, 1, ...) over a '23:59:59' @ToDate reached
+                    -- a whole day further than the old sp_NewReport's 'CreatedDate <= @ToDate'.
                     AND ((@FromDate IS NULL) OR BorderExportPermit.CreatedDate >= @FromDate)
-                    AND ((@ToDate IS NULL) OR BorderExportPermit.CreatedDate < DATEADD(day, 1, @ToDate))
+                    AND ((@ToDate IS NULL) OR BorderExportPermit.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
                     AND BorderExportPermit.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN BorderExportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
                     AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
                     AND BorderExportPermit.SakhanId = (CASE WHEN @SakhanId = 0 THEN BorderExportPermit.SakhanId ELSE @SakhanId END)
@@ -1885,8 +1886,9 @@ BEGIN
     --   * Cancel      -> sp_CancelReport.ImportPermitQuery (ApplyType='Cancel'). Also a FIRST-item
     --                   grid, so TOP 1 again; no AmendRemarkId predicate.
     --   * @FormType = 'Border Import Permit' -> the BorderImportPermit table (Pa Tha Ka only, plus the
-    --                   Sakhan join/filter). Border New footers are not implemented and return an
-    --                   empty set rather than falling through to the non-border branches.
+    --                   Sakhan join/filter), branching on New and Amend/Actual Amend. Any other
+    --                   Border ApplyType returns an empty set rather than falling through to the
+    --                   non-border branches.
     --
     -- Callers name the Actual Amendment branch 'ActualAmend' while the database stores
     -- 'Actual Amend'; @DbApplyType normalises the two spellings so either works.
@@ -1927,10 +1929,43 @@ BEGIN
             GROUP BY ISNULL(d.Currency, N'')
             OPTION (RECOMPILE);
         END
+        ELSE IF @DbApplyType = N'New'
+        BEGIN
+            -- Mirrors the 'Border Import Permit' branch of sp_NewReport_pagination. Two things
+            -- differ from the Amend branch above and must not be "tidied" into line with it:
+            --   * Amount is SUM(items), not TOP 1 -- the New grid's Total Value column sums every
+            --     item on the permit, so the footer has to sum the same value.
+            --   * the date window is the grid's calendar-date form; converting @ToDate to a
+            --     date first is what keeps a '23:59:59' argument out of the following day.
+            -- Reproduces BorderNewReport.rdlc's second tablix: one row per currency
+            -- ("<CUR>: n licence(s)" + summed amount), with the grand TOTAL added by the wrapper.
+            SELECT ISNULL(d.Currency, N'') AS Currency, COUNT(*) AS NoOfLicences, ISNULL(SUM(d.Amount), 0) AS TotalValue
+            FROM (
+                SELECT
+                    (SELECT TOP 1 currency.Code FROM BorderImportPermitItem
+                        INNER JOIN Currency currency ON BorderImportPermitItem.CurrencyId = currency.Id
+                        WHERE BorderImportPermitItem.BorderImportPermitId = BorderImportPermit.Id) AS Currency,
+                    (SELECT ISNULL(SUM(BorderImportPermitItem.Amount), 0) FROM BorderImportPermitItem
+                        WHERE BorderImportPermitItem.BorderImportPermitId = BorderImportPermit.Id) AS Amount
+                FROM BorderImportPermit
+                    INNER JOIN PaThaKa ON BorderImportPermit.PaThaKaId = PaThaKa.Id
+                    INNER JOIN ExportImportSection section ON BorderImportPermit.ExportImportSectionId = section.Id
+                    INNER JOIN Sakhan sakhan ON BorderImportPermit.SakhanId = sakhan.Id
+                WHERE BorderImportPermit.ApplyType = N'New' AND BorderImportPermit.Status = 'Approved'
+                    AND ((@FromDate IS NULL) OR BorderImportPermit.CreatedDate >= @FromDate)
+                    AND ((@ToDate IS NULL) OR BorderImportPermit.CreatedDate < DATEADD(day, 1, CONVERT(date, @ToDate)))
+                    AND BorderImportPermit.ExportImportSectionId = (CASE WHEN @ExportImportSectionId = 0 THEN BorderImportPermit.ExportImportSectionId ELSE @ExportImportSectionId END)
+                    AND PaThaKa.CompanyRegistrationNo = (CASE WHEN @CompanyRegistrationNo = '' THEN PaThaKa.CompanyRegistrationNo ELSE @CompanyRegistrationNo END)
+                    AND BorderImportPermit.SakhanId = (CASE WHEN @SakhanId = 0 THEN BorderImportPermit.SakhanId ELSE @SakhanId END)
+            ) d
+            GROUP BY ISNULL(d.Currency, N'')
+            OPTION (RECOMPILE);
+        END
         ELSE
         BEGIN
-            -- No Border New footer: return an EMPTY correctly-shaped result set rather than falling
-            -- through to a non-border branch (which would count the wrong table).
+            -- Border Cancel / Extension footers are not implemented: return an EMPTY correctly-shaped
+            -- result set rather than falling through to a non-border branch (which would count the
+            -- wrong table).
             SELECT CAST(N'' AS nvarchar(50)) AS Currency, CAST(0 AS int) AS NoOfLicences, CAST(0 AS decimal(18, 4)) AS TotalValue
             WHERE 1 = 0;
         END

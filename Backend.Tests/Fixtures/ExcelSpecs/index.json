@@ -1027,7 +1027,7 @@
       "isBespokePage": false,
       "isComposite": false,
       "hasExcelButton": true,
-      "columnCount": 6
+      "columnCount": 5
     },
     {
       "configKey": "BorderImportPermitBySectionReport",
@@ -1432,7 +1432,7 @@
       "isBespokePage": false,
       "isComposite": false,
       "hasExcelButton": true,
-      "columnCount": 9
+      "columnCount": 10
     },
     {
       "configKey": "ExportLicenceAmendmentReport",
@@ -1561,7 +1561,7 @@
       "variant": null,
       "hasDateRange": true,
       "hasSingleDate": false,
-      "hasCurrencyTotalsColumns": true,
+      "hasCurrencyTotalsColumns": false,
       "showRowNumber": true,
       "rowNumberTitle": "No",
       "isBespokePage": false,

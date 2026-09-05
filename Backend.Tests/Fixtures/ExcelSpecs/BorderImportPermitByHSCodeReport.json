@@ -34,11 +34,6 @@
       "key": "Currency",
       "dataIndex": "currency",
       "title": "Currency"
-    },
-    {
-      "key": "CompanyName",
-      "dataIndex": "companyName",
-      "title": "Company Name"
     }
   ]
 }
