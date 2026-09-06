@@ -218,4 +218,67 @@ public sealed class ReportAggregationServiceTests
         Assert.Equal(15, secondPage.TotalCount);
         Assert.False(secondPage.HasNextPage);
     }
+
+    [Fact]
+    public void SourceOrder_keeps_groups_in_first_appearance_order()
+    {
+        // BorderImportPermitBySectionReport.rdlc groups on (SectionName, Currency) and has no
+        // SortExpressions, so the old report printed the groups in the order their first row
+        // arrived. Canonical ordering would put "4"/CNY before "4"/USD before "9"/THB.
+        var rows = new[]
+        {
+            Row("P1", 10m, "USD", sectionName: "9", sectionId: 9),
+            Row("P2", 20m, "THB", sectionName: "4", sectionId: 10),
+            Row("P3", 30m, "CNY", sectionName: "4", sectionId: 10),
+            Row("P4", 40m, "USD", sectionName: "9", sectionId: 9),
+        };
+
+        var source = ReportAggregationService.Aggregate(
+            rows, ReportAggregateDimension.Section, includeSakhan: false, ReportAggregateOrdering.SourceOrder);
+        var canonical = ReportAggregationService.Aggregate(
+            rows, ReportAggregateDimension.Section, includeSakhan: false);
+
+        Assert.Equal(
+            [("9", "USD", 2, 50m), ("4", "THB", 1, 20m), ("4", "CNY", 1, 30m)],
+            source.Select(group => (group.SectionName, group.Currency, group.NoOfLicences, group.TotalValue ?? 0m)).ToArray());
+        Assert.Equal(
+            [("4", "CNY"), ("4", "THB"), ("9", "USD")],
+            canonical.Select(group => (group.SectionName, group.Currency)).ToArray());
+
+        // Paging keeps that order too, and the footer is still the distinct count over all rows.
+        var paged = ReportAggregationService.CreatePagedResult(
+            rows, ReportAggregateDimension.Section, includeSakhan: false,
+            new ReportQueryRequest { PageSize = 10 }, includeColumnTotals: true,
+            ReportColumnTotalsMode.CountOnly, ReportAggregateOrdering.SourceOrder);
+        Assert.Equal(["9", "4", "4"], paged.Data.Select(group => group.SectionName!).ToArray());
+        Assert.Equal(4m, paged.ColumnTotals!["noOfLicences"]);
+        Assert.False(paged.ColumnTotals.ContainsKey("totalValue"));
+    }
+
+
+    [Fact]
+    public void SourceOrder_company_rows_show_the_first_name_in_row_order()
+    {
+        // BorderImportPermitByCompanyReport.rdlc groups on (CompanyRegistrationNo, Currency) with
+        // no sort and prints Fields!CompanyName.Value -- the group's FIRST row. Under SourceOrder
+        // the source is in legacy row order, so that is the name shown; Canonical keeps the max.
+        var rows = new[]
+        {
+            Row("L1", 10m, "USD", companyName: "ACME CO., LTD.", companyRegistrationNo: "REG-1"),
+            Row("L2", 20m, "USD", companyName: "ZZ ACME CO LTD", companyRegistrationNo: "REG-1"),
+            Row("L3", 30m, "USD", companyName: "BETA", companyRegistrationNo: "REG-2"),
+            Row("L4", 40m, "CNY", companyName: "ACME CO., LTD.", companyRegistrationNo: "REG-1"),
+        };
+
+        var source = ReportAggregationService.Aggregate(
+            rows, ReportAggregateDimension.Company, includeSakhan: false, ReportAggregateOrdering.SourceOrder);
+
+        Assert.Equal(
+            [("REG-1", "USD", "ACME CO., LTD.", 2), ("REG-2", "USD", "BETA", 1), ("REG-1", "CNY", "ACME CO., LTD.", 1)],
+            source.Select(group => (group.CompanyRegistrationNo!, group.Currency!, group.CompanyName!, group.NoOfLicences)).ToArray());
+
+        var canonical = ReportAggregationService.Aggregate(rows, ReportAggregateDimension.Company, includeSakhan: false);
+        Assert.Equal("ZZ ACME CO LTD", Assert.Single(canonical, g => g.CompanyRegistrationNo == "REG-1" && g.Currency == "USD").CompanyName);
+    }
+
 }

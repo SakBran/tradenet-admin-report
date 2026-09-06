@@ -17,7 +17,14 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class BorderImportPermitDetailReportController : ControllerBase, IStreamingExcelReport
+    // v2: the rows now come from the legacy dbo.sp_ImportPermitDetailReport query (order,
+    // Company Address text, fn_GetNRCNo), so an unchanged request payload maps to a different
+    // sheet. The export cache keys on payload + this version; without the bump a closed-period
+    // request would keep serving the previous workbook for 24h.
+    [ExcelFormatVersion(2)]
+    // IExcelNoFooterReport: BorderImportPermitDetailReport.rdlc has no total row (only the
+    // "Details" group, rdlc:3009), so the sheet must not synthesise one either.
+    public class BorderImportPermitDetailReportController : ControllerBase, IStreamingExcelReport, IExcelNoFooterReport
     {
         private const string ReportKey = "BorderImportPermitDetailReport";
 
@@ -43,7 +50,12 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var result = await sp_ImportPermitDetailReport_Fast.CreatePagedResultAsync(_context, _cache, procedureRequest!, request!);
+            // Byte-identical to the old report (owner decision 2026-09-06): the legacy
+            // dbo.sp_ImportPermitDetailReport 'Border' query verbatim, paged
+            // (dbo.sp_BorderImportPermitDetailReport_pagination). Falls back to the LINQ twin
+            // where the procedure is not deployed yet (SQL error 2812).
+            var result = await sp_BorderImportPermitDetailReport.CreatePagedResultAsync(
+                _context, _cache, procedureRequest!, request!, HttpContext.RequestAborted);
 
             return Ok(result);
         }
@@ -80,7 +92,8 @@ namespace Backend.Controllers.Report
             CancellationToken cancellationToken)
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
-            await foreach (var chunk in sp_ImportPermitDetailReport_Fast.StreamResolvedChunksAsync(
+            // Same procedure as the grid (every row, same order), so the sheet is the grid.
+            await foreach (var chunk in sp_BorderImportPermitDetailReport.StreamResolvedChunksAsync(
                 _context, _cache, procedureRequest!, chunkSize, cancellationToken))
             {
                 sink.Append(chunk);
@@ -120,7 +133,12 @@ namespace Backend.Controllers.Report
             }
             procedureRequest = new sp_ImportPermitDetailReportRequest
             {
+                // Legacy ReportsController.cs:14460 (model.Type = AppConfig.Border); the request's
+                // own Type is ignored, as the old hidden field was.
                 Type = "Border",
+                // Passed through unchanged: the page posts <day>T00:00:00 / <day>T23:59:59, which
+                // is exactly what the old Reports.GetImportPermitDetailReport appended
+                // (" 00:00:00" / " 23:59:59") before calling the procedure.
                 FromDate = request.FromDate,
                 ToDate = request.ToDate,
                 PaThaKaTypeId = request.PaThaKaTypeId,

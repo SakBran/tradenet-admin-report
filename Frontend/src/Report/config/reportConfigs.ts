@@ -5288,18 +5288,29 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     ],
     columns: hsCodeDetailColumns,
   },
+  // Byte-for-byte parity with Tradenet 2.0's BorderImportPermitBySectionReport.rdlc (owner
+  // decision 2026-09-06, "even where the old code is wrong"). Same dbo.sp_ImportPermitDetailReport
+  // 'Border' rows as the Detail report, grouped on (SectionName, Currency) with NO sort
+  // (rdlc:1077-1089) -- so the API returns the groups in first-appearance order, not
+  // alphabetically. Header = the old header1 line, row label "Sr.No." (the rdlc's Code
+  // group counter), Total Value = FORMAT(Sum(Amount),"N4"), the TOTAL footer carries only
+  // CountDistinct(LicenceNo) (rdlc:853-907), and the Section cell drills to the Detail report in a
+  // new window (rdlc:610). Filter box = Views/Reports/BorderImportPermitBySectionReport.cshtml:25-59:
+  // From Date, To Date, Sakhan, EIR Card Type, Import Section. Seller Country / Company
+  // Registration No have no box there; they stay on the DTO for drill-downs.
   BorderImportPermitBySectionReport: {
     controllerName: 'BorderImportPermitBySectionReport',
     title: 'Border Import Permit By Section Report',
     apiRoute: 'BorderImportPermitBySectionReport',
     excelRoute: 'BorderImportPermitBySectionReport/Excel',
     excelFileName: 'BorderImportPermitBySectionReport.xlsx',
-    initialSortColumn: 'PaThaKaTypeId',
     // Legacy RDLC printed every row on one scrolling page; these summaries are a
     // handful of (group, currency) rows, so a 10-row page looked like missing data
     // next to the old report (Company List: 13 rows, page 1 showed 10).
     defaultPageSize: 1000,
     showRowNumber: true,
+    rowNumberTitle: 'Sr.No.',
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Permit By Section', true),
     filters: [
       {
         name: 'dateRange',
@@ -5318,10 +5329,18 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        name: 'SakhanId',
+        label: 'Sakhan',
+        type: 'number',
+        defaultValue: 0,
+        lookupName: 'sakhans',
+      },
+      {
         name: 'PaThaKaTypeId',
         label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'paThaKaTypes',
       },
       {
         name: 'ExportImportSectionId',
@@ -5330,30 +5349,21 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 0,
         lookupName: 'borderImportPermitSections',
       },
-      {
-        name: 'SellerCountryId',
-        label: 'Seller Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-      },
     ],
     columns: [
       {
         key: 'Section',
         dataIndex: 'sectionName',
         title: 'Section',
+        drilldown: {
+          targetReportKey: 'BorderImportPermitDetailReport',
+          // Old rdlc:610: url carries fdate, tdate, pathakatype, sakhan (+ the section box,
+          // overridden by the clicked row's id via &header=section&filter=<ExportImportSectionId>).
+          carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'SakhanId'],
+          rowParams: { ExportImportSectionId: 'sectionId' },
+          // Old rdlc:610 drills through with window.open(..., '_blank').
+          openInNewTab: true,
+        },
       },
       {
         key: 'NoOfLicences',
@@ -5364,6 +5374,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'TotalValue',
         dataIndex: 'totalValue',
         title: 'Total Value',
+        // 'money' + '#,##0.0000' is the Money4 cell format in the .xlsx and the grid's
+        // N4 render, matching old rdlc:688 =FORMAT(Sum(Fields!Amount.Value),"N4").
+        dataType: 'money',
+        numberFormat: '#,##0.0000',
       },
       {
         key: 'Currency',
@@ -5579,18 +5593,32 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
     ],
   },
+  // Byte-for-byte parity with Tradenet 2.0's BorderImportPermitByCompanyReport.rdlc (owner
+  // decision 2026-09-06, "even where the old code is wrong"). Same dbo.sp_ImportPermitDetailReport
+  // 'Border' rows as the Detail report, grouped on (CompanyRegistrationNo, Currency) with NO sort
+  // (rdlc:1076-1084) -- so the API returns the groups in first-appearance order, not
+  // alphabetically, and shows each group's FIRST company name. The header is the old header1
+  // line verbatim -- legacy ReportsController.cs:15425 builds "List of Import Permit By Company
+  // (<from>) To (<to>)" for this BORDER screen, no "Border", no "From"; kept as is. Row label
+  // "Sr.No." (the rdlc's Code group counter), Total Value = FORMAT(Sum(Amount),"N4"), the TOTAL
+  // footer carries only CountDistinct(LicenceNo) (rdlc:851-905), and the Company Name cell drills
+  // to the Detail report in a new window (rdlc:608). Filter box =
+  // Views/Reports/BorderImportPermitByCompanyReport.cshtml:25-72: From Date, To Date, Sakhan,
+  // EIR Card Type, Import Section, Company Registration No, Company Name (readonly). No Seller
+  // Country box there; it stays on the DTO for drill-downs.
   BorderImportPermitCompanyListReport: {
     controllerName: 'BorderImportPermitCompanyListReport',
     title: 'Border Import Permit Company List Report',
     apiRoute: 'BorderImportPermitCompanyListReport',
     excelRoute: 'BorderImportPermitCompanyListReport/Excel',
     excelFileName: 'BorderImportPermitCompanyListReport.xlsx',
-    initialSortColumn: 'PaThaKaTypeId',
     // Legacy RDLC printed every row on one scrolling page; these summaries are a
     // handful of (group, currency) rows, so a 10-row page looked like missing data
     // next to the old report (Company List: 13 rows, page 1 showed 10).
     defaultPageSize: 1000,
     showRowNumber: true,
+    rowNumberTitle: 'Sr.No.',
+    reportSubtitle: reportDateRangeSubtitle('List of Import Permit By Company'),
     filters: [
       {
         name: 'dateRange',
@@ -5609,10 +5637,18 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        name: 'SakhanId',
+        label: 'Sakhan',
+        type: 'number',
+        defaultValue: 0,
+        lookupName: 'sakhans',
+      },
+      {
         name: 'PaThaKaTypeId',
         label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'paThaKaTypes',
       },
       {
         name: 'ExportImportSectionId',
@@ -5622,22 +5658,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         lookupName: 'borderImportPermitSections',
       },
       {
-        name: 'SellerCountryId',
-        label: 'Seller Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
         name: 'CompanyRegistrationNo',
         label: 'Company Registration No',
         type: 'text',
         defaultValue: '',
       },
       {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
+        ...importLicenceCompanyNameFilter,
       },
     ],
     columns: [
@@ -5645,6 +5672,16 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'CompanyName',
         dataIndex: 'companyName',
         title: 'Company Name',
+        drilldown: {
+          targetReportKey: 'BorderImportPermitDetailReport',
+          // Old rdlc:608: url carries fdate, tdate, pathakatype, section, sakhan (+ the
+          // registration box, overridden by the clicked row's number via
+          // &header=company&filter=<CompanyRegistrationNo>).
+          carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId', 'SakhanId'],
+          rowParams: { CompanyRegistrationNo: 'companyRegistrationNo' },
+          // Old rdlc:608 drills through with window.open(..., '_blank').
+          openInNewTab: true,
+        },
       },
       {
         key: 'NoOfLicences',
@@ -5655,6 +5692,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'TotalValue',
         dataIndex: 'totalValue',
         title: 'Total Value',
+        // 'money' + '#,##0.0000' is the Money4 cell format in the .xlsx and the grid's
+        // N4 render, matching old rdlc:686 =FORMAT(Sum(Fields!Amount.Value),"N4").
+        dataType: 'money',
+        numberFormat: '#,##0.0000',
       },
       {
         key: 'Currency',
@@ -5751,14 +5792,28 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
     ],
   },
+  // Byte-for-byte parity with Tradenet 2.0's BorderImportPermitDetailReport.rdlc (owner
+  // decision 2026-09-06, "even where the old code is wrong"). The grid is served by the legacy
+  // dbo.sp_ImportPermitDetailReport 'Border' query verbatim
+  // (sp_BorderImportPermitDetailReport_pagination); the header is the old header1 line; the row
+  // label is the RDLC's "Sr.No."; Permit Date / Last Date print as dd/MM/yyyy (the old model's
+  // sLicenceDate / LastDate strings); Price and Value as FORMAT(..., "N4"), Qty as "N2"; every
+  // row on one page like the old ReportViewer; Company Address is the old
+  // CommonRepository.GetAddress string, now sent by the API. Filter box =
+  // Views/Reports/BorderImportPermitDetailReport.cshtml:28-62: From Date, To Date, Sakhan,
+  // EIR Card Type, Import Section. Seller Country / Company Registration No have no box there
+  // either; a By-X drill-down still reaches the request with them (drill effect in
+  // GenericReportPage). `Type` is the old hidden field; the controller pins it to Border.
   BorderImportPermitDetailReport: {
     controllerName: 'BorderImportPermitDetailReport',
     title: 'Border Import Permit Detail Report',
     apiRoute: 'BorderImportPermitDetailReport',
     excelRoute: 'BorderImportPermitDetailReport/Excel',
     excelFileName: 'BorderImportPermitDetailReport.xlsx',
-    initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
+    rowNumberTitle: 'Sr.No.',
+    defaultPageSize: 1000,
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Permit By Detail', true),
     filters: [
       {
         name: 'dateRange',
@@ -5777,10 +5832,18 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
+        name: 'SakhanId',
+        label: 'Sakhan',
+        type: 'number',
+        defaultValue: 0,
+        lookupName: 'sakhans',
+      },
+      {
         name: 'PaThaKaTypeId',
         label: 'EIR Card Type',
         type: 'number',
         defaultValue: 0,
+        lookupName: 'paThaKaTypes',
       },
       {
         name: 'ExportImportSectionId',
@@ -5788,24 +5851,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'number',
         defaultValue: 0,
         lookupName: 'borderImportPermitSections',
-      },
-      {
-        name: 'SellerCountryId',
-        label: 'Seller Country',
-        type: 'number',
-        defaultValue: 0,
-      },
-      {
-        name: 'CompanyRegistrationNo',
-        label: 'Company Registration No',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
       },
     ],
     columns: [
@@ -5824,6 +5869,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'licenceDate',
         title: 'Permit Date',
         dataType: 'date',
+        dateFormat: 'DD/MM/YYYY',
       },
       {
         key: 'CompanyRegistrationNo',
@@ -5883,6 +5929,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'lastDate',
         title: 'Last Date',
         dataType: 'date',
+        dateFormat: 'DD/MM/YYYY',
       },
       {
         key: 'CountryOfOrign',
@@ -5897,7 +5944,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'hsCode',
         dataIndex: 'hsCode',
-        title: 'hsCode',
+        title: 'HSCode',
       },
       {
         key: 'Decription',
@@ -5913,19 +5960,22 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'Price',
         dataIndex: 'price',
         title: 'Price',
-        dataType: 'number',
+        dataType: 'money',
+        numberFormat: '#,##0.0000',
       },
       {
         key: 'Qty',
         dataIndex: 'quantity',
         title: 'Qty',
-        dataType: 'number',
+        dataType: 'money',
+        numberFormat: '#,##0.00',
       },
       {
         key: 'Value',
         dataIndex: 'amount',
         title: 'Value',
-        dataType: 'number',
+        dataType: 'money',
+        numberFormat: '#,##0.0000',
       },
       {
         key: 'Currency',

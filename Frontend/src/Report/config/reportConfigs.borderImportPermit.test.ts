@@ -221,4 +221,188 @@ describe('Border Import Permit report configs', () => {
       valueColumnKey: 'TotalValue',
     });
   });
+
+  it('Detail report is the old BorderImportPermitDetailReport.rdlc, byte for byte', () => {
+    // Owner decision 2026-09-06: identical to the old report even where the old code is
+    // wrong. Filter box = Views/Reports/BorderImportPermitDetailReport.cshtml:28-62 (From,
+    // To, Sakhan, EIR Card Type, Import Section; Type is the old hidden field). Seller Country
+    // and Company Registration No have no box there either -- drill-downs still post them.
+    const cfg = reportConfigs.BorderImportPermitDetailReport;
+
+    expect(cfg.filters.map((filter) => filter.name)).toEqual([
+      'dateRange',
+      'Type',
+      'SakhanId',
+      'PaThaKaTypeId',
+      'ExportImportSectionId',
+    ]);
+    expect(cfg.filters.find((filter) => filter.name === 'SakhanId')).toMatchObject({
+      label: 'Sakhan',
+      lookupName: 'sakhans',
+    });
+    expect(cfg.filters.find((filter) => filter.name === 'PaThaKaTypeId')).toMatchObject({
+      label: 'EIR Card Type',
+      lookupName: 'paThaKaTypes',
+    });
+    expect(cfg.filters.find((filter) => filter.name === 'ExportImportSectionId')).toMatchObject({
+      label: 'Import Section',
+      lookupName: 'borderImportPermitSections',
+    });
+
+    // rdlc header cells in order; Sr.No. is the row-number column.
+    expect(cfg.columns.map((column) => column.title)).toEqual([
+      'Section',
+      'Permit No',
+      'Permit Date',
+      'Company Registration No',
+      'Company Name',
+      'Company Address',
+      'Union Citizenship No',
+      'Agent Name',
+      'Agent Address',
+      'Seller Country',
+      'Port of Shipment',
+      'Place/Port of Discharge',
+      'Last Date',
+      'Country of Orign',
+      'Type of Permit',
+      'HSCode',
+      'Decription',
+      'A/U',
+      'Price',
+      'Qty',
+      'Value',
+      'Currency',
+      'Conditions',
+    ]);
+    expect(cfg.rowNumberTitle).toBe('Sr.No.');
+
+    // rdlc:2705-2864 FORMAT(Price,"N4") / FORMAT(Quantity,"N2") / FORMAT(Amount,"N4"); the
+    // model's sLicenceDate / LastDate are .ToString("dd/MM/yyyy").
+    const column = (dataIndex: string) =>
+      cfg.columns.find((candidate) => candidate.dataIndex === dataIndex);
+    expect(column('price')).toMatchObject({ dataType: 'money', numberFormat: '#,##0.0000' });
+    expect(column('quantity')).toMatchObject({ dataType: 'money', numberFormat: '#,##0.00' });
+    expect(column('amount')).toMatchObject({ dataType: 'money', numberFormat: '#,##0.0000' });
+    expect(column('licenceDate')).toMatchObject({ dataType: 'date', dateFormat: 'DD/MM/YYYY' });
+    expect(column('lastDate')).toMatchObject({ dataType: 'date', dateFormat: 'DD/MM/YYYY' });
+    // Company Address is the old CommonRepository.GetAddress string, now sent by the API.
+    expect(column('companyAddress')?.title).toBe('Company Address');
+
+    // Legacy header1 line; one page like the old ReportViewer; the rdlc has no footer.
+    expect(
+      cfg.reportSubtitle?.({ FromDate: '2025-01-01T00:00:00', ToDate: '2025-12-31T23:59:59' })
+    ).toBe('List of Border Import Permit By Detail From (01/01/2025) To (31/12/2025)');
+    expect(cfg.defaultPageSize).toBe(1000);
+    expect(cfg.currencyTotalsColumns).toBeUndefined();
+  });
+
+  it('By Section is the old BorderImportPermitBySectionReport.rdlc, byte for byte', () => {
+    // Owner decision 2026-09-06. Filter box = Views/Reports/BorderImportPermitBySectionReport
+    // .cshtml:25-59 (From, To, Sakhan, EIR Card Type, Import Section; Type is the old hidden
+    // field); Seller Country / Company Registration No have no box there (drill-downs still
+    // post them).
+    const cfg = reportConfigs.BorderImportPermitBySectionReport;
+
+    expect(cfg.filters.map((filter) => filter.name)).toEqual([
+      'dateRange',
+      'Type',
+      'SakhanId',
+      'PaThaKaTypeId',
+      'ExportImportSectionId',
+    ]);
+    expect(cfg.filters.find((filter) => filter.name === 'SakhanId')?.lookupName).toBe('sakhans');
+    expect(cfg.filters.find((filter) => filter.name === 'PaThaKaTypeId')).toMatchObject({
+      label: 'EIR Card Type',
+      lookupName: 'paThaKaTypes',
+    });
+
+    // rdlc header cells in order; Sr.No. is the Code group counter = the row number.
+    expect(cfg.columns.map((column) => column.title)).toEqual([
+      'Section',
+      'No of Licences',
+      'Total Value',
+      'Currency',
+    ]);
+    expect(cfg.rowNumberTitle).toBe('Sr.No.');
+
+    // rdlc:688 FORMAT(Sum(Amount),"N4"); the count stays a bare integer.
+    expect(cfg.columns.find((column) => column.dataIndex === 'totalValue')).toMatchObject({
+      dataType: 'money',
+      numberFormat: '#,##0.0000',
+    });
+    expect(cfg.columns.find((column) => column.dataIndex === 'noOfLicences')?.numberFormat)
+      .toBeUndefined();
+
+    // rdlc:610: Section opens the Detail report in a new window, filtered to the row's section
+    // with the search's dates, card type and Sakhan carried along.
+    expect(cfg.columns.find((column) => column.dataIndex === 'sectionName')?.drilldown).toEqual({
+      targetReportKey: 'BorderImportPermitDetailReport',
+      carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'SakhanId'],
+      rowParams: { ExportImportSectionId: 'sectionId' },
+      openInNewTab: true,
+    });
+
+    // Legacy header1 line; one page like the old ReportViewer; no per-currency footer block.
+    expect(
+      cfg.reportSubtitle?.({ FromDate: '2025-01-01T00:00:00', ToDate: '2025-12-31T23:59:59' })
+    ).toBe('List of Border Import Permit By Section From (01/01/2025) To (31/12/2025)');
+    expect(cfg.defaultPageSize).toBe(1000);
+    expect(cfg.currencyTotalsColumns).toBeUndefined();
+  });
+
+  it('Company List is the old BorderImportPermitByCompanyReport.rdlc, byte for byte', () => {
+    // Owner decision 2026-09-06. Filter box = Views/Reports/BorderImportPermitByCompanyReport
+    // .cshtml:25-72 (From, To, Sakhan, EIR Card Type, Import Section, Company Registration No,
+    // readonly Company Name; Type is the old hidden field). No Seller Country box there.
+    const cfg = reportConfigs.BorderImportPermitCompanyListReport;
+
+    expect(cfg.filters.map((filter) => filter.name)).toEqual([
+      'dateRange',
+      'Type',
+      'SakhanId',
+      'PaThaKaTypeId',
+      'ExportImportSectionId',
+      'CompanyRegistrationNo',
+      'CompanyName',
+    ]);
+    expect(cfg.filters.find((filter) => filter.name === 'SakhanId')?.lookupName).toBe('sakhans');
+    expect(cfg.filters.find((filter) => filter.name === 'PaThaKaTypeId')?.lookupName).toBe(
+      'paThaKaTypes'
+    );
+    expect(cfg.filters.find((filter) => filter.name === 'CompanyName')).toMatchObject({
+      type: 'readonlyText',
+      populateFromCompanyRegistrationNo: true,
+    });
+
+    // rdlc header cells in order; Sr.No. is the Code group counter = the row number.
+    expect(cfg.columns.map((column) => column.title)).toEqual([
+      'Company Name',
+      'No of Licences',
+      'Total Value',
+      'Currency',
+    ]);
+    expect(cfg.rowNumberTitle).toBe('Sr.No.');
+    expect(cfg.columns.find((column) => column.dataIndex === 'totalValue')).toMatchObject({
+      dataType: 'money',
+      numberFormat: '#,##0.0000',
+    });
+
+    // rdlc:608: Company Name opens the Detail report in a new window for that registration
+    // number, carrying the search's dates, card type, section and Sakhan.
+    expect(cfg.columns.find((column) => column.dataIndex === 'companyName')?.drilldown).toEqual({
+      targetReportKey: 'BorderImportPermitDetailReport',
+      carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId', 'SakhanId'],
+      rowParams: { CompanyRegistrationNo: 'companyRegistrationNo' },
+      openInNewTab: true,
+    });
+
+    // The legacy header1 verbatim: legacy ReportsController.cs:15425 labels this BORDER screen
+    // "List of Import Permit By Company (from) To (to)" -- no "Border", no "From". Kept.
+    expect(
+      cfg.reportSubtitle?.({ FromDate: '2025-01-01T00:00:00', ToDate: '2025-12-31T23:59:59' })
+    ).toBe('List of Import Permit By Company (01/01/2025) To (31/12/2025)');
+    expect(cfg.defaultPageSize).toBe(1000);
+    expect(cfg.currencyTotalsColumns).toBeUndefined();
+  });
 });

@@ -89,6 +89,22 @@ export const formatLegacyReportDate = (value: unknown) => {
 };
 
 /**
+ * A grid date cell rendered with a column's `dateFormat` (Day.js pattern) — the
+ * legacy `.ToString("dd/MM/yyyy")` strings the old Detail RDLCs printed. Blank and
+ * .NET's `DateTime.MinValue` (a NULL that came back through a non-nullable property)
+ * render as the grid's usual `N/A`; an unparseable value is shown as received.
+ */
+export const formatDateCell = (value: unknown, pattern: string): string => {
+  const text = value === undefined || value === null ? '' : String(value).trim();
+  if (text === '' || text.startsWith('0001-01-01')) {
+    return 'N/A';
+  }
+
+  const parsed = dayjs(text);
+  return parsed.isValid() ? parsed.format(pattern) : text;
+};
+
+/**
  * The legacy RDLC in-sheet/in-grid header block: the configured centered
  * heading lines followed by the dynamic subtitle (or the plain title when the
  * report has no subtitle).

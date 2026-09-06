@@ -45,6 +45,25 @@ namespace API.Service.Reports
     }
 
     /// <summary>
+    /// How the grouped rows are ordered.
+    /// </summary>
+    public enum ReportAggregateOrdering
+    {
+        /// <summary>Alphabetical by the dimension label, then Sakhan, then currency (the default).</summary>
+        Canonical,
+
+        /// <summary>
+        /// Groups in the order their FIRST detail row appears in the source. This is what a
+        /// legacy RDLC with a row group and no SortExpressions printed (e.g.
+        /// BorderImportPermitBySectionReport.rdlc:1077-1089 groups on SectionName + Currency and
+        /// sorts nothing), so the old report's row order was the order of the underlying
+        /// procedure rows. Only meaningful when the caller hands the source rows over in a
+        /// deterministic order.
+        /// </summary>
+        SourceOrder,
+    }
+
+    /// <summary>
     /// One detail line feeding an aggregate report. Each _Fast / HS Code source
     /// maps its own detail row onto this shape before grouping.
     /// </summary>
@@ -118,10 +137,13 @@ namespace API.Service.Reports
         public static List<ReportAggregateResult> Aggregate(
             IEnumerable<AggregateSourceRow> rows,
             ReportAggregateDimension dimension,
-            bool includeSakhan)
+            bool includeSakhan,
+            ReportAggregateOrdering ordering = ReportAggregateOrdering.Canonical)
         {
             ArgumentNullException.ThrowIfNull(rows);
 
+            // Enumerable.GroupBy yields the groups in first-appearance order of their keys,
+            // which is exactly what SourceOrder wants to keep.
             var grouped = rows
                 .GroupBy(row => BuildKey(row, dimension, includeSakhan))
                 .Select(group => new ReportAggregateResult
@@ -130,11 +152,15 @@ namespace API.Service.Reports
                     SectionName = dimension == ReportAggregateDimension.Section ? group.Key.Label : null,
                     MethodName = dimension == ReportAggregateDimension.Method ? group.Key.Label : null,
                     Country = dimension == ReportAggregateDimension.Country ? group.Key.Label : null,
-                    // Company groups key on the registration number only (see BuildKey), so the
-                    // displayed name is the group's -- deterministic -- max, like the RDLC's
-                    // First(). HS Code groups carry the name in their key.
+                    // Company groups key on the registration number only (see BuildKey). The RDLC
+                    // prints Fields!CompanyName.Value of the group, i.e. First(): under SourceOrder
+                    // the source is in legacy row order, so the first row's name is that value;
+                    // under Canonical the source is unordered, so the deterministic max stands in.
+                    // HS Code groups carry the name in their key.
                     CompanyName = dimension == ReportAggregateDimension.Company
-                        ? group.Max(row => row.CompanyName)
+                        ? (ordering == ReportAggregateOrdering.SourceOrder
+                            ? group.First().CompanyName
+                            : group.Max(row => row.CompanyName))
                         : dimension == ReportAggregateDimension.HSCode
                             ? group.Key.CompanyName
                             : null,
@@ -161,7 +187,9 @@ namespace API.Service.Reports
                 })
                 .ToList();
 
-            return Order(grouped, dimension, includeSakhan);
+            return ordering == ReportAggregateOrdering.SourceOrder
+                ? grouped
+                : Order(grouped, dimension, includeSakhan);
         }
 
         public static ApiResult<ReportAggregateResult> CreatePagedResult(
@@ -170,11 +198,12 @@ namespace API.Service.Reports
             bool includeSakhan,
             ReportQueryRequest pagingRequest,
             bool includeColumnTotals = false,
-            ReportColumnTotalsMode columnTotalsMode = ReportColumnTotalsMode.CountAndValue)
+            ReportColumnTotalsMode columnTotalsMode = ReportColumnTotalsMode.CountAndValue,
+            ReportAggregateOrdering ordering = ReportAggregateOrdering.Canonical)
         {
             ArgumentNullException.ThrowIfNull(pagingRequest);
 
-            var aggregated = Aggregate(rows, dimension, includeSakhan);
+            var aggregated = Aggregate(rows, dimension, includeSakhan, ordering);
 
             var pageIndex = Math.Max(0, pagingRequest.PageIndex);
             var pageSize = pagingRequest.PageSize <= 0

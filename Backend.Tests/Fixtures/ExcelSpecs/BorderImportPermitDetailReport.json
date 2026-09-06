@@ -5,10 +5,10 @@
   "title": "Border Import Permit Detail Report",
   "fileName": "BorderImportPermitDetailReport.xlsx",
   "headerLines": [
-    "Border Import Permit Detail Report"
+    "List of Border Import Permit By Detail From (01/02/2026) To (28/02/2026)"
   ],
   "showRowNumber": true,
-  "rowNumberTitle": "No.",
+  "rowNumberTitle": "Sr.No.",
   "columns": [
     {
       "key": "Section",
@@ -98,7 +98,7 @@
     {
       "key": "hsCode",
       "dataIndex": "hsCode",
-      "title": "hsCode"
+      "title": "HSCode"
     },
     {
       "key": "Decription",
@@ -114,19 +114,22 @@
       "key": "Price",
       "dataIndex": "price",
       "title": "Price",
-      "dataType": "number"
+      "dataType": "money",
+      "numberFormat": "#,##0.0000"
     },
     {
       "key": "Qty",
       "dataIndex": "quantity",
       "title": "Qty",
-      "dataType": "number"
+      "dataType": "money",
+      "numberFormat": "#,##0.00"
     },
     {
       "key": "Value",
       "dataIndex": "amount",
       "title": "Value",
-      "dataType": "number"
+      "dataType": "money",
+      "numberFormat": "#,##0.0000"
     },
     {
       "key": "Currency",

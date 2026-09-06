@@ -20,7 +20,9 @@ namespace Backend.Controllers.Report
     // so the row set changed for an unchanged request payload. The export cache keys on payload +
     // this version; without the bump a closed-period request would keep serving the border-only
     // workbook for 24h.
-    [ExcelFormatVersion(2)]
+    // v3: rows are now in the old report's order (HS code ID, first appearance) and Total Value is
+    // a 4-decimal money cell.
+    [ExcelFormatVersion(3)]
     public class BorderImportPermitByHSCodeReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "BorderImportPermitByHSCodeReport";
@@ -87,15 +89,10 @@ namespace Backend.Controllers.Report
             // typed with a stray space would LIKE ' 1006%' here and '1006%' in the grid.
             procedureRequest!.HSCode = procedureRequest.HSCode?.Trim() ?? string.Empty;
 
-            // Row order already equals the grid's, so no re-sort here. The grid pages
-            // through sp_HSCodeReport_pagination ("ORDER BY result.HSCode,
-            // result.CompanyName, result.Currency"), and AggregateQuery -- what
-            // GetAggregateRowsAsync streams -- ends with exactly that ORDER BY
-            // server-side. Re-sorting with ReportAggregationService.OrderGroups(...,
-            // ReportAggregateDimension.HSCode, includeSakhan: false) would sort on the
-            // same three keys but with StringComparer.OrdinalIgnoreCase, trading the DB
-            // collation for ordinal semantics -- it could only move Excel rows AWAY from
-            // the grid order.
+            // Row order already equals the grid's (LegacyOrder: both surfaces take the same
+            // LINQ path -- AggregateQuery for the summary, LegacyCompanyGroupsAsync for the
+            // drill), so no re-sort here: ReportAggregationService.OrderGroups would put the
+            // rows back into HS code string order, away from the old report's.
             var rows = await sp_HSCodeReport.GetAggregateRowsAsync(_context, procedureRequest);
             sink.Append(rows);
         }
@@ -155,6 +152,11 @@ namespace Backend.Controllers.Report
                 // The HS Code detail drill (BorderImportPermitHSCodeDetailReport) posts
                 // GroupBy='Company' to get HSCodeDetailReport.rdlc's (HS code, company) rows.
                 GroupByCompany = string.Equals(request.GroupBy, "Company", StringComparison.OrdinalIgnoreCase),
+                // Byte-identical to the old report (owner decision 2026-09-06): legacy
+                // dbo.sp_HSCodeReport ends with ORDER BY HSCode.Id and neither RDLC sorts, so the
+                // groups print in HS code ID order with first-appearance ties -- not the deployed
+                // procedure's HS code string / currency order.
+                LegacyOrder = true,
             };
 
             return true;

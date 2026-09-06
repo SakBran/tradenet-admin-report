@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { reportConfigs } from './config/reportConfigs';
 import type { ReportFilterConfig } from './config/reportTypes';
-import { getDerivedFilterValues } from './reportPresentation';
+import {
+  formatDateCell,
+  getDerivedFilterValues,
+} from './reportPresentation';
 
 describe('getDerivedFilterValues', () => {
   it('posts a constantValue filter without rendering it', () => {
@@ -37,5 +40,25 @@ describe('getDerivedFilterValues', () => {
     expect(getDerivedFilterValues(summary.controllerName, summary.filters)).toEqual({
       FormType: 'Border Import Permit',
     });
+  });
+});
+
+describe('formatDateCell', () => {
+  // BorderImportPermitDetailReport.rdlc prints the old model's sLicenceDate / LastDate,
+  // which were built with .ToString("dd/MM/yyyy"); the grid must print the same bytes.
+  it('renders an ISO date-time with the legacy dd/MM/yyyy pattern', () => {
+    expect(formatDateCell('2025-01-13T12:14:20', 'DD/MM/YYYY')).toBe('13/01/2025');
+    expect(formatDateCell('2025-04-12T00:00:00', 'DD/MM/YYYY')).toBe('12/04/2025');
+  });
+
+  it('treats blank and DateTime.MinValue as no value', () => {
+    expect(formatDateCell(undefined, 'DD/MM/YYYY')).toBe('N/A');
+    expect(formatDateCell(null, 'DD/MM/YYYY')).toBe('N/A');
+    expect(formatDateCell('', 'DD/MM/YYYY')).toBe('N/A');
+    expect(formatDateCell('0001-01-01T00:00:00', 'DD/MM/YYYY')).toBe('N/A');
+  });
+
+  it('shows an unparseable value as received', () => {
+    expect(formatDateCell('not a date', 'DD/MM/YYYY')).toBe('not a date');
   });
 });

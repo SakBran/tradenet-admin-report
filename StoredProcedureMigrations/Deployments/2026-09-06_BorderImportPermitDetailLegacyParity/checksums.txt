@@ -1,0 +1,4 @@
+# SHA-256 of the repository originals these copies were taken from (2026-09-06).
+# Verify with:  shasum -a 256 -c checksums.txt   (run from StoredProcedureMigrations/)
+#
+9d212521fe07a99119391da7e6dc2a4909921c92300cf6cf13403775285b0ef4  sp_BorderImportPermitDetailReport_pagination.sql

@@ -156,3 +156,134 @@ Border **Export** Permit By HS Code has the identical legacy bug (`ReportsContro
 NOT a one-line switch — the proc's Export Permit `@HSCode=''` sub-branch still groups by company —
 so it was left for a follow-up.
 
+
+## Round 3 (2026-09-06) — Detail Report must be byte-identical to the old one
+
+Owner's instruction: "For Border Import Permit Detail Report make, even it is wrong in old code. I
+want to get byte identical result as the old report." Measured first on production over
+`2025-01-01 → 2025-12-31`: 70 rows / 18 permits (all Sakhan), the customer's figure — so the row
+**set** already matched; what did not match was everything around it.
+
+**Old report, as built.** Legacy `ReportsController.cs:14455-14620` runs
+`dbo.sp_ImportPermitDetailReport @Type='Border'` with `FromDate " 00:00:00"` / `ToDate " 23:59:59"`
+and renders `BorderImportPermitDetailReport.rdlc`: `header1` = `List of Border Import Permit By
+Detail From (dd/MM/yyyy) To (dd/MM/yyyy)`, row label `Sr.No.`, 23 columns, no group, no sort, no
+footer. `Permit Date` / `Last Date` are the model's `.ToString("dd/MM/yyyy")` strings, `Price` and
+`Value` are `FORMAT(...,"N4")`, `Qty` is `"N2"`, `Company Address` is `CommonRepository.GetAddress`
+(`"State,"` with no space when there is no postal code; a trailing `", "` when the country is blank).
+The filter form is From Date, To Date, Sakhan, EIR Card Type, Import Section.
+
+**Differences found in the new report, all fixed:**
+
+| Old | New (before) | Fix |
+|---|---|---|
+| rows from `sp_ImportPermitDetailReport 'Border'`, incl. `fn_GetNRCNo` and the FOR XML CSV expanders | LINQ twin (NRC composed in C#, CSV names from a cached lookup) | **new `sp_BorderImportPermitDetailReport_pagination`** — the legacy Border query verbatim, key-paged; grid AND Excel use it; 2812 fallback to the LINQ twin |
+| deterministic-looking order (plan order: permits as created, items in line order) | `OFFSET/FETCH` over an unordered join (a row could show on two pages or none) | proc and LINQ both order by `CreatedDate, permit Id, ItemNo, item UniqueId` |
+| `Company Address` = `GetAddress` string | grid re-joined six columns with `", "` in a different order | API now sends `companyAddress` = `LegacyCompanyAddress.Compose` (both paths) |
+| `13/01/2025` | `2025-01-13` | new column option `dateFormat: 'DD/MM/YYYY'` (`formatDateCell`); Excel already prints `dd/mm/yyyy` |
+| `4.0000`, `200.00`, `800.0000` | `4`, `200`, `800` | `dataType: 'money'` + `numberFormat` `#,##0.0000` / `#,##0.00` / `#,##0.0000` (grid and sheet) |
+| header `HSCode`, row label `Sr.No.`, `header1` line | `hsCode`, `No.`, no header line | title, `rowNumberTitle`, `reportSubtitle` |
+| every row on one page | 10 per page | `defaultPageSize: 1000` |
+| filter box From/To/Sakhan/EIR Card Type/Import Section (dropdowns) | plus Seller Country + Company Registration No boxes; Sakhan and card type were bare number inputs | box = the old five, with `sakhans` / `paThaKaTypes` / `borderImportPermitSections` lookups; the two removed filters stay on the DTO for drill-downs |
+
+`[ExcelFormatVersion(2)]` on the controller (row text changed for an unchanged payload) and
+`IExcelNoFooterReport` (the RDLC has no total row).
+
+**Deployment:** `StoredProcedureMigrations/Deployments/2026-09-06_BorderImportPermitDetailLegacyParity/`
+— one NEW procedure, nothing altered. `VerifyDeployment.sql` section 3 is the proof: the legacy
+procedure and the new one, same window, every row, `EXCEPT` both ways over all 38 legacy columns
+must be empty. Until it is applied the app falls back to the LINQ twin, which now differs from the
+old report only in how the NRC string is composed (the function body is not in any repository
+reachable from here).
+
+**Deliberately reproduced, not fixed:** `CreatedDate <= @ToDate` (the listing reports use the
+calendar-day window; the Detail legacy does not), the CSV expander's exact-token `LIKE` match, the
+unqualified `ApplyType='New'`, the `Decription` / `Country of Orign` header typos, `GetAddress`'s
+punctuation. **Not reproduced:** the legacy C# wraps the whole mapping in `try/catch` and would show
+an EMPTY report if any row had a NULL `LastDate`/`LicenceDate`/`Price` — measured on production,
+no Border Import Permit row in 2020-2026 (2,515 rows) has one, so this cannot change the result;
+and the legacy role filter for CheckUser/ApproveUser accounts, which the new admin does not model.
+Row order is the one thing that cannot be proven from code: the legacy query has no `ORDER BY`.
+
+Tests: `Backend.Tests/BorderImportPermitDetailLegacyParityTests.cs` (procedure text verbatim,
+wrapper parameters, `GetAddress` cases, UI columns/filters/formats vs the RDLC),
+`reportConfigs.borderImportPermit.test.ts` (Detail block), `reportPresentation.test.ts`
+(`formatDateCell`). The Excel spec fixture for the report was regenerated.
+
+## Round 3b (2026-09-06) — By Section Report must be byte-identical to the old one
+
+Same instruction for `BorderImportPermitBySectionReport`. Measured first on production over 2025:
+3 rows (section "4" × CNY / THB / USD: 9 / 3 / 6 licences), footer 18 — the numbers were already
+right; the shape was not.
+
+**Old report, as built.** Legacy `ReportsController.cs:14622-14724` fetches the SAME
+`sp_ImportPermitDetailReport 'Border'` rows as the Detail report and renders
+`BorderImportPermitBySectionReport.rdlc`: `header1` = `List of Border Import Permit By Section
+From (…) To (…)`; one row per **(SectionName, Currency)** group (rdlc:1080-1081) with **no
+SortExpressions**, so groups print in the order their first row arrives; `Sr.No.` is a `Code`
+group counter; `No of Licences` = `CountDistinct(LicenceNo)`; `Total Value` =
+`FORMAT(Sum(Amount),"N4")`; the `TOTAL` footer (under Section, right-aligned) carries only the
+whole-dataset `CountDistinct(LicenceNo)`; the Section cell is a `window.open(…,'_blank')`
+hyperlink into the Detail report with `header=section&filter=<ExportImportSectionId>` plus the
+search's dates, card type and Sakhan. Filter form = From, To, Sakhan, EIR Card Type, Import Section.
+
+**Differences found, all fixed:**
+
+| Old | New (before) | Fix |
+|---|---|---|
+| groups in first-appearance order of the detail rows | alphabetical by section then currency | new `ReportAggregateOrdering.SourceOrder` (`ReportAggregationService`), fed from the ordered detail rows (`OrderedRows`); grid and Excel both use it, the controller no longer re-sorts the sheet |
+| `2,994,220.0000` | `2994220` | `dataType: 'money'`, `numberFormat: '#,##0.0000'` (grid and sheet) |
+| `Sr.No.`, `header1` line | `No.`, no header | `rowNumberTitle`, `reportSubtitle` |
+| Section → Detail drill in a new window | no drill | `drilldown` to `BorderImportPermitDetailReport` carrying FromDate / ToDate / PaThaKaTypeId / SakhanId + the row's `sectionId`, `openInNewTab` |
+| filter box From/To/Sakhan/EIR Card Type/Import Section (dropdowns) | plus Seller Country + Company Registration No boxes; Sakhan and card type bare inputs | the old five with lookups; the two removed stay on the DTO for drill-downs |
+
+Already identical: grouping on the section **name** (not id) + currency, the distinct count per
+group, the count-only TOTAL footer, one page. `[ExcelFormatVersion(3)]` because the sheet's row
+order and the Total Value cell format changed for an unchanged payload.
+
+Not reproduced: the legacy Detail drill's header reads `List of Border Import Permit By
+<SectionName> …` where `model.SectionName` is never assigned — the new Detail keeps its own
+subtitle. Row order rests on the same assumption as the Detail report (the legacy query has no
+`ORDER BY`; first appearance is taken over permits in creation order, items in line order).
+Only `ReportAggregateOrdering.Canonical` (the previous behaviour) is used by every other
+aggregate report; nothing else changed for them.
+
+Tests: `Backend.Tests/BorderImportPermitBySectionLegacyParityTests.cs`,
+`ReportAggregationServiceTests.SourceOrder_keeps_groups_in_first_appearance_order`, and the
+By Section block in `reportConfigs.borderImportPermit.test.ts`. Excel spec fixture regenerated.
+
+## Round 3c (2026-09-06) — Company List Report must be byte-identical to the old one
+
+Same instruction for `BorderImportPermitCompanyListReport`. Measured first on production over 2025:
+13 rows / footer 18 — the customer's figure; the shape was not the old report's.
+
+**Old report, as built.** Legacy `ReportsController.cs:15347-15430` fetches the SAME
+`sp_ImportPermitDetailReport 'Border'` rows and renders `BorderImportPermitByCompanyReport.rdlc`:
+one row per **(CompanyRegistrationNo, Currency)** group (rdlc:1078-1079), **no SortExpressions**
+(first-appearance order), `Company Name` = the group's first row (`Fields!CompanyName.Value`),
+`Sr.No.` group counter, `No of Licences` = `CountDistinct(LicenceNo)`, `Total Value` =
+`FORMAT(Sum(Amount),"N4")`, count-only `TOTAL` footer, Company Name hyperlink → Detail in a new
+window (`header=company&filter=<CompanyRegistrationNo>` + dates, card type, section, Sakhan).
+**Its header is wrong**: `ReportsController.cs:15425` builds `"List of Import Permit By Company
+(" + FromDate + ") To (" + ToDate + ")"` — no "Border", no "From" — on this Border screen. Filter
+form = From, To, Sakhan, EIR Card Type, Import Section, Company Registration No, Company Name (readonly).
+
+**Differences found, all fixed:**
+
+| Old | New (before) | Fix |
+|---|---|---|
+| groups in first-appearance order; name = first row's | alphabetical by name; name = max of the group | `ReportAggregateOrdering.SourceOrder` on grid and Excel; `Aggregate` shows `group.First().CompanyName` under SourceOrder (Canonical keeps the max) |
+| `36,000.0000` | `36000` | `money` + `#,##0.0000` |
+| `Sr.No.`, header `List of Import Permit By Company (…) To (…)` | `No.`, no header | `rowNumberTitle`; `reportSubtitle` = the legacy wording **verbatim, wrong "Import Permit" included** |
+| Company Name → Detail drill in a new window | no drill | `drilldown` → `BorderImportPermitDetailReport` carrying FromDate / ToDate / PaThaKaTypeId / ExportImportSectionId / SakhanId + the row's `companyRegistrationNo`, `openInNewTab` |
+| filter box with Sakhan / card type dropdowns and a readonly Company Name | bare number inputs, an extra Seller Country box, no Company Name | the old seven (`importLicenceCompanyNameFilter` for the readonly, auto-filled name); Seller Country stays on the DTO |
+
+Already identical: grouping on the registration number + currency, the distinct count per row,
+the count-only footer, one page. `[ExcelFormatVersion(3)]`.
+
+Not reproduced: the legacy Detail drill header (`By <CompanyName>`, never filled in by the old
+code). Row order rests on the same no-`ORDER BY` assumption as the other two reports.
+
+Tests: `Backend.Tests/BorderImportPermitCompanyListLegacyParityTests.cs`,
+`ReportAggregationServiceTests.SourceOrder_company_rows_show_the_first_name_in_row_order`, the
+Company List block in `reportConfigs.borderImportPermit.test.ts`. Excel spec fixture regenerated.

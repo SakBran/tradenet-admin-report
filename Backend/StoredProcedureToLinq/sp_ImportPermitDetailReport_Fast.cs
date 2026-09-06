@@ -41,7 +41,7 @@ public static class sp_ImportPermitDetailReport_Fast
             ? DefaultPageSize
             : Math.Min(pagingRequest.PageSize, MaxPageSize);
 
-        var rows = Rows(db, request);
+        var rows = OrderedRows(db, request);
         var totalCount = pagingRequest.IncludeTotalCount
             ? await rows.CountAsync()
             : (int?)null;
@@ -93,7 +93,7 @@ public static class sp_ImportPermitDetailReport_Fast
         var ports = await ReportLookupCache.GetPortNamesAsync(db, cache);
         var countries = await ReportLookupCache.GetCountryNamesAsync(db, cache);
 
-        var rows = await Rows(db, request).ToListAsync();
+        var rows = await OrderedRows(db, request).ToListAsync();
 
         var resolved = rows
             .Select(row => row.ToResult(ports, countries))
@@ -115,7 +115,7 @@ public static class sp_ImportPermitDetailReport_Fast
         var ports = await ReportLookupCache.GetPortNamesAsync(db, cache);
         var countries = await ReportLookupCache.GetCountryNamesAsync(db, cache);
 
-        await foreach (var rawChunk in Rows(db, request).AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
+        await foreach (var rawChunk in OrderedRows(db, request).AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
         {
             yield return rawChunk.Select(row => row.ToResult(ports, countries)).ToList();
         }
@@ -128,13 +128,14 @@ public static class sp_ImportPermitDetailReport_Fast
         ReportAggregateDimension dimension,
         bool includeSakhan,
         bool includeColumnTotals = false,
-        ReportColumnTotalsMode columnTotalsMode = ReportColumnTotalsMode.CountAndValue)
+        ReportColumnTotalsMode columnTotalsMode = ReportColumnTotalsMode.CountAndValue,
+        ReportAggregateOrdering ordering = ReportAggregateOrdering.Canonical)
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(pagingRequest);
 
-        var source = await AggregateSourceRowsAsync(db, request);
+        var source = await AggregateSourceRowsAsync(db, request, ordering);
 
         ApiResult<ReportAggregateResult> result;
 
@@ -150,7 +151,7 @@ public static class sp_ImportPermitDetailReport_Fast
         else
         {
             result = ReportAggregationService.CreatePagedResult(
-                source, dimension, includeSakhan, pagingRequest, includeColumnTotals, columnTotalsMode);
+                source, dimension, includeSakhan, pagingRequest, includeColumnTotals, columnTotalsMode, ordering);
         }
 
         if (includeColumnTotals && result.ColumnTotals is not null)
@@ -194,13 +195,14 @@ public static class sp_ImportPermitDetailReport_Fast
         TradeNetDbContext db,
         sp_ImportPermitDetailReportRequest request,
         ReportAggregateDimension dimension,
-        bool includeSakhan)
+        bool includeSakhan,
+        ReportAggregateOrdering ordering = ReportAggregateOrdering.Canonical)
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
-        var source = await AggregateSourceRowsAsync(db, request);
-        var groups = ReportAggregationService.Aggregate(source, dimension, includeSakhan);
+        var source = await AggregateSourceRowsAsync(db, request, ordering);
+        var groups = ReportAggregationService.Aggregate(source, dimension, includeSakhan, ordering);
 
         if (dimension == ReportAggregateDimension.Daily)
         {
@@ -212,9 +214,15 @@ public static class sp_ImportPermitDetailReport_Fast
 
     private static async Task<List<AggregateSourceRow>> AggregateSourceRowsAsync(
         TradeNetDbContext db,
-        sp_ImportPermitDetailReportRequest request)
+        sp_ImportPermitDetailReportRequest request,
+        ReportAggregateOrdering ordering = ReportAggregateOrdering.Canonical)
     {
-        var rows = await Rows(db, request).ToListAsync();
+        // SourceOrder reports print their groups in first-appearance order, so the source has
+        // to arrive in the legacy row order (permits as created, items in line order) -- the
+        // same order the Detail grid pages in. Canonical reports re-sort, so they skip the ORDER BY.
+        var rows = ordering == ReportAggregateOrdering.SourceOrder
+            ? await OrderedRows(db, request).ToListAsync()
+            : await Rows(db, request).ToListAsync();
 
         return rows
             .Select(row => new AggregateSourceRow
@@ -236,6 +244,23 @@ public static class sp_ImportPermitDetailReport_Fast
                 Currency = row.Currency,
             })
             .ToList();
+    }
+
+    /// <summary>
+    /// <see cref="Rows"/> in the order the grid, the Excel stream and
+    /// sp_BorderImportPermitDetailReport_pagination all page in: permits by CreatedDate then Id,
+    /// items by ItemNo then UniqueId. Without it OFFSET/FETCH ran over an unordered join and a
+    /// row could appear on two pages or on none. The aggregate paths keep the unordered query.
+    /// </summary>
+    private static IOrderedQueryable<ImportPermitDetailFastRow> OrderedRows(
+        TradeNetDbContext db,
+        sp_ImportPermitDetailReportRequest request)
+    {
+        return Rows(db, request)
+            .OrderBy(row => row.PermitCreatedDate)
+            .ThenBy(row => row.PermitId)
+            .ThenBy(row => row.ItemNo)
+            .ThenBy(row => row.ItemUniqueId);
     }
 
     private static IQueryable<ImportPermitDetailFastRow> Rows(
@@ -281,6 +306,10 @@ public static class sp_ImportPermitDetailReport_Fast
                 && (request.SellerCountryId == 0 || permit.SellerCountryId == request.SellerCountryId)
             select new ImportPermitDetailFastRow
             {
+                PermitCreatedDate = permit.CreatedDate,
+                PermitId = permit.Id,
+                ItemNo = item.ItemNo,
+                ItemUniqueId = item.UniqueId,
                 PaThaKaTypeId = paThaKaType.Id,
                 PaThaKaTypeCode = paThaKaType.Code,
                 PaThaKaTypeName = paThaKaType.Description,
@@ -356,6 +385,10 @@ public static class sp_ImportPermitDetailReport_Fast
                 && (request.SakhanId == 0 || permit.SakhanId == request.SakhanId)
             select new ImportPermitDetailFastRow
             {
+                PermitCreatedDate = permit.CreatedDate,
+                PermitId = permit.Id,
+                ItemNo = item.ItemNo,
+                ItemUniqueId = item.UniqueId,
                 PaThaKaTypeId = paThaKaType.Id,
                 PaThaKaTypeCode = paThaKaType.Code,
                 PaThaKaTypeName = paThaKaType.Description,
@@ -403,6 +436,15 @@ public static class sp_ImportPermitDetailReport_Fast
 
     private sealed class ImportPermitDetailFastRow
     {
+        // Paging / streaming order only (never exposed): the permits in creation order, their
+        // items in line order -- the deterministic reading of the legacy procedure's output,
+        // which has no ORDER BY. Also what sp_BorderImportPermitDetailReport_pagination uses,
+        // so the LINQ fallback and the procedure page identically.
+        public DateTime? PermitCreatedDate { get; init; }
+        public string PermitId { get; init; } = null!;
+        public int ItemNo { get; init; }
+        public int ItemUniqueId { get; init; }
+
         public int PaThaKaTypeId { get; init; }
         public string PaThaKaTypeCode { get; init; } = null!;
         public string PaThaKaTypeName { get; init; } = null!;
@@ -462,6 +504,8 @@ public static class sp_ImportPermitDetailReport_Fast
                 LicenceDate = LicenceDate,
                 CompanyRegistrationNo = CompanyRegistrationNo,
                 CompanyName = CompanyName,
+                CompanyAddress = LegacyCompanyAddress.Compose(
+                    UnitLevel, StreetNumberStreetName, QuarterCityTownship, State, Country, PostalCode),
                 UnitLevel = UnitLevel,
                 StreetNumberStreetName = StreetNumberStreetName,
                 QuarterCityTownship = QuarterCityTownship,

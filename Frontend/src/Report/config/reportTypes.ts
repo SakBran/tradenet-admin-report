@@ -60,6 +60,15 @@ export interface ReportColumnConfig {
    * Excel presentation spec, so both surfaces print the same string.
    */
   numberFormat?: string;
+  /**
+   * Day.js pattern for a `date` column whose legacy RDLC printed a pre-formatted string
+   * rather than a date, e.g. 'DD/MM/YYYY' for BorderImportPermitDetailReport.rdlc's
+   * `sLicenceDate` / `LastDate` (the old model's `.ToString("dd/MM/yyyy")`). The grid
+   * renders with this pattern instead of the default YYYY-MM-DD
+   * (`formatDateCell`, Report/reportPresentation.ts). The Excel sheet needs nothing
+   * extra: it already prints `date` cells as dd/mm/yyyy.
+   */
+  dateFormat?: string;
   drilldown?: ReportColumnDrilldown;
   /**
    * Column carried in the config for drill-down/lookup plumbing but NOT rendered

@@ -5,10 +5,10 @@
   "title": "Border Import Permit By Section Report",
   "fileName": "BorderImportPermitBySectionReport.xlsx",
   "headerLines": [
-    "Border Import Permit By Section Report"
+    "List of Border Import Permit By Section From (01/02/2026) To (28/02/2026)"
   ],
   "showRowNumber": true,
-  "rowNumberTitle": "No.",
+  "rowNumberTitle": "Sr.No.",
   "columns": [
     {
       "key": "Section",
@@ -23,7 +23,9 @@
     {
       "key": "TotalValue",
       "dataIndex": "totalValue",
-      "title": "Total Value"
+      "title": "Total Value",
+      "dataType": "money",
+      "numberFormat": "#,##0.0000"
     },
     {
       "key": "Currency",

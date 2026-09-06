@@ -28,11 +28,26 @@ public sealed class sp_HSCodeReportRequest
     /// that HS code arrive as the same parameters. Forces the LINQ path.
     /// </summary>
     public bool GroupByCompany { get; set; }
+
+    /// <summary>
+    /// Print the groups the way the legacy screen did (owner decision 2026-09-06, Border Import
+    /// Permit By HS Code: byte-identical to the old report). Legacy dbo.sp_HSCodeReport ends with
+    /// <c>ORDER BY HSCode.Id</c> and BorderHSCodeReport.rdlc / HSCodeDetailReport.rdlc group with
+    /// no SortExpressions, so the old rows are in HS code ID order with each ID's groups in the
+    /// order their first permit row arrived -- not in HS code string / currency / company-name
+    /// order. Forces the LINQ path (the deployed procedure orders by the HS code string) and, for
+    /// <see cref="GroupByCompany"/>, an in-memory first-appearance grouping.
+    /// </summary>
+    public bool LegacyOrder { get; set; }
 }
 
 public sealed class sp_HSCodeReportResult
 {
     public int? SakhanId { get; set; }
+
+    /// <summary>Ordering keys for <see cref="sp_HSCodeReportRequest.LegacyOrder"/>; only the Import Permit source fills them.</summary>
+    public DateTime? PermitCreatedDate { get; set; }
+    public string? PermitId { get; set; }
     public string? SectionCode { get; set; }
     public int HSCodeId { get; set; }
     public string HSCode { get; set; } = null!;
@@ -159,6 +174,27 @@ public static partial class sp_HSCodeReport
             return fastAggregateResult;
         }
 
+        if (request.LegacyOrder && request.GroupByCompany)
+        {
+            // The legacy HS Code detail drill: one HS code's rows, grouped in memory so the
+            // groups keep first-appearance order and show the first row's company name
+            // (HSCodeDetailReport.rdlc prints Fields!CompanyName.Value of the group = First()).
+            var legacyGroups = await LegacyCompanyGroupsAsync(db, request);
+            var legacyPageIndex = Math.Max(0, pagingRequest.PageIndex);
+            var legacyPageSize = pagingRequest.PageSize <= 0 ? 10 : Math.Min(pagingRequest.PageSize, 1000);
+            var legacyResult = ApiResult<ReportAggregateResult>.CreatePageFromRows(
+                legacyGroups.Skip(legacyPageIndex * legacyPageSize).Take(legacyPageSize).ToList(),
+                legacyGroups.Count,
+                legacyPageIndex,
+                legacyPageSize,
+                null,
+                null,
+                pagingRequest.FilterColumn,
+                pagingRequest.FilterQuery);
+            legacyResult.ColumnTotals = columnTotals;
+            return legacyResult;
+        }
+
         var query = AggregateQuery(db, request);
         var fastResult = await ApiResult<ReportAggregateResult>.CreateFastPageAsync(
             query,
@@ -178,6 +214,13 @@ public static partial class sp_HSCodeReport
         // The procedure cannot produce the (HS code, company) drill grouping for every
         // FormType, so a drill always takes the LINQ twin. It is a single HS code's rows.
         if (request.GroupByCompany)
+        {
+            return false;
+        }
+
+        // The deployed procedure orders by the HS code string; the legacy order is by HS code ID
+        // with first-appearance ties, which only the LINQ twin produces.
+        if (request.LegacyOrder)
         {
             return false;
         }
@@ -214,7 +257,58 @@ public static partial class sp_HSCodeReport
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
+        if (request.LegacyOrder && request.GroupByCompany)
+        {
+            return await LegacyCompanyGroupsAsync(db, request);
+        }
+
         return await AggregateQuery(db, request).ToListAsync();
+    }
+
+    /// <summary>
+    /// The legacy HS Code detail drill's rows: the detail rows in legacy order (HS code ID, then
+    /// the permits as created) grouped on (HSCodeId, CompanyRegistrationNo) -- HSCodeDetailReport.rdlc's
+    /// key (rdlc:1263-1264) -- in first-appearance order. A drill is one HS code (or one prefix),
+    /// so the rows are few; the grouping is done in memory to keep the RDLC's First() semantics.
+    /// </summary>
+    public static async Task<List<ReportAggregateResult>> LegacyCompanyGroupsAsync(
+        TradeNetDbContext db,
+        sp_HSCodeReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var rows = await Query(db, request)
+            .OrderBy(row => row.HSCodeId)
+            .ThenBy(row => row.PermitCreatedDate)
+            .ThenBy(row => row.PermitId)
+            .ToListAsync();
+
+        return GroupLegacyCompanies(rows);
+    }
+
+    /// <summary>
+    /// Pure grouping for <see cref="LegacyCompanyGroupsAsync"/>: <paramref name="rows"/> must
+    /// already be in legacy order. Enumerable.GroupBy keeps first-appearance order of the keys.
+    /// </summary>
+    public static List<ReportAggregateResult> GroupLegacyCompanies(IEnumerable<sp_HSCodeReportResult> rows)
+    {
+        ArgumentNullException.ThrowIfNull(rows);
+
+        return rows
+            .GroupBy(row => new { row.HSCodeId, row.CompanyRegistrationNo })
+            .Select(group => new ReportAggregateResult
+            {
+                HSCode = group.First().HSCode,
+                HSDescription = group.First().HSDescription,
+                CompanyName = group.First().CompanyName,
+                CompanyRegistrationNo = group.Key.CompanyRegistrationNo,
+                Currency = null,
+                NoOfLicences = group.Select(row => row.LicenceNo).Distinct().Count(),
+                TotalValue = null,
+                TotalUSDValue = null,
+            })
+            .ToList();
     }
 
     /// <summary>
@@ -291,6 +385,43 @@ public static partial class sp_HSCodeReport
                 .OrderBy(row => row.HSCode)
                 .ThenBy(row => row.CompanyName)
                 .ThenBy(row => row.Currency);
+        }
+
+        if (request.LegacyOrder)
+        {
+            // BorderHSCodeReport.rdlc groups on (HSCodeId, Currency) with no sort over rows the
+            // legacy procedure returns ORDER BY HSCode.Id: groups in HS code ID order, and an
+            // ID's currencies in the order their first permit row arrived (permits as created).
+            return Query(db, request)
+                .GroupBy(row => new
+                {
+                    row.HSCodeId,
+                    row.HSCode,
+                    row.HSDescription,
+                    row.Currency
+                })
+                .Select(group => new
+                {
+                    group.Key,
+                    NoOfLicences = group.Select(row => row.LicenceNo).Distinct().Count(),
+                    TotalValue = group.Sum(row => row.Amount),
+                    FirstCreated = group.Min(row => row.PermitCreatedDate),
+                    FirstPermit = group.Min(row => row.PermitId),
+                })
+                .OrderBy(group => group.Key.HSCodeId)
+                .ThenBy(group => group.FirstCreated)
+                .ThenBy(group => group.FirstPermit)
+                .Select(group => new ReportAggregateResult
+                {
+                    HSCode = group.Key.HSCode,
+                    HSDescription = group.Key.HSDescription,
+                    CompanyName = null,
+                    CompanyRegistrationNo = null,
+                    Currency = group.Key.Currency,
+                    NoOfLicences = group.NoOfLicences,
+                    TotalValue = group.TotalValue,
+                    TotalUSDValue = null,
+                });
         }
 
         return Query(db, request)
@@ -491,7 +622,9 @@ public static partial class sp_HSCodeReport
                 Currency = currency.Code,
                 LicenceNo = permit.ImportPermitNo,
                 CompanyRegistrationNo = paThaKa.CompanyRegistrationNo,
-                CompanyName = paThaKa.CompanyName
+                CompanyName = paThaKa.CompanyName,
+                PermitCreatedDate = permit.CreatedDate,
+                PermitId = permit.Id
             };
     }
 

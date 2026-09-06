@@ -31,6 +31,7 @@ import {
 } from '../config/reportTypes';
 import {
   buildReportHeaderLines,
+  formatDateCell,
   getDerivedFilterValues,
   isLegacyReportViewer,
   resolveReportColumns,
@@ -366,6 +367,13 @@ const toTableColumn = (
   // print money as N4 (FORMAT(Sum(Amount),"N4")) or N0, not toFixed(2).
   if (column.numberFormat) {
     return { ...column, render: formatWithNumberFormat(column.numberFormat) };
+  }
+
+  // Likewise an explicit dateFormat: the legacy Detail RDLCs print dates the old model
+  // had already formatted with .ToString("dd/MM/yyyy"), not the grid's YYYY-MM-DD.
+  if (column.dateFormat) {
+    const pattern = column.dateFormat;
+    return { ...column, render: (value) => formatDateCell(value, pattern) };
   }
 
   if (column.fallbackDataIndexes?.length) {

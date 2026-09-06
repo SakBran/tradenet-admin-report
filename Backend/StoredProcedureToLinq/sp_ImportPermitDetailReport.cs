@@ -32,6 +32,13 @@ public sealed class sp_ImportPermitDetailReportResult
     public DateTime? LicenceDate { get; set; }
     public string CompanyRegistrationNo { get; set; } = null!;
     public string CompanyName { get; set; } = null!;
+
+    /// <summary>
+    /// The Tradenet 2.0 <c>CommonRepository.GetAddress</c> string the old Detail RDLCs print
+    /// (<see cref="API.Service.Reports.LegacyCompanyAddress"/>), so the grid and the sheet show
+    /// the same bytes as the old report rather than re-joining the six parts below.
+    /// </summary>
+    public string CompanyAddress { get; set; } = string.Empty;
     public string? UnitLevel { get; set; }
     public string StreetNumberStreetName { get; set; } = null!;
     public string QuarterCityTownship { get; set; } = null!;

@@ -19,7 +19,9 @@ namespace Backend.Controllers.Report
     [Route("api/[controller]")]
     // v2: the grand-total footer lost its Total Value cell (legacy parity), so cached
     // closed-period .xlsx files must not be reused.
-    [ExcelFormatVersion(2)]
+    // v3: rows are now in the old report's order (first appearance, not alphabetical), the
+    // displayed name is the group's first, and Total Value is a 4-decimal money cell.
+    [ExcelFormatVersion(3)]
     public class BorderImportPermitCompanyListReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "BorderImportPermitCompanyListReport";
@@ -43,12 +45,18 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
+            // Byte-identical to the old report (owner decision 2026-09-06): the same
+            // dbo.sp_ImportPermitDetailReport 'Border' rows the legacy screen fetched, grouped
+            // the way BorderImportPermitByCompanyReport.rdlc groups them -- on
+            // (CompanyRegistrationNo, Currency), rdlc:1078-1079, with NO sort, so the groups print
+            // in the order their first row appears (SourceOrder), not alphabetically.
             var result = await sp_ImportPermitDetailReport_Fast.CreateAggregateResultAsync(
                 _context, procedureRequest!, request!, ReportAggregateDimension.Company, includeSakhan: false,
                 // The legacy TOTAL row prints only CountDistinct(LicenceNo) — the Total Value
                 // cell is blank, because each row is one (group, currency) pair and summing
                 // across currencies is meaningless (BorderImportPermitByCompanyReport.rdlc).
-                includeColumnTotals: true, columnTotalsMode: ReportColumnTotalsMode.CountOnly);
+                includeColumnTotals: true, columnTotalsMode: ReportColumnTotalsMode.CountOnly,
+                ordering: ReportAggregateOrdering.SourceOrder);
 
             return Ok(result);
         }
@@ -85,12 +93,13 @@ namespace Backend.Controllers.Report
             CancellationToken cancellationToken)
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
+            // Same grouping and the same first-appearance order as the grid (Post), so the
+            // exported rows appear in the order the user saw on screen -- and in the old report.
             var rows = await sp_ImportPermitDetailReport_Fast.GetAggregateRowsAsync(
-                _context, procedureRequest!, ReportAggregateDimension.Company, includeSakhan: false);
+                _context, procedureRequest!, ReportAggregateDimension.Company, includeSakhan: false,
+                ordering: ReportAggregateOrdering.SourceOrder);
 
-            // Same canonical ordering the JSON grid path applies (CreatePagedResult -> Aggregate -> Order),
-            // so the exported rows appear in the order the user saw on screen.
-            sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Company, includeSakhan: false));
+            sink.Append(rows);
         }
 
         private bool TryCreateReportRequest(
@@ -126,6 +135,10 @@ namespace Backend.Controllers.Report
             }
             procedureRequest = new sp_ImportPermitDetailReportRequest
             {
+                // Legacy ReportsController.cs:15347-15430 (model.Type = AppConfig.Border); the
+                // request's own Type is ignored, as the old hidden field was. Dates pass through
+                // unchanged: the page posts <day>T00:00:00 / <day>T23:59:59, which is what the old
+                // Reports.GetImportPermitDetailReport appended before calling the procedure.
                 Type = "Border",
                 FromDate = request.FromDate,
                 ToDate = request.ToDate,
