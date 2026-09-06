@@ -95,6 +95,15 @@ export interface ReportFilterConfig {
   excludeFromRequest?: boolean;
   populateFromCompanyRegistrationNo?: boolean;
   options?: ReportFilterOption[];
+  /**
+   * Posted with this fixed value and never rendered. Resolved by
+   * `getDerivedFilterValues` (Report/reportPresentation.ts) alongside the
+   * identity-derived `FormType`/`Type`, so the grid request, the drill-in seed
+   * and the Excel presentation spec all carry it. Use it when two report configs
+   * share one controller and the backend has to be told which one is calling
+   * (e.g. the HS Code detail drill's `GroupBy: 'Company'`).
+   */
+  constantValue?: string;
 }
 
 export interface ReportPageConfig {

@@ -37,7 +37,8 @@ export const formTypePrefixes: Array<[string, string]> = [
 
 /**
  * Filter values the page fills in from the report identity instead of showing a
- * filter box for them (`FormType`, and `Type` = Border/Oversea).
+ * filter box for them (`FormType`, and `Type` = Border/Oversea), plus any filter
+ * a config pins with `constantValue`.
  */
 export const getDerivedFilterValues = (
   controllerName: string,
@@ -49,6 +50,14 @@ export const getDerivedFilterValues = (
   const formType = formTypePrefixes.find(([prefix]) =>
     controllerName.startsWith(prefix)
   )?.[1];
+
+  // Config-pinned constants first, so the identity-derived values below still win
+  // if a config ever pins one of those names by mistake.
+  for (const filter of filters) {
+    if (filter.constantValue !== undefined) {
+      values[filter.name] = filter.constantValue;
+    }
+  }
 
   if (formType && hasFilter('FormType')) {
     values.FormType = formType;

@@ -103,6 +103,29 @@ public sealed class ReportAggregationServiceTests
     }
 
     [Fact]
+    public void Company_dimension_keys_on_the_registration_number_not_the_name()
+    {
+        // Every legacy *ByCompanyReport.rdlc groups on CompanyRegistrationNo + Currency and only
+        // DISPLAYS the name (e.g. BorderImportPermitByCompanyReport.rdlc:1078-1079), so a company
+        // whose name was re-spelled between permits is still one row there. Keying on the name as
+        // well split it in two.
+        var rows = new[]
+        {
+            Row("L1", 10m, "USD", companyName: "ACME CO., LTD.", companyRegistrationNo: "REG-1"),
+            Row("L2", 20m, "USD", companyName: "ACME CO LTD", companyRegistrationNo: "REG-1"),
+            Row("L3", 30m, "USD", companyName: "ACME CO LTD", companyRegistrationNo: "REG-2"),
+        };
+
+        var result = ReportAggregationService.Aggregate(rows, ReportAggregateDimension.Company, includeSakhan: false);
+
+        Assert.Equal(2, result.Count);
+        var reg1 = Assert.Single(result, r => r.CompanyRegistrationNo == "REG-1");
+        Assert.Equal(2, reg1.NoOfLicences);
+        Assert.Equal(30m, reg1.TotalValue);
+        Assert.Contains(reg1.CompanyName, new[] { "ACME CO., LTD.", "ACME CO LTD" });
+    }
+
+    [Fact]
     public void Different_currencies_split_into_separate_rows_keeping_the_dimension_id()
     {
         var rows = new[]

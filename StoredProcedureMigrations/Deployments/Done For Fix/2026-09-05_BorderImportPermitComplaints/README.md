@@ -77,3 +77,11 @@ That release ships two of these same procedures. Its copies, `checksums.txt` and
 `00_RunAll.sql` were regenerated from the current sources, so both folders now carry
 identical text and either one is safe to run — this folder is the one to run if you are
 applying only this release.
+
+## Round 2 (same day) — no SQL
+
+The follow-up that makes By HS Code print the old report's result (`FormType = "Import Permit"`,
+drill `GroupBy: 'Company'`) is application-only; nothing in this folder changes and nothing new
+needs to be run in SSMS. The Border Import Permit `@HSCode=''` grouping change in 02 is now unused by
+that report but harmless for any other caller.
+

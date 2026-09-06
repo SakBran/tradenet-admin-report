@@ -45,8 +45,9 @@ decorative. 997/856 are oversea numbers; 18 licences is the correct border figur
 with By Section and Company List. The Border Export Permit twin has the same defect
 (`ReportsController.cs:12754`); the two Border *Licence* HS Code reports are correct.
 
-Decision taken with the owner: keep the new report border-only, fix the real paging bug, and tell
-the customer why the old number was larger.
+Decision taken with the owner on the first pass: keep the new report border-only, fix the real
+paging bug, and tell the customer why the old number was larger. **Reversed the same day** — see
+"Round 2" below.
 
 ## Fixes
 
@@ -111,3 +112,47 @@ The copies in `2026-09-04_AmendActualAmendParity`, `2026-09-05_ImportPermitParit
 Unchanged from `9fb4b55`: backend non-DB suites 11 failed / 1662 passed; `Frontend` 8 failed / 1508
 passed. The Excel spec fixtures were regenerated (`npm run fixtures:excel`), which also picked up two
 `ExportLicence*` fixtures left stale by the previous round.
+
+## Round 2 (2026-09-05, later) — By HS Code must print the OLD report's result
+
+The owner came back with the customer's verdict: the report must show the **same result as the old
+one**, 997 / 856 included. Re-measured first: the other five reports already equal the old figures
+(Detail 70 / TCL 20, By Section 18 / 4, Company List 13, Voucher 28 / 8, New Report 18 + TOTAL);
+By HS Code was the only one apart (16 rows / 18 licences vs 856 / 997). The owner confirmed the
+target is the old behaviour, bug for bug.
+
+**What changed — C# and config only, no SQL:**
+
+* `BorderImportPermitByHSCodeReportController` now sends `FormType = "Import Permit"`, exactly what
+  legacy `ReportsController.cs:15465` does. The summary therefore runs `sp_HSCodeReport_pagination`'s
+  Import Permit branch (oversea `ImportPermit` tables, `LicenceDate` window, Sakhan ignored, grouped
+  on HSCodeId + Currency — already the round-1 grouping) and the footer is `CountDistinct(LicenceNo)`
+  over the same oversea rows. The Sakhan and Import Section dropdowns stay as the dead controls the
+  old form had. `[ExcelFormatVersion(2)]` because the row set changed for an unchanged payload.
+* The HS Code **detail drill** (`BorderImportPermitHSCodeDetailReport`, same controller) posts a
+  pinned `GroupBy: 'Company'` — a new `constantValue` filter property resolved by
+  `getDerivedFilterValues`, so it is never rendered, survives drill-in, and reaches the Excel spec.
+  The backend maps it to `sp_HSCodeReportRequest.GroupByCompany`, which forces the LINQ path and a
+  grouping on **(HSCodeId, CompanyRegistrationNo)** — `HSCodeDetailReport.rdlc`'s key (rdlc:1263-1264),
+  no Currency, no Total Value. Without the flag the summary would company-split the moment a user
+  typed an HS-code prefix (the round-1 symptom), and the proc cannot tell the two apart.
+* Company List: `ReportAggregationService.BuildKey` keys the Company dimension on the registration
+  number + currency, as all eight legacy `*ByCompanyReport.rdlc` do; the name is displayed, not
+  keyed. Same rows today (13), one fewer difference in general.
+* `ReportControllerBranchDefaultsTests` gained a `LegacyFormTypeOverrides` entry; new
+  `BorderImportPermitByHSCodeLegacyParityTests` pins the routing, the drill flag and both grouping
+  keys via `ToQueryString()`.
+
+**What this does and does not prove.** The 997 / 856 figures are not reproducible on the database
+reachable from here — the oversea query gives 538 rows / 604 licences over 2025 and 2,447 / 2,763
+over 2020-2026 — so the customer's old system reads a database with different oversea content.
+After this change the new report is the old query by construction; the harness check is
+`BorderImportPermitByHSCodeReport ≡ ImportPermitByHSCodeReport` (rows, totalCount, footer) for the
+same window, plus `SakhanId 4` ≡ `SakhanId 0`. The final old-vs-new comparison has to be run on the
+customer's environment. Residual, non-data differences left alone: legacy row order is `ORDER BY
+HSCode.Id` first-appearance vs the new `HSCode, Currency`; the new proc trims `@HSCode`.
+
+Border **Export** Permit By HS Code has the identical legacy bug (`ReportsController.cs:14120`) but is
+NOT a one-line switch — the proc's Export Permit `@HSCode=''` sub-branch still groups by company —
+so it was left for a follow-up.
+
