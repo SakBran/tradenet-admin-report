@@ -159,7 +159,19 @@ describe('Border Import Permit report configs', () => {
       'FilterType',
       'hsCode',
       'SakhanId',
+      'GroupBy',
     ]);
+    // Shares the summary's controller; this pinned value is how the backend knows to
+    // group on (HS code, company) like the old HSCodeDetailReport.rdlc instead of the
+    // summary's (HS code, currency). The summary itself must not carry it.
+    expect(cfg.filters.find((filter) => filter.name === 'GroupBy')?.constantValue).toBe(
+      'Company'
+    );
+    expect(
+      reportConfigs.BorderImportPermitByHSCodeReport.filters.some(
+        (filter) => filter.name === 'GroupBy'
+      )
+    ).toBe(false);
     expect(
       cfg.filters.find((filter) => filter.name === 'ExportImportSectionId')?.lookupName
     ).toBe('borderImportPermitSections');

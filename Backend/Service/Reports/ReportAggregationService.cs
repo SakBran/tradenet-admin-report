@@ -130,9 +130,14 @@ namespace API.Service.Reports
                     SectionName = dimension == ReportAggregateDimension.Section ? group.Key.Label : null,
                     MethodName = dimension == ReportAggregateDimension.Method ? group.Key.Label : null,
                     Country = dimension == ReportAggregateDimension.Country ? group.Key.Label : null,
-                    CompanyName = dimension == ReportAggregateDimension.Company || dimension == ReportAggregateDimension.HSCode
-                        ? group.Key.CompanyName
-                        : null,
+                    // Company groups key on the registration number only (see BuildKey), so the
+                    // displayed name is the group's -- deterministic -- max, like the RDLC's
+                    // First(). HS Code groups carry the name in their key.
+                    CompanyName = dimension == ReportAggregateDimension.Company
+                        ? group.Max(row => row.CompanyName)
+                        : dimension == ReportAggregateDimension.HSCode
+                            ? group.Key.CompanyName
+                            : null,
                     CompanyRegistrationNo = dimension == ReportAggregateDimension.Company || dimension == ReportAggregateDimension.HSCode
                         ? group.Key.CompanyRegistrationNo
                         : null,
@@ -336,7 +341,12 @@ namespace API.Service.Reports
                 label ?? string.Empty,
                 row.Currency ?? string.Empty,
                 includeSakhan ? row.SakhanCode ?? string.Empty : string.Empty,
-                dimension == ReportAggregateDimension.Company || dimension == ReportAggregateDimension.HSCode
+                // The Company List RDLCs (all eight *ByCompanyReport.rdlc, e.g.
+                // BorderImportPermitByCompanyReport.rdlc:1078-1079) group on the registration
+                // NUMBER + currency and merely display the name, so a company whose name was
+                // re-spelled between permits is still one row. Only the HS Code dimension keeps
+                // the name in its key.
+                dimension == ReportAggregateDimension.HSCode
                     ? row.CompanyName ?? string.Empty
                     : string.Empty,
                 dimension == ReportAggregateDimension.Company || dimension == ReportAggregateDimension.HSCode

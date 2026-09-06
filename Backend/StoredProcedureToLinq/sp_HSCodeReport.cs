@@ -19,6 +19,15 @@ public sealed class sp_HSCodeReportRequest
     public string HSCode { get; set; } = string.Empty;
     public int ExportImportSectionId { get; set; }
     public int SakhanId { get; set; }
+
+    /// <summary>
+    /// Group on (HS code, company) instead of (HS code, currency) -- the shape of the legacy
+    /// HSCodeDetailReport.rdlc drill (rdlc:1263-1264). The old system decided this in the RDLC,
+    /// not in SQL, so the summary and its drill ran the very same query; here the caller has to
+    /// say which shape it wants, because a summary with an HS-code filter typed and a drill for
+    /// that HS code arrive as the same parameters. Forces the LINQ path.
+    /// </summary>
+    public bool GroupByCompany { get; set; }
 }
 
 public sealed class sp_HSCodeReportResult
@@ -166,6 +175,13 @@ public static partial class sp_HSCodeReport
 
     private static bool UsesAggregateStoredProcedure(sp_HSCodeReportRequest request)
     {
+        // The procedure cannot produce the (HS code, company) drill grouping for every
+        // FormType, so a drill always takes the LINQ twin. It is a single HS code's rows.
+        if (request.GroupByCompany)
+        {
+            return false;
+        }
+
         return request.ExportImportSectionId == 0
             && request.FormType is ("Export Licence"
             or "Import Licence"
@@ -205,11 +221,48 @@ public static partial class sp_HSCodeReport
     /// The LINQ twin of sp_HSCodeReport_pagination: used for the Excel streaming path and
     /// whenever a section filter takes the report off the aggregate procedure. It must group
     /// exactly as the procedure does, or the grid and the .xlsx disagree.
+    /// Public so tests can pin the grouping key with <c>ToQueryString()</c>.
     /// </summary>
-    private static IQueryable<ReportAggregateResult> AggregateQuery(
+    public static IQueryable<ReportAggregateResult> AggregateQuery(
         TradeNetDbContext db,
         sp_HSCodeReportRequest request)
     {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (request.GroupByCompany)
+        {
+            // The legacy HS Code DETAIL drill: HSCodeDetailReport.rdlc groups on HSCodeId +
+            // CompanyRegistrationNo only (rdlc:1263-1264) and renders HS Code / Description /
+            // Company Name / No of Licences -- no Currency, no Total Value. Keying on the
+            // registration number (not the name) is what the RDLC does, so a company whose
+            // name was re-spelled between permits stays one row; leaving Currency out of the
+            // key is what keeps a company with items in two currencies from appearing twice.
+            return Query(db, request)
+                .GroupBy(row => new
+                {
+                    row.HSCodeId,
+                    row.HSCode,
+                    row.CompanyRegistrationNo
+                })
+                .Select(group => new ReportAggregateResult
+                {
+                    HSCode = group.Key.HSCode,
+                    HSDescription = group.Max(row => row.HSDescription),
+                    CompanyName = group.Max(row => row.CompanyName),
+                    CompanyRegistrationNo = group.Key.CompanyRegistrationNo,
+                    Currency = null,
+                    NoOfLicences = group
+                        .Select(row => row.LicenceNo)
+                        .Distinct()
+                        .Count(),
+                    TotalValue = null,
+                    TotalUSDValue = null,
+                })
+                .OrderBy(row => row.HSCode)
+                .ThenBy(row => row.CompanyName);
+        }
+
         if (GroupsByCompany(request))
         {
             return Query(db, request)
@@ -269,14 +322,20 @@ public static partial class sp_HSCodeReport
     /// <summary>
     /// Whether the buyer company belongs in the grouping key. The legacy HSCodeReport.rdlc row
     /// group is (HSCodeId, Currency) — no company (rdlc:1152-1153) — while HSCodeDetailReport.rdlc
-    /// adds the company (rdlc:1263-1264). Import Permit has no detail report of its own, and
-    /// keeping the company in its key split one HS code into one invisible row per buyer, each
-    /// with a partial Total Value. Border Import Permit has both surfaces, so it decides per
-    /// request. The remaining form types always need it: their *HSCodeDetailReport configs
-    /// render Company Name off this same query.
+    /// adds the company (rdlc:1263-1264). Keeping the company in the Import Permit key split one
+    /// HS code into one invisible row per buyer, each with a partial Total Value; the oversea
+    /// ImportPermitByHSCodeReport has no separate drill, and the Border Import Permit drill (which
+    /// also runs this FormType, bug-for-bug with Tradenet 2.0) asks for its shape explicitly via
+    /// <see cref="sp_HSCodeReportRequest.GroupByCompany"/>. The remaining form types always need
+    /// it: their *HSCodeDetailReport configs render Company Name off this same query.
     /// </summary>
     private static bool GroupsByCompany(sp_HSCodeReportRequest request)
     {
+        if (request.GroupByCompany)
+        {
+            return true;
+        }
+
         if (string.Equals(request.FormType, "Import Permit", StringComparison.Ordinal))
         {
             return false;

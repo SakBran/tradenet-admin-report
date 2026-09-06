@@ -5144,6 +5144,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
     ],
   },
+  // Reproduces Tradenet 2.0 bug-for-bug (owner decision, 2026-09-05): the old screen ran
+  // the OVERSEA Import Permit query (legacy ReportsController.cs:15465 sets FormType =
+  // "Import Permit"), so the backend does too, and the Sakhan / Import Section dropdowns
+  // below are the same dead controls the old form had -- kept for filter-box parity.
   BorderImportPermitByHSCodeReport: {
     controllerName: 'BorderImportPermitByHSCodeReport',
     reportSubtitle: importLicenceRangeSubtitle('List of Border Import Permit By HS Code', true),
@@ -5269,6 +5273,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'number',
         defaultValue: 0,
         lookupName: 'sakhans',
+      },
+      // This drill shares BorderImportPermitByHSCodeReport's controller. The old
+      // HSCodeDetailReport.rdlc groups on (HS code, company) while the summary's
+      // BorderHSCodeReport.rdlc groups on (HS code, currency), and the two arrive at
+      // the backend as the same parameters -- so the drill has to say which shape it
+      // wants. Never rendered; always posted (see getDerivedFilterValues).
+      {
+        name: 'GroupBy',
+        label: 'Group By',
+        type: 'text',
+        constantValue: 'Company',
       },
     ],
     columns: hsCodeDetailColumns,

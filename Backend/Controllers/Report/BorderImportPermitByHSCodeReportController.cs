@@ -16,6 +16,11 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // v2: the report now runs the legacy oversea 'Import Permit' query (see TryCreateReportRequest),
+    // so the row set changed for an unchanged request payload. The export cache keys on payload +
+    // this version; without the bump a closed-period request would keep serving the border-only
+    // workbook for 24h.
+    [ExcelFormatVersion(2)]
     public class BorderImportPermitByHSCodeReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "BorderImportPermitByHSCodeReport";
@@ -130,10 +135,26 @@ namespace Backend.Controllers.Report
             {
                 FromDate = request.FromDate,
                 ToDate = request.ToDate,
-                FormType = "Border Import Permit",
+                // DELIBERATELY "Import Permit", not "Border Import Permit" -- bug-for-bug parity
+                // with Tradenet 2.0. The old Border Import Permit By HS Code screen sets
+                // `model.FormType = AppConfig.ImportPermit` (legacy ReportsController.cs:15465),
+                // so it has always run dbo.sp_HSCodeReport's OVERSEA ImportPermit branch:
+                // LicenceDate window, @SakhanId ignored, grouped on (HSCodeId, Currency) by
+                // BorderHSCodeReport.rdlc. The customer compares this report against that
+                // screen and the owner's instruction (2026-09-05) is "same result as the old
+                // report". The border-only answer (18 licences over 2025) was rejected because
+                // the old report shows 997. Do not "fix" this back to Border without a new
+                // decision; BorderImportPermitByHSCodeLegacyParityTests pins it.
+                FormType = "Import Permit",
                 FilterType = request.FilterType ?? string.Empty,
                 HSCode = request.HSCode ?? string.Empty,
+                // Passed for filter-box parity only; the Import Permit branch ignores it, exactly
+                // as the old screen's Sakhan dropdown did. ExportImportSectionId is likewise never
+                // mapped (the old form never sent it to the procedure either).
                 SakhanId = request.SakhanId,
+                // The HS Code detail drill (BorderImportPermitHSCodeDetailReport) posts
+                // GroupBy='Company' to get HSCodeDetailReport.rdlc's (HS code, company) rows.
+                GroupByCompany = string.Equals(request.GroupBy, "Company", StringComparison.OrdinalIgnoreCase),
             };
 
             return true;
@@ -148,6 +169,12 @@ namespace Backend.Controllers.Report
         public string FilterType { get; set; } = string.Empty;
         public string HSCode { get; set; } = string.Empty;
         public int SakhanId { get; set; }
+
+        /// <summary>
+        /// 'Company' from the HS Code detail drill; empty from the summary. A string, not a bool,
+        /// because the page posts derived filter values as strings.
+        /// </summary>
+        public string GroupBy { get; set; } = string.Empty;
     }
 }
 

@@ -64,8 +64,25 @@ public sealed class ReportControllerBranchDefaultsTests
         return outParameterType?.GetProperty(propertyName) != null;
     }
 
+    /// <summary>
+    /// Controllers that deliberately send a FormType other than the one their name implies.
+    /// Border Import Permit By HS Code reproduces Tradenet 2.0 bug-for-bug: the old screen set
+    /// `model.FormType = AppConfig.ImportPermit` (legacy ReportsController.cs:15465) and so ran
+    /// the oversea Import Permit branch; the owner asked for the same result (2026-09-05). Do not
+    /// "fix" it to Border here -- see BorderImportPermitByHSCodeLegacyParityTests.
+    /// </summary>
+    private static readonly Dictionary<string, string> LegacyFormTypeOverrides = new(StringComparer.Ordinal)
+    {
+        ["BorderImportPermitByHSCodeReportController"] = "Import Permit",
+    };
+
     private static string? GetExpectedFormType(string controllerName)
     {
+        if (LegacyFormTypeOverrides.TryGetValue(controllerName, out var legacyFormType))
+        {
+            return legacyFormType;
+        }
+
         var reportName = TrimControllerSuffix(controllerName);
 
         if (reportName.StartsWith("BorderExportPermit", StringComparison.Ordinal))
