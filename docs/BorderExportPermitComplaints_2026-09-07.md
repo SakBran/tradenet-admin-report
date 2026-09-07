@@ -177,11 +177,15 @@ Border Import Permit twin).
 
 ### Layer A — the old report on production data (owner)
 
-Pending the owner's SSMS check (`sys.procedures` for `sp_HSCodeReport`/`sp_VoucherReport` on
-production) and the ReportViewer Excel exports of both old reports for 01/01/2025–06/09/2026 into
-`scratchpad/oldreport/`; `scratchpad/compare_old_vs_new.py` diffs them against
-`expected_prod_border_hscode.json` (494 rows / 1,892 licences, computed today from the production
-oversea endpoint) before the merge and against the deployed report after it. **Merge is gated on this.**
+Owner decision 2026-09-07, after Layer B: **merge to `main` now, ahead of Layer A** (the production
+Border Import Permit By HS Code 500 above weighed in favour of shipping). Still owed by the owner: the
+SSMS check (`sys.procedures` for `sp_HSCodeReport`/`sp_VoucherReport` on production — if
+`sp_HSCodeReport` is the altered aggregate, the old By HS Code screen has printed "no data" since June
+and only an export taken before then can serve as Layer A for that report) and the ReportViewer Excel
+exports of both old reports for 01/01/2025–06/09/2026 into `scratchpad/oldreport/`.
+`scratchpad/compare_old_vs_new.py --api` then diffs them against the **deployed**
+`BorderExportPermitByHSCodeReport` / drill / voucher directly (reference figure: 494 rows / 1,892
+licences from the production oversea endpoint on 2026-09-07).
 
 ### Layer C — production self-consistency after merge (harness)
 
@@ -191,6 +195,9 @@ then Excel once the stale second worker is stopped.
 
 ## Deployment
 
-No stored-procedure change. Merge to `main` → the Build Server watcher deploys backend + frontend.
-Then: stop the stale worker (above), re-export the voucher for the customer's window, and run the
-By HS Code harness check.
+No stored-procedure change. Merged to `main` on 2026-09-07 (`--no-ff` merge of
+`fix/BorderExportPermit`) at the owner's instruction → the Build Server watcher deploys backend +
+frontend. Then: Layer C with `scratchpad/layer_c.py` against production (`deploy_probe.py` tells when
+the new build is live: the Import twin answers 200 to the grid's request, By HS Code lists the oversea
+rows, `processedBy` appears on the jobs API), stop the stale worker (above), re-export the voucher for
+the customer's window.
