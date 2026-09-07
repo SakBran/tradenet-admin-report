@@ -239,12 +239,13 @@ namespace API.Service.ExcelExport
             return -1;
         }
 
-        /// <summary>Money → "#,##0.00", Number → general, anything else → text.</summary>
+        /// <summary>Money → "#,##0.00", Integer → "#,##0", Number → general, anything else → text.</summary>
         private static ExcelCellFormat TotalFormat(ExcelColumn column) => column.Format switch
         {
             ExcelCellFormat.Money => ExcelCellFormat.Money,
             ExcelCellFormat.Money4 => ExcelCellFormat.Money,
             ExcelCellFormat.Number => ExcelCellFormat.Number,
+            ExcelCellFormat.Integer => ExcelCellFormat.Integer,
             _ => ExcelCellFormat.Text,
         };
 

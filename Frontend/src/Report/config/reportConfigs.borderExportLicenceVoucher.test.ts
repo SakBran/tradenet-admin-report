@@ -30,12 +30,17 @@ describe('voucher report money column + footer parity (BorderVoucherReport.rdlc)
       const totalAmount = cfg.columns.find((column) => column.title === 'Total Amount');
 
       expect(totalAmount, `${key} has a Total Amount column`).toBeDefined();
-      expect(totalAmount, `${key} Total Amount binds the voucher fee`).toEqual({
+      expect(totalAmount, `${key} Total Amount binds the voucher fee`).toMatchObject({
         key: 'Amount',
         dataIndex: 'amount',
         title: 'Total Amount',
         dataType: 'number',
       });
+      // The rdlc prints the fee with FORMAT(..., "N0"); a report that spells that out may only
+      // use the N0 format (Border Export Permit Voucher does, since 2026-09-07).
+      expect([undefined, '#,##0'], `${key} Total Amount number format`).toContain(
+        totalAmount?.numberFormat
+      );
       // The item/goods value may still appear, but only under its own heading: the
       // non-border VoucherReport.rdlc:652 shows it as "Lic Value" next to a Currency column.
       // It must never be the column labelled "Total Amount".

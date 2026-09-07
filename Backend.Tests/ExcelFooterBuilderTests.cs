@@ -71,6 +71,29 @@ public sealed class ExcelFooterBuilderTests
     }
 
     [Fact]
+    public void An_Integer_column_keeps_its_N0_format_in_the_total_row()
+    {
+        // BorderVoucherReport.rdlc:1808 =FORMAT(SUM(Fields!Amount.Value),"N0"): the grid shows
+        // "18,000" under Total Amount, so the sheet's TOTAL cell must carry the "#,##0" style too.
+        var layout = new ExcelReportLayout
+        {
+            Columns =
+            [
+                ExcelColumn.RowNumber(),
+                ExcelColumn.Untyped("Sakhan", ExcelCellFormat.Text, (_, _) => null, key: "Sakhan", dataIndex: "sakhanCode"),
+                ExcelColumn.Untyped(
+                    "Total Amount", ExcelCellFormat.Integer, (_, _) => null, isNumeric: true, key: "Amount", dataIndex: "amount"),
+            ],
+        };
+        var totals = new ReportFooterTotals(new Dictionary<string, decimal> { ["amount"] = 18000m }, null);
+
+        var row = Assert.Single(ExcelFooterBuilder.Build(layout, totals, 6));
+
+        Assert.Equal([null, "TOTAL", 18000m], Values(row));
+        Assert.Equal(ExcelCellFormat.Integer, row.Cells[2]!.Format);
+    }
+
+    [Fact]
     public void A_columnTotals_key_that_matches_nothing_produces_no_total_row()
     {
         var totals = new ReportFooterTotals(new Dictionary<string, decimal> { ["nope"] = 7m }, null);

@@ -39,10 +39,21 @@ public sealed class BorderImportPermitByHSCodeLegacyParityTests
         var oversea = Assert.IsType<sp_HSCodeReportRequest>(
             ReportTestHelper.CreateProcedureRequest(typeof(ImportPermitByHSCodeReportController)));
 
+        // Only the presentation flags may differ: the Border report prints the old screen's
+        // order (LegacyOrder, round 3) while the oversea report keeps its own; the filter set --
+        // and therefore the row set -- must be identical.
+        var presentationFlags = new[] { nameof(sp_HSCodeReportRequest.LegacyOrder), nameof(sp_HSCodeReportRequest.GroupByCompany) };
         foreach (var property in typeof(sp_HSCodeReportRequest).GetProperties())
         {
+            if (presentationFlags.Contains(property.Name))
+            {
+                continue;
+            }
+
             Assert.Equal(property.GetValue(oversea), property.GetValue(border));
         }
+
+        Assert.True(border.LegacyOrder);
     }
 
     [Fact]

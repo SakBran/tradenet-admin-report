@@ -74,6 +74,10 @@ public sealed class ReportControllerBranchDefaultsTests
     private static readonly Dictionary<string, string> LegacyFormTypeOverrides = new(StringComparer.Ordinal)
     {
         ["BorderImportPermitByHSCodeReportController"] = "Import Permit",
+        // Same legacy defect on the Export twin (ReportsController.cs:14120 sets
+        // AppConfig.ExportPermit); same owner instruction (2026-09-07). Pinned by
+        // BorderExportPermitByHSCodeLegacyParityTests.
+        ["BorderExportPermitByHSCodeReportController"] = "Export Permit",
     };
 
     private static string? GetExpectedFormType(string controllerName)

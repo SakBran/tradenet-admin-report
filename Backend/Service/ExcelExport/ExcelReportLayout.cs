@@ -27,6 +27,9 @@ namespace API.Service.ExcelExport
 
         /// <summary>Numeric cell displayed as "#,##0.0000" (the RDLC N4 money columns).</summary>
         Money4 = 6,
+
+        /// <summary>Numeric cell displayed as "#,##0" (the RDLC N0 columns, e.g. a voucher fee).</summary>
+        Integer = 7,
     }
 
     /// <summary>Where one preamble line sits in the sheet's header block.</summary>
@@ -151,6 +154,11 @@ namespace API.Service.ExcelExport
             => Create(header, ExcelCellFormat.Money, width, includeInTotals, selector);
 
         /// <summary>A money column shown with 4 decimals (RDLC <c>FORMAT(…, "N4")</c>).</summary>
+        /// <summary>A whole-number cell shown as "#,##0" (the RDLC FORMAT(..., "N0")).</summary>
+        public static ExcelColumn Integer<TRow>(
+            string header, Func<TRow, object?> selector, double? width = 12, bool includeInTotals = false)
+            => Create(header, ExcelCellFormat.Integer, width, includeInTotals, selector);
+
         public static ExcelColumn Money4<TRow>(
             string header, Func<TRow, object?> selector, double? width = 18, bool includeInTotals = false)
             => Create(header, ExcelCellFormat.Money4, width, includeInTotals, selector);
@@ -200,7 +208,7 @@ namespace API.Service.ExcelExport
             => new(header, ExcelCellFormat.Text, width, false, static (_, _) => null);
 
         internal static bool IsNumericFormat(ExcelCellFormat format)
-            => format is ExcelCellFormat.Number or ExcelCellFormat.Money or ExcelCellFormat.Money4;
+            => format is ExcelCellFormat.Number or ExcelCellFormat.Integer or ExcelCellFormat.Money or ExcelCellFormat.Money4;
 
         private static ExcelColumn Create<TRow>(
             string header,

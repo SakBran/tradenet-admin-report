@@ -23,6 +23,7 @@ namespace API.Service.ExcelExport
         public const string NullText = "N/A";
 
         private const string Money4Format = "#,##0.0000";
+        private const string IntegerFormat = "#,##0";
 
         /// <summary>
         /// Builds the layout for a report with no typed provider.
@@ -301,7 +302,11 @@ namespace API.Service.ExcelExport
 
         private static ExcelCellFormat ResolveFormat(ExcelSpecColumn spec) => spec.DataType switch
         {
-            "number" => ExcelCellFormat.Number,
+            // The grid renders numberFormat '#,##0' as FORMAT(..., "N0") (thousands separators,
+            // no decimals); the matching cell style keeps the sheet printing the same string.
+            "number" => string.Equals(spec.NumberFormat, IntegerFormat, StringComparison.Ordinal)
+                ? ExcelCellFormat.Integer
+                : ExcelCellFormat.Number,
             "money" => string.Equals(spec.NumberFormat, Money4Format, StringComparison.Ordinal)
                 ? ExcelCellFormat.Money4
                 : ExcelCellFormat.Money,
@@ -321,6 +326,7 @@ namespace API.Service.ExcelExport
             ExcelCellFormat.Money => 16,
             ExcelCellFormat.Money4 => 16,
             ExcelCellFormat.Number => 12,
+            ExcelCellFormat.Integer => 12,
             _ => Math.Clamp((spec.Title?.Length ?? 0) + 4, 12, 40),
         };
 
@@ -329,6 +335,7 @@ namespace API.Service.ExcelExport
             switch (format)
             {
                 case ExcelCellFormat.Number:
+                case ExcelCellFormat.Integer:
                     return HasValue(raw) ? (ToDecimal(raw) ?? (object)AsString(raw)) : null;
 
                 case ExcelCellFormat.Money:

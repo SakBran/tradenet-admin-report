@@ -588,6 +588,7 @@ public sealed class StreamingExcelWriterTests
             [
                 ExcelColumn.Timestamp<SectionRow>("Created", _ => new DateTime(2026, 2, 1, 8, 30, 0)),
                 ExcelColumn.Money4<SectionRow>("Total Value", row => row.TotalValue),
+                ExcelColumn.Integer<SectionRow>("Total Amount", _ => 18000m),
             ],
         };
 
@@ -595,6 +596,11 @@ public sealed class StreamingExcelWriterTests
         using (var writer = new StreamingExcelWriter(ms, "Formats", layout))
         {
             writer.AppendRows(new[] { new SectionRow { TotalValue = 1.2345m } });
+            // The TOTAL row's whole-number cell has its own bold "#,##0" style.
+            writer.AppendFooterRows(
+            [
+                new ExcelFooterRow([new ExcelFooterCell("TOTAL"), null, new ExcelFooterCell(18000m, ExcelCellFormat.Integer)]),
+            ]);
             writer.Finish();
         }
 
@@ -605,11 +611,25 @@ public sealed class StreamingExcelWriterTests
 
         var doc = ReadSheet(archive, 1);
         var ns = doc.Root!.Name.Namespace;
-        var cells = doc.Descendants(ns + "row").Last().Elements(ns + "c").ToList();
+        var rows = doc.Descendants(ns + "row").ToList();
+        var cells = rows[^2].Elements(ns + "c").ToList();
+        var footerCells = rows[^1].Elements(ns + "c").ToList();
 
         Assert.Equal("9", cells[0].Attribute("s")?.Value);
         Assert.Equal("10", cells[1].Attribute("s")?.Value);
-        Assert.InRange(10, 0, xfCount - 1);
+        Assert.Equal("11", cells[2].Attribute("s")?.Value);
+        Assert.Equal("18000", cells[2].Element(ns + "v")?.Value);
+        Assert.Equal("12", footerCells[2].Attribute("s")?.Value);
+        Assert.Equal("18000", footerCells[2].Element(ns + "v")?.Value);
+        Assert.InRange(12, 0, xfCount - 1);
+
+        // Style 11/12 must be the "#,##0" number format (numFmtId 168), not the general one.
+        var xfs = styles.Descendants(stylesNs + "cellXfs").Single().Elements().ToList();
+        Assert.Equal("168", xfs[11].Attribute("numFmtId")?.Value);
+        Assert.Equal("168", xfs[12].Attribute("numFmtId")?.Value);
+        Assert.Contains(
+            styles.Descendants(stylesNs + "numFmt"),
+            fmt => fmt.Attribute("numFmtId")?.Value == "168" && fmt.Attribute("formatCode")?.Value == "#,##0");
 
         // Every count attribute still matches its element count.
         foreach (var name in new[] { "numFmts", "fonts", "fills", "borders", "cellStyleXfs", "cellXfs" })
