@@ -60,8 +60,14 @@ namespace API.Model.ExcelExport
         public DateTime? CompletedAtUtc { get; set; }
         public DateTime ExpiresAtUtc { get; set; }
 
-        /// <summary>While Processing, the lease holder + expiry let a restarted app requeue orphans.</summary>
+        /// <summary>While Processing, the lease expiry lets a restarted app requeue orphans.</summary>
         public DateTime? LeaseExpiresAtUtc { get; set; }
+
+        /// <summary>
+        /// "&lt;MachineName&gt;:&lt;worker guid&gt;" of the worker that claimed the job. Kept after the job
+        /// finishes (the jobs API exposes it as <c>processedBy</c>) so a file produced by a stale second
+        /// worker sharing this queue can be traced to its host. Re-claiming never looks at this column.
+        /// </summary>
         public string? LeaseOwner { get; set; }
 
         public int AttemptCount { get; set; }

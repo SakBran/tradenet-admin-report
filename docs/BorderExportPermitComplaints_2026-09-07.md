@@ -187,17 +187,42 @@ exports of both old reports for 01/01/2025–06/09/2026 into `scratchpad/oldrepo
 `BorderExportPermitByHSCodeReport` / drill / voucher directly (reference figure: 494 rows / 1,892
 licences from the production oversea endpoint on 2026-09-07).
 
-### Layer C — production self-consistency after merge (harness)
+### Layer C — production self-consistency after merge (harness) — ALL PASS
 
-`BorderExportPermitByHSCodeReport` ≡ oversea `ExportPermitByHSCodeReport` re-grouped (rows, footer),
-drills ≡ oversea company rows per HS code, Sakhan/Section dead, voucher 6 / 18,000 in PaymentDate order,
-then Excel once the stale second worker is stopped.
+`main` `3cb57ae` was pushed at 12:28; `scratchpad/deploy_probe.py` saw the new build live at 12:51
+(Import twin 200, By HS Code 494 rows, `processedBy` on the jobs API). `scratchpad/layer_c.py --excel`
+ran at 12:52 against production (`scratchpad/layer_c_result.txt`), requests shaped like the grid:
+
+| check (production, 01/01/2025–06/09/2026) | expected | new | verdict |
+|---|---|---|---|
+| By HS Code ≡ oversea `ExportPermitByHSCodeReport` re-grouped on (HS code, currency) | 494 rows, TOTAL 1,892 | 494 / 1,892, every `No of Licences` and `Total Value` equal | PASS; order differs only inside 3920101900 (EUR/USD tie) |
+| Sakhan = 5, Export Section = 1 | same as 0 / 0 | 494 / 1,892 both | PASS (the previous build answered 500 to Section = 1) |
+| Drills 0713319050 / 3702529000 / 0302730010 (`GroupBy=Company`) | 15 companies / 55, 26 / 76, 1 / 1 | same sets, names and counts | PASS (company order inside a code differs from the oversea endpoint's, which is not the legacy order either) |
+| Voucher, `sortColumn Date` | — | 6 rows, footer 18,000 = Σ amount, PaymentDate order | PASS |
+| Border Import Permit By HS Code, grid request | 200 | 200, 856 rows / 997 | PASS (500 since 2026-09-06) |
+| Voucher Excel (job `876a1242`, produced by this build: `cellXfs count` 13, `numFmt 168`) | grid footer 18,000 | 6 rows, TOTAL 18,000 in `#,##0` | PASS |
+
+Drill codes were chosen so that no company appears with two currencies under the code (otherwise the
+summed oversea count could double-count a licence and the oracle itself would be wrong).
+
+**Found by Layer C: `processedBy` was `null` on every finished job.** `ExcelExportWorker` NULLed
+`LeaseOwner` when it released the lease (on completion and on failure), so the field shipped in
+`3cb57ae` only ever showed while a job was `Processing` (Layer C: 18 completed jobs, all `?`). The
+claim predicate is `Status` + `LeaseExpiresAtUtc` and never reads `LeaseOwner`, so the follow-up
+commit on this branch keeps it on the finished row (`ExcelExportWorker.cs`, both release updates;
+model comment on `ExcelExportJob.LeaseOwner`). Verified with the patched backend run locally against
+the UAT queue (`scratchpad/verify_processedby.py`): the finished job reads
+`processedBy = "Saks-MacBook-Pro-5:<worker guid>"`; the job was deleted afterwards. Until that build is
+live, the producing build of a file is identified only by its fingerprint (`cellXfs count` 13 +
+`numFmt 168` = the 2026-09-07 build) and the host only by catching a job while it is still
+`Processing`.
 
 ## Deployment
 
 No stored-procedure change. Merged to `main` on 2026-09-07 (`--no-ff` merge of
 `fix/BorderExportPermit`) at the owner's instruction → the Build Server watcher deploys backend +
-frontend. Then: Layer C with `scratchpad/layer_c.py` against production (`deploy_probe.py` tells when
-the new build is live: the Import twin answers 200 to the grid's request, By HS Code lists the oversea
-rows, `processedBy` appears on the jobs API), stop the stale worker (above), re-export the voucher for
-the customer's window.
+frontend. The build went live at 12:51 (`scratchpad/deploy_probe.py`: the Import twin answers 200 to
+the grid's request, By HS Code lists the oversea rows, `processedBy` appears on the jobs API) and Layer C
+passed (above). Outstanding: merge the `processedBy` follow-up on this branch (a second production
+restart — owner's call), stop the stale worker (above), and re-export the voucher for the customer's
+window (the 12:52 export `876a1242` from this build already carries the right TOTAL).

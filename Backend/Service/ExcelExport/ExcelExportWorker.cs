@@ -177,7 +177,9 @@ namespace API.Service.ExcelExport
                         .SetProperty(j => j.RowCount, (int)Math.Min(rowCount, int.MaxValue))
                         .SetProperty(j => j.SheetCount, sheetCount)
                         .SetProperty(j => j.CompletedAtUtc, completedAt)
-                        .SetProperty(j => j.LeaseOwner, (string?)null)
+                        // LeaseOwner is deliberately kept: it is the only record of WHICH worker
+                        // produced the file (jobs API `processedBy`). Claiming keys on Status +
+                        // LeaseExpiresAtUtc only, so a finished row can never be re-claimed anyway.
                         .SetProperty(j => j.LeaseExpiresAtUtc, (DateTime?)null)
                         .SetProperty(j => j.ErrorMessage, (string?)null),
                         stoppingToken);
@@ -199,7 +201,8 @@ namespace API.Service.ExcelExport
                     .ExecuteUpdateAsync(s => s
                         .SetProperty(j => j.Status, status)
                         .SetProperty(j => j.ErrorMessage, Truncate(ex.Message, 1000))
-                        .SetProperty(j => j.LeaseOwner, (string?)null)
+                        // LeaseOwner kept (see the completion update above): a requeued job is
+                        // re-claimed on Status alone and the next claimer overwrites it.
                         .SetProperty(j => j.LeaseExpiresAtUtc, (DateTime?)null),
                         CancellationToken.None);
 
