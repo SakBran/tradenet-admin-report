@@ -106,6 +106,11 @@ namespace Backend.Controllers
             sheetCount = j.SheetCount,
             isPeriodClosed = j.IsPeriodClosed,
             requestedBy = j.RequestedByUserName,
+            // "<machine>:<guid>" of the worker that produced (or is producing) the file. Two
+            // API instances sharing one TemplateDB will both claim jobs, and a stale build
+            // among them writes stale sheets (2026-09-07: the Border Export Permit Voucher
+            // footer) -- this is how to tell which host did.
+            processedBy = j.LeaseOwner,
             errorMessage = j.ErrorMessage,
             createdAtUtc = j.CreatedAtUtc,
             startedAtUtc = j.StartedAtUtc,

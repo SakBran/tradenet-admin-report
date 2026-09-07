@@ -132,21 +132,28 @@ describe('Border Export Permit report configs', () => {
     // under the fee column. The old rdlc's only aggregate is the single TOTAL row
     // (BorderVoucherReport.rdlc:1457 + :1521), now served as ColumnTotals["amount"].
     expect(cfg.currencyTotalsColumns).toBeUndefined();
+    // rdlc:1631 / :1808 print the fee and its TOTAL with FORMAT(..., "N0"); the same
+    // numberFormat drives the grid render and the .xlsx cell style, so both say "18,000".
     expect(cfg.columns.at(-1)).toEqual({
       key: 'Amount',
       dataIndex: 'amount',
       title: 'Total Amount',
       dataType: 'number',
+      numberFormat: '#,##0',
     });
+    expect(cfg.rowNumberTitle).toBe('No.');
+    // header2 / header3 exactly as legacy ReportsController.BorderExportPermitVoucherReport sets
+    // them per ApplyType: "Licence Amendment No" / "Amendment Date", "Licence Cancel No" /
+    // "Cancellation Date" (the old strings keep the "Licence " prefix on the number column).
     expect(
       resolvedForAmend.find((column) => column.key === 'LicenceNo')?.title
-    ).toBe('Amendment No');
+    ).toBe('Licence Amendment No');
     expect(
       resolvedForAmend.find((column) => column.key === 'LicenceDate')?.title
     ).toBe('Amendment Date');
     expect(
       resolvedForCancel.find((column) => column.key === 'LicenceNo')?.title
-    ).toBe('Cancellation No');
+    ).toBe('Licence Cancel No');
     expect(
       resolvedForCancel.find((column) => column.key === 'LicenceDate')?.title
     ).toBe('Cancellation Date');
@@ -173,7 +180,70 @@ describe('Border Export Permit report configs', () => {
       targetReportKey: 'BorderExportPermitHSCodeDetailReport',
       carryFilters: ['FromDate', 'ToDate', 'ExportImportSectionId', 'FilterType', 'SakhanId'],
       rowParams: { hsCode: 'hsCode' },
+      // BorderHSCodeReport.rdlc:581 opens the detail with window.open(..., '_blank').
+      openInNewTab: true,
     });
+  });
+
+  it('HS Code report prints the old BorderHSCodeReport.rdlc shape', () => {
+    // Owner decision (Border Import Permit twin, 2026-09-05; Border Export Permit complaint
+    // 2026-09-07): same result as the old screen, which runs the OVERSEA Export Permit query.
+    // The row set is the backend's job (BorderExportPermitByHSCodeLegacyParityTests); the page
+    // pins the rdlc's presentation: Sr.No., N4 Total Value, one scrolling page.
+    const cfg = reportConfigs.BorderExportPermitByHSCodeReport;
+
+    expect(cfg.columns.map((column) => column.title)).toEqual([
+      'HS Code',
+      'Description',
+      'No of Licences',
+      'Total Value',
+      'Currency',
+    ]);
+    expect(cfg.columns.find((column) => column.key === 'TotalValue')).toMatchObject({
+      dataType: 'money',
+      numberFormat: '#,##0.0000',
+    });
+    expect(cfg.rowNumberTitle).toBe('Sr.No.');
+    expect(cfg.defaultPageSize).toBe(1000);
+    expect(cfg.reportSubtitle?.({ FromDate: '2025-01-01', ToDate: '2026-09-06' })).toBe(
+      'List of Border Export Permit By HS Code From (01/01/2025) To (06/09/2026)'
+    );
+    // The summary must NOT carry the drill's grouping flag.
+    expect(cfg.filters.some((filter) => filter.name === 'GroupBy')).toBe(false);
+  });
+
+  it('HS Code detail drill asks the shared controller for the (HS code, company) grouping', () => {
+    const cfg = reportConfigs.BorderExportPermitHSCodeDetailReport;
+
+    expect(cfg.controllerName).toBe('BorderExportPermitByHSCodeReport');
+    expect(cfg.filters.map((filter) => filter.name)).toEqual([
+      'dateRange',
+      'FormType',
+      'ExportImportSectionId',
+      'FilterType',
+      'hsCode',
+      'SakhanId',
+      'GroupBy',
+    ]);
+    // Shares the summary's controller; this pinned value is how the backend knows to
+    // group on (HS code, company) like the old HSCodeDetailReport.rdlc instead of the
+    // summary's (HS code, currency).
+    expect(cfg.filters.find((filter) => filter.name === 'GroupBy')?.constantValue).toBe(
+      'Company'
+    );
+    expect(cfg.columns.map((column) => column.title)).toEqual([
+      'HS Code',
+      'Description',
+      'Company Name',
+      'No of Licences',
+    ]);
+    expect(cfg.rowNumberTitle).toBe('Sr.No.');
+    expect(cfg.defaultPageSize).toBe(1000);
+    // Legacy BorderHSCodeDetailReport header1 = "List of " + FormType + "s By HS Code …" with the
+    // FormType the summary posted ("Export Permit") -- kept verbatim.
+    expect(cfg.reportSubtitle?.({ FromDate: '2025-01-01', ToDate: '2026-09-06' })).toBe(
+      'List of Export Permits By HS Code From (01/01/2025) To (06/09/2026)'
+    );
   });
 
   it('Section, Buyer Country, and Company List drilldowns open Detail in a new tab', () => {

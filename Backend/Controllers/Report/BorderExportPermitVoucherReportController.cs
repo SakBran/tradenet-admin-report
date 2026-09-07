@@ -20,7 +20,12 @@ namespace Backend.Controllers.Report
     [Route("api/[controller]")]
     // v2: the footer moved from the per-currency permit item (goods) value to the legacy single
     // TOTAL of the voucher Amount (BorderVoucherReport.rdlc:1521).
-    [ExcelFormatVersion(2)]
+    // v3: cache invalidation only. On 2026-09-07 a SECOND worker running a pre-v2 build was still
+    // claiming jobs from the shared TemplateDB queue, so v2-hashed jobs enqueued by this build were
+    // completed with the old per-currency goods-value footer (customer job 24c017c8, probe job
+    // 2da7bdc8) and, the period being closed, would have been reused for 24h. Also: Total Amount
+    // now carries numberFormat '#,##0' so the sheet prints the rdlc's N0 ("18,000"), like the grid.
+    [ExcelFormatVersion(3)]
     public class BorderExportPermitVoucherReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "BorderExportPermitVoucherReport";
@@ -119,7 +124,9 @@ namespace Backend.Controllers.Report
             CancellationToken cancellationToken)
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
-            await foreach (var chunk in sp_VoucherReport.ExecuteQueryable(_context, procedureRequest!)
+            // Legacy dbo.sp_VoucherReport ends with ORDER BY AccountTransaction.PaymentDate (the grid's
+            // 'Date' column); the procedure's default is ApplicationNo. Same order as the old sheet.
+            await foreach (var chunk in sp_VoucherReport.ExecuteQueryable(_context, procedureRequest!, sortColumn: "Date", sortOrder: "ASC")
                 .AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
             {
                 sink.Append(chunk.Select(row => row.ToResult()).ToList());

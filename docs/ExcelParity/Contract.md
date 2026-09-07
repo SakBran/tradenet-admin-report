@@ -94,7 +94,7 @@ UI sources: `Frontend/src/Report/Page/GenericReportPage.tsx` (`toTableColumn` ~3
 | `'dateTime'` → `'YYYY-MM-DD HH:mm:ss'` | date serial, style `yyyy-mm-dd hh:mm:ss` (`ExcelCellFormat.DateTime`) |
 | `'boolean'` → `Yes`/`No` | text `Yes`/`No` (bool or "true"/"false" strings); else raw text |
 | `'money'` → `Number(strip commas).toFixed(2)` | numeric, style `#,##0.00` (`Money`); `numberFormat: '#,##0.0000'` → `Money4` |
-| `'number'` → raw | numeric (`Number`) when numeric CLR value or parsable; else raw text |
+| `'number'` → raw | numeric (`Number`) when numeric CLR value or parsable; else raw text; `numberFormat: '#,##0'` → `Integer`, style `#,##0` (the RDLC `FORMAT(..., "N0")`, e.g. a voucher fee and its TOTAL) |
 | `dataIndex === 'transactionAmount' && money` | integer string = minor units (`/100`), string with `.` parsed; commas stripped |
 | `dataIndex === 'mpuAmount'` | value if `hasValue` else `transactionAmount − mocAmount − imAmount` (siblings via the map, missing → 0); Money |
 | `dataIndex === 'amountDiff'` | value if `hasValue` else `transactionAmount − mocAmount`; Money |

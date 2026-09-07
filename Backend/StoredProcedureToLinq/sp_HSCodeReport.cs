@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace API.StoredProcedureToLinq;
@@ -45,7 +46,11 @@ public sealed class sp_HSCodeReportResult
 {
     public int? SakhanId { get; set; }
 
-    /// <summary>Ordering keys for <see cref="sp_HSCodeReportRequest.LegacyOrder"/>; only the Import Permit source fills them.</summary>
+    /// <summary>
+    /// Ordering keys for <see cref="sp_HSCodeReportRequest.LegacyOrder"/>. Only the two oversea permit
+    /// sources fill them (Import Permit and Export Permit -- the ones the Border By HS Code screens run
+    /// bug-for-bug with Tradenet 2.0); every other source leaves them null.
+    /// </summary>
     public DateTime? PermitCreatedDate { get; set; }
     public string? PermitId { get; set; }
     public string? SectionCode { get; set; }
@@ -196,18 +201,36 @@ public static partial class sp_HSCodeReport
         }
 
         var query = AggregateQuery(db, request);
+        var sortColumn = GridSortColumnOrNull(pagingRequest.SortColumn);
         var fastResult = await ApiResult<ReportAggregateResult>.CreateFastPageAsync(
             query,
             pagingRequest.PageIndex,
             pagingRequest.PageSize,
-            pagingRequest.SortColumn,
-            pagingRequest.SortOrder,
+            sortColumn,
+            sortColumn == null ? null : pagingRequest.SortOrder,
             pagingRequest.FilterColumn,
             pagingRequest.FilterQuery,
             pagingRequest.IncludeTotalCount);
         fastResult.ColumnTotals = columnTotals;
         return fastResult;
     }
+
+    /// <summary>
+    /// The grid posts its config's <c>initialSortColumn</c> with every request, and the HS Code configs
+    /// send 'SakhanId' -- a column <see cref="ReportAggregateResult"/> does not have. ApiResult.ApplySort
+    /// throws NotSupportedException for an unknown property, so on the LINQ paths (a section filter, or
+    /// <see cref="sp_HSCodeReportRequest.LegacyOrder"/>) that was an HTTP 500 for the report's very
+    /// first page -- measured on production on 2026-09-07 for Border Import Permit By HS Code, whose
+    /// legacy-order path is LINQ-only. An unknown column means "no explicit sort": the legacy order (or
+    /// the query's own ORDER BY) stands, exactly as the procedure path has always ignored the column.
+    /// A real column (a header the user clicked) is still honoured.
+    /// </summary>
+    private static string? GridSortColumnOrNull(string? sortColumn)
+        => !string.IsNullOrWhiteSpace(sortColumn)
+           && typeof(ReportAggregateResult).GetProperty(
+               sortColumn, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase) != null
+            ? sortColumn
+            : null;
 
     private static bool UsesAggregateStoredProcedure(sp_HSCodeReportRequest request)
     {
@@ -357,41 +380,14 @@ public static partial class sp_HSCodeReport
                 .ThenBy(row => row.CompanyName);
         }
 
-        if (GroupsByCompany(request))
-        {
-            return Query(db, request)
-                .GroupBy(row => new
-                {
-                    row.HSCode,
-                    row.HSDescription,
-                    row.CompanyName,
-                    row.CompanyRegistrationNo,
-                    row.Currency
-                })
-                .Select(group => new ReportAggregateResult
-                {
-                    HSCode = group.Key.HSCode,
-                    HSDescription = group.Key.HSDescription,
-                    CompanyName = group.Key.CompanyName,
-                    CompanyRegistrationNo = group.Key.CompanyRegistrationNo,
-                    Currency = group.Key.Currency,
-                    NoOfLicences = group
-                        .Select(row => row.LicenceNo)
-                        .Distinct()
-                        .Count(),
-                    TotalValue = group.Sum(row => row.Amount),
-                    TotalUSDValue = null,
-                })
-                .OrderBy(row => row.HSCode)
-                .ThenBy(row => row.CompanyName)
-                .ThenBy(row => row.Currency);
-        }
-
         if (request.LegacyOrder)
         {
             // BorderHSCodeReport.rdlc groups on (HSCodeId, Currency) with no sort over rows the
             // legacy procedure returns ORDER BY HSCode.Id: groups in HS code ID order, and an
             // ID's currencies in the order their first permit row arrived (permits as created).
+            // Decided BEFORE GroupsByCompany on purpose: the Border Export Permit screen runs the
+            // oversea 'Export Permit' source, whose default (non-legacy) shape is the company split
+            // that ExportPermitHSCodeDetailReport renders -- the legacy summary must not inherit it.
             return Query(db, request)
                 .GroupBy(row => new
                 {
@@ -422,6 +418,36 @@ public static partial class sp_HSCodeReport
                     TotalValue = group.TotalValue,
                     TotalUSDValue = null,
                 });
+        }
+
+        if (GroupsByCompany(request))
+        {
+            return Query(db, request)
+                .GroupBy(row => new
+                {
+                    row.HSCode,
+                    row.HSDescription,
+                    row.CompanyName,
+                    row.CompanyRegistrationNo,
+                    row.Currency
+                })
+                .Select(group => new ReportAggregateResult
+                {
+                    HSCode = group.Key.HSCode,
+                    HSDescription = group.Key.HSDescription,
+                    CompanyName = group.Key.CompanyName,
+                    CompanyRegistrationNo = group.Key.CompanyRegistrationNo,
+                    Currency = group.Key.Currency,
+                    NoOfLicences = group
+                        .Select(row => row.LicenceNo)
+                        .Distinct()
+                        .Count(),
+                    TotalValue = group.Sum(row => row.Amount),
+                    TotalUSDValue = null,
+                })
+                .OrderBy(row => row.HSCode)
+                .ThenBy(row => row.CompanyName)
+                .ThenBy(row => row.Currency);
         }
 
         return Query(db, request)
@@ -587,7 +613,9 @@ public static partial class sp_HSCodeReport
                 Currency = currency.Code,
                 LicenceNo = permit.ExportPermitNo,
                 CompanyRegistrationNo = paThaKa.CompanyRegistrationNo,
-                CompanyName = paThaKa.CompanyName
+                CompanyName = paThaKa.CompanyName,
+                PermitCreatedDate = permit.CreatedDate,
+                PermitId = permit.Id
             };
     }
 

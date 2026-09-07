@@ -16,6 +16,11 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // v2: the report now runs the legacy oversea 'Export Permit' query in the old report's row
+    // order (see TryCreateReportRequest), so the row set changed for an unchanged request payload.
+    // The export cache keys on payload + this version; without the bump a closed-period request
+    // would keep serving the border-only workbook for 24h.
+    [ExcelFormatVersion(2)]
     public class BorderExportPermitByHSCodeReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "BorderExportPermitByHSCodeReport";
@@ -82,16 +87,10 @@ namespace Backend.Controllers.Report
             // typed with a stray space would LIKE ' 1006%' here and '1006%' in the grid.
             procedureRequest!.HSCode = procedureRequest.HSCode?.Trim() ?? string.Empty;
 
-            // Row order already equals the grid's, so no re-sort here. The grid pages
-            // through sp_HSCodeReport_pagination ("ORDER BY result.HSCode,
-            // result.CompanyName, result.Currency") when no Export Section is chosen, and
-            // through AggregateQuery otherwise -- and AggregateQuery, which is also what
-            // GetAggregateRowsAsync streams, ends with exactly that ORDER BY server-side.
-            // Re-sorting with ReportAggregationService.OrderGroups(...,
-            // ReportAggregateDimension.HSCode, includeSakhan: false) would sort on the same
-            // three keys but with StringComparer.OrdinalIgnoreCase, trading the DB
-            // collation for ordinal semantics -- it could only move Excel rows AWAY from
-            // the grid order.
+            // Row order already equals the grid's (LegacyOrder: both surfaces take the same
+            // LINQ path -- AggregateQuery for the summary, LegacyCompanyGroupsAsync for the
+            // drill), so no re-sort here: ReportAggregationService.OrderGroups would put the
+            // rows back into HS code string order, away from the old report's.
             var rows = await sp_HSCodeReport.GetAggregateRowsAsync(_context, procedureRequest);
             sink.Append(rows);
         }
@@ -131,11 +130,33 @@ namespace Backend.Controllers.Report
             {
                 FromDate = request.FromDate,
                 ToDate = request.ToDate,
-                FormType = "Border Export Permit",
+                // DELIBERATELY "Export Permit", not "Border Export Permit" -- bug-for-bug parity
+                // with Tradenet 2.0. The old Border Export Permit By HS Code screen sets
+                // `model.FormType = AppConfig.ExportPermit` and posts it back through a hidden
+                // field (legacy ReportsController.cs:14120 / Views/Reports/
+                // BorderExportPermitByHSCodeReport.cshtml:21), so it has always run
+                // dbo.sp_HSCodeReport's OVERSEA ExportPermit branch: LicenceDate window,
+                // @SakhanId ignored, no section parameter at all, grouped on (HSCodeId, Currency)
+                // by BorderHSCodeReport.rdlc. The customer compares this report against that
+                // screen ("record မကိုက်ပါ", 2026-09-07) and the owner's standing instruction for
+                // the Border Import Permit twin (2026-09-05) is "same result as the old report".
+                // Do not "fix" this back to Border without a new decision;
+                // BorderExportPermitByHSCodeLegacyParityTests pins it.
+                FormType = "Export Permit",
                 FilterType = request.FilterType ?? string.Empty,
                 HSCode = request.HSCode ?? string.Empty,
-                ExportImportSectionId = request.ExportImportSectionId,
+                // Passed for filter-box parity only; the Export Permit branch ignores it, exactly
+                // as the old screen's Sakhan dropdown did. ExportImportSectionId is likewise never
+                // mapped (the old form never sent it to the procedure either).
                 SakhanId = request.SakhanId,
+                // The HS Code detail drill (BorderExportPermitHSCodeDetailReport) posts
+                // GroupBy='Company' to get HSCodeDetailReport.rdlc's (HS code, company) rows.
+                GroupByCompany = string.Equals(request.GroupBy, "Company", StringComparison.OrdinalIgnoreCase),
+                // Byte-identical to the old report: legacy dbo.sp_HSCodeReport ends with
+                // ORDER BY HSCode.Id and neither RDLC sorts, so the groups print in HS code ID order
+                // with first-appearance ties -- not the deployed procedure's HS code string /
+                // currency order.
+                LegacyOrder = true,
             };
 
             return true;
@@ -149,8 +170,19 @@ namespace Backend.Controllers.Report
         public string FormType { get; set; } = string.Empty;
         public string FilterType { get; set; } = string.Empty;
         public string HSCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Still posted by the Export Section box (kept for filter-box parity with the old form),
+        /// but never mapped: legacy dbo.sp_HSCodeReport has no section parameter.
+        /// </summary>
         public int ExportImportSectionId { get; set; }
         public int SakhanId { get; set; }
+
+        /// <summary>
+        /// 'Company' from the HS Code detail drill; empty from the summary. A string, not a bool,
+        /// because the page posts derived filter values as strings.
+        /// </summary>
+        public string GroupBy { get; set; } = string.Empty;
     }
 }
 

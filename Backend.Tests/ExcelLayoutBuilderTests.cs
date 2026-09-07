@@ -146,6 +146,25 @@ public sealed class ExcelLayoutBuilderTests
     }
 
     [Fact]
+    public void An_N0_number_format_selects_the_Integer_cell_style()
+    {
+        // BorderVoucherReport.rdlc prints the fee with FORMAT(Fields!Amount.Value, "N0"); the grid
+        // renders numberFormat '#,##0' the same way, so the sheet needs a matching "#,##0" style
+        // instead of the general Number one (which shows 18000, not 18,000).
+        var spec = ExcelSpecFactory.Spec(
+            "R",
+            ExcelSpecFactory.Column("noOfLicences", "Total Amount", "number", numberFormat: "#,##0"),
+            ExcelSpecFactory.Column("totalValue", "Plain", "number"));
+
+        var layout = ExcelLayoutBuilder.Build(spec, typeof(Row));
+
+        Assert.Equal(ExcelCellFormat.Integer, layout.Columns[1].Format);
+        Assert.True(layout.Columns[1].IsNumeric);
+        Assert.Equal(7m, Cell(layout, 1, new Row { NoOfLicences = 7 }));
+        Assert.Equal(ExcelCellFormat.Number, layout.Columns[2].Format);
+    }
+
+    [Fact]
     public void A_boolean_column_exports_Yes_or_No()
     {
         var spec = ExcelSpecFactory.Spec("R", ExcelSpecFactory.Column("isActive", "Active", "boolean"));

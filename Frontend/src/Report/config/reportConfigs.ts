@@ -2520,6 +2520,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
     ],
   },
+  // Bug-for-bug with Tradenet 2.0's Border Export Permit By HS Code screen (customer complaint
+  // 2026-09-07 "record မကိုက်ပါ", same owner decision as the Border Import Permit twin on
+  // 2026-09-05): the old screen posts FormType = "Export Permit" (legacy ReportsController.cs:14120
+  // + a hidden field), so it lists the OVERSEA Export Permit rows and ignores its own Sakhan and
+  // Export Section boxes. The controller now sends the same FormType; the two boxes stay as the
+  // dead controls the old form had. Columns = BorderHSCodeReport.rdlc: Sr.No., HS Code,
+  // Description, No of Licences (CountDistinct), Total Value (FORMAT(Sum(Amount),"N4")), Currency;
+  // the HS Code cell opens BorderHSCodeDetailReport in a new window (rdlc:581 window.open _blank).
   BorderExportPermitByHSCodeReport: {
     controllerName: 'BorderExportPermitByHSCodeReport',
     reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permit By HS Code', true),
@@ -2528,7 +2536,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelRoute: 'BorderExportPermitByHSCodeReport/Excel',
     excelFileName: 'BorderExportPermitByHSCodeReport.xlsx',
     initialSortColumn: 'SakhanId',
+    // Legacy RDLC printed every row on one scrolling page; these summaries are a
+    // handful of (HS code, currency) rows, so a 10-row page looked like missing data
+    // next to the old report.
+    defaultPageSize: 1000,
     showRowNumber: true,
+    rowNumberTitle: 'Sr.No.',
     filters: [
       {
         name: 'dateRange',
@@ -2586,6 +2599,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
           targetReportKey: 'BorderExportPermitHSCodeDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'ExportImportSectionId', 'FilterType', 'SakhanId'],
           rowParams: { hsCode: 'hsCode' },
+          openInNewTab: true,
         },
       },
       {
@@ -2597,11 +2611,16 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'NoOfLicences',
         dataIndex: 'noOfLicences',
         title: 'No of Licences',
+        dataType: 'number',
       },
       {
         key: 'TotalValue',
         dataIndex: 'totalValue',
         title: 'Total Value',
+        // 'money' + '#,##0.0000' is the Money4 cell format in the .xlsx and the grid's
+        // N4 render, matching old BorderHSCodeReport.rdlc:713 =FORMAT(Sum(Fields!Amount.Value),"N4").
+        dataType: 'money',
+        numberFormat: '#,##0.0000',
       },
       {
         key: 'Currency',
@@ -2612,13 +2631,20 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   BorderExportPermitHSCodeDetailReport: {
     controllerName: 'BorderExportPermitByHSCodeReport',
-    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permit By HS Code', true),
+    // Legacy BorderHSCodeDetailReport builds header1 as "List of " + FormType + "s By HS Code
+    // From (…) To (…)" with the FormType the summary posted -- "Export Permit" -- so the old
+    // drill is titled after the oversea permits it lists (ReportsController.cs, action
+    // BorderHSCodeDetailReport). Kept verbatim.
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Permits By HS Code', true),
     title: 'HS Code Detail Report',
     apiRoute: 'BorderExportPermitByHSCodeReport',
     excelRoute: 'BorderExportPermitByHSCodeReport/Excel',
     excelFileName: 'BorderExportPermitHSCodeDetailReport.xlsx',
     initialSortColumn: 'hsCode',
+    // One scrolling page like the legacy report viewer (see the summary above).
+    defaultPageSize: 1000,
     showRowNumber: true,
+    rowNumberTitle: 'Sr.No.',
     filters: [
       importLicenceDateRangeFilter,
       importLicenceFormTypeFilter,
@@ -2637,6 +2663,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'number',
         defaultValue: 0,
         lookupName: 'sakhans',
+      },
+      // This drill shares BorderExportPermitByHSCodeReport's controller. The old
+      // HSCodeDetailReport.rdlc groups on (HS code, company) while the summary's
+      // BorderHSCodeReport.rdlc groups on (HS code, currency), and the two arrive at
+      // the backend as the same parameters -- so the drill has to say which shape it
+      // wants. Never rendered; always posted (see getDerivedFilterValues).
+      {
+        name: 'GroupBy',
+        label: 'Group By',
+        type: 'text',
+        constantValue: 'Company',
       },
     ],
     columns: hsCodeDetailColumns,
@@ -3507,8 +3544,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'BorderExportPermitVoucherReport',
     excelRoute: 'BorderExportPermitVoucherReport/Excel',
     excelFileName: 'BorderExportPermitVoucherReport.xlsx',
-    initialSortColumn: 'ApplicationNo',
+    // Legacy dbo.sp_VoucherReport orders by AccountTransaction.PaymentDate = the 'Date' column
+    // (the procedure's own default is ApplicationNo). Measured on UAT 2026-09-07: only 'Date'
+    // reproduces the old report's row order.
+    initialSortColumn: 'Date',
     showRowNumber: true,
+    // BorderVoucherReport.rdlc:261 labels the row-number column "No.".
+    rowNumberTitle: 'No.',
     filters: [
       {
         name: 'dateRange',
@@ -3636,6 +3678,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'amount',
         title: 'Total Amount',
         dataType: 'number',
+        // BorderVoucherReport.rdlc:1631 =FORMAT(Fields!Amount.Value,"N0") and the TOTAL footer
+        // :1808 =FORMAT(SUM(Fields!Amount.Value),"N0"): thousands separators, no decimals --
+        // the same string in the grid and (via the presentation spec) in the .xlsx.
+        numberFormat: '#,##0',
       },
     ],
   },
