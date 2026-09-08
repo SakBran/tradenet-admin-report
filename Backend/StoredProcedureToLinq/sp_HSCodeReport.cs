@@ -479,12 +479,17 @@ public static partial class sp_HSCodeReport
     /// <summary>
     /// Whether the buyer company belongs in the grouping key. The legacy HSCodeReport.rdlc row
     /// group is (HSCodeId, Currency) — no company (rdlc:1152-1153) — while HSCodeDetailReport.rdlc
-    /// adds the company (rdlc:1263-1264). Keeping the company in the Import Permit key split one
-    /// HS code into one invisible row per buyer, each with a partial Total Value; the oversea
-    /// ImportPermitByHSCodeReport has no separate drill, and the Border Import Permit drill (which
-    /// also runs this FormType, bug-for-bug with Tradenet 2.0) asks for its shape explicitly via
-    /// <see cref="sp_HSCodeReportRequest.GroupByCompany"/>. The remaining form types always need
-    /// it: their *HSCodeDetailReport configs render Company Name off this same query.
+    /// adds the company (rdlc:1263-1264). Keeping the company in the key splits one HS code into
+    /// one invisible row per buyer, each with a partial Total Value: that is what made Export
+    /// Licence By HS Code print 1058 rows against the old report's 304, and Border Export Licence
+    /// 76 against 33 (customer complaint 2026-09-08, window 31/08-01/09/2026). A report whose HS
+    /// Code DETAIL drill shares this controller asks for the company shape explicitly via
+    /// <see cref="sp_HSCodeReportRequest.GroupByCompany"/> (the config posts GroupBy='Company'),
+    /// so the summary never has to inherit it. The remaining form types still need it here:
+    /// their *HSCodeDetailReport configs render Company Name off this same query without
+    /// asking, and changing them is a separate parity round.
+    /// Keep this in step with sp_HSCodeReport_pagination.sql's GROUP BY per branch, or the grid
+    /// (procedure) and the .xlsx (this query) disagree.
     /// </summary>
     private static bool GroupsByCompany(sp_HSCodeReportRequest request)
     {
@@ -493,7 +498,7 @@ public static partial class sp_HSCodeReport
             return true;
         }
 
-        if (string.Equals(request.FormType, "Import Permit", StringComparison.Ordinal))
+        if (request.FormType is "Import Permit" or "Export Licence" or "Border Export Licence")
         {
             return false;
         }

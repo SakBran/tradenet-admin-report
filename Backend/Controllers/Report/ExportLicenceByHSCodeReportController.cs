@@ -16,6 +16,12 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // v2: the summary is no longer split per buyer company -- HSCodeReport.rdlc groups on
+    // (HSCodeId, Currency) only (rdlc:1150-1160), so 31/08-01/09/2026 goes from 1058 rows to the
+    // old report's 304, and each Total Value is now the whole HS code's sum instead of one buyer's
+    // slice. The export cache keys on payload + this version; without the bump a closed-period
+    // request keeps serving the company-split workbook.
+    [ExcelFormatVersion(2)]
     public class ExportLicenceByHSCodeReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ExportLicenceByHSCodeReport";
@@ -135,6 +141,12 @@ namespace Backend.Controllers.Report
                 HSCode = request.HSCode ?? string.Empty,
                 SakhanId = request.SakhanId,
                 ExportImportSectionId = request.ExportImportSectionId,
+                // The HS Code detail drill (ExportLicenceHSCodeDetailReport) posts
+                // GroupBy='Company' to get HSCodeDetailReport.rdlc's (HS code, company) rows.
+                // The summary posts nothing and keeps the RDLC's (HS code, currency) grain; the
+                // two arrive here as otherwise identical parameters, so the config has to say
+                // which shape it wants.
+                GroupByCompany = string.Equals(request.GroupBy, "Company", StringComparison.OrdinalIgnoreCase),
             };
 
             return true;
@@ -150,6 +162,12 @@ namespace Backend.Controllers.Report
         public string HSCode { get; set; } = string.Empty;
         public int SakhanId { get; set; }
         public int ExportImportSectionId { get; set; }
+
+        /// <summary>
+        /// 'Company' from the HS Code detail drill; empty from the summary. A string, not a bool,
+        /// because the page posts derived filter values as strings.
+        /// </summary>
+        public string GroupBy { get; set; } = string.Empty;
     }
 }
 

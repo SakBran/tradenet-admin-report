@@ -24,8 +24,9 @@ import {
 } from './excelSpecSamples';
 import { EXCEL_PRESENTATION_FORMAT_VERSION } from './excelTypes';
 
-/** The 4 alias configs that share a controller with a different column set. */
+/** The 5 alias configs that share a controller with a different column set. */
 const ALIAS_CONFIG_KEYS = [
+  'BorderExportLicenceHSCodeDetailReport',
   'BorderExportPermitHSCodeDetailReport',
   'BorderImportLicenceHSCodeDetailReport',
   'BorderImportPermitHSCodeDetailReport',
@@ -144,7 +145,7 @@ describe('buildExcelPresentation', () => {
     expect(gaps.sort()).toEqual(KNOWN_CURRENCY_TOTALS_KEY_GAPS);
   });
 
-  it('uses the configKey, not the controller name, only for the 4 aliases', () => {
+  it('uses the configKey, not the controller name, only for the 5 aliases', () => {
     const mismatched = exportableKeys.filter(
       (key) => reportConfigs[key].controllerName !== key
     );

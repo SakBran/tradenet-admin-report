@@ -4,6 +4,7 @@ import BorderExportLicenceAmendmentReport from './Page/BorderExportLicenceAmendm
 import BorderExportLicenceByHSCodeReport from './Page/BorderExportLicenceByHSCodeReport';
 import BorderExportLicenceByMethodReport from './Page/BorderExportLicenceByMethodReport';
 import BorderExportLicenceBySectionReport from './Page/BorderExportLicenceBySectionReport';
+import BorderExportLicenceHSCodeDetailReport from './Page/BorderExportLicenceHSCodeDetailReport';
 import BorderExportLicenceBySellerCountryReport from './Page/BorderExportLicenceBySellerCountryReport';
 import BorderExportLicenceCancellationReport from './Page/BorderExportLicenceCancellationReport';
 import BorderExportLicenceCompanyListReport from './Page/BorderExportLicenceCompanyListReport';
@@ -175,6 +176,7 @@ export const reportRoutes = [
   { path: 'BorderExportLicenceByHSCodeReport', element: <BorderExportLicenceByHSCodeReport /> },
   { path: 'BorderExportLicenceByMethodReport', element: <BorderExportLicenceByMethodReport /> },
   { path: 'BorderExportLicenceBySectionReport', element: <BorderExportLicenceBySectionReport /> },
+  { path: 'BorderExportLicenceHSCodeDetailReport', element: <BorderExportLicenceHSCodeDetailReport /> },
   { path: 'BorderExportLicenceBySellerCountryReport', element: <BorderExportLicenceBySellerCountryReport /> },
   { path: 'BorderExportLicenceCancellationReport', element: <BorderExportLicenceCancellationReport /> },
   { path: 'BorderExportLicenceCompanyListReport', element: <BorderExportLicenceCompanyListReport /> },
