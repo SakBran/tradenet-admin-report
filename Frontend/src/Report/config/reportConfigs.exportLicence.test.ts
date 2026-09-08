@@ -450,4 +450,64 @@ describe('Export Licence report configs', () => {
       'Auto',
     ]);
   });
+
+  it('By HS Code prints the old rdlc shape, one row per (HS code, currency)', () => {
+    // Complaint 2026-09-08: 31/08-01/09/2026 gave 1058 rows against the old report's 304 because
+    // the backend also grouped on the buyer company -- invisibly, since HSCodeReport.rdlc has no
+    // company column (rdlc:169-444) and groups on HSCodeId + Currency only (rdlc:1150-1160).
+    // Company Name belongs to the HS Code DETAIL drill, which asks for that grain explicitly.
+    const cfg = reportConfigs.ExportLicenceByHSCodeReport;
+
+    expect(cfg.columns.map((column) => column.title)).toEqual([
+      'HS Code',
+      'Description',
+      'No of Licences',
+      'Total Value',
+      'Currency',
+    ]);
+    // HSCodeReport.rdlc:169 prints "Sr.No.", :705 prints Total Value as FORMAT(...,"N4").
+    expect(cfg.rowNumberTitle).toBe('Sr.No.');
+    expect(cfg.columns.find((column) => column.key === 'TotalValue')?.numberFormat).toBe(
+      '#,##0.0000'
+    );
+    // The legacy header1 is plural ("Export Licences"), old ReportsController.cs:4289.
+    expect(
+      cfg.reportSubtitle?.({ FromDate: '2026-02-01', ToDate: '2026-02-03' })
+    ).toBe('List of Export Licences By HS Code From (01/02/2026) To (03/02/2026)');
+    // The RDLC scrolled every row on one page; 304 rows over 10-row pages is what made the
+    // customer report "pagination goes to 106 but data stops at 97".
+    expect(cfg.defaultPageSize).toBe(1000);
+    // rdlc:570-576 opens the drill with window.open(..., '_blank').
+    expect(cfg.columns.find((column) => column.key === 'hsCode')?.drilldown).toEqual({
+      targetReportKey: 'ExportLicenceHSCodeDetailReport',
+      carryFilters: ['FromDate', 'ToDate', 'ExportImportSectionId', 'FilterType'],
+      rowParams: { hsCode: 'hsCode' },
+      openInNewTab: true,
+    });
+  });
+
+  it('HS Code detail drill pins the company grouping its controller cannot infer', () => {
+    // The drill shares ExportLicenceByHSCodeReport's controller and arrives with the same
+    // parameters as a summary that has an HS code typed, so the shape has to be posted.
+    const detail = reportConfigs.ExportLicenceHSCodeDetailReport;
+
+    expect(detail.controllerName).toBe('ExportLicenceByHSCodeReport');
+    expect(detail.filters.find((filter) => filter.name === 'GroupBy')?.constantValue).toBe(
+      'Company'
+    );
+    expect(
+      reportConfigs.ExportLicenceByHSCodeReport.filters.some(
+        (filter) => filter.name === 'GroupBy'
+      )
+    ).toBe(false);
+    // HSCodeDetailReport.rdlc:445-665 -- Company Name, and no Currency / Total Value.
+    expect(detail.columns.map((column) => column.title)).toEqual([
+      'HS Code',
+      'Description',
+      'Company Name',
+      'No of Licences',
+    ]);
+    expect(detail.rowNumberTitle).toBe('Sr.No.');
+    expect(detail.defaultPageSize).toBe(1000);
+  });
 });

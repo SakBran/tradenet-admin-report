@@ -1,3 +1,73 @@
+/* =====================================================================================
+   Export Licence / Border Export Licence By HS Code parity deployment - 2026-09-08
+   Run this ONE file to apply the procedure, or run 01_sp_HSCodeReport_pagination.sql
+   directly. Either way: PROCEDURE FIRST, APPLICATION SECOND.
+
+   Target database: TradeNetDB  (NOT ReportTemplateDB - that one only holds the Excel
+   export job queue; deploying report procedures into it is a known trap.)
+
+   What changes - two @FormType branches of sp_HSCodeReport_pagination, nothing else:
+
+     'Export Licence'        (4 sub-branches)
+     'Border Export Licence' (3 sub-branches)
+
+   1. They now GROUP BY (HSCodeId, HSCode, HSDescription, Currency) instead of
+      additionally on the buyer company. HSCodeReport.rdlc's row group is exactly
+      =Fields!HSCodeId.Value + =Fields!Currency.Value (rdlc:1150-1160), and
+      BorderHSCodeReport.rdlc's is the same (rdlc:1158-1168); neither grid renders a
+      company column, so the extra key silently split one HS code into one row per buyer,
+      each carrying only that buyer's slice of Total Value. Customer complaint 2026-09-08,
+      measured on the live API for 31/08-01/09/2026:
+
+                                        old report   before   after
+        Export Licence By HS Code            304      1058      304
+        Border Export Licence By HS Code      33        76       33
+
+      "Total No of License" (961 / 41) already matched and is unaffected: it is a separate
+      whole-set COUNT(DISTINCT LicenceNo), the RDLC's =CountDistinct(Fields!LicenceNo.Value).
+
+   2. ORDER BY is now (HSCode, Currency, HSCodeId) - a UNIQUE key. It used to be
+      (HSCode, CompanyName, Currency) over a group key that also contained
+      CompanyRegistrationNo and HSDescription, so tied rows were ordered arbitrarily and
+      OFFSET/FETCH could return one row on two pages and another on none. That is the
+      "pagination shows 106 pages but data stops at page 97" half of the complaint.
+
+   3. The 'Export Licence' @IncludeTotalCount=0 fast page now joins ExportImportSection,
+      like every counted sub-branch and like legacy dbo.sp_HSCodeReport. Without it the
+      fast page could show a licence whose ExportImportSectionId has no section row - one
+      the old report never printed and the exact-count branch does not count.
+
+   The other six @FormType branches are UNCHANGED. Import Licence, Export Permit and
+   Border Import Licence By HS Code still carry the company in their key (the same latent
+   defect, deliberately left for a later round - owner decision 2026-09-08); their
+   *HSCodeDetailReport reports render Company Name off this same procedure.
+
+   The HS Code DETAIL drills (ExportLicenceHSCodeDetailReport,
+   BorderExportLicenceHSCodeDetailReport) do NOT use this procedure: they post
+   GroupBy='Company' and run the LINQ twin (sp_HSCodeReport.AggregateQuery), which keys on
+   (HSCodeId, HSCode, CompanyRegistrationNo) - HSCodeDetailReport.rdlc:1261-1265.
+
+   ⚠ Do NOT re-run the sp_HSCodeReport_pagination copies under
+   Deployments/Done For Fix/2026-09-05_ImportPermitParityRound1/ or
+   .../2026-09-05_BorderImportPermitComplaints/. Those are frozen snapshots of what was
+   deployed then and would revert this change.
+
+   Generated from the repository files of the same name; see README.md in this folder.
+   ===================================================================================== */
+
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+USE [TradeNetDB];
+GO
+
+-- ============================================================================
+-- sp_HSCodeReport_pagination   (file 01_sp_HSCodeReport_pagination.sql)
+-- ============================================================================
+PRINT N'Applying sp_HSCodeReport_pagination ...';
+GO
+
 CREATE OR ALTER PROCEDURE [dbo].[sp_HSCodeReport_pagination]
 	@FromDate datetime,
 	@ToDate datetime,
@@ -880,3 +950,8 @@ END
 GO
 
 
+
+GO
+
+PRINT N'sp_HSCodeReport_pagination applied. Now run VerifyDeployment.sql before deploying the application.';
+GO

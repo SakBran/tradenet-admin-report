@@ -1,11 +1,11 @@
 {
   "formatVersion": 1,
-  "configKey": "ExportLicenceHSCodeDetailReport",
-  "controllerName": "ExportLicenceByHSCodeReport",
+  "configKey": "BorderExportLicenceHSCodeDetailReport",
+  "controllerName": "BorderExportLicenceByHSCodeReport",
   "title": "HS Code Detail Report",
-  "fileName": "ExportLicenceHSCodeDetailReport.xlsx",
+  "fileName": "BorderExportLicenceHSCodeDetailReport.xlsx",
   "headerLines": [
-    "List of Export Licences By HS Code From (01/02/2026) To (28/02/2026)"
+    "List of Border Export Licences By HS Code From (01/02/2026) To (28/02/2026)"
   ],
   "showRowNumber": true,
   "rowNumberTitle": "Sr.No.",
