@@ -98,7 +98,10 @@ namespace API.Service.ExcelExport
             // snapshot the rows come from.
             var totals = await ResolveFooterTotalsAsync(context, report, request);
 
-            using var writer = new StreamingExcelWriter(context.Output, report.ExcelWorksheetTitle, layout);
+            // The worksheet name is normally a property of the report, but an alternate
+            // export format may need its own (the DCCA import file expects "Sheet1").
+            using var writer = new StreamingExcelWriter(
+                context.Output, layout.WorksheetTitle ?? report.ExcelWorksheetTitle, layout);
             var sink = new StreamingExcelWriterSink(writer);
             var guarded = RowType == null || report is IExcelReportLayoutProvider
                 ? (IExcelRowSink)sink

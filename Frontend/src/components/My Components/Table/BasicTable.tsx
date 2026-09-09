@@ -75,6 +75,14 @@ interface PropsType<T extends AnyObject = AnyObject> {
   extraFilters?: React.ReactNode;
   onExcel?: (query: BasicTableQuery) => Promise<void>;
   /**
+   * A second export button, for a report that also produces a file in another
+   * system's import format. Rendered only when set, so every other report's
+   * toolbar is unchanged.
+   */
+  onSecondaryExcel?: (query: BasicTableQuery) => Promise<void>;
+  /** Text of the second export button; required for it to make sense. */
+  secondaryExcelLabel?: string;
+  /**
    * Kept for callers that still pass it; the table no longer names the file.
    * The saved name comes from the export job (`ExcelEnqueueResult.fileName`),
    * which the page derives from the spec's `fileName`.
@@ -173,6 +181,8 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   rowKey,
   showActions,
   onExcel,
+  onSecondaryExcel,
+  secondaryExcelLabel,
   refreshKey,
   initialPageSize = 10,
   emptyText = 'No data',
@@ -217,6 +227,8 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
 
   const [loading, setLoading] = useState<boolean>(false);
   const [excelLoading, setExcelLoading] = useState<boolean>(false);
+  const [secondaryExcelLoading, setSecondaryExcelLoading] =
+    useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [filterColumn, setFilterColumn] = useState(firstDataColumn);
   const [filterQuery] = useState('');
@@ -437,6 +449,25 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
     }
   };
 
+  // The alternate export format. Its own loading flag, so exporting one format
+  // does not spin the other button.
+  const handleSecondaryExcel = async () => {
+    if (!onSecondaryExcel) {
+      return;
+    }
+
+    setSecondaryExcelLoading(true);
+    setError(null);
+
+    try {
+      await onSecondaryExcel(query);
+    } catch {
+      setError('Failed to generate Excel file.');
+    } finally {
+      setSecondaryExcelLoading(false);
+    }
+  };
+
   const getRowKey = (row: T, index: number) => {
     if (typeof rowKey === 'function') {
       return rowKey(row, index);
@@ -572,15 +603,28 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
             {title}
           </Typography.Title>
 
-          <Button
-            type="primary"
-            icon={<FileExcelOutlined />}
-            loading={excelLoading}
-            disabled={!excelEnabled}
-            onClick={handleExcel}
-          >
-            Excel
-          </Button>
+          <Flex gap="small" wrap="wrap">
+            <Button
+              type="primary"
+              icon={<FileExcelOutlined />}
+              loading={excelLoading}
+              disabled={!excelEnabled}
+              onClick={handleExcel}
+            >
+              Excel
+            </Button>
+
+            {onSecondaryExcel && (
+              <Button
+                icon={<FileExcelOutlined />}
+                loading={secondaryExcelLoading}
+                disabled={!excelEnabled}
+                onClick={handleSecondaryExcel}
+              >
+                {secondaryExcelLabel ?? 'Excel'}
+              </Button>
+            )}
+          </Flex>
         </Flex>
 
         {error && (

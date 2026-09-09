@@ -95,6 +95,14 @@ namespace API.Service.ExcelExport
         {
             ArgumentNullException.ThrowIfNull(layout);
 
+            // An import-format sheet declares that it owns row 1. Adding a title, the
+            // From/To lines and "Exported: …" above the header row would push every data
+            // row down and break the importer's mapping.
+            if (layout.SuppressStandardHeaderBlock)
+            {
+                return layout;
+            }
+
             var existing = new List<string>(layout.TitleLines);
             existing.AddRange(layout.HeaderBlock.Select(line => line.Text));
 

@@ -745,6 +745,40 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
     [config, form, normalizeReportFilters]
   );
 
+  // The optional second export button (`config.secondaryExcel`), for a report
+  // that also has to produce another system's import format. Same endpoint and
+  // same filters as the normal export; `requestOverrides` is what tells the
+  // controller which layout to build, and — because those fields are part of
+  // the export dedup hash — keeps the two files out of each other's cache.
+  const secondaryExcel = config.secondaryExcel;
+  const generateSecondaryExcel = useCallback(
+    async (query: BasicTableQuery) => {
+      if (!secondaryExcel) {
+        return;
+      }
+
+      let values: FilterFormValues;
+      try {
+        values = await form.validateFields();
+      } catch {
+        return;
+      }
+      const currentFilters = normalizeReportFilters(values);
+      const spec = buildExcelPresentation(config, currentFilters);
+
+      await enqueueExcelExport(
+        config.excelRoute,
+        { ...buildRequest(currentFilters, query), ...secondaryExcel.requestOverrides },
+        // `controllerName` must stay the report's own — the backend rejects a
+        // spec belonging to a different report. Only the naming differs, so the
+        // two jobs are told apart in the Exports list.
+        { ...spec, title: secondaryExcel.title, fileName: secondaryExcel.fileName },
+        secondaryExcel.fileName
+      );
+    },
+    [config, form, normalizeReportFilters, secondaryExcel]
+  );
+
   const applyFilters = (values: FilterFormValues) => {
     setFilters(normalizeReportFilters(values));
     setHasAppliedFilters(true);
@@ -977,6 +1011,8 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
         columns={tableColumns}
         fetchData={fetchRows}
         onExcel={generateExcel}
+        onSecondaryExcel={secondaryExcel ? generateSecondaryExcel : undefined}
+        secondaryExcelLabel={secondaryExcel?.label}
         showActions={false}
         enabled={hasAppliedFilters}
         excelEnabled

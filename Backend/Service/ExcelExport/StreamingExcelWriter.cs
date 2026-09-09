@@ -380,6 +380,7 @@ namespace API.Service.ExcelExport
 
                     _rowInSheet++;
                     WriteHeaderRow(_sheetWriter, _rowInSheet);
+                    WriteBlankRowsAfterHeader();
                 }
 
                 return;
@@ -387,6 +388,22 @@ namespace API.Service.ExcelExport
 
             _rowInSheet++;
             WriteHeaderRow(_sheetWriter, _rowInSheet);
+            WriteBlankRowsAfterHeader();
+        }
+
+        /// <summary>
+        /// The layout's <see cref="ExcelReportLayout.BlankRowsAfterHeader"/> spacer rows,
+        /// repeated on every rolled-over sheet like the header itself. Written inline rather
+        /// than through <see cref="WriteBlankRow"/>: we are inside sheet startup, so that
+        /// method's rollover branch would re-enter <see cref="StartNewSheet"/>.
+        /// </summary>
+        private void WriteBlankRowsAfterHeader()
+        {
+            for (var i = 0; i < _layout.BlankRowsAfterHeader; i++)
+            {
+                _rowInSheet++;
+                WriteEmptyRowElement(_rowInSheet);
+            }
         }
 
         private void CloseCurrentSheet()
@@ -566,8 +583,14 @@ namespace API.Service.ExcelExport
             }
 
             _rowInSheet++;
+            WriteEmptyRowElement(_rowInSheet);
+        }
+
+        /// <summary>A cell-less <c>&lt;row&gt;</c> — the spacer rows and blank separators.</summary>
+        private void WriteEmptyRowElement(int rowNumber)
+        {
             _sheetWriter!.WriteStartElement("row");
-            _sheetWriter.WriteAttributeString("r", _rowInSheet.ToString(CultureInfo.InvariantCulture));
+            _sheetWriter.WriteAttributeString("r", rowNumber.ToString(CultureInfo.InvariantCulture));
             _sheetWriter.WriteEndElement();
         }
 

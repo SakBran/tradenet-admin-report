@@ -115,12 +115,35 @@ export interface ReportFilterConfig {
   constantValue?: string;
 }
 
+/**
+ * A second export button beside the normal one, for a report that also has to
+ * produce a file in some other system's import format.
+ *
+ * It posts to the SAME `excelRoute` (the backend keys one export handler per
+ * controller), and is told apart by `requestOverrides` — fields merged into the
+ * request body that the controller branches on to pick its layout. Those fields
+ * are part of the export dedup hash, so the two buttons never collide on one
+ * cached file.
+ */
+export interface ReportSecondaryExcelConfig {
+  /** Button text, e.g. 'DCCA Excel'. */
+  label: string;
+  /** File the user saves, and the base name of the queued job. */
+  fileName: string;
+  /** Job title shown in the Exports list, so the two jobs are distinguishable. */
+  title: string;
+  /** Merged into the request body, e.g. `{ ExportFormat: 'Dcca' }`. */
+  requestOverrides: Record<string, unknown>;
+}
+
 export interface ReportPageConfig {
   controllerName: string;
   title: string;
   apiRoute: string;
   excelRoute: string;
   excelFileName: string;
+  /** Optional second export button; see ReportSecondaryExcelConfig. */
+  secondaryExcel?: ReportSecondaryExcelConfig;
   columns: ReportColumnConfig[];
   resolveColumns?: (
     filters: Record<string, unknown>,

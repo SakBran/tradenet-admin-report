@@ -701,6 +701,15 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'AccountSummaryReport',
     excelRoute: 'AccountSummaryReport/Excel',
     excelFileName: 'AccountSummaryReport.xlsx',
+    // The old Tradenet 2.0 screen's black "Export" button produced a second,
+    // differently shaped sheet that DCCA imports. Same endpoint and filters;
+    // `ExportFormat` picks the layout on the controller.
+    secondaryExcel: {
+      label: 'DCCA Excel',
+      fileName: 'AccountSummaryReport-DCCA.xlsx',
+      title: 'Account Summary Report (DCCA)',
+      requestOverrides: { ExportFormat: 'Dcca' },
+    },
     initialSortColumn: 'VoucherDate',
     showRowNumber: true,
     reportSubtitle: reportDateRangeSubtitle('Account Summary Report'),
