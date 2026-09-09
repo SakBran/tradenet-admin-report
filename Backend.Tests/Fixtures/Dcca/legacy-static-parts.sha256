@@ -1,0 +1,16 @@
+# SHA-256 of the eight data-independent OOXML parts of the REAL old Tradenet 2.0 DCCA
+# export (TradenetAdmin/uploads/AccountSummary.xlsx on origin/master, 2 Sep 2021, 543 rows).
+# The embedded skeleton must reproduce these exactly; DccaWorkbookWriter copies them through
+# untouched, so every generated DCCA file carries the same bytes.
+#
+# Regenerating the skeleton from the AUTHORING TEMPLATE instead of the export would change
+# five of these. DccaWorkbookSkeleton.Validate() also checks semantic markers, because
+# whoever makes that mistake would update this file in the same commit.
+a2af326e6f1f7ec6920568d3c9c2897048f0f6632836c674b195d79b4a5c2fc4  [Content_Types].xml
+acfa568d36d755b755a62fcde058b93877e4e22065217422c29603c1835ed17e  _rels/.rels
+7978499d61ac47ce18c71b961ee0603ab17f80c22af85570f50a8289d3674019  xl/workbook.xml
+809774018e166ca4121a40c392e33a95d7ec815879d8801295b962e819dd10aa  xl/_rels/workbook.xml.rels
+e6029ab4958414b8bb862b17ffed3a708d1513e61a07d88e966071cca31d1bd4  xl/theme/theme1.xml
+0cfb352853f4949371048cb26a69450affcbc437b9643d02f388a8432157a435  xl/styles.xml
+937c8cdf777882a2d00a85c24bb38f042dd2f6331228ea7cc2a101acc90784b7  docProps/core.xml
+22b3e2a4f41a0a0b6c93cd0da7b28b84a2375b815f787624e81acaaf32a5d191  docProps/app.xml

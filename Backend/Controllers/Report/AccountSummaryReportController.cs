@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using API.DBContext;
 using API.Model;
 using API.Service.ExcelExport;
+using API.Service.ExcelExport.Dcca;
 using API.Service.Reports;
 using API.StoredProcedureToLinq;
 using Microsoft.AspNetCore.Authorization;
@@ -22,9 +23,15 @@ namespace Backend.Controllers.Report
     [ApiController]
     [Route("api/[controller]")]
     // v2 = the exported sheet gained the RDLC title row and the grid's 8 columns.
-    [ExcelFormatVersion(2)]
+    // v3 = the DCCA variant is now written byte-for-byte from the old export's own parts
+    //      (DccaWorkbookWriter) instead of through StreamingExcelWriter, so its bytes changed.
+    [ExcelFormatVersion(3)]
     public class AccountSummaryReportController
-        : ControllerBase, IStreamingExcelReport, IExcelReportLayoutProvider, IExcelFooterTotalsProvider
+        : ControllerBase,
+          IStreamingExcelReport,
+          IExcelReportLayoutProvider,
+          IExcelFooterTotalsProvider,
+          ICustomExcelWriter
     {
         private const string ReportKey = "AccountSummaryReport";
 
@@ -115,18 +122,17 @@ namespace Backend.Controllers.Report
         public Type ExcelRequestType => typeof(AccountSummaryReportRequest);
 
         /// <summary>
-        /// One of two sheets, chosen by <see cref="AccountSummaryReportRequest.ExportFormat"/>:
-        /// the default RDLC-shaped export the grid mirrors, or the DCCA import file.
+        /// The RDLC-shaped export the grid mirrors.
+        ///
+        /// The DCCA variant never reaches here: it is written by
+        /// <see cref="WriteCustomExcelAsync"/>, which the job handler dispatches to before it
+        /// asks for a layout. This returns the standard layout unconditionally rather than
+        /// throwing for DCCA, so a regression in that dispatch produces the wrong file — which a
+        /// test catches — instead of a failed job with an opaque message.
         /// </summary>
         [NonAction]
         public ExcelReportLayout GetExcelLayout(object request)
-        {
-            var typedRequest = (AccountSummaryReportRequest)request;
-
-            return AccountSummaryExportFormat.IsDcca(typedRequest.ExportFormat)
-                ? DccaLayout()
-                : StandardLayout(typedRequest);
-        }
+            => StandardLayout((AccountSummaryReportRequest)request);
 
         /// <summary>
         /// The exported sheet mirrors the grid and the old Tradenet 2.0 RDLC: a title
@@ -160,60 +166,77 @@ namespace Backend.Controllers.Report
             };
         }
 
+        // --- The DCCA import file (written byte-for-byte, not through the shared writer) ---
+
+        /// <summary>
+        /// True only for the DCCA variant, so the report's normal export keeps going through
+        /// <see cref="ExcelReportLayout"/> and <see cref="StreamingExcelWriter"/> untouched.
+        ///
+        /// Note the request still carries a full presentation spec (the frontend posts one for
+        /// both buttons). Its <c>title</c> and <c>fileName</c> still name the job and the
+        /// download, but its <c>columns</c> have NO effect on the DCCA file — editing them in
+        /// reportConfigs.ts will change nothing here.
+        /// </summary>
+        [NonAction]
+        public bool CanWriteCustomExcel(object request)
+            => AccountSummaryExportFormat.IsDcca(((AccountSummaryReportRequest)request).ExportFormat);
+
         /// <summary>
         /// The file DCCA imports. This is NOT the RDLC shape: the old Tradenet 2.0 screen
-        /// produced it separately, from its black "Export" button, by filling the template
-        /// workbook <c>Content/excel-template/TransactionFees.xlsx</c> with EPPlus
-        /// (<c>ReportsController.AccountSummaryReport</c>, POST).
+        /// produced it separately, from its black "Export" button, by loading the template
+        /// workbook <c>Content/excel-template/TransactionFees.xlsx</c> with EPPlus 4.1, filling
+        /// cells and saving (<c>ReportsController.AccountSummaryReport</c>, POST).
         ///
-        /// Reproduced structurally, because DCCA's importer is keyed to that exact file:
-        /// headers on row 1, row 2 left BLANK (the old loop starts at <c>row = 2</c> and
-        /// increments before its first write), data from row 3, no title banner, no Total
-        /// row, no freeze pane, and the worksheet still called "Sheet1".
+        /// DCCA's importer is keyed to that exact file, so it is reproduced rather than
+        /// approximated: eight of its ten OOXML parts are copied byte-for-byte out of the
+        /// embedded skeleton and only the sheet and the string table are generated. See
+        /// <see cref="DccaWorkbookWriter"/> and <see cref="DccaWorkbookSkeleton"/>.
         ///
-        /// The header text is copied verbatim from the template, including its "Transation
-        /// Title" typo — changing it risks the importer failing to find the column.
+        /// The header text lives in the skeleton, including its "Transation Title" typo —
+        /// correcting it would risk the importer failing to find the column.
         /// </summary>
-        private static ExcelReportLayout DccaLayout()
+        [NonAction]
+        public async Task WriteCustomExcelAsync(object request, ExcelExportContext context)
         {
-            return new ExcelReportLayout
+            var typedRequest = (AccountSummaryReportRequest)request;
+            TryCreateReportRequest(typedRequest, out var procedureRequest, out _);
+
+            await using var writer = new DccaWorkbookWriter();
+
+            // The SAME row stream the normal export uses, with the same ordering and the same
+            // includeTotalCount: false — so the two exports can never disagree about the data,
+            // and the COUNT(*) that times this report out is still skipped.
+            await foreach (var chunk in sp_AccountSummaryReport
+                .ExecuteQueryable(_context, procedureRequest!, includeTotalCount: false)
+                .AsAsyncEnumerable().ChunkAsync(context.ChunkSize, context.CancellationToken))
             {
-                SuppressStandardHeaderBlock = true,
-                BlankRowsAfterHeader = 1,
-                WorksheetTitle = "Sheet1",
-                FreezeHeader = false,
-                // Null keeps the sheet free of a Total row; the old file has none.
-                TotalsRowLabel = null,
-                Columns = new[]
+                foreach (var row in chunk)
                 {
-                    ExcelColumn.RowNumber(),
-                    // Text, not a date serial: the template's column B is numFmt 49 (Text)
-                    // and the old code wrote item.VoucherDate.ToString("MM/dd/yyyy").
-                    // Month-first is what DCCA has always received — kept deliberately.
-                    ExcelColumn.Text<sp_AccountSummaryReportResult>(
-                        "Entry Date",
-                        row => row.VoucherDate?.ToString("MM/dd/yyyy", CultureInfo.InvariantCulture),
-                        width: 15.89),
-                    ExcelColumn.Text<sp_AccountSummaryReportResult>(
-                        "HtaThaKa No", row => Concat(row.CompanyRegistrationNo, row.VoucherNo), width: 20.89),
-                    ExcelColumn.Text<sp_AccountSummaryReportResult>(
-                        "Company Name", row => row.CompanyName, width: 16.55),
-                    ExcelColumn.Text<sp_AccountSummaryReportResult>(
-                        "Transation Title", row => row.TransactionTitle, width: 19.33),
-                    // General number format, no thousands separator and no totals — the old
-                    // export wrote the raw Amount into an unstyled cell.
-                    ExcelColumn.Number<sp_AccountSummaryReportResult>(
-                        "Deducted Fees", row => row.Amount, width: 16.89),
-                    // The old code wrote a literal "" here, every row.
-                    ExcelColumn.Text<sp_AccountSummaryReportResult>(
-                        "Remark", _ => string.Empty, width: 18.33),
-                    ExcelColumn.Text<sp_AccountSummaryReportResult>(
-                        "Account Code", row => row.AccountTitleCode, width: 13.44),
-                    ExcelColumn.Text<sp_AccountSummaryReportResult>(
-                        "Location Code", row => row.LocationCode, width: 13.44),
-                },
-            };
+                    await writer.AppendRowAsync(ToDccaRow(row.ToResult()), context.CancellationToken);
+                }
+            }
+
+            await writer.FinishAsync(context.Output, context.CancellationToken);
+
+            context.RowCount = (int)Math.Min(writer.DataRows, int.MaxValue);
+            context.SheetCount = 1;
         }
+
+        /// <summary>
+        /// The nine values the old EPPlus loop wrote, in its order. Every string is coerced to
+        /// "" rather than left null: the old code read each column as
+        /// <c>DataRow[...].ToString()</c>, which yields "" for DBNull and never null.
+        /// </summary>
+        private static DccaRow ToDccaRow(sp_AccountSummaryReportResult row) => new(
+            // The old code called .ToString("MM/dd/yyyy") on a non-nullable DateTime. VoucherDate
+            // can never be null here anyway — the procedure's date predicate excludes NULLs.
+            EntryDate: row.VoucherDate?.ToString("MM/dd/yyyy", CultureInfo.InvariantCulture) ?? string.Empty,
+            HtaThaKaNo: Concat(row.CompanyRegistrationNo, row.VoucherNo),
+            CompanyName: row.CompanyName,
+            TransactionTitle: row.TransactionTitle,
+            Amount: row.Amount,
+            AccountCode: row.AccountTitleCode,
+            LocationCode: row.LocationCode);
 
         /// <summary>
         /// The old export's <c>item.CompanyRegistrationNo + "@" + item.VoucherNo</c>. The

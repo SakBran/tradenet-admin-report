@@ -120,6 +120,34 @@ namespace API.Service.ExcelExport
     }
 
     /// <summary>
+    /// Opt-in escape hatch: for SOME requests this report writes the whole .xlsx itself, instead
+    /// of going through <see cref="ExcelReportLayout"/> and <see cref="StreamingExcelWriter"/>.
+    ///
+    /// Only for a file an external system imports and is keyed to byte-for-byte, where the shared
+    /// writer's own styles and part set cannot be right — currently just the Account Summary
+    /// report's DCCA export, which reproduces the old Tradenet 2.0 EPPlus output. Ordinary
+    /// formatting differences belong in <see cref="IExcelReportLayoutProvider"/>, not here.
+    ///
+    /// <see cref="CanWriteCustomExcel"/> is per-REQUEST, so a report can serve its normal export
+    /// through the shared writer and only one variant through its own.
+    ///
+    /// Mark BOTH members <c>[NonAction]</c> on the controller, exactly like
+    /// <see cref="IStreamingExcelReport.WriteRowsAsync"/>, or MVC's ApiController convention
+    /// rejects them at startup as unrouted actions.
+    /// </summary>
+    public interface ICustomExcelWriter
+    {
+        /// <param name="request">The deserialized request DTO.</param>
+        bool CanWriteCustomExcel(object request);
+
+        /// <summary>
+        /// Writes the complete file to <see cref="ExcelExportContext.Output"/> and sets
+        /// <see cref="ExcelExportContext.RowCount"/> / <see cref="ExcelExportContext.SheetCount"/>.
+        /// </summary>
+        Task WriteCustomExcelAsync(object request, ExcelExportContext context);
+    }
+
+    /// <summary>
     /// The grid's footer numbers for one export: the same shapes the JSON response
     /// carries (<see cref="IReportTotals"/>), snapshotted before streaming starts.
     /// </summary>

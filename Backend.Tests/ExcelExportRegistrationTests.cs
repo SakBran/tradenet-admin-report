@@ -43,14 +43,17 @@ public sealed class ExcelExportRegistrationTests
     }
 
     [Fact]
-    public void Account_summary_is_at_generation_three()
+    public void Account_summary_is_at_generation_four()
     {
+        // [ExcelFormatVersion(3)] + ExcelExportFormat.Generation. Moved from 3 to 4 when the
+        // DCCA variant switched to DccaWorkbookWriter, which changed that file's bytes; the
+        // cache key has to move with it.
         var handler = Registered()
             .Where(descriptor => descriptor.ServiceType == typeof(IExcelReportJobHandler))
             .Select(descriptor => (ControllerStreamingExcelReportJobHandler)descriptor.ImplementationInstance!)
             .Single(h => h.ReportKey == "AccountSummaryReport");
 
-        Assert.Equal(3, handler.FormatVersion);
+        Assert.Equal(4, handler.FormatVersion);
         Assert.True(handler.HasTypedLayout);
     }
 

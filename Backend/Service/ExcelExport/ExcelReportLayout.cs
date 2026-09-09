@@ -304,28 +304,6 @@ namespace API.Service.ExcelExport
         /// <summary>Freeze everything above the first data row so the headers stay put while scrolling.</summary>
         public bool FreezeHeader { get; init; } = true;
 
-        /// <summary>
-        /// Skip the shared title/date/Exported preamble
-        /// (<see cref="ExcelLayoutBuilder.WithStandardHeaderBlock"/>). A sheet that another
-        /// system imports has to start at the header row — anything above it shifts the
-        /// importer's row mapping.
-        /// </summary>
-        public bool SuppressStandardHeaderBlock { get; init; }
-
-        /// <summary>
-        /// Blank rows between the header row and the first data row. The old Tradenet 2.0
-        /// DCCA template left row 2 empty (<c>int row = 2;</c> then <c>row++</c> before the
-        /// first write), and the importer is keyed to that.
-        /// </summary>
-        public int BlankRowsAfterHeader { get; init; }
-
-        /// <summary>
-        /// Overrides <see cref="IStreamingExcelReport.ExcelWorksheetTitle"/> for this layout.
-        /// Null keeps the controller's own title — the worksheet name is a property of the
-        /// report, but an alternate export format may need a different one.
-        /// </summary>
-        public string? WorksheetTitle { get; init; }
-
         internal bool HasExplicitColumns => Columns.Count > 0;
 
         internal bool HasSections => Sections.Count > 0;
@@ -341,10 +319,7 @@ namespace API.Service.ExcelExport
             IReadOnlyList<ExcelReportSection>? sections = null,
             bool? freezeHeader = null,
             string? totalsRowLabel = null,
-            bool? mergeTitleAcrossColumns = null,
-            bool? suppressStandardHeaderBlock = null,
-            int? blankRowsAfterHeader = null,
-            string? worksheetTitle = null)
+            bool? mergeTitleAcrossColumns = null)
             => new()
             {
                 TitleLines = titleLines ?? TitleLines,
@@ -355,9 +330,6 @@ namespace API.Service.ExcelExport
                 CurrencyTotalsColumns = currencyTotalsColumns ?? CurrencyTotalsColumns,
                 Sections = sections ?? Sections,
                 FreezeHeader = freezeHeader ?? FreezeHeader,
-                SuppressStandardHeaderBlock = suppressStandardHeaderBlock ?? SuppressStandardHeaderBlock,
-                BlankRowsAfterHeader = blankRowsAfterHeader ?? BlankRowsAfterHeader,
-                WorksheetTitle = worksheetTitle ?? WorksheetTitle,
             };
     }
 

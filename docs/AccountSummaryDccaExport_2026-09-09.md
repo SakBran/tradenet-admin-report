@@ -1,185 +1,232 @@
-# Account Summary Report — DCCA export (second Excel button)
+# Account Summary Report — DCCA export
 
-Date: 2026-09-09
+Date: 2026-09-09 (rewritten same day after customer feedback)
 
 ## Request
 
-Customer (translated):
-
 > In the **OldReport → AccountSummary** screen, after searching, pressing the **black Export
-> button** produces the format used to **import into DCCA**.
-> In the new Report's AccountSummary report, the Excel that the UI and the export show is
-> fine. Please also provide **one more Excel format so it can be imported into DCCA**.
+> button** produces the format used to **import into DCCA**. … Please also provide **one more
+> Excel format so it can be imported into DCCA**.
 
-Not a parity defect — the customer says the current sheet is correct. This is a **new feature**:
-a second export button beside the existing one.
+Then, after the first attempt:
 
-## What the old system did
+> For DCCA Excel we don't need the column and column header. Start Date and End Date.
+> Need to be byte identical as old report DCCA Feature.
 
-The old Account Summary screen produced **two different files**:
+## What the customer actually received the first time — and why
 
-1. **The on-screen report + its ReportViewer toolbar export** — `ReportControl/AccountSummaryReport.rdlc`,
-   8 columns (`No`, `Entry Date`, `Company Registration No`, `Company Name`, `Voucher No`,
-   `Transaction Title`, `Deducted Fees`, `Remark`). **The new report already reproduces this.**
-2. **The black `btn-dark` "Export" button** — the DCCA import file, 9 columns. This is what was
-   missing.
+The first implementation (`9d1ae35`) rendered the DCCA sheet through the shared
+`StreamingExcelWriter`. The file they got was **not that sheet at all**. Downloaded from PROD
+(job `AccountSummaryReport-DCCA_20260909_050307.xlsx`, 27,915 rows):
 
-The DCCA file is *not* rendered from the RDLC. `ReportsController.AccountSummaryReport` (POST,
-`origin/master`, `Controllers/ReportsController.cs:16359-16461`) writes it as a **side effect of
-the search**, using **EPPlus 4.1** to fill a pre-made template workbook
-(`Content/excel-template/TransactionFees.xlsx`) and saving to the fixed, shared path
-`~/uploads/AccountSummary.xlsx`. The view then renders the black button as a plain `<a href>`
-pointing at that file, only once `Model.FileName != null` (i.e. after a search):
-
-```razor
-@if (Model.FileName != null)
-{
-    <a href="@Model.FileName" class="btn btn-dark" id="btnExport"> … Export</a>
-}
+```
+r1  Account Summary Report (01/09/2026) To (09/09/2026)
+r2  Account Summary Report (DCCA)
+r3  From Date: 01/09/2026            <- the "Start Date"
+r4  To Date: 09/09/2026              <- the "End Date"
+r5  Exported: 09/09/2026 11:33
+r6  No | Entry Date | Company Registration No | Company Name |
+    Voucher No | Transaction Title | Deducted Fees | Remark      <- the standard 8 columns
+r27922  | Total | | | | | 497760000 |
 ```
 
-The cell writes, verbatim:
+Its worksheet was named `Account Summary Report`, never `Sheet1` — so it was produced by a build
+predating the DCCA commit. The filename and job title were DCCA-correct only because they ride on
+the presentation spec, which the old build already honoured.
 
-```csharp
-int row = 2;                 // data starts at row 3; row 2 stays blank
-foreach (var item in lstData)
-{
-    row++; srno++;
-    ws.Cells[row, 1].Value = srno;
-    ws.Cells[row, 2].Value = item.VoucherDate.ToString("MM/dd/yyyy");
-    ws.Cells[row, 3].Value = item.CompanyRegistrationNo + "@" + item.VoucherNo;
-    ws.Cells[row, 4].Value = item.CompanyName;
-    ws.Cells[row, 5].Value = item.TransactionTitle;
-    ws.Cells[row, 6].Value = item.Amount;
-    ws.Cells[row, 7].Value = "";
-    ws.Cells[row, 8].Value = item.AccountTitleCode;
-    ws.Cells[row, 9].Value = item.LocationCode;
-}
+**Root cause: two Excel workers serve the queue, and one runs a stale build.**
+`GET /api/ExcelExport/jobs`:
+
+| `processedBy` | jobs |
+|---|---|
+| `TN2-ADMIN01:3bc29cfb7eed45cd95967c3d1a64052a` | 7 |
+| `null` | 6 |
+
+`ffc840d` made `processedBy` non-null on completion, so `null` means a worker older than that —
+several commits before the DCCA work. The two interleave hour by hour, and the DCCA job was
+claimed by the stale one. This is the unresolved operations item from
+`BorderExportPermitComplaints_2026-09-07.md:59-92`. **No code change fixes it**; see the last
+section.
+
+## The rewrite: reproduce the old file instead of describing it
+
+The old system used **EPPlus 4.1** to load `Content/excel-template/TransactionFees.xlsx`, fill
+cells and save. We cannot use EPPlus: the backend has **no Excel library at all**, EPPlus 5+ is
+Polyform Noncommercial (a paid licence for a ministry) and EPPlus 4.1 is .NET Framework only.
+
+The key insight: **8 of the 10 parts EPPlus emitted do not depend on the data.** Only
+`xl/worksheets/sheet1.xml` and `xl/sharedStrings.xml` vary. So the export now:
+
+- ships a **skeleton** — the real legacy *output* with its 543 data rows deleted — as an
+  `EmbeddedResource`, and copies those 8 parts out of it **byte-for-byte**;
+- builds `sheet1.xml` by **splicing** the skeleton's own bytes at `<dimension`, `<sheetData>` and
+  `</sheetData>`. Nothing about the prologue is retyped, so `sheetViews`, `sheetFormatPr`, all
+  seven `<col>` elements (with their re-serialised attribute order), the header row,
+  `pageMargins`, `pageSetup` and `<headerFooter />` cannot drift.
+
+**The skeleton is derived from the OUTPUT, not the template — this matters.** EPPlus re-serialised
+five of the eight static parts when it saved: `styles.xml` 2383→2975 bytes (gains
+`<numFmts count="0" />`, loses `x14ac:knownFonts="1"`, `<xf>` attributes reordered),
+`workbook.xml` 1167→1294 (gains `fullCalcOnLoad="1"`), plus smaller changes to
+`[Content_Types].xml` and both `.rels`. Only `theme1.xml`, `docProps/core.xml` and
+`docProps/app.xml` are byte-identical in both. A template-derived skeleton would therefore
+mismatch five parts. `DccaWorkbookSkeleton.Validate()` guards the mixup with semantic markers the
+template provably cannot satisfy (hashes alone would not — whoever made that mistake would update
+them in the same commit).
+
+## The measured target
+
+10 parts in this zip order — `sharedStrings.xml` **last**, which is also convenient since the
+string table is only complete once every row has streamed:
+
+```
+[Content_Types].xml  _rels/.rels  xl/workbook.xml  xl/_rels/workbook.xml.rels
+xl/theme/theme1.xml  xl/styles.xml  xl/worksheets/sheet1.xml
+docProps/core.xml  docProps/app.xml  xl/sharedStrings.xml
 ```
 
-The **headers are never written by code** — they come from the template's row 1.
+Dropped vs the template: `xl/printerSettings/printerSettings1.bin` and
+`xl/worksheets/_rels/sheet1.xml.rels` — legal **only because** `r:id` is also stripped from
+`<pageSetup orientation="portrait" />`. The two facts are a coupled invariant and are asserted
+together; keeping the `r:id` while dropping the part makes Excel offer to repair the file.
 
-## Column mapping
+- `<dimension ref="A1:I{last}"/>`, `<headerFooter />` after pageSetup
+- Header `<row r="1" ht="18" customHeight="1">` (no `spans`, no `x14ac:dyDescent`)
+- **No `<row r="2">` element at all** — the old loop is `int row = 2; foreach { row++; … }`, so
+  r1 jumps to r3
+- Per-cell styles: `A s="0"` numeric, `B s="3" t="s"`, `C D E G H I s="0" t="s"`, `F s="0"` numeric
+  (census on the 543-row file: `4344×s="0"`, `543×s="3"`, `8×s="1"`, `1×s="2"`)
+- `sheet1.xml` has a UTF-8 BOM and `standalone="yes"?>`; `sharedStrings.xml` has **no** BOM and
+  `standalone="yes" ?>` (with a space). `<col …/>` has no space before `/>`; other self-closing
+  tags do.
+- Shared strings rebuilt in **first-use order**, and every string cell is shared — dates included,
+  and the empty Remark interned as `<t></t>`. `count == uniqueCount` (both the unique total).
 
-| Col | Header (verbatim from the template) | Source | Cell type |
-|---|---|---|---|
-| A | `No` | running row number | number |
-| B | `Entry Date` | `VoucherDate.ToString("MM/dd/yyyy")` | **text** (template col B is numFmt 49) |
-| C | `HtaThaKa No` | `CompanyRegistrationNo + "@" + VoucherNo` | text |
-| D | `Company Name` | `CompanyName` | text |
-| E | `Transation Title` **(sic — one "c")** | `TransactionTitle` | text |
-| F | `Deducted Fees` | `Amount` | number, General (no separator) |
-| G | `Remark` | literal `""` | text |
-| H | `Account Code` | `AccountTitleCode` = `AccountTitle.Code` (a setup master, not constants) | text |
-| I | `Location Code` | `LocationCode` — `'NPT'`, or `Sakhan.Code` on border branches | text |
+## EPPlus's rules were recovered from the binary, not guessed
 
-**No SQL or stored-procedure change was needed.** `sp_AccountSummaryReportResult` already carries
-`AccountTitleCode` and `LocationCode` (`Backend/StoredProcedureToLinq/sp_AccountSummaryReport.cs:19-34`),
-and `sp_AccountSummaryReport_pagination.sql` already selects them (lines 80, 97). They were simply
-never rendered.
+`tradenet-2.0-admin/TradenetAdmin/bin/EPPlus.dll` (1,250,304 B) is in the repo. Its string heap
+holds the rules verbatim:
 
-## Two claims that were checked, and one that was wrong
-
-**`HtaThaKa No` is `registration@voucher`, not the reverse.** Confirmed twice: from the old
-controller source, and from the data — the customer's sample shows `@U03202600003` with a blank
-Company Name, and the `Member` branch is the only one that hardcodes *both*
-`CompanyRegistrationNo = N''` and `CompanyName = N''` (`sp_AccountSummaryReport_pagination.sql:100-104`).
-
-**The old report did NOT drop border rows when Sakhan = "All".** An initial reading of the old
-proc's final filter claimed it did. It does not:
-
-```sql
-AND tmp.SakhanId = (CASE WHEN @SakhanId='' THEN tmp.SakhanId ELSE @SakhanId END)
+```
+&  &amp;  <  &lt;  >  &gt;  (_x[0-9A-F]{4,4}_)  _x005F  _x00{0}_
+count="{0}" uniqueCount="{0}">  <si>  </si>  "  "  "\t"  "\n"
+<si><t xml:space="preserve">  <si><t>  </t></si>  </sst>
 ```
 
-`@SakhanId` is `int`, so `@SakhanId=''` compares as `@SakhanId = 0`. With "All" that is **true**,
-so the CASE yields `tmp.SakhanId` and the predicate `tmp.SakhanId = tmp.SakhanId` matches every
-row. The new proc reaches the same result by a different route (`(@SakhanId = 0)` on the NPT
-branches, `(@SakhanId = 0 OR Sakhan.Id = @SakhanId)` on the border branches). **The row sets
-already agree; no Sakhan special-casing was added, and adding one would have made the DCCA file
-differ from the old one.** The shipped sample being all-`NPT` just reflects a day with no border
-payments.
+So: escape `&`, `<`, `>` and **nothing else** (the real export has one raw `'` and zero `&apos;`);
+double `_x005F` in front of anything already shaped like `_xNNNN_`; encode control characters as
+`_x00NN_`; and use `xml:space="preserve"` iff the value starts or ends with a space, contains a
+double space, a tab or a newline. **That predicate reproduces all 17 of the 543-row file's
+preserved strings with 0 mismatches across all 498 entries** — verified.
+
+This was worth doing rather than guessing: 17 company names arrive padded
+(`"Shwe Htut Khaung Co., Ltd.                    "`) or double-spaced
+(`"HONEYS  GARMENT  INDUSTRY  LIMITED"`). Dropping the attribute would silently trim them on
+import — a data bug, not a cosmetic one.
+
+**Numeric fidelity.** `sp_AccountSummaryReport_pagination.sql` declares `Amount float`. The old
+chain was `float → .NET Framework double.ToString()` (which defaulted to **G15**) → `decimal.Parse`
+(`Business/Reports.cs:4770`) → EPPlus formatting a `decimal`. .NET Core's default is
+shortest-round-trippable, not G15, so a float artefact like `1234.5600000000001` would now be
+emitted verbatim where the old file has `1234.56`. `DccaXmlText.Number` reproduces the round trip
+(`decimal.Parse(v.ToString("G15", Invariant), Invariant).ToString(Invariant)`), closing the
+`double`-vs-`decimal` item this doc previously left open.
+
+**Nulls.** The old code read every string column as `DataRow[...].ToString()`, which yields `""`
+for `DBNull` and never null — so coercing null to `""` is exact legacy reproduction, not a
+divergence. (`VoucherDate` cannot be null anyway: the procedure's date predicate excludes NULLs.)
 
 ## Implementation
 
-One controller, one report key, **a variant flag on the request DTO**. Handler keys are derived
-from the controller class name and there is exactly one `GetExcelLayout` per controller, so the
-selector has to travel on the request — which also gives the two formats different export dedup
-hashes (`ExcelExportHasher`), without which the second button would be served the first one's
-cached file.
+`Backend/Service/ExcelExport/Dcca/` — `Resources/TransactionFeesSkeleton.xlsx` (6,469 B),
+`DccaWorkbookSkeleton.cs`, `DccaWorkbookWriter.cs`, `DccaXmlText.cs`, `DccaSpoolFile.cs`.
 
-### Shared Excel plumbing (inert unless a layout opts in)
+**The seam is 8 lines.** A new opt-in `ICustomExcelWriter { CanWriteCustomExcel; WriteCustomExcelAsync }`
+(`IStreamingExcelReport.cs`, alongside the four existing opt-ins), dispatched at the top of
+`ControllerStreamingExcelReportJobHandler.GenerateAsync` right after the request is deserialized —
+before layout, header block, footer probe or `StreamingExcelWriter`. It is per-**request**, so the
+report's normal export is untouched. For the other ~160 controllers the `is` test simply fails.
 
-- `ExcelReportLayout.SuppressStandardHeaderBlock` — skips the shared title/From-To/Exported
-  preamble. Honoured at the top of `ExcelLayoutBuilder.WithStandardHeaderBlock`.
-- `ExcelReportLayout.BlankRowsAfterHeader` — spacer rows between the header row and the first
-  data row, re-emitted on every rolled-over sheet.
-- `ExcelReportLayout.WorksheetTitle` — overrides the controller's `ExcelWorksheetTitle`, honoured
-  in `ControllerStreamingExcelReportJobHandler`.
+**The shared writer is byte-identical to its pre-DCCA state.** The first attempt had added
+`ExcelReportLayout.SuppressStandardHeaderBlock` / `.BlankRowsAfterHeader` / `.WorksheetTitle` and
+matching `StreamingExcelWriter` support; all of it was reverted, because a template-splicing writer
+needs none of it. `git diff 6c4450e` is empty for `ExcelReportLayout.cs`, `ExcelLayoutBuilder.cs`,
+`StreamingExcelWriter.cs` and `StreamingExcelWriterTests.cs`.
 
-A regression test asserts that a layout leaving all three at their defaults writes **byte-identical**
-output, so the other ~160 reports are unaffected.
+`AccountSummaryReportController` implements `ICustomExcelWriter` and reuses the **same** row stream
+as the normal export (`includeTotalCount: false`, same ordering), so the two exports cannot
+disagree about the data and the `COUNT(*)` that times this report out is still skipped.
+`GetExcelLayout` now returns the standard layout for **every** request — deliberately a plain
+return rather than a throw, so a regression in the dispatch produces a wrong file a test catches
+instead of an opaque failed job. `[ExcelFormatVersion(2)] → (3)` (handler version 3 → 4), because
+the DCCA bytes changed.
 
-### The report
-
-- `AccountSummaryReportRequest.ExportFormat` (`"Dcca"`, case-insensitive), marked
-  `[JsonIgnore(WhenWritingNull)]` exactly like `ReportQueryRequest.Excel` — so the normal export's
-  request JSON, and therefore its warm cache, is unchanged.
-- `GetExcelLayout` now picks between `StandardLayout` and `DccaLayout`.
-- `GetExcelFooterTotalsAsync` returns `null` for the DCCA variant, which both suppresses the Total
-  row and skips a cross-page `SUM` the file has no use for.
-- `WriteRowsAsync` is unchanged — same rows, same order.
-- **`[ExcelFormatVersion]` was deliberately NOT bumped**: the standard sheet's shape does not
-  change, and the DCCA hash is new, so nothing stale can be served. Bump it if the DCCA layout is
-  later revised — the attribute is per class and moves both variants.
-
-### Frontend
-
-- `ReportPageConfig.secondaryExcel` (`{ label, fileName, title, requestOverrides }`) — generic,
-  currently used only by Account Summary.
-- `BasicTable` gained optional `onSecondaryExcel` / `secondaryExcelLabel`; the second button
-  renders only when set.
-- `GenericReportPage.generateSecondaryExcel` reuses `enqueueExcelExport` unchanged, merging
-  `requestOverrides` into the body and overriding the spec's `title`/`fileName`.
-  `spec.controllerName` must stay `AccountSummaryReport` — both the edge filter and the enqueue
-  service reject a mismatch.
+**Streaming.** `<dimension>` sits at the top of the sheet but the extent is only known at the end,
+and string indices are assigned as rows arrive. Pre-counting is not an option — that `COUNT(*)` is
+the thing that times this report out. So rows and new strings are staged to two
+deflate-compressed `DeleteOnClose` temp files (~343 B/row raw, so a million rows is ~38 MB spooled
+rather than ~343 MB), then spliced in. Row memory is O(1); only the unique-string dictionary grows.
+The `ZipArchive` is created **only** in `FinishAsync` — a constructor-opened archive would write a
+central directory into the output during `Dispose` on cancellation, and `ExcelExportWorker`
+deliberately skips deleting the file on shutdown-cancellation, orphaning a workbook the cleanup
+worker could never reclaim. Entry timestamps are pinned to 1980-01-01 so two exports of the same
+data are byte-identical. Guarded at Excel's 1,048,574-row limit.
 
 ## Verification
 
-Old file (`git show origin/master:TradenetAdmin/uploads/AccountSummary.xlsx`) versus a file
-generated from the new layout, compared cell by cell **keyed by row number**:
+**All ten parts SHA-256-identical to the real 2021 export**, proven by replaying its own 543 rows
+back through the new writer (`Replaying_the_legacy_rows_reproduces_every_part_byte_for_byte`). That
+file is deliberately **not committed** — real company names and voucher numbers — so the test is
+gated on `TRADENET_DCCA_LEGACY_XLSX`; a committed SHA-256 manifest
+(`Backend.Tests/Fixtures/Dcca/legacy-static-parts.sha256`) pins the eight static parts
+unconditionally. Negative control: pointing the variable at the authoring template makes the test
+fail, as it must.
 
-```
-sheet name   old=['Sheet1']  new=['Sheet1']   MATCH
-row 1  MATCH   (all 9 headers, including "Transation Title")
-row 2  MATCH   (empty)
-row 3  MATCH   1 | 09/01/2021 | 149290753@U09202100001 | … | 3000 | | 002 | NPT
-row 4  MATCH
-row 5  MATCH
-row 6  MATCH
-cell types (row 3)  old=[num,str,str,str,str,num,str,str,str]
-                    new=[num,str,str,str,str,num,str,str,str]   MATCH
-```
+Structural validation of generated files (data rows, and the zero-row case): every part well-formed,
+full content-type coverage, no dangling relationships, no `r:id` in the sheet, dimension matching
+the emitted rows, `count == uniqueCount == <si>` count, every shared-string index in range.
+A deliberately nasty row confirmed padding and interior double-spaces preserved, `& < >` escaped
+with the apostrophe left raw, Burmese script intact, the empty Remark interned, and
+`1234.5600000000001` collapsed to `1234.56`.
 
-Note the one benign structural difference: the old file **omits** the row-2 element, while the new
-one emits an empty `<row r="2"/>`. Both present row 2 as empty to Excel and to any OOXML reader;
-the data still begins on row 3 in both.
+Test runs: backend excluding the DB-bound suites — **21 failed / 1749 passed**, the failing set
+*byte-identical* to the `main` baseline (those 21 are the repo's known red baseline).
+Frontend untouched.
 
-Test runs (2026-09-09):
-- Backend, excluding the DB-bound suites: **21 failed / 1749 passed**, against a `main` baseline of
-  **21 failed / 1736 passed** — the failing set is *byte-identical*, and the +13 are the new tests.
-  (The 21 are the repo's known red baseline.)
-- Frontend: `npx tsc --noEmit` clean, `npm run build` clean, `npx vitest run src/Report/excel/`
-  1429 passed — the spec fixture `Backend.Tests/Fixtures/ExcelSpecs/AccountSummaryReport.json` is
-  unchanged, as `secondaryExcel` does not feed `buildExcelPresentation`.
+## The fidelity guarantee to state to the customer
+
+> All **10 XML parts** are **byte-for-byte identical** to what the old system produced — verified
+> by replaying the real 2 Sep 2021 export (543 rows) and comparing SHA-256 per part, including the
+> Burmese company names, the `&` escapes, the 17 preserved-whitespace strings, the empty Remark,
+> the missing row 2 and every style reference.
+>
+> The **.xlsx container** cannot be byte-identical to the 2021 file, and never could be: a ZIP
+> stamps the generation timestamp into every entry header, so **two runs of the OLD system minutes
+> apart already produced different bytes**. What we guarantee instead is that two runs of the NEW
+> system over the same data produce an identical file, and that
+> `unzip -p file <part> | sha256sum` matches the old file for all ten parts.
 
 ## Still owed
 
-- A customer trial-import of one generated file into DCCA before rollout. Everything above
-  verifies the file against the *old export*; only DCCA itself can confirm the importer accepts it.
-- The template's header **styling** (Arial 10 bold, thin borders, `wrapText`, row height 18) is not
-  reproduced; the writer uses its own header style. Values, order and cell types match, which is
-  what an importer reads. If DCCA turns out to be style-sensitive this needs a dedicated `cellXfs`
-  entry (and its `count` bumped) in `StreamingExcelWriter.StylesXml`.
-- `Amount` is `double` in `sp_AccountSummaryReportResult` where the old model used `decimal`;
-  worth a spot-check on large fee values.
+- **A trial import into DCCA.** Everything above verifies the file against the old *export*; only
+  DCCA's importer can confirm it accepts it.
+- **Row order.** Column A's serial and every string index follow it. Old:
+  `dbo.sp_AccountSummaryReport`, no client sort (`Business/Reports.cs:4746-4755`). New:
+  `sp_AccountSummaryReport_pagination` with a null sort → `ORDER BY PaymentDate, SortOrder, Id`.
+  Needs a live-DB comparison before parity is claimed.
+
+## Blocking operations item (not code)
+
+Deploying the backend is necessary but **not sufficient**. The rogue second `ExcelExportWorker`
+must be stopped or re-pointed away from TemplateDB, or DCCA exports keep coming out of the old
+build at random — as do every other report's.
+
+- `GET /api/ExcelExport/jobs` → `processedBy`; `null` = served by the stale worker.
+- Prime suspects: the retired UAT site `P:\WEBSITES\tradenet-admin-backend` (`deploy.ps1:13`,
+  commented out as a target but never decommissioned, still pointed at the same TemplateDB), or a
+  `dotnet run` left on the Build Server. `ExcelExportServiceCollectionExtensions` registers the
+  worker unconditionally — there is no opt-out flag, so any running copy competes for jobs.
+- `C:\ProgramData\TradeNetDeploy\auto-deploy.log` — confirm the watcher saw the commit and logged
+  `Deploy finished OK`. `tools/auto-deploy-watch.ps1:66-84` does `git reset --hard origin/main`
+  *before* deploying and **never retries a failure**, so a failed deploy leaves PROD on the
+  previous build permanently with only a log line as evidence.
