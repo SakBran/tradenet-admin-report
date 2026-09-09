@@ -1,0 +1,4 @@
+# The DCCA export's skeleton workbook is copied byte-for-byte into generated files.
+# Any line-ending translation would silently corrupt it.
+*.xlsx binary
+*.xls binary

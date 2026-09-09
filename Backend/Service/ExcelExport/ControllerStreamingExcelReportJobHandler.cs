@@ -68,6 +68,16 @@ namespace API.Service.ExcelExport
             var request = JsonSerializer.Deserialize(context.RequestJson, report.ExcelRequestType, JsonOptions)
                 ?? throw new InvalidOperationException($"Could not deserialize request for '{ReportKey}'.");
 
+            // A report whose file is pinned to an external importer's exact bytes writes it
+            // itself. Checked before anything generic runs — no layout, no standard header
+            // block, no footer probe, no StreamingExcelWriter. Per-request, so the same
+            // controller's normal export is untouched.
+            if (report is ICustomExcelWriter customWriter && customWriter.CanWriteCustomExcel(request))
+            {
+                await customWriter.WriteCustomExcelAsync(request, context);
+                return;
+            }
+
             var spec = (request as ReportQueryRequest)?.Excel;
 
             // Precedence: the controller's typed layout, else the grid's posted spec.
@@ -98,10 +108,7 @@ namespace API.Service.ExcelExport
             // snapshot the rows come from.
             var totals = await ResolveFooterTotalsAsync(context, report, request);
 
-            // The worksheet name is normally a property of the report, but an alternate
-            // export format may need its own (the DCCA import file expects "Sheet1").
-            using var writer = new StreamingExcelWriter(
-                context.Output, layout.WorksheetTitle ?? report.ExcelWorksheetTitle, layout);
+            using var writer = new StreamingExcelWriter(context.Output, report.ExcelWorksheetTitle, layout);
             var sink = new StreamingExcelWriterSink(writer);
             var guarded = RowType == null || report is IExcelReportLayoutProvider
                 ? (IExcelRowSink)sink

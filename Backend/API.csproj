@@ -14,6 +14,20 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!--
+      The DCCA export copies eight of its ten OOXML parts byte-for-byte out of this
+      workbook, so it must travel with the assembly rather than sit on disk: `dotnet publish`
+      bakes an EmbeddedResource into API.dll, which removes any "missing file on the server"
+      failure mode. LogicalName is pinned so a folder rename cannot break the lookup.
+      The SDK's default None glob would otherwise also claim the file; Remove keeps it
+      unambiguous.
+    -->
+    <None Remove="Service\ExcelExport\Dcca\Resources\TransactionFeesSkeleton.xlsx" />
+    <EmbeddedResource Include="Service\ExcelExport\Dcca\Resources\TransactionFeesSkeleton.xlsx"
+                      LogicalName="API.Dcca.TransactionFeesSkeleton.xlsx" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AWSSDK.S3" Version="4.0.2" />
     <PackageReference Include="FluentFTP" Version="54.2.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.6" />

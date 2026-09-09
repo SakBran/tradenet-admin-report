@@ -1,11 +1,16 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace API.Service.ExcelExport
 {
@@ -49,7 +54,51 @@ namespace API.Service.ExcelExport
 
             RegisterReportHandlers(services);
 
+            // The DCCA export copies eight OOXML parts out of an embedded workbook. Check it at
+            // startup so a bad resource shows up in the log rather than as a broken download
+            // hours later — but LOG, never throw: the DCCA variant of one report must not be
+            // able to take down an API serving ~160 others.
+            var skeletonProblems = Dcca.DccaWorkbookSkeleton.Validate();
+            if (skeletonProblems.Count > 0)
+            {
+                services.AddSingleton<IHostedService>(provider => new DccaSkeletonProblemReporter(
+                    provider.GetRequiredService<ILoggerFactory>()
+                        .CreateLogger("API.Service.ExcelExport.Dcca"),
+                    skeletonProblems));
+            }
+
             return services;
+        }
+
+        /// <summary>
+        /// Reports a broken DCCA skeleton once, at startup, through the configured logger.
+        /// A hosted service (rather than a log call here) because <see cref="AddExcelExportQueue"/>
+        /// runs while the container is still being built and has no logger yet.
+        /// </summary>
+        private sealed class DccaSkeletonProblemReporter : IHostedService
+        {
+            private readonly ILogger _logger;
+            private readonly IReadOnlyList<string> _problems;
+
+            internal DccaSkeletonProblemReporter(ILogger logger, IReadOnlyList<string> problems)
+            {
+                _logger = logger;
+                _problems = problems;
+            }
+
+            public Task StartAsync(CancellationToken cancellationToken)
+            {
+                foreach (var problem in _problems)
+                {
+                    _logger.LogError(
+                        "The DCCA export skeleton is invalid and that export will fail: {Problem}",
+                        problem);
+                }
+
+                return Task.CompletedTask;
+            }
+
+            public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
         }
 
         private static void RegisterReportHandlers(IServiceCollection services)
