@@ -1,0 +1,17 @@
+# Old Tradenet 2.0 DCCA exports used as byte-for-byte oracles for DccaWorkbookWriter.
+#
+# The files themselves are NOT committed: they hold real company names and voucher numbers. Point
+# TRADENET_DCCA_LEGACY_XLSX at one or more of them (';'-separated) to run
+# AccountSummaryDccaExportTests.Replaying_a_legacy_export_reproduces_every_part_byte_for_byte,
+# which parses each file's own data rows, feeds them back through the writer, and requires all ten
+# OOXML parts to be SHA-256-identical.
+#
+# This manifest is the test's guard against verifying the WRONG file. Our own output would pass a
+# self-comparison trivially, so a path whose hash is not listed here fails loudly instead of
+# quietly "passing". Add an entry only after confirming the file really was produced by the old
+# system: 10 zip entries with sharedStrings.xml last, worksheet named Sheet1,
+# cellXfs count="4", and non-1980 zip timestamps (our writer pins 1980-01-01).
+#
+# <sha256 of the .xlsx>  <data rows>  <provenance>
+ffd803d5f5ac747b076cabbe1a7e30f204ad4b65a9f638bb45480fdaee439ca4  543  TradenetAdmin/uploads/AccountSummary.xlsx at origin/master, generated 2 Sep 2021
+3f33778a7ae2ae5cd542de53ff244f549962c5f56084143d0e5aafd45ba20340  138  customer-supplied old-system export, generated 17 Jun 2026 (zip stamps 2026-06-17 09:35)

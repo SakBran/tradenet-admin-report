@@ -2,13 +2,50 @@ using System;
 
 namespace API.Model.ExcelExport
 {
-    /// <summary>Lifecycle of a queued Excel export job.</summary>
+    /// <summary>
+    /// Lifecycle of a queued Excel export job.
+    ///
+    /// <para>
+    /// <b>Why there are two "queued" and two "processing" values.</b> Every
+    /// <c>ExcelExportWorker</c> that can reach TemplateDB competes for the same rows, so an OLDER
+    /// API instance left running anywhere (see <c>docs/BorderExportPermitComplaints_2026-09-07.md</c>)
+    /// silently produces a share of every report's exports from a stale build. Its claim query is
+    /// already compiled against the literals <c>0</c> and <c>1</c> and cannot be changed, so new
+    /// jobs are enqueued as <see cref="QueuedV2"/> and claimed as <see cref="ProcessingV2"/>
+    /// instead: values it has no name for and therefore never matches. That starves it
+    /// deterministically rather than leaving each export a coin toss.
+    /// </para>
+    /// <para>
+    /// The numbers are the contract — this is stored as a plain <c>int</c> and the backend never
+    /// runs migrations, so never renumber an existing member. <see cref="Queued"/> and
+    /// <see cref="Processing"/> are still claimable so rows already in the table drain, and the
+    /// wire format is unchanged: <c>ExcelExportController</c> reports both queued values as
+    /// "Queued" and both processing values as "Processing".
+    /// </para>
+    /// </summary>
     public enum ExcelExportJobStatus
     {
+        /// <summary>Legacy queued state. Still claimable; no longer written.</summary>
         Queued = 0,
+
+        /// <summary>Legacy claimed state. Still reclaimable when its lease expires; no longer written.</summary>
         Processing = 1,
+
         Completed = 2,
-        Failed = 3
+        Failed = 3,
+
+        /// <summary>
+        /// Queued, and claimable only by a build that knows this value. What
+        /// <c>ExcelExportJobService.EnqueueAsync</c> writes, and what a retry falls back to.
+        /// </summary>
+        QueuedV2 = 4,
+
+        /// <summary>
+        /// Claimed counterpart of <see cref="QueuedV2"/>. Needed as well as the queued value:
+        /// guarding only the queue would still let a stale worker take the job through its
+        /// orphan-reclaim branch (<c>Processing</c> + expired lease) the moment a lease lapsed.
+        /// </summary>
+        ProcessingV2 = 5
     }
 
     /// <summary>

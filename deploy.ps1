@@ -208,6 +208,26 @@ Remove-LocalDirectory -Path $publishOutput -AllowedRoot $root
 New-Item -ItemType Directory -Force -Path $publishOutput | Out-Null
 
 Set-Location $backendDir
+
+# Stamp the commit into the assembly's informational version. ExcelExportWorker reads it back and
+# appends it to its worker id, which the jobs API reports as `processedBy` -- that is how a stale
+# API instance sharing the export queue is identified, without having to download and fingerprint
+# a generated file.
+#
+# Set as an environment variable rather than a -p: argument on purpose: MSBuild picks environment
+# variables up as global properties, so the build/publish command lines below stay exactly as they
+# were. Non-fatal -- an unstamped build still runs and reports "@unstamped".
+try {
+    $sha = (& git -C $root rev-parse --short HEAD 2>$null)
+    if ($LASTEXITCODE -eq 0 -and $sha) {
+        $env:SourceRevisionId = $sha.Trim()
+        Write-Host "Stamping backend build with commit: $env:SourceRevisionId"
+    }
+}
+catch {
+    Write-Warning "Could not read the current commit; the backend build will be unstamped. $_"
+}
+
 Invoke-NativeCommand 'Building Backend...' { dotnet build API.csproj -c Release }
 
 Invoke-NativeCommand "Publishing Backend to: $publishOutput" { dotnet publish API.csproj -c Release -o $publishOutput }
