@@ -65,7 +65,7 @@ namespace Backend.Controllers
 
             if (job.Status != ExcelExportJobStatus.Completed)
             {
-                return Conflict($"Export is not ready (status: {job.Status}).");
+                return Conflict($"Export is not ready (status: {StatusName(job.Status)}).");
             }
 
             // Don't serve blindly: confirm the file actually exists on disk.
@@ -94,22 +94,40 @@ namespace Backend.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// The four wire statuses. <see cref="ExcelExportJobStatus.QueuedV2"/> and
+        /// <see cref="ExcelExportJobStatus.ProcessingV2"/> are an internal guard against a stale
+        /// worker claiming jobs (see that enum), not a new user-visible state, so they report as
+        /// their legacy names. The Exports drive polls on exactly these strings and indexes its
+        /// tag colours by them (<c>ExportsDrive.tsx</c>), so leaking "QueuedV2" here would stop
+        /// the auto-refresh and blank the tag.
+        /// </summary>
+        internal static string StatusName(ExcelExportJobStatus status) => status switch
+        {
+            ExcelExportJobStatus.QueuedV2 => nameof(ExcelExportJobStatus.Queued),
+            ExcelExportJobStatus.ProcessingV2 => nameof(ExcelExportJobStatus.Processing),
+            _ => status.ToString()
+        };
+
         private static object ToDto(ExcelExportJob j) => new
         {
             id = j.Id,
             reportKey = j.ReportKey,
             reportTitle = j.ReportTitle,
-            status = j.Status.ToString(),
+            status = StatusName(j.Status),
             fileName = j.FileName,
             fileSizeBytes = j.FileSizeBytes,
             rowCount = j.RowCount,
             sheetCount = j.SheetCount,
             isPeriodClosed = j.IsPeriodClosed,
             requestedBy = j.RequestedByUserName,
-            // "<machine>:<guid>" of the worker that produced (or is producing) the file. Two
-            // API instances sharing one TemplateDB will both claim jobs, and a stale build
-            // among them writes stale sheets (2026-09-07: the Border Export Permit Voucher
-            // footer) -- this is how to tell which host did.
+            // "<machine>:<guid>@<build>" of the worker that produced (or is producing) the file.
+            // Two API instances sharing one TemplateDB both used to claim jobs, and a stale build
+            // among them wrote stale sheets (2026-09-07: the Border Export Permit Voucher footer;
+            // 2026-09-09: the Account Summary DCCA export). QueuedV2 now keeps such a build from
+            // claiming at all; this field is how to confirm which host and which build did.
+            // A null here means a worker older than ffc840d, and no @build means older than the
+            // commit that added the stamp.
             processedBy = j.LeaseOwner,
             errorMessage = j.ErrorMessage,
             createdAtUtc = j.CreatedAtUtc,

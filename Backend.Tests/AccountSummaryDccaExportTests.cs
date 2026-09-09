@@ -15,13 +15,15 @@ namespace Backend.Tests;
 /// The DCCA export must reproduce the old Tradenet 2.0 file, because DCCA's importer is keyed
 /// to it. These tests pin real bytes, not a layout description.
 ///
-/// The headline test (<see cref="Replaying_the_legacy_rows_reproduces_every_part_byte_for_byte"/>)
-/// parses the 543 data rows out of the real 2021 export, feeds them back through the new writer,
-/// and requires all ten parts to be SHA-256-identical. It is skipped unless the legacy file is
-/// available, because that file holds real company names and voucher numbers and is deliberately
-/// NOT committed — point <c>TRADENET_DCCA_LEGACY_XLSX</c> at it to run the test. The always-on
-/// tests below pin the same guarantee from the other side: the embedded skeleton's eight static
-/// parts against a committed hash manifest.
+/// The headline test (<see cref="Replaying_a_legacy_export_reproduces_every_part_byte_for_byte"/>)
+/// parses the data rows out of a real old-system export, feeds them back through the new writer,
+/// and requires all ten parts to be SHA-256-identical. It is skipped unless such a file is
+/// available, because those files hold real company names and voucher numbers and are deliberately
+/// NOT committed — point <c>TRADENET_DCCA_LEGACY_XLSX</c> at one or more of them (';'-separated)
+/// to run it. <c>Fixtures/Dcca/legacy-oracles.sha256</c> records which files are known oracles, so
+/// pointing the test at our own output fails loudly rather than passing a self-comparison. The
+/// always-on tests below pin the same guarantee from the other side: the embedded skeleton's eight
+/// static parts against a committed hash manifest.
 /// </summary>
 public sealed class AccountSummaryDccaExportTests
 {
@@ -82,31 +84,83 @@ public sealed class AccountSummaryDccaExportTests
 
     // ---- the headline byte-for-byte test ----
 
-    [Fact]
-    public async Task Replaying_the_legacy_rows_reproduces_every_part_byte_for_byte()
+    /// <summary>
+    /// Every path in <c>TRADENET_DCCA_LEGACY_XLSX</c> (';'-separated) that exists on disk. Written
+    /// as one [Fact] over a loop rather than a [Theory]: the variable is normally unset, and an
+    /// empty theory data set is an xUnit error, not a skip.
+    /// </summary>
+    private static List<string> OraclePaths()
+        => (Environment.GetEnvironmentVariable(LegacyPathVariable) ?? string.Empty)
+            .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(File.Exists)
+            .ToList();
+
+    /// <summary>sha256 of a known old-system export → the number of data rows it holds.</summary>
+    private static async Task<Dictionary<string, int>> KnownOraclesAsync()
     {
-        var legacyPath = Environment.GetEnvironmentVariable(LegacyPathVariable);
-        if (string.IsNullOrWhiteSpace(legacyPath) || !File.Exists(legacyPath))
+        var lines = await File.ReadAllLinesAsync(
+            Path.Combine(AppContext.BaseDirectory, "Fixtures", "Dcca", "legacy-oracles.sha256"));
+
+        return lines
+            .Where(line => !line.StartsWith('#') && line.Trim().Length > 0)
+            .Select(line => line.Split("  ", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .ToDictionary(
+                parts => parts[0],
+                parts => int.Parse(parts[1], CultureInfo.InvariantCulture),
+                StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Replaying_a_legacy_export_reproduces_every_part_byte_for_byte()
+    {
+        var oracles = OraclePaths();
+        if (oracles.Count == 0)
         {
             // Not committed: real company names and voucher numbers.
             return;
         }
 
-        var legacy = Parts(await File.ReadAllBytesAsync(legacyPath));
-        var rows = LegacyRows(legacy);
+        var known = await KnownOraclesAsync();
 
-        // Sanity: the file we were pointed at really is the 543-row export.
-        Assert.Equal(543, rows.Count);
-
-        var generated = Parts(await WriteAsync(rows));
-
-        Assert.Equal(ExpectedEntryOrder, EntryNames(await WriteAsync(rows)));
-
-        foreach (var name in ExpectedEntryOrder)
+        foreach (var path in oracles)
         {
-            Assert.True(generated.ContainsKey(name), $"The generated workbook has no '{name}' part.");
-            Assert.Equal(Sha256(legacy[name]), Sha256(generated[name]));
+            var bytes = await File.ReadAllBytesAsync(path);
+            var sourceHash = Sha256(bytes);
+
+            // Without this, pointing the variable at a file WE generated would pass trivially and
+            // report byte-identity we never actually proved.
+            Assert.True(
+                known.TryGetValue(sourceHash, out var expectedRows),
+                $"'{path}' (sha256 {sourceHash}) is not a recorded old-system export. Add it to "
+                + "Fixtures/Dcca/legacy-oracles.sha256 only after confirming it came from "
+                + "Tradenet 2.0 and not from this writer.");
+
+            var legacy = Parts(bytes);
+            var rows = LegacyRows(legacy);
+            Assert.Equal(expectedRows, rows.Count);
+
+            var generated = Parts(await WriteAsync(rows));
+
+            Assert.Equal(ExpectedEntryOrder, EntryNames(await WriteAsync(rows)));
+
+            foreach (var name in ExpectedEntryOrder)
+            {
+                Assert.True(generated.ContainsKey(name), $"The generated workbook has no '{name}' part.");
+                Assert.Equal(Sha256(legacy[name]), Sha256(generated[name]));
+            }
         }
+    }
+
+    [Fact]
+    public async Task Every_recorded_oracle_is_a_distinct_file_with_a_plausible_row_count()
+    {
+        // Always-on sanity on the manifest itself, so a malformed line is caught here rather than
+        // silently shrinking the set of files the headline test verifies.
+        var known = await KnownOraclesAsync();
+
+        Assert.NotEmpty(known);
+        Assert.All(known.Keys, hash => Assert.Equal(64, hash.Length));
+        Assert.All(known.Values, rows => Assert.InRange(rows, 1, DccaWorkbookWriter.MaxDataRows));
     }
 
     /// <summary>

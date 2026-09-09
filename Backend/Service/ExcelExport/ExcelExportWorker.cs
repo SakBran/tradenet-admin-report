@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using API.DBContext;
@@ -19,10 +21,72 @@ namespace API.Service.ExcelExport
     /// </summary>
     public sealed class ExcelExportWorker : BackgroundService
     {
+        private static readonly string BuildStamp = ResolveBuildStamp();
+
+        /// <summary>
+        /// What a job goes back to when it will be retried. Never the legacy
+        /// <see cref="ExcelExportJobStatus.Queued"/>: requeueing as 0 would hand the retry to any
+        /// stale worker sharing this queue, which is exactly what the guard exists to prevent.
+        /// </summary>
+        internal const ExcelExportJobStatus RequeueStatus = ExcelExportJobStatus.QueuedV2;
+
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ExcelExportOptions _options;
         private readonly ILogger<ExcelExportWorker> _logger;
-        private readonly string _workerId = $"{Environment.MachineName}:{Guid.NewGuid():N}";
+
+        /// <summary>
+        /// Recorded as <see cref="ExcelExportJob.LeaseOwner"/> and surfaced by the jobs API as
+        /// <c>processedBy</c>. The build stamp is the point: it identifies not just WHICH host
+        /// produced a file but which build, so a stale instance sharing this queue is one HTTP
+        /// call to spot instead of a forensic comparison of the file's own bytes.
+        /// </summary>
+        private readonly string _workerId = $"{Environment.MachineName}:{Guid.NewGuid():N}@{BuildStamp}";
+
+        /// <summary>
+        /// The one definition of "this job can be taken now". The candidate lookup and the atomic
+        /// claim MUST use the same predicate or the lease stops being a lease — one query would
+        /// find work the other refuses to take, and the loop would spin.
+        ///
+        /// New jobs are <see cref="ExcelExportJobStatus.QueuedV2"/>/<see cref="ExcelExportJobStatus.ProcessingV2"/>;
+        /// the legacy values stay claimable so rows written before this build still drain.
+        /// </summary>
+        internal static Expression<Func<ExcelExportJob, bool>> Claimable(DateTime now)
+            => j => j.Status == ExcelExportJobStatus.QueuedV2
+                || j.Status == ExcelExportJobStatus.Queued
+                || ((j.Status == ExcelExportJobStatus.ProcessingV2 || j.Status == ExcelExportJobStatus.Processing)
+                    && j.LeaseExpiresAtUtc != null
+                    && j.LeaseExpiresAtUtc < now);
+
+        /// <summary>
+        /// "1.0.0+&lt;sha&gt;" (deploy.ps1 passes <c>-p:SourceRevisionId</c>) → the sha; a plain
+        /// version with no metadata is used as-is. Never throws: an unstamped build must still run.
+        /// </summary>
+        private static string ResolveBuildStamp()
+        {
+            try
+            {
+                var informational = (Assembly.GetEntryAssembly() ?? typeof(ExcelExportWorker).Assembly)
+                    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                    ?.InformationalVersion;
+
+                if (string.IsNullOrWhiteSpace(informational))
+                {
+                    return "unstamped";
+                }
+
+                var plus = informational.IndexOf('+');
+                var stamp = plus >= 0 ? informational[(plus + 1)..] : informational;
+                stamp = stamp.Trim();
+
+                return stamp.Length == 0 ? "unstamped"
+                    : stamp.Length > 12 ? stamp[..12]
+                    : stamp;
+            }
+            catch
+            {
+                return "unstamped";
+            }
+        }
 
         public ExcelExportWorker(
             IServiceScopeFactory scopeFactory,
@@ -36,6 +100,10 @@ namespace API.Service.ExcelExport
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            // Logged once so the deploy log records which build owns this queue. If two of these
+            // lines exist on one TemplateDB with different stamps, that is the bug.
+            _logger.LogInformation("Excel export worker {WorkerId} starting.", _workerId);
+
             var loops = Math.Max(1, _options.MaxConcurrency);
             var tasks = Enumerable.Range(0, loops).Select(_ => RunLoopAsync(stoppingToken));
             return Task.WhenAll(tasks);
@@ -84,10 +152,9 @@ namespace API.Service.ExcelExport
 
             var now = DateTime.UtcNow;
 
-            // Candidate: a Queued job, or a Processing job whose lease has expired (orphan).
+            // Candidate: a queued job, or a claimed job whose lease has expired (orphan).
             var candidate = await db.ExcelExportJobs
-                .Where(j => j.Status == ExcelExportJobStatus.Queued
-                    || (j.Status == ExcelExportJobStatus.Processing && j.LeaseExpiresAtUtc != null && j.LeaseExpiresAtUtc < now))
+                .Where(Claimable(now))
                 .OrderBy(j => j.CreatedAtUtc)
                 .Select(j => j.Id)
                 .FirstOrDefaultAsync(stoppingToken);
@@ -99,13 +166,14 @@ namespace API.Service.ExcelExport
 
             var leaseExpiry = now.AddMinutes(Math.Max(1, _options.LeaseMinutes));
 
-            // Atomic claim: only one worker wins the UPDATE guarded by the same status/lease condition.
+            // Atomic claim: only one worker wins the UPDATE guarded by the same status/lease
+            // condition. The two Where calls AND together, so the guard is literally the same
+            // expression the candidate lookup used.
             var claimed = await db.ExcelExportJobs
-                .Where(j => j.Id == candidate
-                    && (j.Status == ExcelExportJobStatus.Queued
-                        || (j.Status == ExcelExportJobStatus.Processing && j.LeaseExpiresAtUtc != null && j.LeaseExpiresAtUtc < now)))
+                .Where(j => j.Id == candidate)
+                .Where(Claimable(now))
                 .ExecuteUpdateAsync(s => s
-                    .SetProperty(j => j.Status, ExcelExportJobStatus.Processing)
+                    .SetProperty(j => j.Status, ExcelExportJobStatus.ProcessingV2)
                     .SetProperty(j => j.LeaseOwner, _workerId)
                     .SetProperty(j => j.LeaseExpiresAtUtc, leaseExpiry)
                     .SetProperty(j => j.StartedAtUtc, now)
@@ -194,7 +262,7 @@ namespace API.Service.ExcelExport
                 try { fileStore?.Delete(relativePath); } catch { /* best effort */ }
 
                 var willRetry = job.AttemptCount < _options.MaxAttempts;
-                var status = willRetry ? ExcelExportJobStatus.Queued : ExcelExportJobStatus.Failed;
+                var status = willRetry ? RequeueStatus : ExcelExportJobStatus.Failed;
 
                 await db.ExcelExportJobs
                     .Where(j => j.Id == job.Id)

@@ -198,13 +198,98 @@ Frontend untouched.
 > All **10 XML parts** are **byte-for-byte identical** to what the old system produced — verified
 > by replaying the real 2 Sep 2021 export (543 rows) and comparing SHA-256 per part, including the
 > Burmese company names, the `&` escapes, the 17 preserved-whitespace strings, the empty Remark,
-> the missing row 2 and every style reference.
+> the missing row 2 and every style reference. Confirmed a second time against an export the old
+> system generated on **17 Jun 2026**, and then against the file **production actually served on
+> 9 Sep 2026** (29,321 rows).
 >
 > The **.xlsx container** cannot be byte-identical to the 2021 file, and never could be: a ZIP
 > stamps the generation timestamp into every entry header, so **two runs of the OLD system minutes
 > apart already produced different bytes**. What we guarantee instead is that two runs of the NEW
 > system over the same data produce an identical file, and that
 > `unzip -p file <part> | sha256sum` matches the old file for all ten parts.
+
+## Second oracle: a June 2026 export from the old system
+
+The customer supplied `AccountSummary.xlsx`, an export the OLD system generated on 17 Jun 2026
+(zip stamps `2026-06-17 09:35`, 138 data rows) — five years newer than the 2021 file the skeleton
+was cut from. Measured against the shipped skeleton:
+
+| Checked | Result |
+|---|---|
+| The 8 data-independent parts | **byte-identical** (same SHA-256 as 2021) |
+| Zip entry order, 10 entries, `sharedStrings.xml` last | identical |
+| `sheet1.xml` bytes before `<dimension` | **byte-identical** |
+| `<cols>` + header `<row r="1" ht="18" customHeight="1">` | **byte-identical** |
+| `</sheetData>…<pageMargins/><pageSetup/><headerFooter/>` | **byte-identical** |
+| Shared strings | `count="163" uniqueCount="163"`, strict first-use order, `<t></t>` for empty Remark |
+| Style census | `s="0"`×1104, `s="3"`×138, `s="1"`×8, `s="2"`×1 — 138 rows through the writer's per-cell scheme |
+
+So the old system's output format has not drifted since 2021, and the skeleton reproduces both.
+`Backend.Tests/Fixtures/Dcca/legacy-oracles.sha256` records the sha256 and row count of both known
+oracles; `TRADENET_DCCA_LEGACY_XLSX` now takes a `;`-separated list, and a path whose hash is not
+in that manifest **fails** rather than passing — otherwise pointing the test at our own output
+would "verify" byte-identity we never proved.
+
+## Confirmed in production, 9 Sep 2026
+
+Job `AccountSummaryReport-DCCA_20260909_082928.xlsx`, 29,321 rows, `processedBy
+TN2-ADMIN01:785825ef...`:
+
+- 10 entries in the expected order, `sharedStrings.xml` last, all zip stamps `1980-01-01` (the
+  writer's pinned timestamp)
+- worksheet `Sheet1`; `cellXfs count="4"` (EPPlus's table, not `StreamingExcelWriter`'s 11 or 13)
+- the 8 static parts **SHA-256-identical to the committed 2021 manifest**
+- `<dimension ref="A1:I29323" />`; rows 1, 3, 4, … 29323 — **no row 2**
+- prologue, `<cols>` + header row, and the `pageSetup`/`headerFooter` tail byte-identical to the old
+  export
+- `count == uniqueCount == 30923`, BOM on `sheet1.xml` and none on `sharedStrings.xml`, `<t></t>`
+  for the empty Remark, the `Transation Title` typo intact
+- **316 strings carry `xml:space="preserve"`** — the padded and double-spaced company names that
+  guessed escaping would have silently trimmed on import
+
+Two earlier jobs the same morning (`…_050307`, `…_081829`) both had `processedBy: null` and were
+the stale worker's 6-part standard sheet. The build that produced them reported
+`cellXfs count="11"`, i.e. older than 2026-09-07 — it had never contained any DCCA code.
+
+## The stale worker can no longer claim a job
+
+`ExcelExportJobStatus` gained `QueuedV2 = 4` and `ProcessingV2 = 5`. `EnqueueAsync` writes
+`QueuedV2`, the worker claims as `ProcessingV2`, and a retry requeues as `QueuedV2`
+(`ExcelExportWorker.RequeueStatus`). An older API instance's candidate/claim query is compiled
+against the literals `0` and `1`, so it matches nothing and starves — deterministic exclusion
+instead of a coin toss.
+
+- **`Status` is a plain `int` and the backend never calls `Migrate()`/`EnsureCreated()`**, so this
+  needed zero schema change. That was the deciding constraint: a new column would simply not exist
+  on TemplateDB.
+- **Both** states are guarded. Poisoning only the queue leaves the orphan-reclaim branch
+  (`Processing` + expired lease) open, so a stale worker would take the job the moment a lease
+  lapsed — exactly when a reclaim is due.
+- `Queued`/`Processing` stay claimable so rows written before this build still drain.
+- The wire contract is unchanged: `ExcelExportController.StatusName` reports both queued values as
+  `Queued` and both processing values as `Processing`. `ExportsDrive.tsx` polls on those strings and
+  indexes its tag colours by them, so leaking `QueuedV2` would have stopped the auto-refresh. **No
+  frontend change.**
+- `ExcelExportStaleWorkerGuardTests` transcribes the old build's predicate **with raw ints** and
+  asserts it finds nothing — it is a query inside a binary we do not control, so it must keep
+  finding no work even if the enum is later renamed. The mirror test asserts the *real*
+  `ExcelExportWorker.Claimable` still matches, so the guard cannot lock this build out too.
+
+**Accepted trade-off:** if the current build's worker is ever down, exports sit visibly at "Queued"
+instead of returning a stale file. A wrong file imported into a government accounting system is
+worse than a stalled export.
+
+## Which build produced a file is now one field
+
+`ExcelExportWorker` appends a build stamp to its worker id — `"<machine>:<guid>@<sha>"` — read from
+the assembly's `AssemblyInformationalVersion`, and logs it once at startup. `deploy.ps1` sets
+`$env:SourceRevisionId` from `git rev-parse --short HEAD` before build/publish; it is set as an
+environment variable rather than a `-p:` argument so MSBuild picks it up as a global property and
+the existing command lines stay untouched. Verified locally: `1.0.0+deadbeef99` reached the DLL via
+the environment alone.
+
+Reading `processedBy` now answers "is the deployed build current?" directly: `null` means a worker
+older than `ffc840d`, no `@` means older than this commit.
 
 ## Still owed
 
@@ -215,13 +300,13 @@ Frontend untouched.
   `sp_AccountSummaryReport_pagination` with a null sort → `ORDER BY PaymentDate, SortOrder, Id`.
   Needs a live-DB comparison before parity is claimed.
 
-## Blocking operations item (not code)
+## Operations item (not code)
 
-Deploying the backend is necessary but **not sufficient**. The rogue second `ExcelExportWorker`
-must be stopped or re-pointed away from TemplateDB, or DCCA exports keep coming out of the old
-build at random — as do every other report's.
+The guard makes a stale worker harmless, but it does not remove it: it still runs, burns CPU and
+can claim legacy `Queued` rows. Find and stop it.
 
-- `GET /api/ExcelExport/jobs` → `processedBy`; `null` = served by the stale worker.
+- `GET /api/ExcelExport/jobs` → `processedBy`. Since this commit, a value without `@<sha>` — or a
+  `null` — identifies a worker that is not this build.
 - Prime suspects: the retired UAT site `P:\WEBSITES\tradenet-admin-backend` (`deploy.ps1:13`,
   commented out as a target but never decommissioned, still pointed at the same TemplateDB), or a
   `dotnet run` left on the Build Server. `ExcelExportServiceCollectionExtensions` registers the

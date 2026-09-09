@@ -70,9 +70,14 @@ namespace API.Service.ExcelExport
             var isPeriodClosed = toDate.Date < DateTime.Today;
 
             // 1) An identical request already queued/processing → tell the user to wait.
+            //    All four in-flight values, legacy included: missing one would enqueue a duplicate
+            //    instead of reporting "already generating".
             var inFlight = await _db.ExcelExportJobs
                 .Where(j => j.FilterHash == filterHash
-                    && (j.Status == ExcelExportJobStatus.Queued || j.Status == ExcelExportJobStatus.Processing))
+                    && (j.Status == ExcelExportJobStatus.QueuedV2
+                        || j.Status == ExcelExportJobStatus.ProcessingV2
+                        || j.Status == ExcelExportJobStatus.Queued
+                        || j.Status == ExcelExportJobStatus.Processing))
                 .OrderByDescending(j => j.CreatedAtUtc)
                 .FirstOrDefaultAsync();
 
@@ -120,7 +125,10 @@ namespace API.Service.ExcelExport
                 ReportTitle = ExcelPresentationSpecValidator.SanitizeTitle(spec?.Title) ?? handler.DefaultTitle,
                 FilterHash = filterHash,
                 RequestJson = requestJson,
-                Status = ExcelExportJobStatus.Queued,
+                // QueuedV2 so a stale API instance sharing TemplateDB cannot claim this job:
+                // its claim query is compiled against Queued=0/Processing=1. See
+                // ExcelExportJobStatus for why that matters.
+                Status = ExcelExportJobStatus.QueuedV2,
                 IsPeriodClosed = isPeriodClosed,
                 // InvariantCulture: on a host whose default culture uses a non-Gregorian
                 // calendar the stamp would otherwise not be the Gregorian date.
