@@ -173,6 +173,11 @@ public sealed class BorderExportPermitLegacyParityLiveDbTests(ITestOutputHelper 
         var baseline = await PostSummaryAsync(db, from, to);
         // Legacy dbo.sp_HSCodeReport's Export Permit branch has no section parameter and never reads
         // @SakhanId; the old screen's two dropdowns changed nothing. Neither may ours.
+        //
+        // The UI stopped rendering both boxes on 2026-09-10 (customer complaint: picking a Sakhan
+        // returned the same 494 rows as All), but the DTO still binds them for inbound
+        // compatibility -- so this test remains the standing proof that the values are ignored, and
+        // that a bookmarked drill URL still carrying sakhanId gets the same rows it always did.
         foreach (var alternative in new[] { await PostSummaryAsync(db, from, to, sakhanId: 5), await PostSummaryAsync(db, from, to, sectionId: 1) })
         {
             Assert.Equal(Shape(baseline.Rows), Shape(alternative.Rows));

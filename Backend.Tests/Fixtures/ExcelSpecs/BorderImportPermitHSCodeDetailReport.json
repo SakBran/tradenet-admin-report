@@ -5,7 +5,7 @@
   "title": "HS Code Detail Report",
   "fileName": "BorderImportPermitHSCodeDetailReport.xlsx",
   "headerLines": [
-    "List of Border Import Permit By HS Code From (01/02/2026) To (28/02/2026)"
+    "List of Import Permits By HS Code From (01/02/2026) To (28/02/2026)"
   ],
   "showRowNumber": true,
   "rowNumberTitle": "No.",

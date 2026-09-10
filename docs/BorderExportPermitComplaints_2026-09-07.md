@@ -163,7 +163,11 @@ Border Import Permit twin).
 **Two defects found by testing the grid's real request shape:**
 
 * **Production Border Import Permit By HS Code has answered HTTP 500 since the 2026-09-06 legacy-order
-  deploy.** The grid posts `sortColumn: 'SakhanId'` (its `initialSortColumn`); `ReportAggregateResult`
+  deploy.** The grid posts `sortColumn: 'SakhanId'` (its `initialSortColumn`) — **correction
+  (2026-09-10): `BasicTable` no longer sends any sort column** (`BasicTable.tsx:92` declares the prop
+  but never destructures it; `sortColumn` is hardcoded `''` at `:146`, `:282`, `:369`), so only the
+  backend guard below still matters. The `initialSortColumn: 'SakhanId'` entries were deleted from
+  both HS Code summaries on 2026-09-10; keep the guard and its test regardless. `ReportAggregateResult`
   has no such property and `ApiResult.ApplySort` throws `NotSupportedException` for an unknown column on
   every LINQ path (measured 2026-09-07: `BorderImportPermitByHSCodeReport` 500 for every request;
   `BorderImportLicenceByHSCodeReport` and `ExportLicenceByHSCodeReport` 500 as soon as a section is
@@ -226,3 +230,10 @@ the grid's request, By HS Code lists the oversea rows, `processedBy` appears on 
 passed (above). Outstanding: merge the `processedBy` follow-up on this branch (a second production
 restart — owner's call), stop the stale worker (above), and re-export the voucher for the customer's
 window (the 12:52 export `876a1242` from this build already carries the right TOTAL).
+
+---
+
+**Follow-up 2026-09-10 — the Sakhan box was removed.** Same story as the Import twin: the "dead
+Sakhan/Section boxes" this document verified as correct legacy behaviour drew their own customer
+complaint ("sakhan ကိုရွေးရှာလဲ all အတိုင်းပဲ 494 ပဲ ကျပါတယ်"). The rows were kept and the two dropdowns
+deleted. See `docs/BorderPermitByHSCodeSakhanRemoval_2026-09-10.md`.

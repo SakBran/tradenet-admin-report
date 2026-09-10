@@ -2611,10 +2611,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   // 2026-09-07 "record မကိုက်ပါ", same owner decision as the Border Import Permit twin on
   // 2026-09-05): the old screen posts FormType = "Export Permit" (legacy ReportsController.cs:14120
   // + a hidden field), so it lists the OVERSEA Export Permit rows and ignores its own Sakhan and
-  // Export Section boxes. The controller now sends the same FormType; the two boxes stay as the
-  // dead controls the old form had. Columns = BorderHSCodeReport.rdlc: Sr.No., HS Code,
-  // Description, No of Licences (CountDistinct), Total Value (FORMAT(Sum(Amount),"N4")), Currency;
-  // the HS Code cell opens BorderHSCodeDetailReport in a new window (rdlc:581 window.open _blank).
+  // Export Section boxes. The controller still sends that same FormType -- the rows are unchanged.
+  //
+  // The Sakhan and Export Section dropdowns were REMOVED on 2026-09-10 (customer complaint:
+  // "sakhan ကိုရွေးရှာလဲ all အတိုင်းပဲ 494 ပဲ ကျပါတယ်"). Measured on PROD that day: SakhanId 0/4/5
+  // and ExportImportSectionId 0/1/2 all return the identical 578 rows / 2,637 permits for
+  // 2024-05-01..2026-09-06. They cannot ever work here -- the oversea ExportPermit table has no
+  // SakhanId column at all (only Border* does), so the old form's dropdown was equally decorative.
+  // The controller still ACCEPTS both properties for inbound compatibility (bookmarked drill URLs,
+  // already-queued Excel jobs). Columns = BorderHSCodeReport.rdlc: Sr.No., HS Code, Description,
+  // No of Licences (CountDistinct), Total Value (FORMAT(Sum(Amount),"N4")), Currency; the HS Code
+  // cell opens BorderHSCodeDetailReport in a new window (rdlc:581 window.open _blank).
   BorderExportPermitByHSCodeReport: {
     controllerName: 'BorderExportPermitByHSCodeReport',
     reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permit By HS Code', true),
@@ -2622,7 +2629,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'BorderExportPermitByHSCodeReport',
     excelRoute: 'BorderExportPermitByHSCodeReport/Excel',
     excelFileName: 'BorderExportPermitByHSCodeReport.xlsx',
-    initialSortColumn: 'SakhanId',
     // Legacy RDLC printed every row on one scrolling page; these summaries are a
     // handful of (HS code, currency) rows, so a 10-row page looked like missing data
     // next to the old report.
@@ -2647,13 +2653,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
-        name: 'ExportImportSectionId',
-        label: 'Export Section',
-        type: 'number',
-        defaultValue: 0,
-        lookupName: 'borderExportPermitSections',
-      },
-      {
         name: 'FilterType',
         label: 'Filter By',
         type: 'select',
@@ -2669,13 +2668,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'text',
         defaultValue: '',
       },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-        lookupName: 'sakhans',
-      },
     ],
     columns: [
       {
@@ -2684,7 +2676,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'HS Code',
         drilldown: {
           targetReportKey: 'BorderExportPermitHSCodeDetailReport',
-          carryFilters: ['FromDate', 'ToDate', 'ExportImportSectionId', 'FilterType', 'SakhanId'],
+          carryFilters: ['FromDate', 'ToDate', 'FilterType'],
           rowParams: { hsCode: 'hsCode' },
           openInNewTab: true,
         },
@@ -2735,22 +2727,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     filters: [
       importLicenceDateRangeFilter,
       importLicenceFormTypeFilter,
-      {
-        name: 'ExportImportSectionId',
-        label: 'Export Section',
-        type: 'number',
-        defaultValue: 0,
-        lookupName: 'borderExportPermitSections',
-      },
       importLicenceFilterTypeFilter,
       importLicenceHSCodeFilter,
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-        lookupName: 'sakhans',
-      },
       // This drill shares BorderExportPermitByHSCodeReport's controller. The old
       // HSCodeDetailReport.rdlc groups on (HS code, company) while the summary's
       // BorderHSCodeReport.rdlc groups on (HS code, currency), and the two arrive at
@@ -5256,8 +5234,15 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   },
   // Reproduces Tradenet 2.0 bug-for-bug (owner decision, 2026-09-05): the old screen ran
   // the OVERSEA Import Permit query (legacy ReportsController.cs:15465 sets FormType =
-  // "Import Permit"), so the backend does too, and the Sakhan / Import Section dropdowns
-  // below are the same dead controls the old form had -- kept for filter-box parity.
+  // "Import Permit"), so the backend does too -- the rows are unchanged.
+  //
+  // The Sakhan and Import Section dropdowns were REMOVED on 2026-09-10 (customer complaint:
+  // "sakhan ကိုရွေးရှာလဲ all အတိုင်းပဲ ၁၀၁၄ ပဲ ကျပါတယ်"). Measured on PROD that day: SakhanId
+  // 0/1/4/5 and ExportImportSectionId 0/1/2/3/10 all return the identical 1,014 rows / 1,328
+  // permits for 2024-05-01..2026-09-06. They cannot ever work here -- the oversea ImportPermit
+  // table has no SakhanId column at all (only Border* does), so the old form's dropdown was
+  // equally decorative. The controller still ACCEPTS SakhanId for inbound compatibility
+  // (bookmarked drill URLs, already-queued Excel jobs).
   BorderImportPermitByHSCodeReport: {
     controllerName: 'BorderImportPermitByHSCodeReport',
     reportSubtitle: importLicenceRangeSubtitle('List of Border Import Permit By HS Code', true),
@@ -5265,7 +5250,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'BorderImportPermitByHSCodeReport',
     excelRoute: 'BorderImportPermitByHSCodeReport/Excel',
     excelFileName: 'BorderImportPermitByHSCodeReport.xlsx',
-    initialSortColumn: 'SakhanId',
     // Legacy RDLC printed every row on one scrolling page; these summaries are a
     // handful of (group, currency) rows, so a 10-row page looked like missing data
     // next to the old report (Company List: 13 rows, page 1 showed 10).
@@ -5289,13 +5273,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: '',
       },
       {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-        lookupName: 'borderImportPermitSections',
-      },
-      {
         name: 'FilterType',
         label: 'Filter By',
         type: 'select',
@@ -5311,13 +5288,6 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'text',
         defaultValue: '',
       },
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-        lookupName: 'sakhans',
-      },
     ],
     columns: [
       {
@@ -5326,7 +5296,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'HS Code',
         drilldown: {
           targetReportKey: 'BorderImportPermitHSCodeDetailReport',
-          carryFilters: ['FromDate', 'ToDate', 'ExportImportSectionId', 'FilterType', 'SakhanId'],
+          carryFilters: ['FromDate', 'ToDate', 'FilterType'],
           rowParams: { hsCode: 'hsCode' },
         },
       },
@@ -5355,7 +5325,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   BorderImportPermitHSCodeDetailReport: {
     controllerName: 'BorderImportPermitByHSCodeReport',
     title: 'HS Code Detail Report',
-    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Permit By HS Code', true),
+    // Legacy BorderHSCodeDetailReport builds header1 as "List of " + FormType + "s By HS Code
+    // From (…) To (…)" with the FormType the summary posted -- "Import Permit" -- so the old
+    // drill is titled after the oversea permits it lists (ReportsController.cs:10589, action
+    // BorderHSCodeDetailReport). Kept verbatim, matching the Export twin above.
+    reportSubtitle: importLicenceRangeSubtitle('List of Import Permits By HS Code', true),
     apiRoute: 'BorderImportPermitByHSCodeReport',
     excelRoute: 'BorderImportPermitByHSCodeReport/Excel',
     excelFileName: 'BorderImportPermitHSCodeDetailReport.xlsx',
@@ -5368,22 +5342,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     filters: [
       importLicenceDateRangeFilter,
       importLicenceFormTypeFilter,
-      {
-        name: 'ExportImportSectionId',
-        label: 'Import Section',
-        type: 'number',
-        defaultValue: 0,
-        lookupName: 'borderImportPermitSections',
-      },
       importLicenceFilterTypeFilter,
       importLicenceHSCodeFilter,
-      {
-        name: 'SakhanId',
-        label: 'Sakhan',
-        type: 'number',
-        defaultValue: 0,
-        lookupName: 'sakhans',
-      },
       // This drill shares BorderImportPermitByHSCodeReport's controller. The old
       // HSCodeDetailReport.rdlc groups on (HS code, company) while the summary's
       // BorderHSCodeReport.rdlc groups on (HS code, currency), and the two arrive at

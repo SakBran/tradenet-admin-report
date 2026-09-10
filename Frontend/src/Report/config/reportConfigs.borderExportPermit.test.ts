@@ -159,26 +159,29 @@ describe('Border Export Permit report configs', () => {
     ).toBe('Cancellation Date');
   });
 
-  it('HS Code report keeps Export Section, Start/End filter, Sakhan lookup, and detail drilldown', () => {
+  // Customer complaint 2026-09-10: "sakhan ကိုရွေးရှာလဲ all အတိုင်းပဲ 494 ပဲ ကျပါတယ်". Measured on
+  // PROD that day, SakhanId 0/4/5 and ExportImportSectionId 0/1/2 all return the identical
+  // 578 rows / 2,637 permits -- the report runs the legacy OVERSEA Export Permit query and the
+  // oversea ExportPermit table has no SakhanId column at all. Owner decision: keep the rows, drop
+  // the two controls that cannot ever work. The negative guards below are what stops them coming
+  // back; do NOT "restore for filter-box parity" without a new owner decision.
+  it('HS Code report drops the Sakhan and Export Section boxes it can never honour', () => {
     const cfg = reportConfigs.BorderExportPermitByHSCodeReport;
 
     expect(cfg.filters.map((filter) => filter.name)).toEqual([
       'dateRange',
       'FormType',
-      'ExportImportSectionId',
       'FilterType',
       'hsCode',
-      'SakhanId',
     ]);
-    expect(
-      cfg.filters.find((filter) => filter.name === 'ExportImportSectionId')?.lookupName
-    ).toBe('borderExportPermitSections');
-    expect(cfg.filters.find((filter) => filter.name === 'SakhanId')?.lookupName).toBe(
-      'sakhans'
-    );
+    expect(cfg.filters.some((filter) => filter.name === 'SakhanId')).toBe(false);
+    expect(cfg.filters.some((filter) => filter.name === 'ExportImportSectionId')).toBe(false);
+    // A fifth dead Sakhan reference: BasicTable declares initialSortColumn but never sends it,
+    // and 'SakhanId' is not a property of ReportAggregateResult (it used to be an HTTP 500).
+    expect(cfg.initialSortColumn).toBeUndefined();
     expect(cfg.columns.find((column) => column.key === 'hsCode')?.drilldown).toEqual({
       targetReportKey: 'BorderExportPermitHSCodeDetailReport',
-      carryFilters: ['FromDate', 'ToDate', 'ExportImportSectionId', 'FilterType', 'SakhanId'],
+      carryFilters: ['FromDate', 'ToDate', 'FilterType'],
       rowParams: { hsCode: 'hsCode' },
       // BorderHSCodeReport.rdlc:581 opens the detail with window.open(..., '_blank').
       openInNewTab: true,
@@ -219,12 +222,12 @@ describe('Border Export Permit report configs', () => {
     expect(cfg.filters.map((filter) => filter.name)).toEqual([
       'dateRange',
       'FormType',
-      'ExportImportSectionId',
       'FilterType',
       'hsCode',
-      'SakhanId',
       'GroupBy',
     ]);
+    expect(cfg.filters.some((filter) => filter.name === 'SakhanId')).toBe(false);
+    expect(cfg.filters.some((filter) => filter.name === 'ExportImportSectionId')).toBe(false);
     // Shares the summary's controller; this pinned value is how the backend knows to
     // group on (HS code, company) like the old HSCodeDetailReport.rdlc instead of the
     // summary's (HS code, currency).

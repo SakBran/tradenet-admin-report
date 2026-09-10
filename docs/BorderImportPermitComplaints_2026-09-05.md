@@ -287,3 +287,11 @@ code). Row order rests on the same no-`ORDER BY` assumption as the other two rep
 Tests: `Backend.Tests/BorderImportPermitCompanyListLegacyParityTests.cs`,
 `ReportAggregationServiceTests.SourceOrder_company_rows_show_the_first_name_in_row_order`, the
 Company List block in `reportConfigs.borderImportPermit.test.ts`. Excel spec fixture regenerated.
+
+---
+
+**Follow-up 2026-09-10 — the Sakhan box was removed.** The bug-for-bug decision recorded above left a
+Sakhan dropdown on this screen that cannot ever filter (the oversea `ImportPermit` table has no
+`SakhanId` column), and the customer complained that picking one still returned 1,014 rows. The rows
+were kept; the dead Sakhan and Import Section dropdowns were deleted instead, and the HS Code drill's
+header became the legacy string verbatim. See `docs/BorderPermitByHSCodeSakhanRemoval_2026-09-10.md`.

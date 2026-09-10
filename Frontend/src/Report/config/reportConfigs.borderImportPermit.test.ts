@@ -125,42 +125,45 @@ describe('Border Import Permit report configs', () => {
     expect(cfg.currencyTotalsColumns).toBeUndefined();
   });
 
-  it('HS Code report restores the old Import Section filter and drilldown carries it through', () => {
+  // Customer complaint 2026-09-10: "sakhan ကိုရွေးရှာလဲ all အတိုင်းပဲ ၁၀၁၄ ပဲ ကျပါတယ်". Measured on
+  // PROD that day, SakhanId 0/1/4/5 and ExportImportSectionId 0/1/2/3/10 all return the identical
+  // 1,014 rows / 1,328 permits -- the report runs the legacy OVERSEA Import Permit query and the
+  // oversea ImportPermit table has no SakhanId column at all. Owner decision: keep the rows, drop
+  // the two controls that cannot ever work. The negative guards below are what stops them coming
+  // back; do NOT "restore for filter-box parity" without a new owner decision.
+  it('HS Code report drops the Sakhan and Import Section boxes it can never honour', () => {
     const cfg = reportConfigs.BorderImportPermitByHSCodeReport;
 
     expect(cfg.filters.map((filter) => filter.name)).toEqual([
       'dateRange',
       'FormType',
-      'ExportImportSectionId',
       'FilterType',
       'hsCode',
-      'SakhanId',
     ]);
-    expect(
-      cfg.filters.find((filter) => filter.name === 'ExportImportSectionId')?.lookupName
-    ).toBe('borderImportPermitSections');
-    expect(cfg.filters.find((filter) => filter.name === 'SakhanId')?.lookupName).toBe(
-      'sakhans'
-    );
+    expect(cfg.filters.some((filter) => filter.name === 'SakhanId')).toBe(false);
+    expect(cfg.filters.some((filter) => filter.name === 'ExportImportSectionId')).toBe(false);
+    // A fifth dead Sakhan reference: BasicTable declares initialSortColumn but never sends it,
+    // and 'SakhanId' is not a property of ReportAggregateResult (it used to be an HTTP 500).
+    expect(cfg.initialSortColumn).toBeUndefined();
     expect(cfg.columns.find((column) => column.key === 'hsCode')?.drilldown).toEqual({
       targetReportKey: 'BorderImportPermitHSCodeDetailReport',
-      carryFilters: ['FromDate', 'ToDate', 'ExportImportSectionId', 'FilterType', 'SakhanId'],
+      carryFilters: ['FromDate', 'ToDate', 'FilterType'],
       rowParams: { hsCode: 'hsCode' },
     });
   });
 
-  it('HS Code detail report keeps section and Sakhan filters for the drilldown page', () => {
+  it('HS Code detail report drops the same two boxes and keeps only the GroupBy flag', () => {
     const cfg = reportConfigs.BorderImportPermitHSCodeDetailReport;
 
     expect(cfg.filters.map((filter) => filter.name)).toEqual([
       'dateRange',
       'FormType',
-      'ExportImportSectionId',
       'FilterType',
       'hsCode',
-      'SakhanId',
       'GroupBy',
     ]);
+    expect(cfg.filters.some((filter) => filter.name === 'SakhanId')).toBe(false);
+    expect(cfg.filters.some((filter) => filter.name === 'ExportImportSectionId')).toBe(false);
     // Shares the summary's controller; this pinned value is how the backend knows to
     // group on (HS code, company) like the old HSCodeDetailReport.rdlc instead of the
     // summary's (HS code, currency). The summary itself must not carry it.
@@ -172,12 +175,18 @@ describe('Border Import Permit report configs', () => {
         (filter) => filter.name === 'GroupBy'
       )
     ).toBe(false);
-    expect(
-      cfg.filters.find((filter) => filter.name === 'ExportImportSectionId')?.lookupName
-    ).toBe('borderImportPermitSections');
-    expect(cfg.filters.find((filter) => filter.name === 'SakhanId')?.lookupName).toBe(
-      'sakhans'
-    );
+  });
+
+  it('HS Code drill keeps the legacy header, which names the oversea permits it lists', () => {
+    // Legacy BorderHSCodeDetailReport builds header1 as "List of " + FormType + "s By HS Code
+    // From (…) To (…)" from the FormType the summary posted -- "Import Permit"
+    // (ReportsController.cs:10589). Verbatim, exactly as the Export twin already does.
+    const subtitle = reportConfigs.BorderImportPermitHSCodeDetailReport.reportSubtitle?.({
+      FromDate: '2025-01-01',
+      ToDate: '2026-09-06',
+    });
+
+    expect(subtitle).toBe('List of Import Permits By HS Code From (01/01/2025) To (06/09/2026)');
   });
   it('summary reports print on one page like the old RDLC', () => {
     // The legacy report viewer scrolled every row on a single page. At the grid's 10-row

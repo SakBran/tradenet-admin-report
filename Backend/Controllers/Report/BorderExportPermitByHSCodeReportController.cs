@@ -145,9 +145,12 @@ namespace Backend.Controllers.Report
                 FormType = "Export Permit",
                 FilterType = request.FilterType ?? string.Empty,
                 HSCode = request.HSCode ?? string.Empty,
-                // Passed for filter-box parity only; the Export Permit branch ignores it, exactly
-                // as the old screen's Sakhan dropdown did. ExportImportSectionId is likewise never
-                // mapped (the old form never sent it to the procedure either).
+                // Accepted, never honoured. The Export Permit branch has no @SakhanId predicate --
+                // the oversea ExportPermit table has no SakhanId column at all -- exactly as the
+                // old screen's Sakhan dropdown behaved. The UI stopped rendering that dropdown on
+                // 2026-09-10 (customer complaint: picking a Sakhan returned the same 494 rows as
+                // All); this stays bound only so a bookmarked drill URL or an already-queued Excel
+                // job that still carries sakhanId keeps working. Same for ExportImportSectionId.
                 SakhanId = request.SakhanId,
                 // The HS Code detail drill (BorderExportPermitHSCodeDetailReport) posts
                 // GroupBy='Company' to get HSCodeDetailReport.rdlc's (HS code, company) rows.
@@ -172,8 +175,12 @@ namespace Backend.Controllers.Report
         public string HSCode { get; set; } = string.Empty;
 
         /// <summary>
-        /// Still posted by the Export Section box (kept for filter-box parity with the old form),
-        /// but never mapped: legacy dbo.sp_HSCodeReport has no section parameter.
+        /// Accepted for inbound compatibility only. The Export Section box was removed from the UI
+        /// on 2026-09-10, and legacy dbo.sp_HSCodeReport has no section parameter, so this is never
+        /// mapped onto the procedure request. Note the LINQ twin DOES carry a section predicate on
+        /// the oversea rows (sp_HSCodeReport.cs, ExportPermitRows / ImportPermitRows) -- it is dead
+        /// only because this controller never maps the property, so mapping it here would silently
+        /// diverge from the old screen.
         /// </summary>
         public int ExportImportSectionId { get; set; }
         public int SakhanId { get; set; }

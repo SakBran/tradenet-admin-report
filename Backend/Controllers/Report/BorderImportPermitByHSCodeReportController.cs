@@ -22,7 +22,11 @@ namespace Backend.Controllers.Report
     // workbook for 24h.
     // v3: rows are now in the old report's order (HS code ID, first appearance) and Total Value is
     // a 4-decimal money cell.
-    [ExcelFormatVersion(3)]
+    // v4: the HS Code drill's header line is the legacy string verbatim ("List of Import Permits By
+    // HS Code From (...) To (...)", legacy ReportsController.cs:10589 builds it from the posted
+    // FormType), matching the Export twin. The title row is part of the sheet, so without this bump
+    // a replayed job would keep serving the old-header workbook from the 24h cache.
+    [ExcelFormatVersion(4)]
     public class BorderImportPermitByHSCodeReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "BorderImportPermitByHSCodeReport";
@@ -145,9 +149,13 @@ namespace Backend.Controllers.Report
                 FormType = "Import Permit",
                 FilterType = request.FilterType ?? string.Empty,
                 HSCode = request.HSCode ?? string.Empty,
-                // Passed for filter-box parity only; the Import Permit branch ignores it, exactly
-                // as the old screen's Sakhan dropdown did. ExportImportSectionId is likewise never
-                // mapped (the old form never sent it to the procedure either).
+                // Accepted, never honoured. The Import Permit branch has no @SakhanId predicate --
+                // the oversea ImportPermit table has no SakhanId column at all -- exactly as the
+                // old screen's Sakhan dropdown behaved. The UI stopped rendering that dropdown on
+                // 2026-09-10 (customer complaint: picking a Sakhan returned the same 1,014 rows as
+                // All); this stays bound only so a bookmarked drill URL or an already-queued Excel
+                // job that still carries sakhanId keeps working. Same for ExportImportSectionId,
+                // which this DTO does not even declare (the old form never sent it either).
                 SakhanId = request.SakhanId,
                 // The HS Code detail drill (BorderImportPermitHSCodeDetailReport) posts
                 // GroupBy='Company' to get HSCodeDetailReport.rdlc's (HS code, company) rows.
