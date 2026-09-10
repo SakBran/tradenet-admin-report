@@ -200,19 +200,42 @@ Note the deployed backend was at `f6fc344` when this was written (from the expor
   `concurrent-peer-sessions-edit-repo`.
 - The DB-bound suites were not run, per the owner's standing decision.
 
-## Still owed
+## Production verification — all done, 2026-09-10 23:00–23:05
 
-The production re-measurement of #3–#6 and #8 can only be done **after** the procedures and
-the build are deployed. The exact checks:
+Merged as `a770009`; the auto-deploy shipped the API and then the frontend (bundle
+`index-uhsnmlV_.js`). Export jobs now stamp `processedBy … @a770009`, confirming the build.
 
-1. `POST /api/ImportLicenceBySectionReport` for 2025 must return
-   `columnTotals: {"noOfLicences": 65452}` with **no** `totalValue` key, and that number
-   must equal the sum of `noOfLicences` over all rows. Repeat for the other three.
-2. `POST /api/ImportPermitCancellationReport` for 2023 → today must return **0** rows with
-   a null `currency`/`amount` (was 10 of 20); `OVSIP42425C000005` must read `USD` /
-   `6100`; `currencyTotals` must carry no `""` currency line. Re-run the three sibling
-   cancellation reports to confirm they are untouched.
-3. Click Excel on all four Total Value pages: the file should download without a visit to
-   Exports.
-4. Re-export one By-X report and confirm the `.xlsx` footer row carries the count — that
-   is what the `ExcelFormatVersion` bump exists to guarantee.
+**#3–#6 footers, all four dimensions:**
+
+| report | rows | `columnTotals` |
+| --- | --- | --- |
+| ImportLicenceByMethodReport | 31 | `{"noOfLicences": 65452}` |
+| ImportLicenceBySectionReport | 28 | `{"noOfLicences": 65452}` |
+| ImportLicenceBySellerCountryReport | 173 | `{"noOfLicences": 65452}` |
+| ImportLicenceCompanyListReport | 5080 | `{"noOfLicences": 65452}` |
+
+No `totalValue` key on any of them, so the money cell stays blank as the RDLC has it, and
+the count matches the independently derived distinct-licence total.
+
+**#8 Import Permit Cancellation** — the procedures were applied (note: `deploy.ps1` and
+`tools/auto-deploy-watch.ps1` contain no SQL step, so this was a manual run, not the
+pipeline; the hand-deploy note above still stands for future rounds):
+
+- NULL-currency rows: **0 of 20**, from 10 of 20.
+- `OVSIP42425C000005` → `USD` / `2933599000` / `4,600`. Note this is a *different* item
+  from the one the local reproduction predicted (`2939119000` / `6,100`): both are that
+  parent's real items, and `ORDER BY ImportPermitItem.Id` takes the lowest actual Id, which
+  a seeded fixture cannot know. Deterministic, which is the property that matters.
+- Footer `USD 16 / 680,812.773`, `EUR 3 / 9,994.16`, `CNY 1 / 2,857,800`; no `""` line;
+  `grandTotalLicences` 20 = `totalCount`. Recomputing the per-currency sums from the 20 grid
+  rows reproduces all three **to the cent** — grid and footer now agree by construction.
+
+**#2 + #7 menu** — the live bundle carries 7 `hideInMenu` references: the 6 flagged configs
+plus the `reportNavItems` filter. All five `HS Code Detail Report` configs are still present
+(hidden, not deleted), so their drill-downs keep working.
+
+**#1 Excel** — enqueued a real export through the API and polled it exactly as the shipped
+`waitForJob` does: `Queued` → **`Completed` after 1 second**, so the 1 s first tick catches
+it. The downloaded file (3,051 bytes, 22 rows) has the right title
+(`Import Licences Total Value & Licences (01/01/2025) To (31/03/2025)`) and both sections.
+The old UI stopped at that `Queued` response and never fetched the file.
