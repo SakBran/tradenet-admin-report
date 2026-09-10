@@ -131,7 +131,8 @@ public static class sp_ImportLicenceDetailReport_Fast
         ReportQueryRequest pagingRequest,
         ReportAggregateDimension dimension,
         bool includeSakhan,
-        bool includeColumnTotals = false)
+        bool includeColumnTotals = false,
+        ReportColumnTotalsMode columnTotalsMode = ReportColumnTotalsMode.CountAndValue)
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
@@ -140,9 +141,20 @@ public static class sp_ImportLicenceDetailReport_Fast
         // AggregateInSqlAsync already fills TotalUSDValue for the Daily dimension; the
         // grand-total footer row (legacy RDLC "TOTAL") is produced by CreatePagedResultFromGroups
         // when includeColumnTotals is set, and includes the USD roll-up for Daily.
+        //
+        // Unlike the Export/Import Permit families, CountOnly needs no separate
+        // COUNT(DISTINCT LicenceNo) here: sp_ImportLicenceSummaryReport_Indexed groups on
+        // (dimension, currency), but an Import Licence never spans two currencies, so
+        // BuildColumnTotals' Sum(NoOfLicences) already equals the RDLC's
+        // =CountDistinct(Fields!LicenceNo.Value). Measured on production for 2025: the sum
+        // is 65,452 for By Method, By Section, By Seller Country and Company List alike,
+        // and equals the distinct licence count from the Pa Tha Ka type split. Asking the
+        // EF row path for the distinct count instead would hit the 6.4M-row
+        // ImportLicenceItem join that sp_ImportLicenceSummaryReport_Indexed.sql:11-18
+        // records as timing out past 180s.
         var groups = await AggregateInSqlAsync(db, request, dimension, includeSakhan);
         return ReportAggregationService.CreatePagedResultFromGroups(
-            groups, dimension, includeSakhan, pagingRequest, includeColumnTotals);
+            groups, dimension, includeSakhan, pagingRequest, includeColumnTotals, columnTotalsMode);
     }
 
     public static async Task<byte[]> CreateAggregateExcelWorkbookAsync(

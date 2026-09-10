@@ -18,8 +18,14 @@ namespace Backend.Controllers.Report
     [ApiController]
     [Route("api/[controller]")]
     [ExcelFormatVersion(2)]
+    // IExcelNoFooterReport: this report's Post returns a composite summary, not an
+    // ApiResult/IReportTotals, so the footer probe can never produce a footer row -- its own
+    // layout test asserts ExcelFooterBuilder.Build stays empty. Without the marker the
+    // resolver still replays Post (a second GetTotalValueLicencesSummaryAsync, three more DB
+    // round trips), and because FooterTotals defaults to Required it turns any hiccup in that
+    // replay into a failed export. The sheet's bytes are unchanged, so no format-version bump.
     public class ExportLicenceTotalValueLicencesReportController
-        : ControllerBase, IStreamingExcelReport, IExcelReportLayoutProvider
+        : ControllerBase, IStreamingExcelReport, IExcelReportLayoutProvider, IExcelNoFooterReport
     {
         private const string ReportKey = "ExportLicenceTotalValueLicencesReport";
 

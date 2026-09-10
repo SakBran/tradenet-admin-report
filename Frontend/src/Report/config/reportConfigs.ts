@@ -1133,6 +1133,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     ],
   },
   BorderExportLicenceHSCodeDetailReport: {
+    // Drill target only, reached from the By HS Code summary's HS Code cell. Its
+    // controllerName is deliberately the summary's (same endpoint), which is exactly why it
+    // needs hideInMenu: createReportItem keys the menu off controllerName, so leaving it
+    // visible rendered a second row with the summary's own key and link.
+    hideInMenu: true,
     controllerName: 'BorderExportLicenceByHSCodeReport',
     reportSubtitle: importLicenceRangeSubtitle('List of Border Export Licences By HS Code', true),
     title: 'HS Code Detail Report',
@@ -2719,6 +2724,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     ],
   },
   BorderExportPermitHSCodeDetailReport: {
+    // Drill target only, reached from the By HS Code summary's HS Code cell. Its
+    // controllerName is deliberately the summary's (same endpoint), which is exactly why it
+    // needs hideInMenu: createReportItem keys the menu off controllerName, so leaving it
+    // visible rendered a second row with the summary's own key and link.
+    hideInMenu: true,
     controllerName: 'BorderExportPermitByHSCodeReport',
     // Legacy BorderHSCodeDetailReport builds header1 as "List of " + FormType + "s By HS Code
     // From (…) To (…)" from the FormType the summary posted. That rule is kept; the FormType it
@@ -4015,6 +4025,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     ],
   },
   BorderImportLicenceHSCodeDetailReport: {
+    // Drill target only, reached from the By HS Code summary's HS Code cell. Its
+    // controllerName is deliberately the summary's (same endpoint), which is exactly why it
+    // needs hideInMenu: createReportItem keys the menu off controllerName, so leaving it
+    // visible rendered a second row with the summary's own key and link.
+    hideInMenu: true,
     controllerName: 'BorderImportLicenceByHSCodeReport',
     reportSubtitle: importLicenceRangeSubtitle('List of Border Import Licence By HS Code', true),
     title: 'HS Code Detail Report',
@@ -5357,6 +5372,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     ],
   },
   BorderImportPermitHSCodeDetailReport: {
+    // Drill target only, reached from the By HS Code summary's HS Code cell. Its
+    // controllerName is deliberately the summary's (same endpoint), which is exactly why it
+    // needs hideInMenu: createReportItem keys the menu off controllerName, so leaving it
+    // visible rendered a second row with the summary's own key and link.
+    hideInMenu: true,
     controllerName: 'BorderImportPermitByHSCodeReport',
     title: 'HS Code Detail Report',
     // Legacy header1 is "List of " + <posted FormType> + "s By HS Code From (…) To (…)"; with the
@@ -7128,6 +7148,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     ],
   },
   ExportLicenceHSCodeDetailReport: {
+    // Drill target only, reached from the By HS Code summary's HS Code cell. Its
+    // controllerName is deliberately the summary's (same endpoint), which is exactly why it
+    // needs hideInMenu: createReportItem keys the menu off controllerName, so leaving it
+    // visible rendered a second row with the summary's own key and link.
+    hideInMenu: true,
     controllerName: 'ExportLicenceByHSCodeReport',
     reportSubtitle: importLicenceRangeSubtitle('List of Export Licences By HS Code', true),
     title: 'HS Code Detail Report',
@@ -9853,6 +9878,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   // equals the "No of Licences" of the clicked cell (the per-item Detail report
   // fans out per HS line, so its count never matched).
   ImportLicenceDetailByLicenceReport: {
+    // Drill target only (see the note above): the sitemap has one "Import Licence Detail
+    // Report", the per-item ImportLicenceDetailReport. Two identically titled menu rows is
+    // what the customer reported.
+    hideInMenu: true,
     controllerName: 'ImportLicenceDetailByLicenceReport',
     title: 'Import Licence Detail Report',
     apiRoute: 'ImportLicenceDetailByLicenceReport',

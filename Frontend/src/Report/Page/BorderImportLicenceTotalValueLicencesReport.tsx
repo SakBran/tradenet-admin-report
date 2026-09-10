@@ -22,11 +22,12 @@ import dayjs, { Dayjs } from 'dayjs';
 import axiosInstance from '../../services/AxiosInstance';
 import { PageHeader } from '../../components';
 import { reportConfigs } from '../config/reportConfigs';
+import {
+  enqueueExcelExport,
+  ExcelSpecRejectedError,
+} from '../excel/excelEnqueue';
 
 const config = reportConfigs.BorderImportLicenceTotalValueLicencesReport;
-
-const excelContentType =
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 interface LookupOption {
   id: number;
@@ -49,12 +50,6 @@ interface TotalValueLicencesSummary {
   totalValueByCurrency: ValueRow[];
   totalLicencesByPaThaKaType: LicenceRow[];
   totalUsdValue: number;
-}
-
-interface ExcelEnqueueResult {
-  status: 'Ready' | 'Queued' | 'Processing';
-  downloadUrl?: string;
-  fileName?: string;
 }
 
 type FormValues = {
@@ -169,37 +164,22 @@ const BorderImportLicenceTotalValueLicencesReport = () => {
       return;
     }
 
-    const response = await axiosInstance.post<ExcelEnqueueResult>(
-      config.excelRoute,
-      buildRequest(values)
-    );
-    const result = response.data;
-
-    if (result.status === 'Ready' && result.downloadUrl) {
-      const fileResponse = await axiosInstance.get(result.downloadUrl, {
-        responseType: 'blob',
-      });
-      const blob = new Blob([fileResponse.data], {
-        type: String(fileResponse.headers['content-type'] ?? excelContentType),
-      });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = result.fileName ?? config.excelFileName;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      message.success('Your Excel export is ready and downloading.');
-      return;
-    }
-
-    if (result.status === 'Processing') {
-      message.info(
-        'This export is already being generated. It will appear in Exports when ready.'
+    // The shared funnel, not a hand-rolled post: it reports a rejected request instead of
+    // swallowing it (this page used to await an un-caught POST, so a failure made the
+    // button do nothing at all), and it follows the queued job to completion so the file
+    // downloads here. No presentation spec -- this controller is an
+    // IExcelReportLayoutProvider and builds the two-section sheet itself.
+    try {
+      await enqueueExcelExport(
+        config.excelRoute,
+        buildRequest(values),
+        undefined,
+        config.excelFileName
       );
-    } else {
-      message.success('Export queued. It will appear in Exports when ready.');
+    } catch (error) {
+      if (!(error instanceof ExcelSpecRejectedError)) {
+        message.error('Excel export failed. Please try again.');
+      }
     }
   };
 

@@ -15,9 +15,13 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    [ExcelFormatVersion(2)]
+    // v3: the legacy count-only TOTAL footer is back (the 2026-09-03 removal took the
+    // whole row, but the old rdlc always printed CountDistinct(LicenceNo)), so cached
+    // closed-period .xlsx files must not be reused. IExcelNoFooterReport is deliberately
+    // gone: it would keep that count out of the sheet (ExcelFooterTotalsResolver.cs:77-80).
+    [ExcelFormatVersion(3)]
     public class ImportLicenceBySectionReportController
-        : ControllerBase, IStreamingExcelReport, IExcelNoFooterReport
+        : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ImportLicenceBySectionReport";
 
@@ -38,11 +42,13 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
-            var rows = await sp_ImportLicenceDetailReport_Fast.GetAggregateRowsAsync(
-                _context, procedureRequest!, ReportAggregateDimension.Section, includeSakhan: false);
-
-            var result = ReportAggregationService.CreatePagedResultFromGroups(
-                rows, ReportAggregateDimension.Section, includeSakhan: false, request!);
+            var result = await sp_ImportLicenceDetailReport_Fast.CreateAggregateResultAsync(
+                _context, procedureRequest!, request!, ReportAggregateDimension.Section, includeSakhan: false,
+                // The legacy TOTAL row prints only CountDistinct(LicenceNo); the Total Value and
+                // Currency cells are blank, because each row is one (group, currency) pair and
+                // summing money across currencies is meaningless
+                // (ImportLicenceBySectionReport.rdlc:837/891/945).
+                includeColumnTotals: true, columnTotalsMode: ReportColumnTotalsMode.CountOnly);
 
             return Ok(result);
         }
