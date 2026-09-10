@@ -20,3 +20,24 @@ Border Import Permit Voucher Report
 ငါတို့Accessရတဲ့ DBက၂၀၂၅ ၆လပိုင်းထိပဲရှိလို့ ၂၀၂၆နဲ့ပါလာတဲ့ data တွေကိုမထွက်နိုင်ပါဘူး။ ၂၀၂၅ data တွေကိုထည့်ပြီးပြန်စမ်းကြည့်ရမယ်။ ပြီးရင် OldReport နဲ့ Report တွေကိုတူညီအောင်ပြင်ပေးရမယ်။ ၂၀၂၅ data တွေထည့်ပြီးပြန်စမ်းကြည့်ပြီးပြန်ပြောပါ။
 Harness သုံးပြီးမှန်အောင်ပြင်ပါ။
 Objective OldReportအတိုင်း Dataထွက်အောင်ပြင်ပေးရမယ်။ Harness သုံးပြီးမှန်အောင်ပြင်ပါ။
+
+---
+
+## SUPERSEDED for the two "By HS Code" reports — 2026-09-10
+
+The "Objective: OldReport အတိုင်း Data ထွက်အောင်ပြင်ပေးရမယ်" line above **no longer applies to
+Border Import Permit By HS Code or Border Export Permit By HS Code.**
+
+The customer re-tested the Sakhan filter on those two screens and said:
+
+> Sakhanတွေ Filterလုပ်လို့ရအောင်ပြင်ပေးပါ။ **Old Reportမှာမှားနေလို့ပါ။**
+
+The old report is wrong on these two: it posts the OVERSEA FormType, so it lists oversea permits
+under a Border title and its Sakhan dropdown cannot work (oversea permit tables have no SakhanId
+column). Both reports now read the **Border** tables and Sakhan filters. On the customer's window
+(1-May-2024 → 6-Sep-2026) that takes Import from 1,014 rows / 1,328 permits to 31 / 112, and Export
+from 578 / 2,637 to 12 / 8 — deliberately, not a regression.
+
+Do NOT "restore parity with the OldReport" on these two without a new customer decision.
+See `docs/BorderPermitByHSCodeSakhanSwitch_2026-09-10.md`. The objective above still stands for every
+other report on this list.

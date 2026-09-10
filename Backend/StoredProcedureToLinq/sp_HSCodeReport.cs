@@ -47,9 +47,10 @@ public sealed class sp_HSCodeReportResult
     public int? SakhanId { get; set; }
 
     /// <summary>
-    /// Ordering keys for <see cref="sp_HSCodeReportRequest.LegacyOrder"/>. Only the two oversea permit
-    /// sources fill them (Import Permit and Export Permit -- the ones the Border By HS Code screens run
-    /// bug-for-bug with Tradenet 2.0); every other source leaves them null.
+    /// Ordering keys for <see cref="sp_HSCodeReportRequest.LegacyOrder"/>. Filled by the four permit
+    /// sources (Import Permit, Export Permit, Border Import Permit, Border Export Permit) -- every
+    /// source a caller runs with LegacyOrder must fill them, or the order silently degenerates.
+    /// The licence sources leave them null and never set LegacyOrder.
     /// </summary>
     public DateTime? PermitCreatedDate { get; set; }
     public string? PermitId { get; set; }
@@ -836,7 +837,15 @@ public static partial class sp_HSCodeReport
                 Currency = currency.Code,
                 LicenceNo = permit.ExportPermitNo,
                 CompanyRegistrationNo = paThaKa.CompanyRegistrationNo,
-                CompanyName = paThaKa.CompanyName
+                CompanyName = paThaKa.CompanyName,
+                // Required by LegacyOrder, which this source has run since 2026-09-10 (see the
+                // controller). AggregateQuery orders groups by Min(PermitCreatedDate) then
+                // Min(PermitId), and LegacyCompanyGroupsAsync sorts rows by the same pair before an
+                // order-sensitive in-memory GroupBy. Leave them unset and both collapse to a
+                // constant null: arbitrary group order, unstable OFFSET/FETCH paging, and a
+                // non-deterministic company name on the drill.
+                PermitCreatedDate = permit.CreatedDate,
+                PermitId = permit.Id
             };
     }
 
@@ -873,7 +882,11 @@ public static partial class sp_HSCodeReport
                 Currency = currency.Code,
                 LicenceNo = permit.ImportPermitNo,
                 CompanyRegistrationNo = paThaKa.CompanyRegistrationNo,
-                CompanyName = paThaKa.CompanyName
+                CompanyName = paThaKa.CompanyName,
+                // See BorderExportPermitRows: LegacyOrder sorts on these two, so an unset pair
+                // means an arbitrary group order and unstable paging.
+                PermitCreatedDate = permit.CreatedDate,
+                PermitId = permit.Id
             };
     }
 

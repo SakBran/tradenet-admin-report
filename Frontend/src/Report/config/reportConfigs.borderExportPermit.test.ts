@@ -239,10 +239,11 @@ describe('Border Export Permit report configs', () => {
     ]);
     expect(cfg.rowNumberTitle).toBe('Sr.No.');
     expect(cfg.defaultPageSize).toBe(1000);
-    // Legacy BorderHSCodeDetailReport header1 = "List of " + FormType + "s By HS Code …" with the
-    // FormType the summary posted ("Export Permit") -- kept verbatim.
+    // Legacy BorderHSCodeDetailReport header1 = "List of " + FormType + "s By HS Code …" built from
+    // the FormType the summary posts. That rule is kept; the FormType became "Border Export Permit"
+    // when the report moved onto the Border tables on 2026-09-10.
     expect(cfg.reportSubtitle?.({ FromDate: '2025-01-01', ToDate: '2026-09-06' })).toBe(
-      'List of Export Permits By HS Code From (01/01/2025) To (06/09/2026)'
+      'List of Border Export Permits By HS Code From (01/01/2025) To (06/09/2026)'
     );
   });
 

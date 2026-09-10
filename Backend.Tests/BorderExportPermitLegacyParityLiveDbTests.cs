@@ -18,8 +18,8 @@ namespace Backend.Tests;
 /// (<c>TRADENET_REPORT_TEST_CONNECTION_STRING</c>): from a developer Mac against UAT, from the Build Server
 /// against production.
 ///
-/// The oracle for By HS Code is the LEGACY SQL TEXT of <c>dbo.sp_HSCodeReport</c>'s 'Export Permit' branch
-/// (docs/StoredProcedureDefinitions.sql:4727-4737 and :4743-4754, exported 2026-05-28) executed verbatim --
+/// The oracle for By HS Code is the LEGACY SQL TEXT of <c>dbo.sp_HSCodeReport</c>'s 'Border Export Permit' branch
+/// (docs/StoredProcedureDefinitions.sql:5019-5030 and :5036-5048, exported 2026-05-28) executed verbatim --
 /// not <c>EXEC dbo.sp_HSCodeReport</c>, because on UAT that procedure was ALTERed into a paginated aggregate
 /// on 2026-06-01 (docs/sp_HSCodeReport_AggregatePagination.sql) and no longer returns the columns the old
 /// admin app reads. The RDLC shaping is replayed here: BorderHSCodeReport.rdlc groups on (HSCodeId,
@@ -33,34 +33,38 @@ public sealed class BorderExportPermitLegacyParityLiveDbTests(ITestOutputHelper 
     private const string SkipReason =
         "Set TRADENET_REPORT_TEST_CONNECTION_STRING to a reachable TradeNetDB to run this live parity test.";
 
-    // docs/StoredProcedureDefinitions.sql:4727-4737 -- dbo.sp_HSCodeReport, @FormType='Export Permit', @HSCode=''.
+    // docs/StoredProcedureDefinitions.sql:5019-5030 -- dbo.sp_HSCodeReport, @FormType='Border Export
+    // Permit', @HSCode=''. Re-pointed from the 'Export Permit' (oversea) branch on 2026-09-10, when
+    // the report was switched to the Border tables so the Sakhan filter works.
     private const string LegacySummarySql = """
-        SELECT section.Code sectionCode,HSCodeId,HSCode.Code HSCode,HSCode.Description HSDescription,Amount,currency.Code Currency,
-        ExportPermit.ExportPermitNo LicenceNo,CompanyRegistrationNo,CompanyName
-        FROM ExportPermit
-        INNER JOIN ExportPermitItem ON ExportPermit.Id = ExportPermitItem.ExportPermitId
-        INNER JOIN PaThaKa ON ExportPermit.PaThaKaId = PaThaKa.Id
-        INNER JOIN HSCode ON ExportPermitItem.HSCodeId = HSCode.Id
-        INNER JOIN Currency currency ON ExportPermitItem.CurrencyId = currency.Id
-        INNER JOIN ExportImportSection section ON ExportPermit.ExportImportSectionId = section.Id
-        WHERE ApplyType='New' AND ExportPermit.Status='Approved'
-        AND (ExportPermit.LicenceDate>=@FromDate AND ExportPermit.LicenceDate<=@ToDate)
+        SELECT BorderExportPermit.SakhanId SakhanId,section.Code sectionCode,HSCodeId,HSCode.Code HSCode,HSCode.Description HSDescription,Amount,currency.Code Currency,
+        BorderExportPermit.ExportPermitNo LicenceNo,CompanyRegistrationNo,CompanyName
+        FROM BorderExportPermit
+        INNER JOIN BorderExportPermitItem ON BorderExportPermit.Id = BorderExportPermitItem.BorderExportPermitId
+        INNER JOIN PaThaKa ON BorderExportPermit.PaThaKaId = PaThaKa.Id
+        INNER JOIN HSCode ON BorderExportPermitItem.HSCodeId = HSCode.Id
+        INNER JOIN Currency currency ON BorderExportPermitItem.CurrencyId = currency.Id
+        INNER JOIN ExportImportSection section ON BorderExportPermit.ExportImportSectionId = section.Id
+        WHERE ApplyType='New' AND BorderExportPermit.Status='Approved'
+        AND (BorderExportPermit.LicenceDate>=@FromDate AND BorderExportPermit.LicenceDate<=@ToDate)
+        AND BorderExportPermit.SakhanId=(CASE WHEN @SakhanId=0 THEN BorderExportPermit.SakhanId ELSE @SakhanId END)
         ORDER BY HSCode.Id
         """;
 
-    // docs/StoredProcedureDefinitions.sql:4743-4754 -- same branch, @FilterType='Start' with an HS code.
+    // docs/StoredProcedureDefinitions.sql:5036-5048 -- same branch, @FilterType='Start' with an HS code.
     private const string LegacyDrillSql = """
-        SELECT section.Code SectionCode,HSCodeId,HSCode.Code HSCode,HSCode.Description HSDescription,Amount,currency.Code Currency,
-        ExportPermit.ExportPermitNo LicenceNo,CompanyRegistrationNo,CompanyName
-        FROM ExportPermit
-        INNER JOIN ExportPermitItem ON ExportPermit.Id = ExportPermitItem.ExportPermitId
-        INNER JOIN PaThaKa ON ExportPermit.PaThaKaId = PaThaKa.Id
-        INNER JOIN HSCode ON ExportPermitItem.HSCodeId = HSCode.Id
-        INNER JOIN Currency currency ON ExportPermitItem.CurrencyId = currency.Id
-        INNER JOIN ExportImportSection section ON ExportPermit.ExportImportSectionId = section.Id
-        WHERE ApplyType='New' AND ExportPermit.Status='Approved'
-        AND (ExportPermit.LicenceDate>=@FromDate AND ExportPermit.LicenceDate<=@ToDate)
+        SELECT BorderExportPermit.SakhanId SakhanId,section.Code SectionCode,HSCodeId,HSCode.Code HSCode,HSCode.Description HSDescription,Amount,currency.Code Currency,
+        BorderExportPermit.ExportPermitNo LicenceNo,CompanyRegistrationNo,CompanyName
+        FROM BorderExportPermit
+        INNER JOIN BorderExportPermitItem ON BorderExportPermit.Id = BorderExportPermitItem.BorderExportPermitId
+        INNER JOIN PaThaKa ON BorderExportPermit.PaThaKaId = PaThaKa.Id
+        INNER JOIN HSCode ON BorderExportPermitItem.HSCodeId = HSCode.Id
+        INNER JOIN Currency currency ON BorderExportPermitItem.CurrencyId = currency.Id
+        INNER JOIN ExportImportSection section ON BorderExportPermit.ExportImportSectionId = section.Id
+        WHERE ApplyType='New' AND BorderExportPermit.Status='Approved'
+        AND (BorderExportPermit.LicenceDate>=@FromDate AND BorderExportPermit.LicenceDate<=@ToDate)
         AND HSCode.Code LIKE @HSCode+'%'
+        AND BorderExportPermit.SakhanId=(CASE WHEN @SakhanId=0 THEN BorderExportPermit.SakhanId ELSE @SakhanId END)
         ORDER BY HSCode.Id
         """;
 
@@ -83,8 +87,8 @@ public sealed class BorderExportPermitLegacyParityLiveDbTests(ITestOutputHelper 
         // this fails before any database is involved.
         var lines = File.ReadAllLines(Path.Combine(RepositoryRoot, "docs", "StoredProcedureDefinitions.sql"));
 
-        Assert.Equal(Normalize(string.Join('\n', lines[4726..4737])), Normalize(LegacySummarySql));
-        Assert.Equal(Normalize(string.Join('\n', lines[4742..4754])), Normalize(LegacyDrillSql));
+        Assert.Equal(Normalize(string.Join('\n', lines[5018..5030])), Normalize(LegacySummarySql));
+        Assert.Equal(Normalize(string.Join('\n', lines[5035..5048])), Normalize(LegacyDrillSql));
     }
 
     // ---------------------------------------------------------------- live comparisons
@@ -161,8 +165,13 @@ public sealed class BorderExportPermitLegacyParityLiveDbTests(ITestOutputHelper 
     }
 
     [Fact]
-    public async Task Sakhan_and_export_section_boxes_are_dead_like_the_old_form()
+    public async Task Sakhan_filters_and_the_parts_add_up_to_the_whole()
     {
+        // The inverse of what this test asserted until 2026-09-10, when it pinned both dropdowns as
+        // dead. They were: the report ran the oversea branch, which has no @SakhanId predicate. The
+        // customer asked for Sakhan to work ("Old Reportမှာမှားနေလို့ပါ"), so now each Sakhan must
+        // return its own slice, and the slices must partition the whole -- a permit sits at exactly
+        // one Sakhan, so the per-Sakhan licence counts have to sum to the all-Sakhan footer.
         using var db = TryConnect();
         if (db == null)
         {
@@ -171,15 +180,34 @@ public sealed class BorderExportPermitLegacyParityLiveDbTests(ITestOutputHelper 
 
         var (from, to) = Windows[0];
         var baseline = await PostSummaryAsync(db, from, to);
-        // Legacy dbo.sp_HSCodeReport's Export Permit branch has no section parameter and never reads
-        // @SakhanId; the old screen's two dropdowns changed nothing. Neither may ours.
-        foreach (var alternative in new[] { await PostSummaryAsync(db, from, to, sakhanId: 5), await PostSummaryAsync(db, from, to, sectionId: 1) })
+        Assert.NotEmpty(baseline.Rows);
+
+        var sakhanIds = await db.Sakhans.Select(s => s.Id).ToListAsync();
+        var perSakhanTotal = 0;
+        var narrowed = 0;
+        foreach (var sakhanId in sakhanIds)
         {
-            Assert.Equal(Shape(baseline.Rows), Shape(alternative.Rows));
-            Assert.Equal(baseline.Footer, alternative.Footer);
+            var slice = await PostSummaryAsync(db, from, to, sakhanId: sakhanId);
+            perSakhanTotal += slice.Footer ?? 0;
+            if (slice.Rows.Count < baseline.Rows.Count)
+            {
+                narrowed++;
+            }
+
+            // Every row a Sakhan returns must also appear in the all-Sakhan result.
+            Assert.Empty(Shape(slice.Rows).Except(Shape(baseline.Rows)));
         }
 
-        output.WriteLine($"dead boxes: {baseline.Rows.Count} rows / TOTAL {baseline.Footer} with Sakhan=0/Section=0, Sakhan=5 and Section=1 alike");
+        output.WriteLine($"sakhan: all = {baseline.Rows.Count} rows / TOTAL {baseline.Footer}; "
+            + $"{sakhanIds.Count} sakhans sum to {perSakhanTotal}; {narrowed} returned fewer rows than All");
+
+        Assert.Equal(baseline.Footer, perSakhanTotal);
+        Assert.True(narrowed > 0, "No Sakhan narrowed the result -- the filter is not being applied.");
+
+        // The Export Section box is mapped too (an addition of ours: the legacy Border branch has no
+        // section parameter), so a real section id must not widen the result.
+        var section = await PostSummaryAsync(db, from, to, sectionId: 5);
+        Assert.True(section.Footer <= baseline.Footer);
 
         static List<(string, string, int, decimal)> Shape(List<ReportAggregateResult> rows)
             => rows.Select(r => (r.HSCode ?? "", r.Currency ?? "", r.NoOfLicences, Round4(r.TotalValue ?? 0m))).ToList();
@@ -329,7 +357,7 @@ public sealed class BorderExportPermitLegacyParityLiveDbTests(ITestOutputHelper 
             items.Select(i => i.LicenceNo).Distinct().Count());
 
     private static async Task<List<LegacyItem>> ReadLegacyItemsAsync(
-        TradeNetDbContext db, string sql, DateTime from, DateTime to, string? hsCode = null)
+        TradeNetDbContext db, string sql, DateTime from, DateTime to, string? hsCode = null, int sakhanId = 0)
     {
         var connection = (SqlConnection)db.Database.GetDbConnection();
         if (connection.State != ConnectionState.Open)
@@ -342,6 +370,8 @@ public sealed class BorderExportPermitLegacyParityLiveDbTests(ITestOutputHelper 
         command.CommandTimeout = 300;
         command.Parameters.Add(new SqlParameter("@FromDate", SqlDbType.DateTime) { Value = from });
         command.Parameters.Add(new SqlParameter("@ToDate", SqlDbType.DateTime) { Value = to });
+        // The Border branch takes @SakhanId (0 = all) where the oversea one did not.
+        command.Parameters.Add(new SqlParameter("@SakhanId", SqlDbType.Int) { Value = sakhanId });
         if (hsCode != null)
         {
             command.Parameters.Add(new SqlParameter("@HSCode", SqlDbType.NVarChar, 50) { Value = hsCode });

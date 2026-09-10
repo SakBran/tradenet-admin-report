@@ -226,3 +226,10 @@ the grid's request, By HS Code lists the oversea rows, `processedBy` appears on 
 passed (above). Outstanding: merge the `processedBy` follow-up on this branch (a second production
 restart — owner's call), stop the stale worker (above), and re-export the voucher for the customer's
 window (the 12:52 export `876a1242` from this build already carries the right TOTAL).
+
+---
+
+**Superseded 2026-09-10 — By HS Code now reads the Border tables.** Same reversal as the Import twin:
+the customer asked for the Sakhan filter to work and said the old report is wrong. 578 rows / 2,637
+permits -> 12 / 8 on their window, and the "dead Sakhan/Section boxes" this document verified as
+correct legacy behaviour are now live. See `docs/BorderPermitByHSCodeSakhanSwitch_2026-09-10.md`.
