@@ -2622,7 +2622,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'BorderExportPermitByHSCodeReport',
     excelRoute: 'BorderExportPermitByHSCodeReport/Excel',
     excelFileName: 'BorderExportPermitByHSCodeReport.xlsx',
-    initialSortColumn: 'SakhanId',
+    // No initialSortColumn: 'SakhanId' is not a property of ReportAggregateResult, so it was only
+    // ever inert (BasicTable declares the prop and never posts it) and was an HTTP 500 before the
+    // sp_HSCodeReport.GridSortColumnOrNull guard. Removed 2026-09-10; keep that guard.
     // Legacy RDLC printed every row on one scrolling page; these summaries are a
     // handful of (HS code, currency) rows, so a 10-row page looked like missing data
     // next to the old report.
@@ -2719,10 +2721,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   BorderExportPermitHSCodeDetailReport: {
     controllerName: 'BorderExportPermitByHSCodeReport',
     // Legacy BorderHSCodeDetailReport builds header1 as "List of " + FormType + "s By HS Code
-    // From (…) To (…)" with the FormType the summary posted -- "Export Permit" -- so the old
-    // drill is titled after the oversea permits it lists (ReportsController.cs, action
-    // BorderHSCodeDetailReport). Kept verbatim.
-    reportSubtitle: importLicenceRangeSubtitle('List of Export Permits By HS Code', true),
+    // From (…) To (…)" from the FormType the summary posted. That rule is kept; the FormType it
+    // reads changed to "Border Export Permit" on 2026-09-10, so the drill is now titled after the
+    // border permits it actually lists instead of the oversea ones the old screen mislabelled it
+    // with (ReportsController.cs, action BorderHSCodeDetailReport).
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Export Permits By HS Code', true),
     title: 'HS Code Detail Report',
     apiRoute: 'BorderExportPermitByHSCodeReport',
     excelRoute: 'BorderExportPermitByHSCodeReport/Excel',
@@ -5265,7 +5268,8 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     apiRoute: 'BorderImportPermitByHSCodeReport',
     excelRoute: 'BorderImportPermitByHSCodeReport/Excel',
     excelFileName: 'BorderImportPermitByHSCodeReport.xlsx',
-    initialSortColumn: 'SakhanId',
+    // No initialSortColumn -- see the Border Export Permit twin: 'SakhanId' is not a property of
+    // ReportAggregateResult, so it was inert at best and a 500 before the GridSortColumnOrNull guard.
     // Legacy RDLC printed every row on one scrolling page; these summaries are a
     // handful of (group, currency) rows, so a 10-row page looked like missing data
     // next to the old report (Company List: 13 rows, page 1 showed 10).
@@ -5355,7 +5359,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   BorderImportPermitHSCodeDetailReport: {
     controllerName: 'BorderImportPermitByHSCodeReport',
     title: 'HS Code Detail Report',
-    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Permit By HS Code', true),
+    // Legacy header1 is "List of " + <posted FormType> + "s By HS Code From (…) To (…)"; with the
+    // 2026-09-10 switch that FormType is "Border Import Permit". Matches the Export twin.
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Permits By HS Code', true),
     apiRoute: 'BorderImportPermitByHSCodeReport',
     excelRoute: 'BorderImportPermitByHSCodeReport/Excel',
     excelFileName: 'BorderImportPermitHSCodeDetailReport.xlsx',

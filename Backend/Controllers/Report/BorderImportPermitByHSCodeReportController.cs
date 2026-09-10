@@ -22,7 +22,11 @@ namespace Backend.Controllers.Report
     // workbook for 24h.
     // v3: rows are now in the old report's order (HS code ID, first appearance) and Total Value is
     // a 4-decimal money cell.
-    [ExcelFormatVersion(3)]
+    // v4: the report reads the BORDER tables (2026-09-10) -- a different row set for an unchanged
+    // payload, and the Sakhan/Import Section filters now apply. Mandatory: the export cache is keyed
+    // on payload + this version only, so without the bump a closed-period request would keep serving
+    // the oversea workbook for 24h.
+    [ExcelFormatVersion(4)]
     public class BorderImportPermitByHSCodeReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "BorderImportPermitByHSCodeReport";
@@ -132,30 +136,39 @@ namespace Backend.Controllers.Report
             {
                 FromDate = request.FromDate,
                 ToDate = request.ToDate,
-                // DELIBERATELY "Import Permit", not "Border Import Permit" -- bug-for-bug parity
-                // with Tradenet 2.0. The old Border Import Permit By HS Code screen sets
-                // `model.FormType = AppConfig.ImportPermit` (legacy ReportsController.cs:15465),
-                // so it has always run dbo.sp_HSCodeReport's OVERSEA ImportPermit branch:
-                // LicenceDate window, @SakhanId ignored, grouped on (HSCodeId, Currency) by
-                // BorderHSCodeReport.rdlc. The customer compares this report against that
-                // screen and the owner's instruction (2026-09-05) is "same result as the old
-                // report". The border-only answer (18 licences over 2025) was rejected because
-                // the old report shows 997. Do not "fix" this back to Border without a new
-                // decision; BorderImportPermitByHSCodeLegacyParityTests pins it.
-                FormType = "Import Permit",
+                // Border, NOT the oversea "Import Permit" -- reversed on 2026-09-10.
+                //
+                // Until then this screen ran dbo.sp_HSCodeReport's OVERSEA ImportPermit branch
+                // bug-for-bug, because the old Tradenet 2.0 screen does: legacy
+                // ReportsController.cs:15465 sets `model.FormType = AppConfig.ImportPermit`, so the
+                // old report has always listed oversea permits under a Border title, and its Sakhan
+                // dropdown could not work -- the oversea ImportPermit table has no SakhanId column.
+                // The owner asked for that same result on 2026-09-05.
+                //
+                // The customer then asked for the Sakhan filter to work, saying the old report is
+                // the thing that is wrong ("Old Reportမှာမှားနေလို့ပါ", 2026-09-10). This now reads
+                // the real border permits, so Sakhan filters. Measured cost on the customer's
+                // window (2024-05-01..2026-09-06): 1,014 rows / 1,328 permits -> 31 / 112.
+                // Doc: docs/BorderPermitByHSCodeSakhanSwitch_2026-09-10.md.
+                FormType = "Border Import Permit",
                 FilterType = request.FilterType ?? string.Empty,
                 HSCode = request.HSCode ?? string.Empty,
-                // Passed for filter-box parity only; the Import Permit branch ignores it, exactly
-                // as the old screen's Sakhan dropdown did. ExportImportSectionId is likewise never
-                // mapped (the old form never sent it to the procedure either).
+                // Live since the switch: sp_HSCodeReport.BorderImportPermitRows filters on both.
+                // The section predicate is an addition of ours -- the legacy Border branch of
+                // dbo.sp_HSCodeReport has no section parameter at all -- kept so the Import Section
+                // box does something rather than sitting dead next to a working Sakhan box.
                 SakhanId = request.SakhanId,
+                ExportImportSectionId = request.ExportImportSectionId,
                 // The HS Code detail drill (BorderImportPermitHSCodeDetailReport) posts
                 // GroupBy='Company' to get HSCodeDetailReport.rdlc's (HS code, company) rows.
                 GroupByCompany = string.Equals(request.GroupBy, "Company", StringComparison.OrdinalIgnoreCase),
-                // Byte-identical to the old report (owner decision 2026-09-06): legacy
-                // dbo.sp_HSCodeReport ends with ORDER BY HSCode.Id and neither RDLC sorts, so the
-                // groups print in HS code ID order with first-appearance ties -- not the deployed
-                // procedure's HS code string / currency order.
+                // Keep this true even though the report no longer chases the old row SET. It is
+                // load-bearing for two other reasons: it forces the LINQ path
+                // (UsesAggregateStoredProcedure returns false for it), and it makes AggregateQuery
+                // take the (HSCodeId, Currency) branch BEFORE GroupsByCompany -- which would
+                // otherwise split the summary per buyer company, the defect fixed on 2026-09-08.
+                // It also keeps BorderHSCodeReport.rdlc's row order: HS code ID, first-appearance
+                // ties (hence PermitCreatedDate/PermitId on the Border projection).
                 LegacyOrder = true,
             };
 
@@ -171,6 +184,13 @@ namespace Backend.Controllers.Report
         public string FilterType { get; set; } = string.Empty;
         public string HSCode { get; set; } = string.Empty;
         public int SakhanId { get; set; }
+
+        /// <summary>
+        /// The Import Section box. Added 2026-09-10 with the switch to the Border tables -- the box
+        /// had always been rendered and posted, but this DTO had no property to bind it to, so the
+        /// value was dropped before it reached the query.
+        /// </summary>
+        public int ExportImportSectionId { get; set; }
 
         /// <summary>
         /// 'Company' from the HS Code detail drill; empty from the summary. A string, not a bool,

@@ -20,7 +20,11 @@ namespace Backend.Controllers.Report
     // order (see TryCreateReportRequest), so the row set changed for an unchanged request payload.
     // The export cache keys on payload + this version; without the bump a closed-period request
     // would keep serving the border-only workbook for 24h.
-    [ExcelFormatVersion(2)]
+    // v3: the report reads the BORDER tables (2026-09-10) -- a different row set for an unchanged
+    // payload, and the Sakhan/Export Section filters now apply. Mandatory: the export cache is keyed
+    // on payload + this version only, so without the bump a closed-period request would keep serving
+    // the oversea workbook for 24h.
+    [ExcelFormatVersion(3)]
     public class BorderExportPermitByHSCodeReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "BorderExportPermitByHSCodeReport";
@@ -130,32 +134,40 @@ namespace Backend.Controllers.Report
             {
                 FromDate = request.FromDate,
                 ToDate = request.ToDate,
-                // DELIBERATELY "Export Permit", not "Border Export Permit" -- bug-for-bug parity
-                // with Tradenet 2.0. The old Border Export Permit By HS Code screen sets
-                // `model.FormType = AppConfig.ExportPermit` and posts it back through a hidden
-                // field (legacy ReportsController.cs:14120 / Views/Reports/
-                // BorderExportPermitByHSCodeReport.cshtml:21), so it has always run
-                // dbo.sp_HSCodeReport's OVERSEA ExportPermit branch: LicenceDate window,
-                // @SakhanId ignored, no section parameter at all, grouped on (HSCodeId, Currency)
-                // by BorderHSCodeReport.rdlc. The customer compares this report against that
-                // screen ("record မကိုက်ပါ", 2026-09-07) and the owner's standing instruction for
-                // the Border Import Permit twin (2026-09-05) is "same result as the old report".
-                // Do not "fix" this back to Border without a new decision;
-                // BorderExportPermitByHSCodeLegacyParityTests pins it.
-                FormType = "Export Permit",
+                // Border, NOT the oversea "Export Permit" -- reversed on 2026-09-10, same decision
+                // as the Border Import Permit twin.
+                //
+                // Until then this screen ran dbo.sp_HSCodeReport's OVERSEA ExportPermit branch
+                // bug-for-bug, because the old Tradenet 2.0 screen does: legacy
+                // ReportsController.cs:14120 sets `model.FormType = AppConfig.ExportPermit` and
+                // posts it back through a hidden field (Views/Reports/
+                // BorderExportPermitByHSCodeReport.cshtml:21). So the old report has always listed
+                // oversea permits under a Border title, and its Sakhan dropdown could not work --
+                // the oversea ExportPermit table has no SakhanId column.
+                //
+                // The customer then asked for the Sakhan filter to work, saying the old report is
+                // the thing that is wrong ("Old Reportမှာမှားနေလို့ပါ", 2026-09-10). Measured cost on
+                // their window (2024-05-01..2026-09-06): 578 rows / 2,637 permits -> 12 / 8.
+                // Doc: docs/BorderPermitByHSCodeSakhanSwitch_2026-09-10.md.
+                FormType = "Border Export Permit",
                 FilterType = request.FilterType ?? string.Empty,
                 HSCode = request.HSCode ?? string.Empty,
-                // Passed for filter-box parity only; the Export Permit branch ignores it, exactly
-                // as the old screen's Sakhan dropdown did. ExportImportSectionId is likewise never
-                // mapped (the old form never sent it to the procedure either).
+                // Live since the switch: sp_HSCodeReport.BorderExportPermitRows filters on both.
+                // The section predicate is an addition of ours -- the legacy Border branch of
+                // dbo.sp_HSCodeReport has no section parameter at all -- kept so the Export Section
+                // box does something rather than sitting dead next to a working Sakhan box.
                 SakhanId = request.SakhanId,
+                ExportImportSectionId = request.ExportImportSectionId,
                 // The HS Code detail drill (BorderExportPermitHSCodeDetailReport) posts
                 // GroupBy='Company' to get HSCodeDetailReport.rdlc's (HS code, company) rows.
                 GroupByCompany = string.Equals(request.GroupBy, "Company", StringComparison.OrdinalIgnoreCase),
-                // Byte-identical to the old report: legacy dbo.sp_HSCodeReport ends with
-                // ORDER BY HSCode.Id and neither RDLC sorts, so the groups print in HS code ID order
-                // with first-appearance ties -- not the deployed procedure's HS code string /
-                // currency order.
+                // Keep this true even though the report no longer chases the old row SET. It forces
+                // the LINQ path (UsesAggregateStoredProcedure returns false for it) and makes
+                // AggregateQuery take the (HSCodeId, Currency) branch BEFORE GroupsByCompany --
+                // which returns true unconditionally for "Border Export Permit", so dropping the
+                // flag would split the summary per buyer company (the defect fixed 2026-09-08).
+                // It also keeps BorderHSCodeReport.rdlc's row order: HS code ID, first-appearance
+                // ties (hence PermitCreatedDate/PermitId on the Border projection).
                 LegacyOrder = true,
             };
 
@@ -172,8 +184,9 @@ namespace Backend.Controllers.Report
         public string HSCode { get; set; } = string.Empty;
 
         /// <summary>
-        /// Still posted by the Export Section box (kept for filter-box parity with the old form),
-        /// but never mapped: legacy dbo.sp_HSCodeReport has no section parameter.
+        /// The Export Section box. Mapped onto the query since 2026-09-10; before that it was
+        /// posted and dropped. Note this is an addition of ours, not legacy behaviour: legacy
+        /// dbo.sp_HSCodeReport has no section parameter on any branch.
         /// </summary>
         public int ExportImportSectionId { get; set; }
         public int SakhanId { get; set; }

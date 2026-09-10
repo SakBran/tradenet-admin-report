@@ -125,7 +125,10 @@ describe('Border Import Permit report configs', () => {
     expect(cfg.currencyTotalsColumns).toBeUndefined();
   });
 
-  it('HS Code report restores the old Import Section filter and drilldown carries it through', () => {
+  // Both boxes below are LIVE since 2026-09-10: the report reads the Border tables, whose query
+  // filters on SakhanId and ExportImportSectionId. Until then it ran the legacy oversea query
+  // bug-for-bug and neither box did anything, which is what the customer complained about.
+  it('HS Code report keeps the Import Section and Sakhan filters and the drilldown carries them', () => {
     const cfg = reportConfigs.BorderImportPermitByHSCodeReport;
 
     expect(cfg.filters.map((filter) => filter.name)).toEqual([
@@ -179,6 +182,19 @@ describe('Border Import Permit report configs', () => {
       'sakhans'
     );
   });
+
+  it('HS Code drill is titled after the border permits it lists', () => {
+    // Legacy BorderHSCodeDetailReport header1 = "List of " + FormType + "s By HS Code …" built from
+    // the FormType the summary posts. That rule is kept; the FormType became "Border Import Permit"
+    // when the report moved onto the Border tables on 2026-09-10, so the drill no longer carries
+    // the old screen's oversea wording.
+    const cfg = reportConfigs.BorderImportPermitHSCodeDetailReport;
+
+    expect(cfg.reportSubtitle?.({ FromDate: '2025-01-01', ToDate: '2026-09-06' })).toBe(
+      'List of Border Import Permits By HS Code From (01/01/2025) To (06/09/2026)'
+    );
+  });
+
   it('summary reports print on one page like the old RDLC', () => {
     // The legacy report viewer scrolled every row on a single page. At the grid's 10-row
     // default, Company List showed 10 of its 13 rows while the .xlsx (which never pages) had

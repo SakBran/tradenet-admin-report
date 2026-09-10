@@ -287,3 +287,10 @@ code). Row order rests on the same no-`ORDER BY` assumption as the other two rep
 Tests: `Backend.Tests/BorderImportPermitCompanyListLegacyParityTests.cs`,
 `ReportAggregationServiceTests.SourceOrder_company_rows_show_the_first_name_in_row_order`, the
 Company List block in `reportConfigs.borderImportPermit.test.ts`. Excel spec fixture regenerated.
+
+---
+
+**Superseded 2026-09-10 — By HS Code now reads the Border tables.** The bug-for-bug decision recorded
+above left a Sakhan dropdown that could not work. The customer asked for it to work and said the old
+report is the thing that is wrong, so the report was switched off the oversea query: 1,014 rows /
+1,328 permits -> 31 / 112 on their window. See `docs/BorderPermitByHSCodeSakhanSwitch_2026-09-10.md`.
