@@ -104,13 +104,26 @@ missing TryCreateReportRequest` baseline; `ExcelSpecContractTests` 1,220 passed;
 / 6 failed, the identical 6 that fail on a clean `main` worktree (verified) in files this change does
 not touch. `tsc --noEmit` clean.
 
-## Still to verify on PROD after deploy
+## Verified on PROD after deploy — ALL PASS (2026-09-10 18:37)
 
-The Border LINQ branches have never executed in production. Check: both summaries return rows (not 0,
-not a 500); the figures above; that per-Sakhan footers sum to All; that walking every page of both
-grids and one HS Code drill shows no repeated or missing rows (the paging symptom if the
-`PermitCreatedDate` projection were wrong); and that a fresh export carries Border rows — fingerprint
-the file rather than trusting the queue, and check `processedBy` on `GET /api/ExcelExport/jobs`.
+The Border LINQ branches had never executed in production, so this was the real gate, not the local
+test run. Deploy note: the auto-deploy watcher was not running (it lives in an interactive RDP session
+on the Build Server and stops on sign-out), so the merge sat for ~50 minutes until it was restarted.
+
+| check | result |
+|---|---|
+| Import summary, 2024-05-01 → 2026-09-06 | **31 rows / 112 permits** — exactly as predicted |
+| Export summary, same window | **12 rows / 8 permits** — exactly as predicted |
+| Sakhan filters | Import: Kanpitetee 6/97, Yangon 6/6, Tachileik 14/5, Myawaddy 4/3, Kawthaung 1/1, Muse 0/0. Export: Kanpitetee 4/2, Tachileik 1/3, Myawaddy 7/3, rest 0 |
+| per-Sakhan permits sum to All | 112 = 112 and 8 = 8 — **MATCH** on both |
+| paging stability | walked both grids at 5 rows/page: 31 and 12 rows recovered, **0 duplicates, 0 missing, 0 extra, order identical** to the single-page fetch — the `PermitCreatedDate`/`PermitId` projection is doing its job |
+| Section predicate live | real section (10 / 5) returns the full set; section 999 returns **0 rows** |
+| HS Code drill | Import `0305592100` → 1 row / 1 permit (NAY LA THITSAR COMPANY LIMITED); Export `0901112000` → 1 row / 3 permits |
+| Excel export | job `0ab343a3`, **rowCount 31**, 38 sheet rows (5 meta + header + 31 data + TOTAL), footer **TOTAL 112**, title line `List of Border Import Permit By HS Code From (01/05/2024) To (06/09/2026)`, cellXfs 13 |
+| no stale second worker | `processedBy = TN2-ADMIN01:…**@f6fc344**` — the worker stamps the commit SHA and it is this merge; every earlier job on the queue reads `@a96005f252f7`, the previous build |
+
+That last row is the cleanest build-identity proof this queue has ever given us — worth reaching for
+first the next time an "Excel ≠ UI" report comes in.
 
 Related: `docs/BorderImportPermitComplaints_2026-09-05.md`,
 `docs/BorderExportPermitComplaints_2026-09-07.md`, `Border Import Permit To Fix List.md`.
