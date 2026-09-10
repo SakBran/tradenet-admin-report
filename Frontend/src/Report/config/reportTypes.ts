@@ -142,6 +142,17 @@ export interface ReportPageConfig {
   apiRoute: string;
   excelRoute: string;
   excelFileName: string;
+  /**
+   * Keeps this report out of the sidebar while leaving its route and drill-downs
+   * working — for a config that only exists as a drill target.
+   *
+   * The `hiddenReportKeys` deny-list in reportNavItems.tsx cannot express this: it
+   * matches on `controllerName`, and the five `*HSCodeDetailReport` configs share
+   * theirs with the summary they are drilled from, so denying the name would hide
+   * the summary too. (Sharing the name is also why they used to render a second
+   * menu row with the same antd key and the same link as their summary.)
+   */
+  hideInMenu?: boolean;
   /** Optional second export button; see ReportSecondaryExcelConfig. */
   secondaryExcel?: ReportSecondaryExcelConfig;
   columns: ReportColumnConfig[];

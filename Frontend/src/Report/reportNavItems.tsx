@@ -220,7 +220,8 @@ const hiddenReportKeys = new Set([
   'ImportLicenceDataImport',
 ]);
 const navReportConfigList = reportConfigList.filter(
-  (config) => !hiddenReportKeys.has(config.controllerName)
+  (config) =>
+    !hiddenReportKeys.has(config.controllerName) && !config.hideInMenu
 );
 
 export const getReportCategoryKey = (controllerName: string) =>

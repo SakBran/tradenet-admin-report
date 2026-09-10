@@ -21,7 +21,9 @@ namespace Backend.Controllers.Report
     // v2: restored the legacy per-currency TOTAL footer, dropped the HS Code column the old
     // rdlc never had and un-swapped Licence No / Cancellation No, so cached closed-period
     // .xlsx files must not be reused.
-    [ExcelFormatVersion(2)]
+    // v3: Currency / Total Value now resolve through the cancelled permit's items instead of
+    // the (item-less) cancellation record, so those cells change from blank to real values.
+    [ExcelFormatVersion(3)]
     public class ImportPermitCancellationReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ImportPermitCancellationReport";
