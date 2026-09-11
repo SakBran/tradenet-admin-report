@@ -2613,7 +2613,7 @@
       "hasSingleDate": false,
       "hasCurrencyTotalsColumns": false,
       "showRowNumber": true,
-      "rowNumberTitle": "No",
+      "rowNumberTitle": "No.",
       "isBespokePage": true,
       "isComposite": false,
       "hasExcelButton": true,
@@ -2631,7 +2631,7 @@
       "rowNumberTitle": "No",
       "isBespokePage": true,
       "isComposite": false,
-      "hasExcelButton": false,
+      "hasExcelButton": true,
       "columnCount": 7
     },
     {
@@ -2703,7 +2703,7 @@
       "hasSingleDate": false,
       "hasCurrencyTotalsColumns": false,
       "showRowNumber": true,
-      "rowNumberTitle": "No",
+      "rowNumberTitle": "No.",
       "isBespokePage": true,
       "isComposite": false,
       "hasExcelButton": true,

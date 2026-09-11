@@ -20,6 +20,17 @@ import {
 } from '../../components/My Components/Table/BasicTable';
 import { AnyObject } from '../../types/AnyObject';
 import { PaginationType } from '../../types/PaginationType';
+import { reportConfigs } from '../config/reportConfigs';
+import { buildExcelPresentation } from '../excel/buildExcelPresentation';
+import { enqueueExcelExport } from '../excel/excelEnqueue';
+import { buildReportHeaderLines, formatDateCell } from '../reportPresentation';
+
+/**
+ * The grid is hand-built here, but the sheet is described by the shared config so
+ * `buildExcelPresentation` can produce the spec the Excel queue requires — the two column
+ * lists must stay identical (both mirror MemberRegistrationReport.rdlc:278-718).
+ */
+const config = reportConfigs.MemberRegistrationReport;
 
 type ApplyType = 'All' | 'New' | 'Extension';
 
@@ -37,10 +48,14 @@ interface MemberRegistrationRow extends AnyObject {
   endDate?: string | null;
 }
 
+// Request shape posted to the backend. PascalCase because the Excel presentation spec's
+// header lines are built from these same values (config.reportSubtitle reads FromDate/ToDate),
+// so the page must not carry two spellings of one filter.
 interface MemberRegistrationFilters {
-  fromDate: string;
-  toDate: string;
-  applyType: ApplyType;
+  [key: string]: unknown;
+  FromDate: string;
+  ToDate: string;
+  ApplyType: ApplyType;
 }
 
 interface MemberRegistrationFormValues {
@@ -48,17 +63,7 @@ interface MemberRegistrationFormValues {
   applyType: ApplyType;
 }
 
-const excelContentType =
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-
-const formatDate = (value: unknown) => {
-  if (!value) {
-    return 'N/A';
-  }
-
-  const parsed = dayjs(value.toString());
-  return parsed.isValid() ? parsed.format('YYYY-MM-DD') : value.toString();
-};
+const formatDate = (value: unknown) => formatDateCell(value, 'YYYY-MM-DD');
 
 const toApiDate = (value: Dayjs, edge: 'start' | 'end') =>
   (edge === 'start' ? value.startOf('day') : value.endOf('day')).format(
@@ -68,9 +73,9 @@ const toApiDate = (value: Dayjs, edge: 'start' | 'end') =>
 const toFilters = (
   values: MemberRegistrationFormValues
 ): MemberRegistrationFilters => ({
-  fromDate: toApiDate(values.dateRange[0], 'start'),
-  toDate: toApiDate(values.dateRange[1], 'end'),
-  applyType: values.applyType,
+  FromDate: toApiDate(values.dateRange[0], 'start'),
+  ToDate: toApiDate(values.dateRange[1], 'end'),
+  ApplyType: values.applyType,
 });
 
 const buildRequest = (
@@ -87,25 +92,16 @@ const buildRequest = (
   includeTotalCount: query.includeTotalCount,
 });
 
-const downloadBlob = (blob: Blob, fileName: string) => {
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.URL.revokeObjectURL(url);
-};
-
+// The old report's 8 columns (MemberRegistrationReport.rdlc:333-718), which is also what
+// reportConfigs.MemberRegistrationReport declares. The grid used to carry an Address and a
+// Start Date column the old report never had, and called the last one "End Date".
 const memberRegistrationColumns: BasicTableColumn<MemberRegistrationRow>[] = [
   { key: 'ApplyType', dataIndex: 'applyType', title: 'Apply Type' },
   { key: 'MemberCode', dataIndex: 'memberCode', title: 'Member Code' },
   { key: 'Email', dataIndex: 'email', title: 'Email' },
   { key: 'FullName', dataIndex: 'fullName', title: 'Full Name' },
   { key: 'Mobile', dataIndex: 'mobile', title: 'Mobile' },
-  { key: 'NRCNo', dataIndex: 'nrcNo', title: 'NRC No' },
-  { key: 'Address', dataIndex: 'address', title: 'Address' },
+  { key: 'nrcNo', dataIndex: 'nrcNo', title: 'NRC No.' },
   {
     key: 'IssuedDate',
     dataIndex: 'issuedDate',
@@ -113,15 +109,9 @@ const memberRegistrationColumns: BasicTableColumn<MemberRegistrationRow>[] = [
     render: formatDate,
   },
   {
-    key: 'StartDate',
-    dataIndex: 'startDate',
-    title: 'Start Date',
-    render: formatDate,
-  },
-  {
-    key: 'EndDate',
+    key: 'ValidDate',
     dataIndex: 'endDate',
-    title: 'End Date',
+    title: 'Valid Date',
     render: formatDate,
   },
 ];
@@ -167,16 +157,16 @@ const MemberRegistrationReport = () => {
       } catch {
         return;
       }
-      const response = await axiosInstance.post(
-        'MemberRegistrationReport/Excel',
-        buildRequest(toFilters(values), query),
-        { responseType: 'blob' }
+      // Excel is an async job, not a file response: the endpoint returns a queue ticket and
+      // REJECTS a request that carries no presentation spec, which is why the old blob
+      // download here could only ever fail.
+      const applied = toFilters(values);
+      await enqueueExcelExport(
+        config.excelRoute,
+        buildRequest(applied, query),
+        buildExcelPresentation(config, applied),
+        config.excelFileName
       );
-      const blob = new Blob([response.data], {
-        type: String(response.headers['content-type'] ?? excelContentType),
-      });
-
-      downloadBlob(blob, 'MemberRegistrationReport.xlsx');
     },
     [form]
   );
@@ -193,6 +183,12 @@ const MemberRegistrationReport = () => {
     setHasAppliedFilters(false);
     setRefreshKey((current) => current + 1);
   };
+
+  // The legacy RDLC header block, from the same config the Excel spec uses, so the grid and
+  // the sheet print the same three lines.
+  const reportHeaderLines = hasAppliedFilters
+    ? buildReportHeaderLines(config, filters)
+    : undefined;
 
   return (
     <>
@@ -251,6 +247,7 @@ const MemberRegistrationReport = () => {
 
       <BasicTable<MemberRegistrationRow>
         title="Member Registration"
+        reportHeaderLines={reportHeaderLines}
         tableId="memberRegistrationReportTable"
         columns={memberRegistrationColumns}
         fetchData={fetchRows}
@@ -260,9 +257,9 @@ const MemberRegistrationReport = () => {
         excelEnabled
         idleText="Set filters, then click Filter to load the report."
         refreshKey={refreshKey}
-        initialSortColumn="IssuedDate"
-        initialSortOrder="desc"
-        excelFileName="MemberRegistrationReport.xlsx"
+        initialSortColumn={config.initialSortColumn}
+        rowNumberTitle="No."
+        excelFileName={config.excelFileName}
       />
     </>
   );

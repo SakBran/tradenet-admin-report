@@ -25,6 +25,20 @@ namespace Backend.Controllers.Report
         private const int DefaultPageSize = 10;
         private const int MaxPageSize = 1000;
 
+        // The legacy screen's "No of List" box (model.TotalRecords) defaulted to 10 and was
+        // required; a blank box bound to 0 and made Take(0) return nothing, so 0 is treated
+        // as "unset" here rather than reproducing that silent-empty behaviour.
+        private const int DefaultTopCount = 10;
+        private const int MaxTopCount = MaxPageSize;
+
+        // This report is "the top N companies by capital", exactly as the legacy
+        // PaThaKaReports.GetTopCapitalCompanyReport was
+        // (.OrderByDescending(x => x.Capital).Take(model.TotalRecords)). The ranking IS the
+        // report, so the grid's SortColumn/SortOrder are deliberately ignored: clicking a
+        // header re-requests and gets the same order back.
+        private const string RankColumn = "Capital";
+        private const string RankOrder = "DESC";
+
         // Excel worksheets allow 1,048,576 rows including the header.
         private const int MaxExcelDataRows = 1_048_576 - 1;
 
@@ -50,25 +64,21 @@ namespace Backend.Controllers.Report
                 ? DefaultPageSize
                 : Math.Min(request.PageSize, MaxPageSize);
 
-            var sortColumn = string.IsNullOrWhiteSpace(request.SortColumn) ? null : request.SortColumn;
-            var sortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? null : request.SortOrder;
+            // SQL ranks and truncates (ORDER BY Capital DESC + FETCH NEXT @TopCount), so the
+            // window is at most "No of List" rows and the grid pages within it in memory.
+            var window = await TopCompaniesAsync(procedureRequest!, request);
 
-            // Pagination is performed inside the stored procedure (OFFSET/FETCH);
-            // every row carries the total matching count via TotalCount.
-            var rows = await sp_PaThaKaReport.ExecuteAsync(
-                _context,
-                procedureRequest!,
-                sortColumn,
-                sortOrder,
-                pageIndex,
-                pageSize);
-
-            var totalCount = rows.Count > 0 ? rows[0].TotalCount : 0;
-            var data = rows.Select(row => row.ToResult()).ToList();
+            var data = window
+                .Skip(pageIndex * pageSize)
+                .Take(pageSize)
+                .Select(row => row.ToResult())
+                .ToList();
 
             var result = ApiResult<sp_PaThaKaReportResult>.CreatePageFromRows(
                 data,
-                totalCount,
+                // The report IS the top-N window, so that — not the count of everything
+                // matching the filters (rows[0].TotalCount) — is the total the pager sees.
+                window.Count,
                 pageIndex,
                 pageSize,
                 request.SortColumn,
@@ -111,12 +121,36 @@ namespace Backend.Controllers.Report
             CancellationToken cancellationToken)
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
-            await foreach (var chunk in sp_PaThaKaReport.ExecuteQueryable(_context, procedureRequest!)
-                .AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
-            {
-                sink.Append(chunk.Select(row => row.ToResult()).ToList());
-            }
+
+            // The same window Post serves, so the sheet cannot show rows the grid never had.
+            // (It used to stream EVERY matching company, ignoring the top-N entirely.)
+            var window = await TopCompaniesAsync(procedureRequest!, request, cancellationToken);
+
+            sink.Append(window.Select(row => row.ToResult()).ToList());
         }
+
+        /// <summary>
+        /// The report's rows: the <c>No of List</c> highest-capital companies matching the
+        /// filters, capital descending. Ranking and truncation happen in SQL via the
+        /// procedure's sort/paging parameters.
+        /// </summary>
+        private Task<List<sp_PaThaKaReportRow>> TopCompaniesAsync(
+            sp_PaThaKaReportRequest procedureRequest,
+            ListOfTopCapitalCompanyRequest request,
+            CancellationToken cancellationToken = default)
+            => sp_PaThaKaReport.ExecuteQueryable(
+                    _context,
+                    procedureRequest,
+                    RankColumn,
+                    RankOrder,
+                    pageIndex: 0,
+                    pageSize: ResolveTopCount(request))
+                .ToListAsync(cancellationToken);
+
+        private static int ResolveTopCount(ListOfTopCapitalCompanyRequest request) =>
+            request.TotalRecords <= 0
+                ? DefaultTopCount
+                : Math.Min(request.TotalRecords, MaxTopCount);
 
         private bool TryCreateReportRequest(
             ListOfTopCapitalCompanyRequest? request,
@@ -171,6 +205,12 @@ namespace Backend.Controllers.Report
         public int LineofBusinessId { get; set; }
         public string State { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
+
+        /// <summary>
+        /// How many top-capital companies to return (the "No of List" filter). Defaults to
+        /// the legacy screen's 10 for a caller that omits it; the controller clamps it.
+        /// </summary>
+        public int TotalRecords { get; set; } = 10;
     }
 }
 

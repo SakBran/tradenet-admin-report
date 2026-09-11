@@ -1,11 +1,18 @@
 import { useCallback, useState } from 'react';
 import { Button, Card, Empty, Form, Input, Space, Spin, message } from 'antd';
-import { PrinterOutlined, SearchOutlined } from '@ant-design/icons';
+import {
+  FileExcelOutlined,
+  PrinterOutlined,
+  SearchOutlined,
+} from '@ant-design/icons';
 import dayjs from 'dayjs';
 import axiosInstance from '../../services/AxiosInstance';
 import { PageHeader } from '../../components';
+import { enqueueExcelExport } from '../excel/excelEnqueue';
 
 const API_ROUTE = 'ListOfDirectorsByCompanyRegistrationNo/Detail';
+const EXCEL_ROUTE = 'ListOfDirectorsByCompanyRegistrationNo/Excel';
+const EXCEL_FILE_NAME = 'ListOfDirectorsByCompanyRegistrationNo.xlsx';
 
 interface AddressParts {
   unitLevel?: string | null;
@@ -91,6 +98,7 @@ const tableStyle: React.CSSProperties = {
 const ListOfDirectorsByCompanyRegistrationNo = () => {
   const [form] = Form.useForm<{ companyRegistrationNo: string }>();
   const [loading, setLoading] = useState(false);
+  const [excelLoading, setExcelLoading] = useState(false);
   const [data, setData] = useState<DetailResult | null>(null);
   const [searched, setSearched] = useState(false);
 
@@ -123,6 +131,37 @@ const ListOfDirectorsByCompanyRegistrationNo = () => {
   }, []);
 
   const company = data?.company ?? null;
+
+  // The sheet is built by the controller's own typed layout (two blocks, like the RDLC), so
+  // no presentation spec rides along. The date range is required by the request DTO but
+  // ignored by the @Type='By Company Registration No' branch — send today/today, exactly as
+  // the Detail endpoint does.
+  const generateExcel = useCallback(async () => {
+    const registrationNo = data?.companyRegistrationNo?.trim();
+    if (!registrationNo) {
+      return;
+    }
+
+    setExcelLoading(true);
+    try {
+      const today = dayjs();
+      await enqueueExcelExport(
+        EXCEL_ROUTE,
+        {
+          FromDate: today.startOf('day').format('YYYY-MM-DDTHH:mm:ss'),
+          ToDate: today.endOf('day').format('YYYY-MM-DDTHH:mm:ss'),
+          CompanyRegistrationNo: registrationNo,
+          Type: 'By Company Registration No',
+        },
+        undefined,
+        EXCEL_FILE_NAME
+      );
+    } catch {
+      message.error('Failed to generate Excel file.');
+    } finally {
+      setExcelLoading(false);
+    }
+  }, [data]);
 
   return (
     <div>
@@ -172,6 +211,15 @@ const ListOfDirectorsByCompanyRegistrationNo = () => {
                   disabled={!company}
                 >
                   Print
+                </Button>
+                <Button
+                  type="primary"
+                  icon={<FileExcelOutlined />}
+                  onClick={generateExcel}
+                  loading={excelLoading}
+                  disabled={!company}
+                >
+                  Excel
                 </Button>
               </Space>
             </Form.Item>
