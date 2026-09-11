@@ -12181,6 +12181,13 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ListOfDirectors.xlsx',
     initialSortColumn: 'CompanyRegistrationNo',
     showRowNumber: true,
+    // The page passes rowNumberTitle="No." to BasicTable (DirectorListReport.rdlc:550);
+    // declare it here too so the sheet's first header matches the grid's.
+    rowNumberTitle: 'No.',
+    // Legacy RDLC report header: Ministry of Commerce / Directorate of Trade /
+    // "Directors List ({FromDate}) To ({ToDate})" (ReportsController.cs:597).
+    reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
+    reportSubtitle: reportDateRangeSubtitle('Directors List'),
     filters: [
       {
         name: 'dateRange',
@@ -12299,6 +12306,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         : '';
       return `Top Capital Company Report (${from}) To (${to})`;
     },
+    // The old report had no sortable headers: the ranking IS the report (top N by
+    // Capital), so the controller ignores the grid's sort. See
+    // ListOfTopCapitalCompanyController.Post.
     filters: [
       {
         name: 'dateRange',
@@ -12335,6 +12345,17 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'select',
         defaultValue: '',
         options: pathakaStatusFilterOptions,
+      },
+      {
+        // The old screen's required "No of List" box (model.TotalRecords, default 10 —
+        // PaThaKaTopCapitalCompanyReport.cshtml:61-68, ReportsController.cs:418). It is
+        // what makes this a TOP-capital report: the controller ranks by Capital DESC and
+        // returns only this many companies.
+        name: 'TotalRecords',
+        label: 'No of List',
+        type: 'number',
+        defaultValue: 10,
+        required: true,
       },
     ],
     columns: [
@@ -12515,6 +12536,12 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'MemberRegistrationReport.xlsx',
     initialSortColumn: 'ApplyType',
     showRowNumber: true,
+    rowNumberTitle: 'No.',
+    // Legacy RDLC report header: Ministry of Commerce / Directorate of Trade /
+    // "Member Registration ({FromDate}) To ({ToDate})" (the old header1 parameter,
+    // ReportsController.cs:168).
+    reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
+    reportSubtitle: reportDateRangeSubtitle('Member Registration'),
     filters: [
       {
         name: 'dateRange',

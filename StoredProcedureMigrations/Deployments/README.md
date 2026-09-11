@@ -31,3 +31,7 @@ from its original, so a snapshot can never quietly go stale.
 | [2026-09-06_ExportPermitItemOrder](2026-09-06_ExportPermitItemOrder/) | 7 procedures — Export Permit item order `(HSCodeId, ItemNo)`; supersedes the Export Permit half of `2026-09-05_ExportPermitRound3` |
 | [2026-09-05_BorderImportPermitComplaints](2026-09-05_BorderImportPermitComplaints/) | 4 procedures — Border Import Permit HS Code paging and grouping, the New Report TOTAL footer, and the New-branch date window; re-syncs the two procedures also shipped by `2026-09-05_ImportPermitParityRound1` |
 | [2026-09-06_BorderImportPermitDetailLegacyParity](2026-09-06_BorderImportPermitDetailLegacyParity/) | 1 NEW procedure — `sp_BorderImportPermitDetailReport_pagination`, the legacy Border Import Permit Detail query paginated at item grain (the grid and the .xlsx now print the old report's rows and cell text) |
+| [2026-09-11_TopCapitalCompanyRanking](2026-09-11_TopCapitalCompanyRanking/) | 1 procedure — `sp_PaThaKaReport_pagination` gains `Capital` in its sort whitelist, so List of Top Capital Company can rank by capital for the restored "No of List" filter. **Deploy before the application**: against the stale procedure the report silently returns the newest N companies, not the largest N |
+
+Folders in [`Done For Fix/`](Done%20For%20Fix/) have been applied and verified; the table
+above lists them by name for the record.

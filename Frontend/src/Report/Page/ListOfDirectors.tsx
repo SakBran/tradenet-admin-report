@@ -10,7 +10,6 @@ import {
   Row,
   Select,
   Space,
-  message,
 } from 'antd';
 import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
@@ -23,13 +22,20 @@ import {
 } from '../../components/My Components/Table/BasicTable';
 import { AnyObject } from '../../types/AnyObject';
 import { PaginationType } from '../../types/PaginationType';
+import { reportConfigs } from '../config/reportConfigs';
+import { buildExcelPresentation } from '../excel/buildExcelPresentation';
+import { enqueueExcelExport } from '../excel/excelEnqueue';
+import { buildReportHeaderLines } from '../reportPresentation';
+
+/**
+ * The grid is hand-built here (the NRC cascade has no config equivalent), but the sheet is
+ * described by the shared config so `buildExcelPresentation` can produce the spec the Excel
+ * queue requires. `directorColumns` below and `config.columns` must stay identical — both
+ * mirror DirectorListReport.rdlc:550-963.
+ */
+const config = reportConfigs.ListOfDirectors;
 
 const API_ROUTE = 'ListOfDirectors';
-const EXCEL_ROUTE = 'ListOfDirectors/Excel';
-const EXCEL_FILE_NAME = 'ListOfDirectors.xlsx';
-
-const excelContentType =
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 // '' = no NRC filter (all). 'Current' / 'Old' mirror the legacy admin's NRCType,
 // which fn_GetNRCNo uses to decide how to assemble the NRC string for matching.
@@ -45,8 +51,11 @@ interface DirectorRow extends AnyObject {
   directorBlackList?: string | null;
 }
 
-// Request shape posted to the backend (PascalCase keys map to the C# request DTO).
+// Request shape posted to the backend (PascalCase keys map to the C# request DTO). The index
+// signature makes these the "applied filters" record that buildExcelPresentation and
+// buildReportHeaderLines read, so the grid and the sheet are driven by one object.
 interface DirectorFilters {
+  [key: string]: unknown;
   FromDate: string;
   ToDate: string;
   CompanyRegistrationNo: string;
@@ -85,14 +94,6 @@ interface NrcCodeOption {
   code: string;
   label: string;
 }
-
-type ExcelEnqueueResult = {
-  status: 'Ready' | 'Queued' | 'Processing';
-  jobId: string;
-  fileName?: string;
-  downloadUrl?: string;
-  message?: string;
-};
 
 const toApiDate = (value: Dayjs, edge: 'start' | 'end') =>
   (edge === 'start' ? value.startOf('day') : value.endOf('day')).format(
@@ -142,17 +143,6 @@ const buildRequest = (filters: DirectorFilters, query: BasicTableQuery) => ({
   includeTotalCount: query.includeTotalCount,
 });
 
-const downloadBlob = (blob: Blob, fileName: string) => {
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.URL.revokeObjectURL(url);
-};
-
 const directorColumns: BasicTableColumn<DirectorRow>[] = [
   {
     key: 'CompanyRegistrationNo',
@@ -162,7 +152,7 @@ const directorColumns: BasicTableColumn<DirectorRow>[] = [
   { key: 'CompanyName', dataIndex: 'companyName', title: 'Company Name' },
   { key: 'Name', dataIndex: 'directorName', title: 'Name' },
   { key: 'Position', dataIndex: 'directorPosition', title: 'Position' },
-  { key: 'NRCNo', dataIndex: 'directorNRC', title: 'NRC No.' },
+  { key: 'nrcNo', dataIndex: 'directorNRC', title: 'NRC No.' },
   { key: 'Nationality', dataIndex: 'directorNationality', title: 'Nationality' },
   { key: 'Status', dataIndex: 'directorBlackList', title: 'Status' },
 ];
@@ -280,33 +270,16 @@ const ListOfDirectors = () => {
         return;
       }
 
-      const response = await axiosInstance.post<ExcelEnqueueResult>(
-        EXCEL_ROUTE,
-        buildRequest(toFilters(values), query)
+      // The endpoint REJECTS a request that carries no presentation spec, which is why this
+      // export always failed. Going through enqueueExcelExport also buys the page the
+      // poll-and-download it never had: it only ever handled an immediate `Ready`.
+      const applied = toFilters(values);
+      await enqueueExcelExport(
+        config.excelRoute,
+        buildRequest(applied, query),
+        buildExcelPresentation(config, applied),
+        config.excelFileName
       );
-      const result = response.data;
-
-      if (result.status === 'Ready' && result.downloadUrl) {
-        const fileResponse = await axiosInstance.get(result.downloadUrl, {
-          responseType: 'blob',
-        });
-        const blob = new Blob([fileResponse.data], {
-          type: String(
-            fileResponse.headers['content-type'] ?? excelContentType
-          ),
-        });
-        downloadBlob(blob, result.fileName ?? EXCEL_FILE_NAME);
-        message.success('Your Excel export is ready and downloading.');
-        return;
-      }
-
-      if (result.status === 'Processing') {
-        message.info(
-          'This export is already being generated. It will appear in Exports when ready.'
-        );
-      } else {
-        message.success('Export queued. It will appear in Exports when ready.');
-      }
     },
     [form]
   );
@@ -324,16 +297,10 @@ const ListOfDirectors = () => {
     setRefreshKey((current) => current + 1);
   };
 
-  // Legacy RDLC-style report header, shown once filters are applied and reflecting
-  // the chosen date range (mirrors the old admin's "Directors List (..) To (..)").
+  // Legacy RDLC-style report header ("Directors List (..) To (..)"), from the same config the
+  // Excel spec uses, so the grid and the sheet print the same three lines.
   const reportHeaderLines = hasAppliedFilters
-    ? [
-        'Ministry of Commerce',
-        'Directorate of Trade',
-        `Directors List (${dayjs(filters.FromDate).format(
-          'DD/MM/YYYY'
-        )}) To (${dayjs(filters.ToDate).format('DD/MM/YYYY')})`,
-      ]
+    ? buildReportHeaderLines(config, filters)
     : undefined;
 
   return (
@@ -481,8 +448,8 @@ const ListOfDirectors = () => {
         excelEnabled
         idleText="Set filters, then click Filter to load the report."
         refreshKey={refreshKey}
-        excelFileName={EXCEL_FILE_NAME}
-        rowNumberTitle="No."
+        excelFileName={config.excelFileName}
+        rowNumberTitle={config.rowNumberTitle}
       />
     </>
   );

@@ -14,7 +14,6 @@ import {
   Skeleton,
   Space,
   Typography,
-  message,
 } from 'antd';
 import {
   FileExcelOutlined,
@@ -26,6 +25,8 @@ import axiosInstance from '../../services/AxiosInstance';
 import { PageHeader } from '../../components';
 import { AnyObject } from '../../types/AnyObject';
 import { PaginationType } from '../../types/PaginationType';
+import { buildCompanyProfileExcelSpec } from '../excel/bespoke/companyProfile';
+import { enqueueExcelExport } from '../excel/excelEnqueue';
 
 // CompanyProfile is rendered by this bespoke page (not GenericReportPage) so it can
 // reproduce the legacy Tradenet 2.0 layout exactly: Myanmar column headers, the
@@ -43,10 +44,10 @@ const TABLE_ID = 'companyProfileTable';
 // 9 company-level columns + 3 nested director columns.
 const TOTAL_COLUMN_COUNT = 12;
 
-const excelContentType =
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-
+// The index signature makes these the "applied filters" record the bespoke Excel spec
+// builder reads (it formats FromDate/ToDate into the sheet's header line).
 interface CompanyProfileFilters {
+  [key: string]: unknown;
   FromDate: string;
   ToDate: string;
   CompanyRegistrationNo: string;
@@ -81,14 +82,6 @@ interface CompanyRow {
   extensionCount?: number;
   directors: DirectorEntry[];
 }
-
-type ExcelEnqueueResult = {
-  status: 'Ready' | 'Queued' | 'Processing';
-  jobId: string;
-  fileName?: string;
-  downloadUrl?: string;
-  message?: string;
-};
 
 const toApiDate = (value: Dayjs, edge: 'start' | 'end') =>
   (edge === 'start' ? value.startOf('day') : value.endOf('day')).format(
@@ -204,17 +197,6 @@ const groupByCompany = (rows: AnyObject[]): CompanyRow[] => {
   return order.map((id) => byId.get(id)!);
 };
 
-const downloadBlob = (blob: Blob, fileName: string) => {
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.URL.revokeObjectURL(url);
-};
-
 const CompanyProfile = () => {
   const [form] = Form.useForm<CompanyProfileFormValues>();
   const initialFormValues = useMemo<CompanyProfileFormValues>(() => {
@@ -289,33 +271,16 @@ const CompanyProfile = () => {
     setError(null);
 
     try {
-      const response = await axiosInstance.post<ExcelEnqueueResult>(
+      // The endpoint REJECTS a request that carries no presentation spec, which is why this
+      // export always failed. buildCompanyProfileExcelSpec describes this page's hand-built
+      // Myanmar columns (the generic builder would describe the nav-only config instead).
+      const applied = toFilters(values);
+      await enqueueExcelExport(
         EXCEL_ROUTE,
-        buildRequest(toFilters(values), { pageIndex, pageSize })
+        buildRequest(applied, { pageIndex, pageSize }),
+        buildCompanyProfileExcelSpec(applied),
+        EXCEL_FILE_NAME
       );
-      const result = response.data;
-
-      if (result.status === 'Ready' && result.downloadUrl) {
-        const fileResponse = await axiosInstance.get(result.downloadUrl, {
-          responseType: 'blob',
-        });
-        const blob = new Blob([fileResponse.data], {
-          type: String(
-            fileResponse.headers['content-type'] ?? excelContentType
-          ),
-        });
-        downloadBlob(blob, result.fileName ?? EXCEL_FILE_NAME);
-        message.success('Your Excel export is ready and downloading.');
-        return;
-      }
-
-      if (result.status === 'Processing') {
-        message.info(
-          'This export is already being generated. It will appear in Exports when ready.'
-        );
-      } else {
-        message.success('Export queued. It will appear in Exports when ready.');
-      }
     } catch {
       setError('Failed to generate Excel file.');
     } finally {

@@ -5,10 +5,12 @@
   "title": "List of Directors",
   "fileName": "ListOfDirectors.xlsx",
   "headerLines": [
-    "List of Directors"
+    "Ministry of Commerce",
+    "Directorate of Trade",
+    "Directors List (01/02/2026) To (28/02/2026)"
   ],
   "showRowNumber": true,
-  "rowNumberTitle": "No",
+  "rowNumberTitle": "No.",
   "columns": [
     {
       "key": "CompanyRegistrationNo",

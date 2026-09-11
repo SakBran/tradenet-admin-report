@@ -18,7 +18,17 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class ListOfDirectorsByCompanyRegistrationNoController : ControllerBase, IStreamingExcelReport
+    // The sheet gained the legacy two-block layout (it had no export at all before), so
+    // cached files from the previous format version must not be served.
+    [ExcelFormatVersion(2)]
+    // IExcelReportLayoutProvider: this is a document-style master/detail report, not a grid —
+    // the sheet is two tables (company info, then that company's directors), so it is declared
+    // here rather than built from the page's flat column spec.
+    // IExcelNoFooterReport: no RDLC of this report has a Sum row, and without the marker the
+    // footer resolver would replay Post — whose failure, under the default Required policy,
+    // would fail the whole export.
+    public class ListOfDirectorsByCompanyRegistrationNoController
+        : ControllerBase, IStreamingExcelReport, IExcelReportLayoutProvider, IExcelNoFooterReport
     {
         private const string ReportKey = "ListOfDirectorsByCompanyRegistrationNo";
 
@@ -42,7 +52,8 @@ namespace Backend.Controllers.Report
         // header + that company's directors (No / Name / NRC No / Position / Address).
         // Uses the @Type='By Company Registration No' branch of sp_DirectorListReport, which
         // ignores the date range and returns one row per director with full company + director
-        // detail. No paging / no Excel (document-style report, mirrors CardLists).
+        // detail. Not paged (document-style report, mirrors CardLists); the Excel export
+        // reproduces the same two blocks via GetExcelLayout/WriteRowsAsync below.
         [HttpPost("Detail")]
         public async Task<ActionResult<DirectorsByCompanyDetailResult>> Detail(
             [FromBody] DirectorsByCompanyDetailRequest? request)
@@ -53,7 +64,18 @@ namespace Backend.Controllers.Report
                 return BadRequest("Company Registration No is required.");
             }
 
-            var rows = await sp_DirectorListReport.ExecuteAsync(
+            return Ok(await LoadDetailAsync(registrationNo));
+        }
+
+        /// <summary>
+        /// The document this report is: the company block and its directors. Shared by
+        /// <see cref="Detail"/> and the Excel export so the page and the sheet cannot disagree.
+        /// </summary>
+        private async Task<DirectorsByCompanyDetailResult> LoadDetailAsync(
+            string registrationNo,
+            CancellationToken cancellationToken = default)
+        {
+            var rows = await sp_DirectorListReport.ExecuteQueryable(
                 _context,
                 new sp_DirectorListReportRequest
                 {
@@ -61,15 +83,15 @@ namespace Backend.Controllers.Report
                     ToDate = DateTime.Today,
                     CompanyRegistrationNo = registrationNo,
                     Type = "By Company Registration No",
-                });
+                }).ToListAsync(cancellationToken);
 
             var first = rows.FirstOrDefault();
             if (first == null)
             {
-                return Ok(new DirectorsByCompanyDetailResult { CompanyRegistrationNo = registrationNo });
+                return new DirectorsByCompanyDetailResult { CompanyRegistrationNo = registrationNo };
             }
 
-            return Ok(new DirectorsByCompanyDetailResult
+            return new DirectorsByCompanyDetailResult
             {
                 CompanyRegistrationNo = registrationNo,
                 Company = new DirectorsByCompanyInfo
@@ -99,7 +121,7 @@ namespace Backend.Controllers.Report
                     Country = row.DirectorCountry,
                     PostalCode = row.DirectorPostalCode,
                 }).ToList(),
-            });
+            };
         }
 
         [HttpPost]
@@ -152,6 +174,75 @@ namespace Backend.Controllers.Report
         public string ExcelWorksheetTitle => "List of Directors By Company Registration No";
         public Type ExcelRequestType => typeof(ListOfDirectorsByCompanyRegistrationNoRequest);
 
+        /// <summary>
+        /// The two stacked blocks of the legacy DirectorListByCompanyRegistrationNoReport.rdlc:
+        /// the 7-column company header (rdlc:451-851) and, under a "List of Directors" bar
+        /// (rdlc:1352), the director table (rdlc:1419-1639). Headers, order and the composed
+        /// Address cells are the page's, verbatim
+        /// (Frontend/src/Report/Page/ListOfDirectorsByCompanyRegistrationNo.tsx:195-262).
+        /// </summary>
+        [NonAction]
+        public ExcelReportLayout GetExcelLayout(object request)
+        {
+            var typedRequest = (ListOfDirectorsByCompanyRegistrationNoRequest)request;
+
+            return new ExcelReportLayout
+            {
+                // The legacy RDLC banner (rdlc:223-308) and its header1 parameter,
+                // "List of Directors (<CompanyRegistrationNo>)" — the same three lines the
+                // page prints above the tables.
+                TitleLines = new[]
+                {
+                    "Ministry of Commerce",
+                    "Directorate of Trade",
+                    $"List of Directors ({typedRequest.CompanyRegistrationNo?.Trim()})",
+                },
+                Sections = new[]
+                {
+                    new ExcelReportSection
+                    {
+                        // The company block has no section bar in the RDLC, just its header row.
+                        Title = string.Empty,
+                        Columns = new[]
+                        {
+                            ExcelColumn.Text<DirectorsByCompanyInfo>(
+                                    "Company Registration No", row => row.CompanyRegistrationNo)
+                                .Bind("CompanyRegistrationNo", "companyRegistrationNo"),
+                            ExcelColumn.Text<DirectorsByCompanyInfo>("Company Name", row => row.CompanyName)
+                                .Bind("CompanyName", "companyName"),
+                            ExcelColumn.Text<DirectorsByCompanyInfo>("Company Address", row => JoinAddress(row))
+                                .Bind("CompanyAddress", "companyAddress"),
+                            ExcelColumn.Date<DirectorsByCompanyInfo>(
+                                    "Company Registration Date", row => row.CompanyRegistrationDate)
+                                .Bind("CompanyRegistrationDate", "companyRegistrationDate"),
+                            ExcelColumn.Date<DirectorsByCompanyInfo>("Valid Date", row => row.EndDate)
+                                .Bind("ValidDate", "endDate"),
+                            ExcelColumn.Text<DirectorsByCompanyInfo>("Business Type", row => row.BusinessType)
+                                .Bind("BusinessType", "businessType"),
+                            ExcelColumn.Text<DirectorsByCompanyInfo>("Line of Business", row => row.LineofBusiness)
+                                .Bind("LineOfBusiness", "lineofBusiness"),
+                        },
+                    },
+                    new ExcelReportSection
+                    {
+                        Title = "List of Directors",
+                        Columns = new[]
+                        {
+                            ExcelColumn.RowNumber("No"),
+                            ExcelColumn.Text<DirectorsByCompanyDirector>("Name", row => row.DirectorName)
+                                .Bind("Name", "directorName"),
+                            ExcelColumn.Text<DirectorsByCompanyDirector>("NRC No", row => row.DirectorNRC)
+                                .Bind("nrcNo", "directorNRC"),
+                            ExcelColumn.Text<DirectorsByCompanyDirector>("Position", row => row.DirectorPosition)
+                                .Bind("Position", "directorPosition"),
+                            ExcelColumn.Text<DirectorsByCompanyDirector>("Address", row => JoinAddress(row))
+                                .Bind("Address", "directorAddress"),
+                        },
+                    },
+                },
+            };
+        }
+
         [NonAction]
         public Task WriteRowsAsync(object request, IExcelRowSink sink, int chunkSize, CancellationToken cancellationToken)
             => WriteRowsAsync((ListOfDirectorsByCompanyRegistrationNoRequest)request, sink, chunkSize, cancellationToken);
@@ -162,12 +253,45 @@ namespace Backend.Controllers.Report
             int chunkSize,
             CancellationToken cancellationToken)
         {
-            TryCreateReportRequest(request, out var procedureRequest, out _);
-            await foreach (var chunk in sp_DirectorListReport.ExecuteQueryable(_context, procedureRequest!)
-                .AsAsyncEnumerable().ChunkAsync(chunkSize, cancellationToken))
+            // The SAME load Detail does, so the sheet and the page cannot disagree. (The export
+            // used to stream the flat grid projection, which is not what this screen shows.)
+            var detail = await LoadDetailAsync(
+                request.CompanyRegistrationNo?.Trim() ?? string.Empty, cancellationToken);
+
+            if (detail.Company == null)
             {
-                sink.Append(chunk.Select(row => row.ToResult()).ToList());
+                return;
             }
+
+            sink.BeginSection(0);
+            sink.Append(new[] { detail.Company });
+
+            sink.BeginSection(1);
+            sink.Append(detail.Directors);
+        }
+
+        /// <summary>
+        /// The single combined address cell both blocks print, mirroring the page's
+        /// <c>buildAddress</c>: State and Postal Code share one comma-separated part.
+        /// </summary>
+        private static string JoinAddress(IReportAddressParts parts)
+        {
+            var stateLine = string.Join(
+                ' ',
+                new[] { parts.State, parts.PostalCode }
+                    .Select(part => part?.Trim())
+                    .Where(part => !string.IsNullOrEmpty(part)));
+
+            return string.Join(
+                ", ",
+                new[]
+                {
+                    parts.UnitLevel?.Trim(),
+                    parts.StreetNumberStreetName?.Trim(),
+                    parts.QuarterCityTownship?.Trim(),
+                    stateLine,
+                    parts.Country?.Trim(),
+                }.Where(part => !string.IsNullOrEmpty(part)));
         }
 
         private bool TryCreateReportRequest(
@@ -245,7 +369,20 @@ namespace Backend.Controllers.Report
         public List<DirectorsByCompanyDirector> Directors { get; set; } = new();
     }
 
-    public sealed class DirectorsByCompanyInfo
+    /// <summary>
+    /// The address parts both blocks of this report compose into one cell.
+    /// </summary>
+    public interface IReportAddressParts
+    {
+        string? UnitLevel { get; }
+        string? StreetNumberStreetName { get; }
+        string? QuarterCityTownship { get; }
+        string? State { get; }
+        string? Country { get; }
+        string? PostalCode { get; }
+    }
+
+    public sealed class DirectorsByCompanyInfo : IReportAddressParts
     {
         public string CompanyRegistrationNo { get; set; } = string.Empty;
         public string CompanyName { get; set; } = string.Empty;
@@ -261,7 +398,7 @@ namespace Backend.Controllers.Report
         public string? PostalCode { get; set; }
     }
 
-    public sealed class DirectorsByCompanyDirector
+    public sealed class DirectorsByCompanyDirector : IReportAddressParts
     {
         public string? DirectorName { get; set; }
         public string? DirectorNRC { get; set; }
