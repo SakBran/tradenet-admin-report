@@ -25,7 +25,8 @@ namespace Backend.Controllers.Report
     // v2 = the exported sheet gained the RDLC title row and the grid's 8 columns.
     // v3 = the DCCA variant is now written byte-for-byte from the old export's own parts
     //      (DccaWorkbookWriter) instead of through StreamingExcelWriter, so its bytes changed.
-    [ExcelFormatVersion(3)]
+    // 4: mm/dd/yyyy Entry Date and comma-less Deducted Fees (2026-09-13 complaint round).
+    [ExcelFormatVersion(4)]
     public class AccountSummaryReportController
         : ControllerBase,
           IStreamingExcelReport,
@@ -151,14 +152,17 @@ namespace Backend.Controllers.Report
                 Columns = new[]
                 {
                     ExcelColumn.RowNumber(),
-                    ExcelColumn.Date<sp_AccountSummaryReportResult>("Entry Date", row => row.VoucherDate),
+                    // mm/dd/yyyy and comma-less amounts: the payment department reads these
+                    // figures across into their own books, and the DCCA file this report
+                    // also produces has always used MM/dd/yyyy (see ToDccaRow).
+                    ExcelColumn.DateUs<sp_AccountSummaryReportResult>("Entry Date", row => row.VoucherDate),
                     ExcelColumn.Text<sp_AccountSummaryReportResult>("Company Registration No", row => row.CompanyRegistrationNo, width: 24),
                     ExcelColumn.Text<sp_AccountSummaryReportResult>("Company Name", row => row.CompanyName, width: 34),
                     ExcelColumn.Text<sp_AccountSummaryReportResult>("Voucher No", row => row.VoucherNo, width: 16),
                     ExcelColumn.Text<sp_AccountSummaryReportResult>("Transaction Title", row => row.TransactionTitle, width: 30),
                     // Bound to "amount" so the footer builder places Post's
                     // ColumnTotals["amount"] under this column instead of re-summing.
-                    ExcelColumn.Money<sp_AccountSummaryReportResult>("Deducted Fees", row => row.Amount, includeInTotals: true)
+                    ExcelColumn.MoneyPlain<sp_AccountSummaryReportResult>("Deducted Fees", row => row.Amount, includeInTotals: true)
                         .Bind("DeductedFees", "amount"),
                     // Unbound in the old RDLC too — a header with a deliberately empty body.
                     ExcelColumn.Blank("Remark", width: 18),

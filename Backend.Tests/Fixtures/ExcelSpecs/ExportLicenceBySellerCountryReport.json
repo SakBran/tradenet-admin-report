@@ -3,7 +3,7 @@
   "configKey": "ExportLicenceBySellerCountryReport",
   "controllerName": "ExportLicenceBySellerCountryReport",
   "title": "Export Licence By Buyer Country Report",
-  "fileName": "ExportLicenceBySellerCountryReport.xlsx",
+  "fileName": "ExportLicenceByBuyerCountryReport.xlsx",
   "headerLines": [
     "List of Export Licences By Buyer Country From (01/02/2026) To (28/02/2026)"
   ],

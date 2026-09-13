@@ -383,6 +383,7 @@ namespace API.Model.ExcelExport
                 column.Title = Clean(column.Title);
                 column.DataType = CleanOrNull(column.DataType);
                 column.NumberFormat = CleanOrNull(column.NumberFormat);
+                column.DateFormat = CleanOrNull(column.DateFormat);
 
                 if (column.Key.Length == 0)
                 {
@@ -436,6 +437,12 @@ namespace API.Model.ExcelExport
                 {
                     problems.Add($"{columnPath}.numberFormat: must be 32 characters or fewer.");
                     column.NumberFormat = column.NumberFormat[..32];
+                }
+
+                if (column.DateFormat is { Length: > 32 })
+                {
+                    problems.Add($"{columnPath}.dateFormat: must be 32 characters or fewer.");
+                    column.DateFormat = column.DateFormat[..32];
                 }
             }
 

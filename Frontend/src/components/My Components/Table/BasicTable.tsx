@@ -561,12 +561,14 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
     numberFormat?: string
   ) => {
     // An explicit RDLC number format wins, so the footer total prints with the
-    // same decimals as the column it sits under.
+    // same decimals — and the same grouping — as the column it sits under.
+    // '#,##0.00' groups; '0.00' (the Payment reports) prints plain digits.
     if (numberFormat) {
       const decimals = numberFormat.split('.')[1]?.length ?? 0;
       return Number(value).toLocaleString('en-US', {
         minimumFractionDigits: decimals,
         maximumFractionDigits: decimals,
+        useGrouping: numberFormat.includes(','),
       });
     }
 

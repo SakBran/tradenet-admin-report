@@ -18,6 +18,8 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // 2: mm/dd/yyyy dates and comma-less amounts (2026-09-13 complaint round).
+    [ExcelFormatVersion(2)]
     public class OnlineFeesReportController : ControllerBase, IStreamingExcelReport, IExcelFooterTotalsProvider
     {
         private const string ReportKey = "OnlineFeesReport";

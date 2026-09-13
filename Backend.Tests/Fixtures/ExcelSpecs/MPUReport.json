@@ -34,7 +34,8 @@
       "key": "TrxnDate",
       "dataIndex": "transactionDateTime",
       "title": "Trxn Date",
-      "dataType": "dateTime"
+      "dataType": "dateTime",
+      "dateFormat": "MM/DD/YYYY HH:mm:ss"
     },
     {
       "key": "FormType",
@@ -75,25 +76,29 @@
       "key": "TrxnAmount",
       "dataIndex": "transactionAmount",
       "title": "Trxn Amount",
-      "dataType": "money"
+      "dataType": "money",
+      "numberFormat": "0.00"
     },
     {
       "key": "MOC",
       "dataIndex": "mocAmount",
       "title": "MOC",
-      "dataType": "money"
+      "dataType": "money",
+      "numberFormat": "0.00"
     },
     {
       "key": "IM",
       "dataIndex": "imAmount",
       "title": "IM",
-      "dataType": "money"
+      "dataType": "money",
+      "numberFormat": "0.00"
     },
     {
       "key": "MPU",
       "dataIndex": "mpuAmount",
       "title": "MPU",
-      "dataType": "money"
+      "dataType": "money",
+      "numberFormat": "0.00"
     },
     {
       "key": "VoucherNo",
@@ -104,13 +109,15 @@
       "key": "TotalAmount",
       "dataIndex": "totalAmount",
       "title": "Total Amount",
-      "dataType": "money"
+      "dataType": "money",
+      "numberFormat": "0.00"
     },
     {
       "key": "AmountDiff",
       "dataIndex": "amountDiff",
       "title": "Amount Diff",
-      "dataType": "money"
+      "dataType": "money",
+      "numberFormat": "0.00"
     }
   ]
 }

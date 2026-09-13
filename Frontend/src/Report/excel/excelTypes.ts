@@ -35,6 +35,12 @@ export interface ExcelSpecColumn {
   fallbackDataIndexes?: string[];
   /** Excel number format override (e.g. `#,##0.0000` for 4-decimal money). */
   numberFormat?: string;
+  /**
+   * dayjs pattern the grid prints a date cell with (e.g. `MM/DD/YYYY`), mapped to
+   * the matching Excel number format so the sheet reads the same way. Optional —
+   * only the reports that override the default date rendering emit it.
+   */
+  dateFormat?: string;
 }
 
 /** Where the per-currency footer rows put their label and their value. */

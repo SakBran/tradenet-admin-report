@@ -49,6 +49,12 @@ namespace API.Service.ExcelExport
         private const int StyleMoney4 = 10;
         private const int StyleInteger = 11;
         private const int StyleTotalInteger = 12;
+        private const int StyleDateUs = 13;
+        private const int StyleDateTimeUs = 14;
+        private const int StyleMoneyPlain = 15;
+        private const int StyleNumberPlain = 16;
+        private const int StyleTotalMoneyPlain = 17;
+        private const int StyleTotalNumberPlain = 18;
 
         private readonly ZipArchive _archive;
         private readonly string _worksheetBaseName;
@@ -677,6 +683,10 @@ namespace API.Service.ExcelExport
             ExcelCellFormat.Money => StyleMoney,
             ExcelCellFormat.Money4 => StyleMoney4,
             ExcelCellFormat.Integer => StyleInteger,
+            ExcelCellFormat.DateUs => StyleDateUs,
+            ExcelCellFormat.DateTimeUs => StyleDateTimeUs,
+            ExcelCellFormat.MoneyPlain => StyleMoneyPlain,
+            ExcelCellFormat.NumberPlain => StyleNumberPlain,
             _ => StyleDefault,
         };
 
@@ -685,6 +695,8 @@ namespace API.Service.ExcelExport
             ExcelCellFormat.Money or ExcelCellFormat.Money4 => StyleTotalMoney,
             ExcelCellFormat.Number => StyleTotalNumber,
             ExcelCellFormat.Integer => StyleTotalInteger,
+            ExcelCellFormat.MoneyPlain => StyleTotalMoneyPlain,
+            ExcelCellFormat.NumberPlain => StyleTotalNumberPlain,
             _ => StyleTotalLabel,
         };
 
@@ -738,7 +750,9 @@ namespace API.Service.ExcelExport
 
             if (value != null)
             {
-                if (format is ExcelCellFormat.Date or ExcelCellFormat.DateTime && TryGetDateSerial(value, out var serial))
+                if (format is ExcelCellFormat.Date or ExcelCellFormat.DateTime
+                        or ExcelCellFormat.DateUs or ExcelCellFormat.DateTimeUs
+                    && TryGetDateSerial(value, out var serial))
                 {
                     writer.WriteElementString("v", serial);
                 }
@@ -919,12 +933,17 @@ namespace API.Service.ExcelExport
         private const string StylesXml =
             "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>" +
             "<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">" +
-            "<numFmts count=\"5\">" +
+            "<numFmts count=\"9\">" +
             "<numFmt numFmtId=\"164\" formatCode=\"dd/mm/yyyy\"/>" +
             "<numFmt numFmtId=\"165\" formatCode=\"#,##0.00\"/>" +
             "<numFmt numFmtId=\"166\" formatCode=\"yyyy-mm-dd hh:mm:ss\"/>" +
             "<numFmt numFmtId=\"167\" formatCode=\"#,##0.0000\"/>" +
             "<numFmt numFmtId=\"168\" formatCode=\"#,##0\"/>" +
+            // The Payment reports: US date order, and amounts with no thousands separators.
+            "<numFmt numFmtId=\"169\" formatCode=\"mm/dd/yyyy\"/>" +
+            "<numFmt numFmtId=\"170\" formatCode=\"mm/dd/yyyy hh:mm:ss\"/>" +
+            "<numFmt numFmtId=\"171\" formatCode=\"0.00\"/>" +
+            "<numFmt numFmtId=\"172\" formatCode=\"0\"/>" +
             "</numFmts>" +
             "<fonts count=\"3\">" +
             "<font><sz val=\"11\"/><name val=\"Calibri\"/></font>" +
@@ -937,7 +956,7 @@ namespace API.Service.ExcelExport
             "</fills>" +
             "<borders count=\"1\"><border><left/><right/><top/><bottom/><diagonal/></border></borders>" +
             "<cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs>" +
-            "<cellXfs count=\"13\">" +
+            "<cellXfs count=\"19\">" +
             // 0 body
             "<xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/>" +
             // 1 title
@@ -967,6 +986,18 @@ namespace API.Service.ExcelExport
             "<xf numFmtId=\"168\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\"/>" +
             // 12 totals whole number (rdlc N0, bold)
             "<xf numFmtId=\"168\" fontId=\"2\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\" applyFont=\"1\"/>" +
+            // 13 date, US order (Payment)
+            "<xf numFmtId=\"169\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\"/>" +
+            // 14 date + time, US order (Payment)
+            "<xf numFmtId=\"170\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\"/>" +
+            // 15 money, no thousands separators (Payment)
+            "<xf numFmtId=\"171\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\"/>" +
+            // 16 whole number, no thousands separators (Payment)
+            "<xf numFmtId=\"172\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\"/>" +
+            // 17 totals money, no thousands separators (Payment, bold)
+            "<xf numFmtId=\"171\" fontId=\"2\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\" applyFont=\"1\"/>" +
+            // 18 totals whole number, no thousands separators (Payment, bold)
+            "<xf numFmtId=\"172\" fontId=\"2\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\" applyFont=\"1\"/>" +
             "</cellXfs>" +
             "</styleSheet>";
     }

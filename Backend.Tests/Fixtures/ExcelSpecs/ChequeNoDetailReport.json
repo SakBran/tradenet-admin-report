@@ -24,7 +24,8 @@
       "key": "TransactionDateTime",
       "dataIndex": "transactionDateTime",
       "title": "Trxn Date",
-      "dataType": "dateTime"
+      "dataType": "dateTime",
+      "dateFormat": "MM/DD/YYYY HH:mm:ss"
     },
     {
       "key": "FormType",
@@ -40,7 +41,8 @@
       "key": "Amount",
       "dataIndex": "amount",
       "title": "Amount",
-      "dataType": "number"
+      "dataType": "number",
+      "numberFormat": "0.00"
     },
     {
       "key": "PaThaKaNo",

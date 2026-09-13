@@ -55,6 +55,7 @@ export const toPresentationColumn = (
     ? { fallbackDataIndexes: [...column.fallbackDataIndexes] }
     : {}),
   ...(column.numberFormat ? { numberFormat: column.numberFormat } : {}),
+  ...(column.dateFormat ? { dateFormat: column.dateFormat } : {}),
 });
 
 /** One literal → stable key order → deterministic dedup hash. */

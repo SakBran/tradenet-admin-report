@@ -30,6 +30,18 @@ namespace API.Service.ExcelExport
 
         /// <summary>Numeric cell displayed as "#,##0" (the RDLC N0 columns, e.g. a voucher fee).</summary>
         Integer = 7,
+
+        /// <summary>A date serial displayed as "mm/dd/yyyy" (the Payment reports).</summary>
+        DateUs = 8,
+
+        /// <summary>A date serial displayed as "mm/dd/yyyy hh:mm:ss" (the Payment reports).</summary>
+        DateTimeUs = 9,
+
+        /// <summary>Money with NO thousands separators — "0.00" (the Payment reports).</summary>
+        MoneyPlain = 10,
+
+        /// <summary>A whole number with NO thousands separators — "0" (the Payment reports).</summary>
+        NumberPlain = 11,
     }
 
     /// <summary>Where one preamble line sits in the sheet's header block.</summary>
@@ -169,6 +181,19 @@ namespace API.Service.ExcelExport
 
             return Create<TRow>(header, ExcelCellFormat.Date, width, false, row => selector(row));
         }
+
+        /// <summary>A date column shown as "mm/dd/yyyy" (the Payment reports).</summary>
+        public static ExcelColumn DateUs<TRow>(string header, Func<TRow, System.DateTime?> selector, double? width = 12)
+        {
+            ArgumentNullException.ThrowIfNull(selector);
+
+            return Create<TRow>(header, ExcelCellFormat.DateUs, width, false, row => selector(row));
+        }
+
+        /// <summary>A money column with NO thousands separators — "0.00" (the Payment reports).</summary>
+        public static ExcelColumn MoneyPlain<TRow>(
+            string header, Func<TRow, object?> selector, double? width = 16, bool includeInTotals = false)
+            => Create(header, ExcelCellFormat.MoneyPlain, width, includeInTotals, selector);
 
         /// <summary>A date + time column ("yyyy-mm-dd hh:mm:ss").</summary>
         public static ExcelColumn Timestamp<TRow>(string header, Func<TRow, System.DateTime?> selector, double? width = 20)

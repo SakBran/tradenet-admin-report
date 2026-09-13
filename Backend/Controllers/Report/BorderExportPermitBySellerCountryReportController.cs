@@ -65,7 +65,7 @@ namespace Backend.Controllers.Report
         }
 
         // --- Async Excel export streaming (used by the background queue worker) ---
-        public string ExcelWorksheetTitle => "Border Export Permit By Seller Country Report";
+        public string ExcelWorksheetTitle => "Border Export Permit By Buyer Country Report";
         public Type ExcelRequestType => typeof(BorderExportPermitBySellerCountryReportRequest);
 
         [NonAction]
