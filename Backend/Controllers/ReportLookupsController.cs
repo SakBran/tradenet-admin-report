@@ -90,6 +90,8 @@ namespace Backend.Controllers
                 "eicccardtypes" => GetEiccCardTypes,
                 "productgroups" => GetProductGroups,
                 "productitems" => GetProductItems,
+                "importstatementcodes" => GetImportStatementCodes,
+                "exportstatementcodes" => GetExportStatementCodes,
                 "pathakatypes" => GetPaThaKaTypes,
                 "paymenttypes" => GetPaymentTypes,
                 "sakhans" => GetSakhans,
@@ -615,6 +617,26 @@ namespace Backend.Controllers
                 {
                     ParentId = item.ProductGroupId
                 })
+                .ToListAsync();
+
+        // The Advance Search screen's "Statement Code" box. The legacy model builder read
+        // `ProductItemRepository.GetAll(AppConfig.Import|Export, 0).Where(x => x.IsDeleted == false)`
+        // (AdvanceSearchRepository.cs:147 on origin/master): every product group, one trade side,
+        // and -- unlike every other lookup here -- no IsActive test, so a de-activated statement
+        // code stays pickable. Kept, so the box offers exactly what the old one did.
+        private Task<List<ReportLookupOption>> GetImportStatementCodes() =>
+            GetStatementCodes(ImportTradeType);
+
+        private Task<List<ReportLookupOption>> GetExportStatementCodes() =>
+            GetStatementCodes(ExportTradeType);
+
+        private Task<List<ReportLookupOption>> GetStatementCodes(string tradeType) =>
+            _context.ProductItems
+                .AsNoTracking()
+                .Where(item => !item.IsDeleted && item.Type == tradeType)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, string.Empty, item.Name))
                 .ToListAsync();
 
         private Task<List<ReportLookupOption>> GetSakhans() =>

@@ -13,7 +13,15 @@ export type ReportFilterType =
   | 'date'
   | 'dateRange'
   | 'boolean'
-  | 'select';
+  | 'select'
+  /**
+   * A multi-select box, posted as ONE comma-joined string (e.g. `"5,12"`) — the shape the
+   * legacy `@Html.ListBoxFor` screens sent. Options come from `options` or, like the single
+   * selects, from `lookupName`; unlike them it gets no "All" entry, because an empty
+   * selection already means "all" to those filters. Used by Advance Search's Mode of
+   * Transport, Country of Origin and Consigned Country boxes.
+   */
+  | 'multiSelect';
 
 export interface ReportFilterOption {
   label: string;
@@ -99,6 +107,11 @@ export interface ReportFilterConfig {
   toLabel?: string;
   showTime?: boolean;
   defaultValue?: string | number | boolean;
+  /**
+   * How wide the `dateRange` box opens on first load: `n` months back to today (default 1,
+   * i.e. the start of this month). **0 means today to today**, which is what the legacy
+   * Advance Search screen defaulted both of its date boxes to.
+   */
   defaultDateRangeMonths?: number;
   required?: boolean;
   excludeFromRequest?: boolean;

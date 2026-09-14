@@ -47,6 +47,7 @@ type FilterValue =
   | boolean
   | Dayjs
   | [Dayjs, Dayjs]
+  | (string | number)[]
   | undefined;
 type FilterFormValues = Record<string, FilterValue>;
 
@@ -257,10 +258,17 @@ const toApiDate = (value: Dayjs, edge: 'start' | 'end') =>
 
 const toApiDateTime = (value: Dayjs) => value.format('YYYY-MM-DDTHH:mm:ss');
 
-const getInitialFilterValue = (filter: ReportFilterConfig): FilterValue => {
+// Exported for tests; the page itself uses it through buildInitialValues.
+export const getInitialFilterValue = (filter: ReportFilterConfig): FilterValue => {
   if (filter.type === 'dateRange') {
     const today = dayjs();
-    const months = Math.max(1, filter.defaultDateRangeMonths ?? 1);
+    const months = Math.max(0, filter.defaultDateRangeMonths ?? 1);
+    // 0 = today to today, the legacy Advance Search default (its model builder seeded both
+    // boxes with DateTime.Now); every other report opens on a whole month.
+    if (months === 0) {
+      return [today, filter.showTime ? today.endOf('day') : today];
+    }
+
     if (months > 1) {
       return [
         today.subtract(months - 1, 'month').startOf('month'),
@@ -276,6 +284,11 @@ const getInitialFilterValue = (filter: ReportFilterConfig): FilterValue => {
 
   if (filter.type === 'date') {
     return dayjs();
+  }
+
+  // Nothing selected — which is this box's "all".
+  if (filter.type === 'multiSelect') {
+    return [];
   }
 
   if (filter.defaultValue !== undefined) {
@@ -299,7 +312,9 @@ const buildInitialValues = (filters: ReportFilterConfig[]) =>
     return values;
   }, {});
 
-const normalizeFilters = (
+// Turns the form's values into the flat JSON body the report endpoints take.
+// Exported for tests.
+export const normalizeFilters = (
   filters: ReportFilterConfig[],
   values: FilterFormValues
 ) =>
@@ -336,6 +351,13 @@ const normalizeFilters = (
     if (filter.type === 'number') {
       request[filter.name] =
         typeof value === 'number' ? value : Number(value ?? 0);
+      return request;
+    }
+
+    // One comma-joined string, as the legacy ListBox posted (`.toString()` of the
+    // selection). Empty means "all", so an empty selection posts "".
+    if (filter.type === 'multiSelect') {
+      request[filter.name] = Array.isArray(value) ? value.join(',') : '';
       return request;
     }
 
@@ -452,16 +474,16 @@ const getLookupFilter = (filter: ReportFilterConfig) => {
   return filter.name.endsWith('Id') ? idFilterLookups[filter.name] : undefined;
 };
 
+const toLookupOptionItems = (options: LookupOption[] = []) =>
+  options.map((option) => ({
+    label: option.code ? `${option.label} (${option.code})` : option.label,
+    value: option.value ?? option.id,
+  }));
+
 const toLookupSelectOptions = (
   options: LookupOption[] = [],
   allValue: string | number = 0
-) => [
-  { label: 'All', value: allValue },
-  ...options.map((option) => ({
-    label: option.code ? `${option.label} (${option.code})` : option.label,
-    value: option.value ?? option.id,
-  })),
-];
+) => [{ label: 'All', value: allValue }, ...toLookupOptionItems(options)];
 
 /**
  * The Payment reports' From Date and To Date, as two separate boxes — the shape
@@ -512,6 +534,29 @@ const renderFilter = (
   overrideOptions?: LookupOption[]
 ) => {
   const lookup = getLookupFilter(filter);
+
+  // Checked BEFORE the lookup branch, which would otherwise win on `lookupName` alone. A
+  // multi-select gets no "All" entry: leaving it empty is what means "all" to these filters,
+  // and an "All" option alongside real values would post the literal 0.
+  if (filter.type === 'multiSelect') {
+    return (
+      <Select
+        allowClear
+        mode="multiple"
+        showSearch
+        loading={lookup ? loadingLookupNames.has(lookup.lookupName) : false}
+        optionFilterProp="label"
+        options={
+          lookup
+            ? toLookupOptionItems(
+                overrideOptions ?? lookupOptions[lookup.lookupName]
+              )
+            : (filter.options ?? [])
+        }
+        placeholder="All"
+      />
+    );
+  }
 
   if (lookup) {
     return (

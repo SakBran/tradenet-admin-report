@@ -24,6 +24,7 @@ import {
   ApartmentOutlined,
   CloudDownloadOutlined,
   CloudUploadOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { reportConfigList } from './config/reportConfigs';
@@ -214,6 +215,15 @@ const reportCategoryDefinitions: ReportCategory[] = [
         'AccountSummaryReport',
         'MPUReportV3',
       ].includes(controllerName),
+  },
+  {
+    // Last, which is where "Advance Search" sat in the old nav — straight after the Payment
+    // entry (_Layout.cshtml:1262-1277 on origin/master). The old menu had ONE entry, opening
+    // a page of eight tiles; the eight configs under this group are those tiles.
+    key: 'report-advance-search',
+    title: 'Advance Search',
+    icon: <SearchOutlined />,
+    matches: (controllerName) => controllerName.startsWith('AdvanceSearch'),
   },
 ];
 

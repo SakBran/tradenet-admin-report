@@ -1,0 +1,141 @@
+{
+  "formatVersion": 1,
+  "configKey": "AdvanceSearchExportLicence",
+  "controllerName": "AdvanceSearchExportLicence",
+  "title": "Advance Search for Export Licence",
+  "fileName": "AdvanceSearchExportLicence.xlsx",
+  "headerLines": [
+    "Advance Search for Export Licence"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "Section",
+      "dataIndex": "section",
+      "title": "Section"
+    },
+    {
+      "key": "LicenceNo",
+      "dataIndex": "licenceNo",
+      "title": "LicenceNo"
+    },
+    {
+      "key": "LicenceDate",
+      "dataIndex": "licenceDate",
+      "title": "LicenceDate",
+      "dataType": "date",
+      "dateFormat": "MM/DD/YYYY HH:mm:ss"
+    },
+    {
+      "key": "CompanyRegistrationNo",
+      "dataIndex": "companyRegistrationNo",
+      "title": "CompanyRegistrationNo"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "CompanyName"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "CompanyAddress",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country"
+      ]
+    },
+    {
+      "key": "SellerName",
+      "dataIndex": "sellerName",
+      "title": "SellerName"
+    },
+    {
+      "key": "SellerAddress",
+      "dataIndex": "sellerAddress",
+      "title": "SellerAddress"
+    },
+    {
+      "key": "SellerCountry",
+      "dataIndex": "sellerCountry",
+      "title": "SellerCountry"
+    },
+    {
+      "key": "PortOfDischarge",
+      "dataIndex": "portOfDischarge",
+      "title": "PortOfDischarge"
+    },
+    {
+      "key": "LastDate",
+      "dataIndex": "lastDate",
+      "title": "Last Date",
+      "dataType": "date",
+      "dateFormat": "MM/DD/YYYY HH:mm:ss"
+    },
+    {
+      "key": "Method",
+      "dataIndex": "method",
+      "title": "Method"
+    },
+    {
+      "key": "ConsignedCountry",
+      "dataIndex": "consignedCountry",
+      "title": "ConsignedCountry"
+    },
+    {
+      "key": "CountryOfOrigin",
+      "dataIndex": "countryOfOrigin",
+      "title": "CountryOfOrigin"
+    },
+    {
+      "key": "HSCode",
+      "dataIndex": "hsCode",
+      "title": "HSCode"
+    },
+    {
+      "key": "Description",
+      "dataIndex": "description",
+      "title": "Description"
+    },
+    {
+      "key": "AorU",
+      "dataIndex": "aorU",
+      "title": "AorU"
+    },
+    {
+      "key": "Price",
+      "dataIndex": "price",
+      "title": "Price",
+      "dataType": "number",
+      "numberFormat": "#,##0.0000"
+    },
+    {
+      "key": "Qty",
+      "dataIndex": "qty",
+      "title": "Qty",
+      "dataType": "number",
+      "numberFormat": "#,##0.0000"
+    },
+    {
+      "key": "Value",
+      "dataIndex": "value",
+      "title": "Value",
+      "dataType": "number",
+      "numberFormat": "#,##0.0000"
+    },
+    {
+      "key": "Currency",
+      "dataIndex": "currency",
+      "title": "Currency"
+    },
+    {
+      "key": "Conditions",
+      "dataIndex": "conditions",
+      "title": "Conditions"
+    }
+  ]
+}
