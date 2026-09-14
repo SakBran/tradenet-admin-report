@@ -142,7 +142,9 @@ const formatBoolean = (value: unknown) => {
 
 const formatMoney = (value: unknown) => {
   const parsed = Number(value?.toString().replace(/,/g, ''));
-  return Number.isFinite(parsed) ? parsed.toFixed(2) : value?.toString() ?? 'N/A';
+  return Number.isFinite(parsed)
+    ? parsed.toFixed(2)
+    : (value?.toString() ?? 'N/A');
 };
 
 /**
@@ -161,7 +163,8 @@ const decimalsInNumberFormat = (numberFormat: string) =>
  * comma, so this is a no-op for them; the Payment reports ask for plain digits
  * (the accounting department re-keys the figures elsewhere).
  */
-const groupsInNumberFormat = (numberFormat: string) => numberFormat.includes(',');
+const groupsInNumberFormat = (numberFormat: string) =>
+  numberFormat.includes(',');
 
 const formatWithNumberFormat =
   (numberFormat: string) =>
@@ -254,53 +257,6 @@ const toApiDate = (value: Dayjs, edge: 'start' | 'end') =>
 
 const toApiDateTime = (value: Dayjs) => value.format('YYYY-MM-DDTHH:mm:ss');
 
-/**
- * One-click ranges for the `showTime` reports (the six Payment reports). The
- * accounting staff who run them asked for the date range to be easier to pick:
- * clicking a preset applies the range immediately, with no time spinners and no
- * OK click, while the calendar and the HH:mm panel stay available for the rarer
- * case where they do want a specific time window.
- *
- * Each range spans whole days, which is what a day/month accounting report wants.
- */
-const buildDateRangePresets = (): {
-  label: string;
-  value: [Dayjs, Dayjs];
-}[] => {
-  const today = dayjs();
-  const wholeDays = (from: Dayjs, to: Dayjs): [Dayjs, Dayjs] => [
-    from.startOf('day'),
-    to.endOf('day'),
-  ];
-
-  return [
-    { label: 'Today', value: wholeDays(today, today) },
-    {
-      label: 'Yesterday',
-      value: wholeDays(today.subtract(1, 'day'), today.subtract(1, 'day')),
-    },
-    {
-      label: 'This Month',
-      value: wholeDays(today.startOf('month'), today),
-    },
-    {
-      label: 'Last Month',
-      value: wholeDays(
-        today.subtract(1, 'month').startOf('month'),
-        today.subtract(1, 'month').endOf('month')
-      ),
-    },
-    {
-      label: 'Last 3 Months',
-      value: wholeDays(today.subtract(2, 'month').startOf('month'), today),
-    },
-    {
-      label: 'This Year',
-      value: wholeDays(today.startOf('year'), today),
-    },
-  ];
-};
-
 const getInitialFilterValue = (filter: ReportFilterConfig): FilterValue => {
   if (filter.type === 'dateRange') {
     const today = dayjs();
@@ -312,7 +268,10 @@ const getInitialFilterValue = (filter: ReportFilterConfig): FilterValue => {
       ];
     }
 
-    return [today.startOf('month'), filter.showTime ? today.endOf('day') : today];
+    return [
+      today.startOf('month'),
+      filter.showTime ? today.endOf('day') : today,
+    ];
   }
 
   if (filter.type === 'date') {
@@ -493,6 +452,46 @@ const toLookupSelectOptions = (
   })),
 ];
 
+/**
+ * The Payment reports' From Date and To Date, as two separate boxes — the shape
+ * the old Tradenet 2.0 screens had (`@Html.TextBoxFor(model => model.FromTime)`
+ * and `.ToTime`, two `col-md-3` cells). Staff running these reports could not get
+ * on with one combined range box, so this is a deliberate return to the old form.
+ *
+ * The form value stays the single `[Dayjs, Dayjs]` tuple the rest of the page
+ * already speaks — each box binds to one slot of it through antd's array
+ * NamePath — so normalizeFilters, the drill-down seed and the subtitle are
+ * untouched. Time stays selectable at HH:mm, as the old datetimepicker had it
+ * ("dd/mm/yyyy H:MM"); the To edge is widened to :59 in normalizeFilters.
+ */
+const renderDateRangeBoxes = (filter: ReportFilterConfig) =>
+  (
+    [
+      [0, filter.fromLabel ?? 'From Date'],
+      [1, filter.toLabel ?? 'To Date'],
+    ] as const
+  ).map(([index, label]) => (
+    <Col xs={24} md={12} lg={6} key={`${filter.name}-${index}`}>
+      <Form.Item
+        label={label}
+        name={[filter.name, index]}
+        rules={
+          filter.required
+            ? [{ required: true, message: `${label} is required` }]
+            : undefined
+        }
+      >
+        <DatePicker
+          allowClear={false}
+          format="MM/DD/YYYY HH:mm"
+          placeholder={label}
+          showTime={{ format: 'HH:mm' }}
+          style={{ width: '100%' }}
+        />
+      </Form.Item>
+    </Col>
+  ));
+
 const renderFilter = (
   filter: ReportFilterConfig,
   lookupOptions: Record<string, LookupOption[]>,
@@ -518,20 +517,15 @@ const renderFilter = (
   }
 
   if (filter.type === 'dateRange') {
-    // The showTime reports (Payment) print MM/DD/YYYY everywhere else, so the box
-    // reads the same way; seconds are dropped from the panel (three spinners became
-    // two) and the presets make the common ranges a single click.
+    // A `showTime` range never reaches here: those reports render two separate
+    // From/To boxes instead (see renderDateRangeBoxes).
     return (
       <DatePicker.RangePicker
         allowClear={false}
-        format={filter.showTime ? 'MM/DD/YYYY HH:mm' : undefined}
         placeholder={[
           filter.fromLabel ?? 'From Date',
           filter.toLabel ?? 'To Date',
         ]}
-        presets={filter.showTime ? buildDateRangePresets() : undefined}
-        showTime={filter.showTime ? { format: 'HH:mm' } : false}
-        size={filter.showTime ? 'large' : undefined}
         style={{ width: '100%' }}
       />
     );
@@ -641,9 +635,7 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
   >({});
   const companyNameFilter = useMemo(
     () =>
-      config.filters.find(
-        (filter) => filter.populateFromCompanyRegistrationNo
-      ),
+      config.filters.find((filter) => filter.populateFromCompanyRegistrationNo),
     [config.filters]
   );
   const watchedCompanyRegistrationNo = Form.useWatch(
@@ -831,11 +823,18 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
 
       await enqueueExcelExport(
         config.excelRoute,
-        { ...buildRequest(currentFilters, query), ...secondaryExcel.requestOverrides },
+        {
+          ...buildRequest(currentFilters, query),
+          ...secondaryExcel.requestOverrides,
+        },
         // `controllerName` must stay the report's own — the backend rejects a
         // spec belonging to a different report. Only the naming differs, so the
         // two jobs are told apart in the Exports list.
-        { ...spec, title: secondaryExcel.title, fileName: secondaryExcel.fileName },
+        {
+          ...spec,
+          title: secondaryExcel.title,
+          fileName: secondaryExcel.fileName,
+        },
         secondaryExcel.fileName
       );
     },
@@ -911,7 +910,9 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
   // plus selected current filters (mirrors the legacy RDLC "blue cell" links).
   const handleDrill = useCallback(
     (drilldown: ReportColumnDrilldown, row: AnyObject) => {
-      const params: Record<string, unknown> = { ...(drilldown.staticParams ?? {}) };
+      const params: Record<string, unknown> = {
+        ...(drilldown.staticParams ?? {}),
+      };
       (drilldown.carryFilters ?? []).forEach((name) => {
         if (filters[name] !== undefined) {
           params[name] = filters[name];
@@ -1019,31 +1020,35 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
             onValuesChange={handleValuesChange}
           >
             <Row gutter={[16, 16]} align="bottom">
-              {visibleFilters.map((filter) => (
-                <Col xs={24} md={12} lg={6} key={filter.name}>
-                  <Form.Item
-                    label={filter.label ?? getLookupFilter(filter)?.label}
-                    name={filter.name}
-                    rules={
-                      filter.required
-                        ? [
-                            {
-                              required: true,
-                              message: `${filter.label} is required`,
-                            },
-                          ]
-                        : undefined
-                    }
-                  >
-                    {renderFilter(
-                      filter,
-                      lookupOptions,
-                      loadingLookupNames,
-                      getDependentLookupOptions(filter)
-                    )}
-                  </Form.Item>
-                </Col>
-              ))}
+              {visibleFilters.flatMap((filter) =>
+                filter.type === 'dateRange' && filter.showTime
+                  ? renderDateRangeBoxes(filter)
+                  : [
+                      <Col xs={24} md={12} lg={6} key={filter.name}>
+                        <Form.Item
+                          label={filter.label ?? getLookupFilter(filter)?.label}
+                          name={filter.name}
+                          rules={
+                            filter.required
+                              ? [
+                                  {
+                                    required: true,
+                                    message: `${filter.label} is required`,
+                                  },
+                                ]
+                              : undefined
+                          }
+                        >
+                          {renderFilter(
+                            filter,
+                            lookupOptions,
+                            loadingLookupNames,
+                            getDependentLookupOptions(filter)
+                          )}
+                        </Form.Item>
+                      </Col>,
+                    ]
+              )}
               <Col xs={24} md={12} lg={6}>
                 <Form.Item>
                   <Space wrap>
