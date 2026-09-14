@@ -24,7 +24,8 @@
       "key": "PermitDate",
       "dataIndex": "licenceDate",
       "title": "Permit Date",
-      "dataType": "date"
+      "dataType": "date",
+      "dateFormat": "DD/MM/YYYY"
     },
     {
       "key": "CompanyRegistrationNo",
@@ -83,7 +84,8 @@
       "key": "LastDate",
       "dataIndex": "lastDate",
       "title": "Last Date",
-      "dataType": "date"
+      "dataType": "date",
+      "dateFormat": "DD/MM/YYYY"
     },
     {
       "key": "CountryOfOrign",

@@ -2,8 +2,8 @@
   "formatVersion": 1,
   "configKey": "BorderExportPermitBySellerCountryReport",
   "controllerName": "BorderExportPermitBySellerCountryReport",
-  "title": "Border Export Permit By Seller Country Report",
-  "fileName": "BorderExportPermitBySellerCountryReport.xlsx",
+  "title": "Border Export Permit By Buyer Country Report",
+  "fileName": "BorderExportPermitByBuyerCountryReport.xlsx",
   "headerLines": [
     "List of Export Permit By Buyer Country From (01/02/2026) To (28/02/2026)"
   ],

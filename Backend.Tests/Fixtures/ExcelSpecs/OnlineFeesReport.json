@@ -14,7 +14,8 @@
       "key": "EntryDate",
       "dataIndex": "voucherDate",
       "title": "Entry Date",
-      "dataType": "date"
+      "dataType": "date",
+      "dateFormat": "MM/DD/YYYY"
     },
     {
       "key": "CompanyRegistrationNo",
@@ -35,7 +36,8 @@
       "key": "DeductedFees",
       "dataIndex": "amount",
       "title": "Deducted Fees",
-      "dataType": "number"
+      "dataType": "number",
+      "numberFormat": "0.00"
     },
     {
       "key": "Remark",

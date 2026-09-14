@@ -75,6 +75,12 @@ namespace API.Model.ExcelExport
 
         /// <summary>e.g. "#,##0.0000" for the 4-decimal money columns.</summary>
         public string? NumberFormat { get; set; }
+
+        /// <summary>
+        /// The dayjs pattern the grid printed a date cell with (e.g. "MM/DD/YYYY"),
+        /// mapped to the matching Excel number format. Null = the default rendering.
+        /// </summary>
+        public string? DateFormat { get; set; }
     }
 
     /// <summary>Which columns carry the per-currency footer label and value.</summary>

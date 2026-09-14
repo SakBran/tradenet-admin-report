@@ -238,10 +238,12 @@ public sealed class StreamingExcelWriterTests
         Assert.Null(cells[0].Attribute("t"));
         Assert.Equal("1", cells[0].Element(ns + "v")?.Value);
 
-        // Entry Date → a real date serial carrying the dd/mm/yyyy style.
+        // Entry Date → a real date serial carrying the mm/dd/yyyy style (style 13): the
+        // payment department reads these into their own books, and this report's DCCA
+        // file has always printed MM/dd/yyyy.
         Assert.Null(cells[1].Attribute("t"));
         Assert.Equal(new DateTime(2026, 8, 31).ToOADate().ToString("0.##########"), cells[1].Element(ns + "v")?.Value);
-        Assert.Equal("3", cells[1].Attribute("s")?.Value);
+        Assert.Equal("13", cells[1].Attribute("s")?.Value);
 
         // Company Registration No stays text, so a numeric-looking code keeps its shape.
         Assert.Equal("inlineStr", cells[2].Attribute("t")?.Value);

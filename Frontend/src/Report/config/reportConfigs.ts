@@ -746,6 +746,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'voucherDate',
         title: 'Entry Date',
         dataType: 'date',
+        dateFormat: 'MM/DD/YYYY',
       },
       {
         key: 'CompanyRegistrationNo',
@@ -772,6 +773,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'amount',
         title: 'Deducted Fees',
         dataType: 'number',
+        numberFormat: '0.00',
       },
       {
         key: 'Remark',
@@ -1357,7 +1359,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     title: 'Border Export Licence By Buyer Country Report',
     apiRoute: 'BorderExportLicenceBySellerCountryReport',
     excelRoute: 'BorderExportLicenceBySellerCountryReport/Excel',
-    excelFileName: 'BorderExportLicenceBySellerCountryReport.xlsx',
+    // The route keys stay "BySellerCountry" (they are the backend controller name and
+    // the menu key), but an export licence has a BUYER — the downloaded file is named
+    // after the report the user sees, not after the route.
+    excelFileName: 'BorderExportLicenceByBuyerCountryReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
     filters: [
@@ -1595,6 +1600,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Company Registration No',
         type: 'text',
         defaultValue: '',
+      },
+      // BorderExportLicenceByCompanyReport.cshtml:76-77 -- a read-only companion box
+      // that fills in from the registration no; it is display only, never a request field.
+      {
+        ...importLicenceCompanyNameFilter,
       },
       {
         name: 'SakhanId',
@@ -2872,10 +2882,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   BorderExportPermitBySellerCountryReport: {
     controllerName: 'BorderExportPermitBySellerCountryReport',
     reportSubtitle: importLicenceRangeSubtitle('List of Export Permit By Buyer Country', true),
-    title: 'Border Export Permit By Seller Country Report',
+    title: 'Border Export Permit By Buyer Country Report',
     apiRoute: 'BorderExportPermitBySellerCountryReport',
     excelRoute: 'BorderExportPermitBySellerCountryReport/Excel',
-    excelFileName: 'BorderExportPermitBySellerCountryReport.xlsx',
+    excelFileName: 'BorderExportPermitByBuyerCountryReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
     filters: [
@@ -3130,6 +3140,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         label: 'Company Registration No',
         type: 'text',
         defaultValue: '',
+      },
+      // BorderExportPermitByCompanyReport.cshtml:71 -- read-only, display only.
+      {
+        ...importLicenceCompanyNameFilter,
       },
       {
         name: 'SakhanId',
@@ -6603,12 +6617,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'date',
         title: 'Date',
         dataType: 'date',
+        dateFormat: 'MM/DD/YYYY',
       },
       {
         key: 'Amount',
         dataIndex: 'amount',
         title: 'Amount',
         dataType: 'number',
+        numberFormat: '0.00',
       },
     ],
   },
@@ -6657,6 +6673,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'transactionDateTime',
         title: 'Trxn Date',
         dataType: 'dateTime',
+        dateFormat: 'MM/DD/YYYY HH:mm:ss',
       },
       {
         key: 'FormType',
@@ -6673,6 +6690,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'amount',
         title: 'Amount',
         dataType: 'number',
+        numberFormat: '0.00',
       },
       {
         key: 'PaThaKaNo',
@@ -7332,7 +7350,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     title: 'Export Licence By Buyer Country Report',
     apiRoute: 'ExportLicenceBySellerCountryReport',
     excelRoute: 'ExportLicenceBySellerCountryReport/Excel',
-    excelFileName: 'ExportLicenceBySellerCountryReport.xlsx',
+    excelFileName: 'ExportLicenceByBuyerCountryReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
     filters: [
@@ -8493,7 +8511,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     title: 'Export Permit By Buyer Country Report',
     apiRoute: 'ExportPermitBySellerCountryReport',
     excelRoute: 'ExportPermitBySellerCountryReport/Excel',
-    excelFileName: 'ExportPermitBySellerCountryReport.xlsx',
+    excelFileName: 'ExportPermitByBuyerCountryReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
     filters: [
@@ -8700,6 +8718,18 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         type: 'number',
         defaultValue: 0,
         lookupName: 'exportPermitSections',
+      },
+      // ExportPermitByCompanyReport.cshtml:59-66 -- the old screen's last two boxes.
+      // The controller request already carries CompanyRegistrationNo; Company Name is
+      // read-only and display only.
+      {
+        name: 'CompanyRegistrationNo',
+        label: 'Company Registration No',
+        type: 'text',
+        defaultValue: '',
+      },
+      {
+        ...importLicenceCompanyNameFilter,
       },
     ],
     columns: [
@@ -12671,6 +12701,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'transactionDateTime',
         title: 'Trxn Date',
         dataType: 'dateTime',
+        dateFormat: 'MM/DD/YYYY HH:mm:ss',
       },
       {
         key: 'FormType',
@@ -12712,24 +12743,28 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'transactionAmount',
         title: 'Trxn Amount',
         dataType: 'money',
+        numberFormat: '0.00',
       },
       {
         key: 'MOC',
         dataIndex: 'mocAmount',
         title: 'MOC',
         dataType: 'money',
+        numberFormat: '0.00',
       },
       {
         key: 'IM',
         dataIndex: 'imAmount',
         title: 'IM',
         dataType: 'money',
+        numberFormat: '0.00',
       },
       {
         key: 'MPU',
         dataIndex: 'mpuAmount',
         title: 'MPU',
         dataType: 'money',
+        numberFormat: '0.00',
       },
       {
         key: 'VoucherNo',
@@ -12741,12 +12776,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'totalAmount',
         title: 'Total Amount',
         dataType: 'money',
+        numberFormat: '0.00',
       },
       {
         key: 'AmountDiff',
         dataIndex: 'amountDiff',
         title: 'Amount Diff',
         dataType: 'money',
+        numberFormat: '0.00',
       },
     ],
   },
@@ -12816,6 +12853,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'transactionDateTime',
         title: 'Trxn Date',
         dataType: 'dateTime',
+        dateFormat: 'MM/DD/YYYY HH:mm:ss',
       },
       {
         key: 'FormType',
@@ -12857,24 +12895,28 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'transactionAmount',
         title: 'Trxn Amount',
         dataType: 'money',
+        numberFormat: '0.00',
       },
       {
         key: 'MOC',
         dataIndex: 'mocAmount',
         title: 'MOC',
         dataType: 'money',
+        numberFormat: '0.00',
       },
       {
         key: 'IM',
         dataIndex: 'imAmount',
         title: 'IM',
         dataType: 'money',
+        numberFormat: '0.00',
       },
       {
         key: 'MPU',
         dataIndex: 'mpuAmount',
         title: 'MPU',
         dataType: 'money',
+        numberFormat: '0.00',
       },
       {
         key: 'VoucherNo',
@@ -12886,12 +12928,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'totalAmount',
         title: 'Total Amount',
         dataType: 'money',
+        numberFormat: '0.00',
       },
       {
         key: 'AmountDiff',
         dataIndex: 'amountDiff',
         title: 'Amount Diff',
         dataType: 'money',
+        numberFormat: '0.00',
       },
     ],
   },
@@ -12937,6 +12981,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'voucherDate',
         title: 'Entry Date',
         dataType: 'date',
+        dateFormat: 'MM/DD/YYYY',
       },
       {
         key: 'CompanyRegistrationNo',
@@ -12958,6 +13003,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'amount',
         title: 'Deducted Fees',
         dataType: 'number',
+        numberFormat: '0.00',
       },
       {
         key: 'Remark',

@@ -3,7 +3,7 @@
   "configKey": "ExportPermitBySellerCountryReport",
   "controllerName": "ExportPermitBySellerCountryReport",
   "title": "Export Permit By Buyer Country Report",
-  "fileName": "ExportPermitBySellerCountryReport.xlsx",
+  "fileName": "ExportPermitByBuyerCountryReport.xlsx",
   "headerLines": [
     "List of Export Permit By Buyer Country From (01/02/2026) To (28/02/2026)"
   ],

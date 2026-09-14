@@ -25,13 +25,15 @@
       "key": "Date",
       "dataIndex": "date",
       "title": "Date",
-      "dataType": "date"
+      "dataType": "date",
+      "dateFormat": "MM/DD/YYYY"
     },
     {
       "key": "Amount",
       "dataIndex": "amount",
       "title": "Amount",
-      "dataType": "number"
+      "dataType": "number",
+      "numberFormat": "0.00"
     }
   ]
 }

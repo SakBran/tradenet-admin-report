@@ -147,13 +147,21 @@ const formatMoney = (value: unknown) => {
 
 /**
  * Legacy RDLC `FORMAT(..., "Nx")` rendering for a numeric cell, driven by the
- * column's `numberFormat`: thousands separators plus the fixed decimal count the
- * format string carries ('#,##0.0000' -> 4, '#,##0' -> 0). Keeps the grid and the
- * Excel sheet — which gets the same `numberFormat` via the presentation spec —
- * printing the identical string.
+ * column's `numberFormat`: the fixed decimal count the format string carries
+ * ('#,##0.0000' -> 4, '#,##0' -> 0). Keeps the grid and the Excel sheet — which
+ * gets the same `numberFormat` via the presentation spec — printing the identical
+ * string.
  */
 const decimalsInNumberFormat = (numberFormat: string) =>
   numberFormat.split('.')[1]?.length ?? 0;
+
+/**
+ * Thousands separators come from the format string itself, exactly as they do in
+ * Excel: '#,##0.00' groups, '0.00' does not. Every legacy RDLC format carries the
+ * comma, so this is a no-op for them; the Payment reports ask for plain digits
+ * (the accounting department re-keys the figures elsewhere).
+ */
+const groupsInNumberFormat = (numberFormat: string) => numberFormat.includes(',');
 
 const formatWithNumberFormat =
   (numberFormat: string) =>
@@ -171,6 +179,7 @@ const formatWithNumberFormat =
     return parsed.toLocaleString('en-US', {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
+      useGrouping: groupsInNumberFormat(numberFormat),
     });
   };
 
@@ -245,6 +254,53 @@ const toApiDate = (value: Dayjs, edge: 'start' | 'end') =>
 
 const toApiDateTime = (value: Dayjs) => value.format('YYYY-MM-DDTHH:mm:ss');
 
+/**
+ * One-click ranges for the `showTime` reports (the six Payment reports). The
+ * accounting staff who run them asked for the date range to be easier to pick:
+ * clicking a preset applies the range immediately, with no time spinners and no
+ * OK click, while the calendar and the HH:mm panel stay available for the rarer
+ * case where they do want a specific time window.
+ *
+ * Each range spans whole days, which is what a day/month accounting report wants.
+ */
+const buildDateRangePresets = (): {
+  label: string;
+  value: [Dayjs, Dayjs];
+}[] => {
+  const today = dayjs();
+  const wholeDays = (from: Dayjs, to: Dayjs): [Dayjs, Dayjs] => [
+    from.startOf('day'),
+    to.endOf('day'),
+  ];
+
+  return [
+    { label: 'Today', value: wholeDays(today, today) },
+    {
+      label: 'Yesterday',
+      value: wholeDays(today.subtract(1, 'day'), today.subtract(1, 'day')),
+    },
+    {
+      label: 'This Month',
+      value: wholeDays(today.startOf('month'), today),
+    },
+    {
+      label: 'Last Month',
+      value: wholeDays(
+        today.subtract(1, 'month').startOf('month'),
+        today.subtract(1, 'month').endOf('month')
+      ),
+    },
+    {
+      label: 'Last 3 Months',
+      value: wholeDays(today.subtract(2, 'month').startOf('month'), today),
+    },
+    {
+      label: 'This Year',
+      value: wholeDays(today.startOf('year'), today),
+    },
+  ];
+};
+
 const getInitialFilterValue = (filter: ReportFilterConfig): FilterValue => {
   if (filter.type === 'dateRange') {
     const today = dayjs();
@@ -302,9 +358,11 @@ const normalizeFilters = (
           ? toApiDateTime(range[0])
           : toApiDate(range[0], 'start')
         : undefined;
+      // endOf('minute') on the To edge: the picker's time panel is HH:mm, so a 23:59
+      // pick would otherwise send 23:59:00 and drop the last 59 seconds of the day.
       request[filter.toName ?? 'ToDate'] = range?.[1]
         ? filter.showTime
-          ? toApiDateTime(range[1])
+          ? toApiDateTime(range[1].endOf('minute'))
           : toApiDate(range[1], 'end')
         : undefined;
       return request;
@@ -460,15 +518,20 @@ const renderFilter = (
   }
 
   if (filter.type === 'dateRange') {
+    // The showTime reports (Payment) print MM/DD/YYYY everywhere else, so the box
+    // reads the same way; seconds are dropped from the panel (three spinners became
+    // two) and the presets make the common ranges a single click.
     return (
       <DatePicker.RangePicker
         allowClear={false}
-        format={filter.showTime ? 'YYYY-MM-DD HH:mm:ss' : undefined}
+        format={filter.showTime ? 'MM/DD/YYYY HH:mm' : undefined}
         placeholder={[
           filter.fromLabel ?? 'From Date',
           filter.toLabel ?? 'To Date',
         ]}
-        showTime={filter.showTime}
+        presets={filter.showTime ? buildDateRangePresets() : undefined}
+        showTime={filter.showTime ? { format: 'HH:mm' } : false}
+        size={filter.showTime ? 'large' : undefined}
         style={{ width: '100%' }}
       />
     );

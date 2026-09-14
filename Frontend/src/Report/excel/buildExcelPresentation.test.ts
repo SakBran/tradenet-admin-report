@@ -219,6 +219,7 @@ describe('buildExcelPresentation', () => {
                   'dataType',
                   'fallbackDataIndexes',
                   'numberFormat',
+                  'dateFormat',
                 ].includes(key)
               )
               .sort()

@@ -25,6 +25,13 @@ namespace API.Service.ExcelExport
         private const string Money4Format = "#,##0.0000";
         private const string IntegerFormat = "#,##0";
 
+        // The Payment reports: no thousands separators, and mm/dd/yyyy dates. The date
+        // constants are the grid's dayjs patterns, not Excel format codes.
+        private const string MoneyPlainFormat = "0.00";
+        private const string NumberPlainFormat = "0";
+        private const string DateUsFormat = "MM/DD/YYYY";
+        private const string DateTimeUsFormat = "MM/DD/YYYY HH:mm:ss";
+
         /// <summary>
         /// Builds the layout for a report with no typed provider.
         /// <paramref name="rowType"/> is what <c>WriteRowsAsync</c> appends; when it is
@@ -304,14 +311,27 @@ namespace API.Service.ExcelExport
         {
             // The grid renders numberFormat '#,##0' as FORMAT(..., "N0") (thousands separators,
             // no decimals); the matching cell style keeps the sheet printing the same string.
+            // '0.00' / '0' carry no comma, so neither does the sheet (the Payment reports).
             "number" => string.Equals(spec.NumberFormat, IntegerFormat, StringComparison.Ordinal)
                 ? ExcelCellFormat.Integer
-                : ExcelCellFormat.Number,
+                : string.Equals(spec.NumberFormat, MoneyPlainFormat, StringComparison.Ordinal)
+                    ? ExcelCellFormat.MoneyPlain
+                    : string.Equals(spec.NumberFormat, NumberPlainFormat, StringComparison.Ordinal)
+                        ? ExcelCellFormat.NumberPlain
+                        : ExcelCellFormat.Number,
             "money" => string.Equals(spec.NumberFormat, Money4Format, StringComparison.Ordinal)
                 ? ExcelCellFormat.Money4
-                : ExcelCellFormat.Money,
-            "date" => ExcelCellFormat.Date,
-            "dateTime" => ExcelCellFormat.DateTime,
+                : string.Equals(spec.NumberFormat, MoneyPlainFormat, StringComparison.Ordinal)
+                    ? ExcelCellFormat.MoneyPlain
+                    : ExcelCellFormat.Money,
+            // dateFormat mirrors the grid's dayjs pattern: only the US order is mapped,
+            // anything else falls back to the default rendering.
+            "date" => string.Equals(spec.DateFormat, DateUsFormat, StringComparison.Ordinal)
+                ? ExcelCellFormat.DateUs
+                : ExcelCellFormat.Date,
+            "dateTime" => string.Equals(spec.DateFormat, DateTimeUsFormat, StringComparison.Ordinal)
+                ? ExcelCellFormat.DateTimeUs
+                : ExcelCellFormat.DateTime,
             _ => ExcelCellFormat.Text,   // 'string', 'boolean' and unset all render as text
         };
 
@@ -322,11 +342,15 @@ namespace API.Service.ExcelExport
         private static double ResolveWidth(ExcelSpecColumn spec, ExcelCellFormat format) => format switch
         {
             ExcelCellFormat.Date => 12,
+            ExcelCellFormat.DateUs => 12,
             ExcelCellFormat.DateTime => 20,
+            ExcelCellFormat.DateTimeUs => 20,
             ExcelCellFormat.Money => 16,
             ExcelCellFormat.Money4 => 16,
+            ExcelCellFormat.MoneyPlain => 16,
             ExcelCellFormat.Number => 12,
             ExcelCellFormat.Integer => 12,
+            ExcelCellFormat.NumberPlain => 12,
             _ => Math.Clamp((spec.Title?.Length ?? 0) + 4, 12, 40),
         };
 
@@ -336,10 +360,12 @@ namespace API.Service.ExcelExport
             {
                 case ExcelCellFormat.Number:
                 case ExcelCellFormat.Integer:
+                case ExcelCellFormat.NumberPlain:
                     return HasValue(raw) ? (ToDecimal(raw) ?? (object)AsString(raw)) : null;
 
                 case ExcelCellFormat.Money:
                 case ExcelCellFormat.Money4:
+                case ExcelCellFormat.MoneyPlain:
                     if (!HasValue(raw))
                     {
                         return null;
@@ -354,6 +380,8 @@ namespace API.Service.ExcelExport
 
                 case ExcelCellFormat.Date:
                 case ExcelCellFormat.DateTime:
+                case ExcelCellFormat.DateUs:
+                case ExcelCellFormat.DateTimeUs:
                     if (!HasValue(raw))
                     {
                         return null;
