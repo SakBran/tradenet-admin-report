@@ -810,6 +810,10 @@ const eiccReportConfig = (
   excelFileName: `${controllerName}.xlsx`,
   showRowNumber: true,
   rowNumberTitle: 'No',
+  // Kept out of the sidebar for now (owner's call, 2026-09-14). The route, the API and the
+  // Excel export all still work, so /Report/<key> reaches the report directly; drop this
+  // line to put the EICC group back in the menu.
+  hideInMenu: true,
   // The RDLC printed every row on one scrolling page; a 10-row first page would read
   // as missing data next to the old report.
   defaultPageSize: 1000,

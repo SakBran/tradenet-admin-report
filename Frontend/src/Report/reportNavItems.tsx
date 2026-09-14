@@ -193,6 +193,9 @@ const reportCategoryDefinitions: ReportCategory[] = [
       controllerName.startsWith('OGARecommendation'),
   },
   {
+    // Currently renders nothing: the three EICC configs set `hideInMenu` (owner's call,
+    // 2026-09-14), and a category with no children is dropped below. Kept so unhiding them
+    // is a one-line change in reportConfigs.ts rather than a nav edit as well.
     key: 'report-eicc',
     title: 'EICC',
     icon: <SafetyCertificateOutlined />,

@@ -147,15 +147,21 @@ describe('EICC report configs', () => {
     );
   });
 
-  it('all three screens are routed and listed in the sidebar', () => {
+  it('all three screens are routed and exported, but kept out of the sidebar', () => {
     const menuKeys = collectMenuKeys(reportNavItems);
     const routePaths = reportRoutes.map((route) => route.path);
 
     for (const key of EICC_KEYS) {
-      expect(menuKeys).toContain(key);
+      // Owner's call 2026-09-14: hidden from the menu, still reachable at /Report/<key>.
+      expect(reportConfigs[key].hideInMenu).toBe(true);
+      expect(menuKeys).not.toContain(key);
+
       expect(routePaths).toContain(key);
       expect(reportConfigs[key].apiRoute).toBe(key);
       expect(reportConfigs[key].excelRoute).toBe(`${key}/Excel`);
     }
+
+    // The empty EICC group must not render as a dead, childless sidebar row.
+    expect(menuKeys).not.toContain('report-eicc');
   });
 });
