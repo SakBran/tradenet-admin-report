@@ -29,7 +29,8 @@
     {
       "key": "TotalValue",
       "dataIndex": "totalValue",
-      "title": "Total Value"
+      "title": "Total Value",
+      "numberFormat": "#,##0.0000"
     },
     {
       "key": "Currency",
@@ -40,7 +41,8 @@
       "key": "TotalUSDValue",
       "dataIndex": "totalUSDValue",
       "title": "Total USD Value",
-      "dataType": "number"
+      "dataType": "number",
+      "numberFormat": "#,##0.0000"
     }
   ]
 }

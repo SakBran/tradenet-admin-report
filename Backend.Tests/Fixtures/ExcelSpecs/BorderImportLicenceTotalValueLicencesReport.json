@@ -13,7 +13,8 @@
     {
       "key": "TotalValue",
       "dataIndex": "totalValue",
-      "title": "Total Value"
+      "title": "Total Value",
+      "numberFormat": "#,##0.0000"
     },
     {
       "key": "Currency",

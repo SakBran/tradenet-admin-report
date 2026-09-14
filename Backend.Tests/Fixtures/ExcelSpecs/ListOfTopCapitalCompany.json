@@ -61,7 +61,8 @@
       "key": "CapitalAmount",
       "dataIndex": "capital",
       "title": "Capital Amount",
-      "dataType": "number"
+      "dataType": "number",
+      "numberFormat": "#,##0.0000"
     }
   ]
 }

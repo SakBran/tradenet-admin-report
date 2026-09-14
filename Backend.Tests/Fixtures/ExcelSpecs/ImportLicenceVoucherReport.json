@@ -50,7 +50,8 @@
       "key": "LicValue",
       "dataIndex": "totalAmount",
       "title": "Lic Value",
-      "dataType": "number"
+      "dataType": "number",
+      "numberFormat": "#,##0.0000"
     },
     {
       "key": "Currency",
@@ -81,13 +82,15 @@
       "key": "TotalCIF",
       "dataIndex": "totalCIF",
       "title": "Total CIF",
-      "dataType": "number"
+      "dataType": "number",
+      "numberFormat": "#,##0.0000"
     },
     {
       "key": "ExchangeRate",
       "dataIndex": "exchangeRate",
       "title": "Exchange Rate",
-      "dataType": "number"
+      "dataType": "number",
+      "numberFormat": "#,##0.0000"
     },
     {
       "key": "Amount",

@@ -29,6 +29,7 @@ namespace API.Service.ExcelExport
         // constants are the grid's dayjs patterns, not Excel format codes.
         private const string MoneyPlainFormat = "0.00";
         private const string NumberPlainFormat = "0";
+        private const string Money4PlainFormat = "0.0000";
         private const string DateUsFormat = "MM/DD/YYYY";
         private const string DateTimeUsFormat = "MM/DD/YYYY HH:mm:ss";
 
@@ -312,18 +313,14 @@ namespace API.Service.ExcelExport
             // The grid renders numberFormat '#,##0' as FORMAT(..., "N0") (thousands separators,
             // no decimals); the matching cell style keeps the sheet printing the same string.
             // '0.00' / '0' carry no comma, so neither does the sheet (the Payment reports).
-            "number" => string.Equals(spec.NumberFormat, IntegerFormat, StringComparison.Ordinal)
-                ? ExcelCellFormat.Integer
-                : string.Equals(spec.NumberFormat, MoneyPlainFormat, StringComparison.Ordinal)
-                    ? ExcelCellFormat.MoneyPlain
-                    : string.Equals(spec.NumberFormat, NumberPlainFormat, StringComparison.Ordinal)
-                        ? ExcelCellFormat.NumberPlain
-                        : ExcelCellFormat.Number,
+            "number" => NumericFormatFor(spec.NumberFormat) ?? ExcelCellFormat.Number,
             "money" => string.Equals(spec.NumberFormat, Money4Format, StringComparison.Ordinal)
                 ? ExcelCellFormat.Money4
                 : string.Equals(spec.NumberFormat, MoneyPlainFormat, StringComparison.Ordinal)
                     ? ExcelCellFormat.MoneyPlain
-                    : ExcelCellFormat.Money,
+                    : string.Equals(spec.NumberFormat, Money4PlainFormat, StringComparison.Ordinal)
+                        ? ExcelCellFormat.Money4Plain
+                        : ExcelCellFormat.Money,
             // dateFormat mirrors the grid's dayjs pattern: only the US order is mapped,
             // anything else falls back to the default rendering.
             "date" => string.Equals(spec.DateFormat, DateUsFormat, StringComparison.Ordinal)
@@ -332,7 +329,22 @@ namespace API.Service.ExcelExport
             "dateTime" => string.Equals(spec.DateFormat, DateTimeUsFormat, StringComparison.Ordinal)
                 ? ExcelCellFormat.DateTimeUs
                 : ExcelCellFormat.DateTime,
-            _ => ExcelCellFormat.Text,   // 'string', 'boolean' and unset all render as text
+            // 'string' and 'boolean' are text. An UNSET dataType carrying a number format
+            // is the By-X summaries' "Total Value": the grid prints it through that format
+            // even with no dataType, so the sheet must too. Its IsNumeric stays false
+            // (IsNumericDataType below), which keeps the currency footer where it was.
+            _ => NumericFormatFor(spec.NumberFormat) ?? ExcelCellFormat.Text,
+        };
+
+        /// <summary>The cell format a grid number format asks for, or null if unrecognised.</summary>
+        private static ExcelCellFormat? NumericFormatFor(string? numberFormat) => numberFormat switch
+        {
+            Money4Format => ExcelCellFormat.Money4,
+            Money4PlainFormat => ExcelCellFormat.Money4Plain,
+            MoneyPlainFormat => ExcelCellFormat.MoneyPlain,
+            IntegerFormat => ExcelCellFormat.Integer,
+            NumberPlainFormat => ExcelCellFormat.NumberPlain,
+            _ => null,
         };
 
         private static bool IsNumericDataType(string? dataType)
@@ -348,6 +360,7 @@ namespace API.Service.ExcelExport
             ExcelCellFormat.Money => 16,
             ExcelCellFormat.Money4 => 16,
             ExcelCellFormat.MoneyPlain => 16,
+            ExcelCellFormat.Money4Plain => 18,
             ExcelCellFormat.Number => 12,
             ExcelCellFormat.Integer => 12,
             ExcelCellFormat.NumberPlain => 12,
@@ -366,6 +379,7 @@ namespace API.Service.ExcelExport
                 case ExcelCellFormat.Money:
                 case ExcelCellFormat.Money4:
                 case ExcelCellFormat.MoneyPlain:
+                case ExcelCellFormat.Money4Plain:
                     if (!HasValue(raw))
                     {
                         return null;

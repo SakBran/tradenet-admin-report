@@ -126,19 +126,22 @@
       "key": "Price",
       "dataIndex": "price",
       "title": "Price",
-      "dataType": "number"
+      "dataType": "number",
+      "numberFormat": "#,##0.0000"
     },
     {
       "key": "Qty",
       "dataIndex": "quantity",
       "title": "Qty",
-      "dataType": "number"
+      "dataType": "number",
+      "numberFormat": "#,##0.0000"
     },
     {
       "key": "Value",
       "dataIndex": "amount",
       "title": "Value",
-      "dataType": "number"
+      "dataType": "number",
+      "numberFormat": "#,##0.0000"
     },
     {
       "key": "Currency",
