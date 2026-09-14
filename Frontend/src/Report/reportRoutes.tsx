@@ -165,6 +165,9 @@ import EVShowRoomDetailReport from './Page/EVShowRoomDetailReport';
 import EVShowRoomRegistrationByVoucher from './Page/EVShowRoomRegistrationByVoucher';
 import OGARecommendationReport from './Page/OGARecommendationReport';
 import OGARecommendationHistoryReport from './Page/OGARecommendationHistoryReport';
+import EICCCertificateReport from './Page/EICCCertificateReport';
+import EICCLicencePermitReport from './Page/EICCLicencePermitReport';
+import EICCBorderLicencePermitReport from './Page/EICCBorderLicencePermitReport';
 import ExportsDrive from './Page/ExportsDrive';
 
 export const reportRoutes = [
@@ -339,5 +342,11 @@ export const reportRoutes = [
   {
     path: 'OGARecommendationHistoryReport',
     element: <OGARecommendationHistoryReport />,
+  },
+  { path: 'EICCCertificateReport', element: <EICCCertificateReport /> },
+  { path: 'EICCLicencePermitReport', element: <EICCLicencePermitReport /> },
+  {
+    path: 'EICCBorderLicencePermitReport',
+    element: <EICCBorderLicencePermitReport />,
   },
 ];

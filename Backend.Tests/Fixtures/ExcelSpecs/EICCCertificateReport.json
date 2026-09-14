@@ -1,0 +1,69 @@
+{
+  "formatVersion": 1,
+  "configKey": "EICCCertificateReport",
+  "controllerName": "EICCCertificateReport",
+  "title": "EICC Certificate Report",
+  "fileName": "EICCCertificateReport.xlsx",
+  "headerLines": [
+    "EICC Certificate Report (15/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "EICCNo",
+      "dataIndex": "eiccNo",
+      "title": "EICC No"
+    },
+    {
+      "key": "EICCDate",
+      "dataIndex": "eiccDate",
+      "title": "Date",
+      "dataType": "date",
+      "dateFormat": "DD/MM/YYYY"
+    },
+    {
+      "key": "EICCStatus",
+      "dataIndex": "eiccStatus",
+      "title": "Status"
+    },
+    {
+      "key": "FormType",
+      "dataIndex": "formType",
+      "title": "Form Type"
+    },
+    {
+      "key": "ApplyType",
+      "dataIndex": "applyType",
+      "title": "Application Type"
+    },
+    {
+      "key": "PaThaKaNo",
+      "dataIndex": "paThaKaNo",
+      "title": "Company Registration No"
+    },
+    {
+      "key": "CompanyName",
+      "dataIndex": "companyName",
+      "title": "Company Name"
+    },
+    {
+      "key": "CompanyAddress",
+      "dataIndex": "companyAddress",
+      "title": "Company Address",
+      "fallbackDataIndexes": [
+        "unitLevel",
+        "streetNumberStreetName",
+        "quarterCityTownship",
+        "state",
+        "country",
+        "postalCode"
+      ]
+    },
+    {
+      "key": "EICCRemark",
+      "dataIndex": "remark",
+      "title": "Remark"
+    }
+  ]
+}

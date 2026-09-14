@@ -36,3 +36,57 @@ describe('filterOptionsByParent (OGA Department -> Section cascade)', () => {
     expect(filterOptionsByParent(sections, 99)).toEqual([]);
   });
 });
+
+// The EICC Licence/Permit reports cascade Product Group from the CARD TYPE, which is a
+// name, not an id. Each group is tagged with the side it belongs to, and the old admin
+// picked the side by testing the card type's own text
+// (eicc-reports.js:69-74 on origin/master).
+interface ProductGroupOption {
+  id: number;
+  label: string;
+  parentCode?: string;
+}
+
+const productGroups: ProductGroupOption[] = [
+  { id: 1, label: 'Rice', parentCode: 'Export' },
+  { id: 2, label: 'Beans', parentCode: 'Export' },
+  { id: 3, label: 'Machinery', parentCode: 'Import' },
+];
+
+describe('filterOptionsByParent (EICC Card Type -> Product Group cascade)', () => {
+  it('keeps only the Export groups for an Export card type', () => {
+    expect(
+      filterOptionsByParent(productGroups, 'Export Licence').map((g) => g.id)
+    ).toEqual([1, 2]);
+    expect(
+      filterOptionsByParent(productGroups, 'Border Export Permit').map(
+        (g) => g.id
+      )
+    ).toEqual([1, 2]);
+  });
+
+  it('keeps only the Import groups for an Import card type', () => {
+    expect(
+      filterOptionsByParent(productGroups, 'Import Permit').map((g) => g.id)
+    ).toEqual([3]);
+    expect(
+      filterOptionsByParent(productGroups, 'Border Import Licence').map(
+        (g) => g.id
+      )
+    ).toEqual([3]);
+  });
+
+  it('shows every group when the card type is "--- All ---"', () => {
+    expect(filterOptionsByParent(productGroups, '')).toHaveLength(3);
+  });
+
+  it('drops an untagged option once a card type is chosen', () => {
+    const withUntagged: ProductGroupOption[] = [
+      ...productGroups,
+      { id: 4, label: 'Unknown' },
+    ];
+    expect(
+      filterOptionsByParent(withUntagged, 'Export Licence').map((g) => g.id)
+    ).toEqual([1, 2]);
+  });
+});

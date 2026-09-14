@@ -1,4 +1,5 @@
 using API.DBContext;
+using API.Service.Reports;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
@@ -37,10 +38,41 @@ public sealed class sp_EICCReportResult
     public string Country { get; set; } = null!;
     public string? PostalCode { get; set; }
     public string? Remark { get; set; }
+
+    /// <summary>
+    /// The legacy report's "Company Address" cell. The old MVC model built it in C# from the
+    /// six address columns (<c>CommonRepository.GetAddress</c>, Reports.cs:5404 on
+    /// origin/master), so it is composed here rather than in SQL -- same algorithm, same bytes.
+    /// Computed, so the grid JSON and the Excel row map both expose it as `companyAddress`.
+    /// </summary>
+    public string CompanyAddress => LegacyCompanyAddress.Compose(
+        UnitLevel,
+        StreetNumberStreetName,
+        QuarterCityTownship,
+        State,
+        Country,
+        PostalCode);
 }
 
+/// <summary>
+/// The Tradenet 2.0 admin's <c>dbo.sp_EICCReport</c> -- the data behind
+/// <c>ReportControl/EICCReport.rdlc</c>, reached from three sidebar entries that differ only
+/// by <c>@Type</c> (Certificate / LicencePermit / BorderLicencePermit; _Layout.cshtml:2052,
+/// 2075, 2089 on origin/master).
+///
+/// The filters, the branch shapes and the odd bits are the old procedure's, not corrected:
+/// the EICC date is matched exactly (<c>&gt;= @EICCDate AND &lt;= @EICCDate</c>, not a whole-day
+/// window), the card type is a <c>LIKE @FormType + '%'</c> prefix match, and only the Export
+/// Licence branch demands an exact ProductGroupId/ProductItemId match (every other branch
+/// treats 0 as "all") -- see <see cref="LicencePermitBaseRows"/>.
+/// </summary>
 public static class sp_EICCReport
 {
+    /// <summary>The <c>@Type</c> values the legacy screen passes (AppConfig.cs:1312-1314).</summary>
+    public const string CertificateType = "Certificate";
+    public const string LicencePermitType = "LicencePermit";
+    public const string BorderLicencePermitType = "BorderLicencePermit";
+
     public static IQueryable<sp_EICCReportResult> Query(
         TradeNetDbContext db,
         sp_EICCReportRequest request)
@@ -48,11 +80,25 @@ public static class sp_EICCReport
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
-        return CertificateRows(db, request)
-            .Concat(LicencePermitRows(db, request))
-            .Concat(BorderLicencePermitRows(db, request))
+        // The legacy procedure UNIONed all three type branches behind `@Type = '...'`
+        // predicates, so every run paid for all of them (the Certificate branch alone is
+        // eight joins-and-unions). Only one branch can ever return rows, so build just that
+        // one. Each branch still carries its own `request.Type == type` guard, which is what
+        // makes an unrecognised Type return nothing.
+        var rows = request.Type switch
+        {
+            LicencePermitType => LicencePermitRows(db, request),
+            BorderLicencePermitType => BorderLicencePermitRows(db, request),
+            _ => CertificateRows(db, request),
+        };
+
+        return rows
             .Where(row => request.FormType == string.Empty || EF.Functions.Like(row.FormType, request.FormType + "%"))
+            // CreatedDate is the legacy ORDER BY. EICCId breaks ties so the grid's OFFSET
+            // paging cannot repeat or drop a row between pages; the old report printed every
+            // row on one scrolling page and never needed it.
             .OrderBy(row => row.CreatedDate)
+            .ThenBy(row => row.EICCId)
             .Select(row => new sp_EICCReportResult
             {
                 EICCId = row.EICCId,
@@ -90,7 +136,7 @@ public static class sp_EICCReport
         TradeNetDbContext db,
         sp_EICCReportRequest request)
     {
-        return CertificateBaseRows(db, request, "Certificate")
+        return CertificateBaseRows(db, request, CertificateType)
             .Join(db.BusinessServiceAgencyRegistrations,
                 certificate => certificate.TransactionId,
                 registration => registration.Id,
@@ -124,7 +170,7 @@ public static class sp_EICCReport
                     PostalCode = paThaKa.PostalCode,
                     Remark = row.certificate.Remark
                 })
-            .Concat(CertificateBaseRows(db, request, "Certificate")
+            .Concat(CertificateBaseRows(db, request, CertificateType)
                 .Join(db.DutyFreeShopRegistrations,
                     certificate => certificate.TransactionId,
                     registration => registration.Id,
@@ -158,7 +204,7 @@ public static class sp_EICCReport
                         PostalCode = paThaKa.PostalCode,
                         Remark = row.certificate.Remark
                     }))
-            .Concat(CertificateBaseRows(db, request, "Certificate")
+            .Concat(CertificateBaseRows(db, request, CertificateType)
                 .Join(db.PaThaKaRegistrations,
                     certificate => certificate.TransactionId,
                     registration => registration.Id,
@@ -249,7 +295,7 @@ public static class sp_EICCReport
         bool showRoomOnly = false)
     {
         return
-            from certificate in CertificateBaseRows(db, request, "Certificate")
+            from certificate in CertificateBaseRows(db, request, CertificateType)
             join registration in registrations on certificate.TransactionId equals registration.Id
             join eiccNo in db.Eiccnos on registration.EICCNoId equals eiccNo.Id
             join paThaKa in db.PaThaKas on registration.PaThaKaId equals paThaKa.Id
@@ -282,7 +328,7 @@ public static class sp_EICCReport
         TradeNetDbContext db,
         sp_EICCReportRequest request)
     {
-        return LicencePermitBaseRows(db, request, "LicencePermit", strictProductFilter: true)
+        return LicencePermitBaseRows(db, request, LicencePermitType, strictProductFilter: true)
             .Join(db.ExportLicences,
                 certificate => certificate.TransactionId,
                 licence => licence.Id,
@@ -317,7 +363,7 @@ public static class sp_EICCReport
                     Remark = row.certificate.Remark
                 })
             .Concat(
-            from certificate in LicencePermitBaseRows(db, request, "LicencePermit", strictProductFilter: false)
+            from certificate in LicencePermitBaseRows(db, request, LicencePermitType, strictProductFilter: false)
             join licence in db.ImportLicences on certificate.TransactionId equals licence.Id
             join eiccNo in db.Eiccnos on licence.EiccnoId equals eiccNo.Id
             join paThaKa in db.PaThaKas on licence.PaThaKaId equals paThaKa.Id
@@ -344,7 +390,7 @@ public static class sp_EICCReport
                 Remark = certificate.Remark
             })
             .Concat(
-            from certificate in LicencePermitBaseRows(db, request, "LicencePermit", strictProductFilter: false)
+            from certificate in LicencePermitBaseRows(db, request, LicencePermitType, strictProductFilter: false)
             join permit in db.ExportPermits on certificate.TransactionId equals permit.Id
             join eiccNo in db.Eiccnos on permit.EiccnoId equals eiccNo.Id
             join paThaKa in db.PaThaKas on permit.PaThaKaId equals paThaKa.Id
@@ -371,7 +417,7 @@ public static class sp_EICCReport
                 Remark = certificate.Remark
             })
             .Concat(
-            from certificate in LicencePermitBaseRows(db, request, "LicencePermit", strictProductFilter: false)
+            from certificate in LicencePermitBaseRows(db, request, LicencePermitType, strictProductFilter: false)
             join permit in db.ImportPermits on certificate.TransactionId equals permit.Id
             join eiccNo in db.Eiccnos on permit.EiccnoId equals eiccNo.Id
             join paThaKa in db.PaThaKas on permit.PaThaKaId equals paThaKa.Id
@@ -451,7 +497,7 @@ public static class sp_EICCReport
         IQueryable<LicencePermitAddressRow> source)
     {
         return
-            from certificate in LicencePermitBaseRows(db, request, "BorderLicencePermit", strictProductFilter: false)
+            from certificate in LicencePermitBaseRows(db, request, BorderLicencePermitType, strictProductFilter: false)
             join row in source on certificate.TransactionId equals row.Id
             join eiccNo in db.Eiccnos on row.EICCNoId equals eiccNo.Id
             join paThaKa in db.PaThaKas on row.PaThaKaId equals paThaKa.Id

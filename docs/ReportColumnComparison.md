@@ -1289,7 +1289,8 @@ Extra in new (12): `No`, `Date`, `Company Registration No`, `Company Name`, `Com
 - `DutyFreeShopDetailReport.rdlc`
 - `DutyFreeShopRegistrationByVoucherReport.rdlc`
 - `DutyFreeShopSummaryReport.rdlc`
-- `EICCReport.rdlc`
+- ~~`EICCReport.rdlc`~~ — mapped 2026-09-14 to `EICCCertificateReport`, `EICCLicencePermitReport` and
+  `EICCBorderLicencePermitReport` (one RDLC, three screens). See `docs/EICCReport_Port_2026-09-14.md`.
 - `EVShowRoomBrandNewDetailReport.rdlc`
 - `EVShowRoomBrandNewSummaryReport.rdlc`
 - `EVShowRoomDetailReport.rdlc`

@@ -193,6 +193,12 @@ const reportCategoryDefinitions: ReportCategory[] = [
       controllerName.startsWith('OGARecommendation'),
   },
   {
+    key: 'report-eicc',
+    title: 'EICC',
+    icon: <SafetyCertificateOutlined />,
+    matches: (controllerName) => controllerName.startsWith('EICC'),
+  },
+  {
     key: 'report-payment',
     title: 'Payment',
     icon: <DollarOutlined />,

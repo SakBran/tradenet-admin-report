@@ -694,6 +694,200 @@ const resolveBorderImportLicenceVoucherColumns = (
     : resolved;
 };
 
+
+// --- EICC reports ---------------------------------------------------------
+// The old admin had ONE screen (Views/EICC/EICCReport.cshtml) reached from three
+// sidebar entries that differ only by `type`: Certificates, Licence & Permit and
+// Border Licence & Permit (_Layout.cshtml:2052, 2075, 2089 on origin/master). They
+// are three reports here, because a report key names the route, the menu entry and
+// the Excel job. All three print the same ten EICCReport.rdlc columns.
+
+// EICCReport.rdlc:205-756 on origin/master, in tablix column order. The RDLC wraps
+// four of the headers over two lines ("Application " / "Type"); the grid prints each
+// as the one phrase it reads as.
+const eiccReportColumns: ReportColumnConfig[] = [
+  { key: 'EICCNo', dataIndex: 'eiccNo', title: 'EICC No' },
+  {
+    key: 'EICCDate',
+    dataIndex: 'eiccDate',
+    title: 'Date',
+    dataType: 'date',
+    // The old model formatted this in C# (`sEICCDate`), so the cell is dd/MM/yyyy,
+    // not the grid's default YYYY-MM-DD.
+    dateFormat: 'DD/MM/YYYY',
+  },
+  { key: 'EICCStatus', dataIndex: 'eiccStatus', title: 'Status' },
+  { key: 'FormType', dataIndex: 'formType', title: 'Form Type' },
+  { key: 'ApplyType', dataIndex: 'applyType', title: 'Application Type' },
+  {
+    key: 'PaThaKaNo',
+    dataIndex: 'paThaKaNo',
+    title: 'Company Registration No',
+  },
+  { key: 'CompanyName', dataIndex: 'companyName', title: 'Company Name' },
+  {
+    key: 'CompanyAddress',
+    dataIndex: 'companyAddress',
+    title: 'Company Address',
+    fallbackDataIndexes: [
+      'unitLevel',
+      'streetNumberStreetName',
+      'quarterCityTownship',
+      'state',
+      'country',
+      'postalCode',
+    ],
+  },
+  { key: 'EICCRemark', dataIndex: 'remark', title: 'Remark' },
+];
+
+// EICCReport.cshtml:26 — a single required date box, defaulted to today. Posted as
+// `Date` rather than `EICCDate`: that is the name the Excel header block discovers a
+// one-date report by, so the sheet prints its "Date: dd/MM/yyyy" line.
+const eiccDateFilter: ReportFilterConfig = {
+  name: 'Date',
+  label: 'EICC Date',
+  type: 'date',
+  required: true,
+};
+
+// EICCReport.cshtml:32-49 — two options and no "all"; the procedure compares Status
+// with `=`, so leaving it blank would return nothing.
+const eiccStatusFilter: ReportFilterConfig = {
+  name: 'EICCStatus',
+  label: 'EICC Status',
+  type: 'select',
+  defaultValue: 'Pending',
+  options: [
+    { label: 'Pending', value: 'Pending' },
+    { label: 'Approved', value: 'Approved' },
+  ],
+};
+
+// Product Group / Product Item, shown only on the two Licence-Permit screens
+// (eicc-reports.js:26-33 hides both for Certificates). Group narrows to the Import or
+// Export side of the chosen card type; Item narrows to the chosen group.
+const eiccProductFilters: ReportFilterConfig[] = [
+  {
+    name: 'ProductGroupId',
+    label: 'Product Group',
+    type: 'number',
+    defaultValue: 0,
+    lookupName: 'productGroups',
+    dependsOn: 'FormType',
+  },
+  {
+    name: 'ProductItemId',
+    label: 'Product Item',
+    type: 'number',
+    defaultValue: 0,
+    lookupName: 'productItems',
+    dependsOn: 'ProductGroupId',
+  },
+];
+
+// The RDLC's only header line, `header1` = "EICC " + type + " Report (" + date + ")"
+// (EICCController.cs:505 on origin/master). The type word is the raw AppConfig value,
+// so "LicencePermit" and "BorderLicencePermit" are printed unspaced, as they were.
+const eiccReportSubtitle =
+  (type: string) => (filters: Record<string, unknown>) => {
+    const date = filters.Date
+      ? dayjs(String(filters.Date)).format('DD/MM/YYYY')
+      : '';
+    return `EICC ${type} Report (${date})`;
+  };
+
+const eiccReportConfig = (
+  controllerName: string,
+  title: string,
+  legacyType: string,
+  filters: ReportFilterConfig[]
+): ReportPageConfig => ({
+  controllerName,
+  title,
+  apiRoute: controllerName,
+  excelRoute: `${controllerName}/Excel`,
+  excelFileName: `${controllerName}.xlsx`,
+  showRowNumber: true,
+  rowNumberTitle: 'No',
+  // The RDLC printed every row on one scrolling page; a 10-row first page would read
+  // as missing data next to the old report.
+  defaultPageSize: 1000,
+  reportSubtitle: eiccReportSubtitle(legacyType),
+  filters,
+  columns: eiccReportColumns,
+});
+
+export const eiccReportConfigs: Record<string, ReportPageConfig> = {
+  EICCCertificateReport: eiccReportConfig(
+    'EICCCertificateReport',
+    'EICC Certificate Report',
+    'Certificate',
+    [
+      eiccDateFilter,
+      eiccStatusFilter,
+      {
+        name: 'FormType',
+        label: 'Card Type',
+        type: 'select',
+        defaultValue: '',
+        // Registration card types only — the old screen dropped Member and anything
+        // named Licence or Permit (EICCController.cs:409), and showed Wine Importation
+        // as "Alcoholic Beverages Importation". Both live in the `eiccCardTypes` lookup.
+        lookupName: 'eiccCardTypes',
+      },
+    ]
+  ),
+  EICCLicencePermitReport: eiccReportConfig(
+    'EICCLicencePermitReport',
+    'EICC Licence and Permit Report',
+    'LicencePermit',
+    [
+      eiccDateFilter,
+      eiccStatusFilter,
+      {
+        name: 'FormType',
+        label: 'Card Type',
+        type: 'select',
+        defaultValue: '',
+        // Hardcoded in the old controller, not read from CardType (EICCController.cs:400).
+        options: [
+          { label: '--- All ---', value: '' },
+          { label: 'Export Licence', value: 'Export Licence' },
+          { label: 'Import Licence', value: 'Import Licence' },
+          { label: 'Export Permit', value: 'Export Permit' },
+          { label: 'Import Permit', value: 'Import Permit' },
+        ],
+      },
+      ...eiccProductFilters,
+    ]
+  ),
+  EICCBorderLicencePermitReport: eiccReportConfig(
+    'EICCBorderLicencePermitReport',
+    'EICC Border Licence and Permit Report',
+    'BorderLicencePermit',
+    [
+      eiccDateFilter,
+      eiccStatusFilter,
+      {
+        name: 'FormType',
+        label: 'Card Type',
+        type: 'select',
+        defaultValue: '',
+        // Hardcoded in the old controller (EICCController.cs:455).
+        options: [
+          { label: '--- All ---', value: '' },
+          { label: 'Border Export Licence', value: 'Border Export Licence' },
+          { label: 'Border Import Licence', value: 'Border Import Licence' },
+          { label: 'Border Export Permit', value: 'Border Export Permit' },
+          { label: 'Border Import Permit', value: 'Border Import Permit' },
+        ],
+      },
+      ...eiccProductFilters,
+    ]
+  ),
+};
+
 export const reportConfigs: Record<string, ReportPageConfig> = {
   AccountSummaryReport: {
     controllerName: 'AccountSummaryReport',
@@ -14059,6 +14253,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     ],
   },
   ...newReportConfigs,
+  ...eiccReportConfigs,
 };
 
 export const reportConfigList = Object.values(reportConfigs);

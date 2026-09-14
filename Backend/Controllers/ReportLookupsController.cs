@@ -33,6 +33,14 @@ namespace Backend.Controllers
         private const string ImportTradeType = "Import";
         private const string ExportTradeType = "Export";
 
+        // EICC card-type dropdown vocabulary, from the old admin's AppConfig
+        // (AppConfig.cs:1268, 1274-1275, 1292-1293 on origin/master).
+        private const string EiccExcludedCardType = "Member";
+        private const string LicenceCardTypeWord = "Licence";
+        private const string PermitCardTypeWord = "Permit";
+        private const string WineImportationCardType = "Wine Importation";
+        private const string AlcoholicBeveragesImportationCardType = "Alcoholic Beverages Importation";
+
         private readonly TradeNetDbContext _context;
         private readonly IMemoryCache _cache;
 
@@ -79,6 +87,9 @@ namespace Backend.Controllers
                 "nrcprefixes" => GetNrcprefixes,
                 "ogadepartments" => GetOgaDepartments,
                 "ogasections" => GetOgaSections,
+                "eicccardtypes" => GetEiccCardTypes,
+                "productgroups" => GetProductGroups,
+                "productitems" => GetProductItems,
                 "pathakatypes" => GetPaThaKaTypes,
                 "paymenttypes" => GetPaymentTypes,
                 "sakhans" => GetSakhans,
@@ -544,6 +555,68 @@ namespace Backend.Controllers
         // SakhanRepository.GetAll), so a retired border station that still has permits stayed
         // selectable there. Filtering on IsActive here made those permits unreachable in the new
         // reports -- the filter box could no longer express a search the old one could.
+        // The EICC Certificate report's "Card Type" dropdown. The old screen built it from
+        // CardTypeRepository.GetAll() minus Member and anything whose name contains Licence or
+        // Permit -- i.e. the registration card types only (EICCController.cs:409 on
+        // origin/master). The value posted is the Description, because the procedure matches it
+        // as `FormType LIKE @FormType + '%'`, not by id.
+        //
+        // "Wine Importation" is the stored FormType but the old dropdown showed it as
+        // "Alcoholic Beverages Importation" (EICCReport.cshtml:63). Relabelled here, value kept,
+        // so the request still carries the string the data has.
+        private async Task<List<ReportLookupOption>> GetEiccCardTypes()
+        {
+            var cardTypes = await _context.CardTypes
+                .AsNoTracking()
+                .Where(item => item.IsActive && !item.IsDeleted)
+                .Where(item => item.Description != EiccExcludedCardType
+                    && !item.Description.Contains(LicenceCardTypeWord)
+                    && !item.Description.Contains(PermitCardTypeWord))
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Description)
+                .Select(item => new ReportLookupOption(
+                    item.Id,
+                    string.Empty,
+                    item.Description,
+                    item.Description))
+                .ToListAsync();
+
+            return cardTypes
+                .Select(option => option.Label == WineImportationCardType
+                    ? option with { Label = AlcoholicBeveragesImportationCardType }
+                    : option)
+                .ToList();
+        }
+
+        // Product Group / Product Item for the two EICC Licence-Permit reports. The old screen
+        // refetched both lists over AJAX (eicc-reports.js): the group list is narrowed to
+        // Export or Import by the selected card type, and the item list to the selected group.
+        // Both come down once here and cascade on the client -- ParentCode carries the group's
+        // Import/Export side, ParentId an item's group.
+        private Task<List<ReportLookupOption>> GetProductGroups() =>
+            _context.ProductGroups
+                .AsNoTracking()
+                .Where(item => item.IsActive && !item.IsDeleted)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, string.Empty, item.Name)
+                {
+                    ParentCode = item.Type
+                })
+                .ToListAsync();
+
+        private Task<List<ReportLookupOption>> GetProductItems() =>
+            _context.ProductItems
+                .AsNoTracking()
+                .Where(item => item.IsActive && !item.IsDeleted)
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Select(item => new ReportLookupOption(item.Id, string.Empty, item.Name)
+                {
+                    ParentId = item.ProductGroupId
+                })
+                .ToListAsync();
+
         private Task<List<ReportLookupOption>> GetSakhans() =>
             _context.Sakhans
                 .AsNoTracking()
@@ -563,6 +636,14 @@ namespace Backend.Controllers
         /// OGADepartmentId). Null for non-cascaded lookups.
         /// </summary>
         public int? ParentId { get; init; }
+
+        /// <summary>
+        /// Optional parent tag for a dropdown that cascades from a TEXT filter rather than an
+        /// id one -- an EICC Product Group carries "Import" or "Export" here, and the card type
+        /// chosen above it ("Border Export Licence") selects the matching side. Null for
+        /// non-cascaded lookups and for ones that cascade by <see cref="ParentId"/>.
+        /// </summary>
+        public string? ParentCode { get; init; }
 
         public ReportLookupOption(int id, string code, string label, string? value)
             : this(id, code, label)

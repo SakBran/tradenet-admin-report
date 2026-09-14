@@ -57,6 +57,9 @@ interface LookupOption {
   value?: string | number;
   /** Parent id for cascading lookups (e.g. an OGA Section's OGADepartmentId). */
   parentId?: number;
+  /** Parent tag for a lookup that cascades from a TEXT filter (an EICC Product
+   * Group's "Import"/"Export" side). See filterCascade.ts. */
+  parentCode?: string;
 }
 
 interface LookupFilterConfig {
@@ -878,19 +881,37 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
       return;
     }
 
-    dependentFilters.forEach((filter) => {
-      if (
-        filter.dependsOn &&
-        Object.prototype.hasOwnProperty.call(changedValues, filter.dependsOn)
-      ) {
-        form.setFieldValue(filter.name, filter.defaultValue ?? 0);
-      }
-    });
+    // Cascades can be more than one link long (EICC: Card Type → Product Group →
+    // Product Item). Clearing only the direct dependents would leave Product Item
+    // holding a value from the card type the user just moved away from, so the reset
+    // is carried down the whole chain.
+    const resetValues: Record<string, unknown> = {};
+    const clearedNames = new Set(Object.keys(changedValues));
+    for (let settled = false; !settled; ) {
+      settled = true;
+      dependentFilters.forEach((filter) => {
+        if (
+          filter.dependsOn &&
+          clearedNames.has(filter.dependsOn) &&
+          !clearedNames.has(filter.name)
+        ) {
+          const cleared = filter.defaultValue ?? 0;
+          form.setFieldValue(filter.name, cleared);
+          resetValues[filter.name] = cleared;
+          clearedNames.add(filter.name);
+          settled = false;
+        }
+      });
+    }
 
     setParentFilterValues((current) => {
       const next = { ...current };
       parentFilterNames.forEach((name) => {
-        next[name] = (allValues as Record<string, unknown>)[name];
+        // A parent that was itself just cleared (a middle link in the chain) is not in
+        // `allValues` yet — setFieldValue has not re-rendered the form.
+        next[name] = Object.prototype.hasOwnProperty.call(resetValues, name)
+          ? resetValues[name]
+          : (allValues as Record<string, unknown>)[name];
       });
       return next;
     });
