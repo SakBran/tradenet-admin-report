@@ -45,12 +45,16 @@ public sealed class AdvanceSearchQueryTranslationTests
         PortOfDischarge = "Yangon",
         ModeOfTransport = "Sea,Road,Air",
         MethodOfImportExport = 4,
-        CountryOfOrigin = "5",
-        ConsignedCountry = "5",
+        // Several, so the any-of predicates are the ones under test: on the six comma-joined
+        // columns these fold into an OR chain of delimiter-safe LIKEs, and on the two int
+        // columns into an IN list. Neither shape existed before and neither is compile-checked.
+        CountryOfOrigin = "5,12",
+        ConsignedCountry = "5,12",
         Description = "rice",
         Incoterm = 2,
         StatementCode = 7,
         ApplyType = "New",
+        Office = 4,
     };
 
     [Theory]
@@ -69,10 +73,26 @@ public sealed class AdvanceSearchQueryTranslationTests
             .ToQueryString();
 
         Assert.Contains("SELECT", sql, StringComparison.Ordinal);
-        // The date range binds IssuedDate, never LicenceDate.
-        Assert.Contains("IssuedDate", sql, StringComparison.Ordinal);
+        // The date range binds LicenceDate -- the column the grid shows and the one every
+        // comparable report in this app ranges on. It used to bind IssuedDate, which is why a
+        // 2026 search could answer with a row displaying a 2025 date.
+        Assert.Contains("LicenceDate", sql, StringComparison.Ordinal);
         // Deterministic paging: Description first, then the item key.
         Assert.Contains("ORDER BY", sql, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [MemberData(nameof(EveryType))]
+    public void The_date_range_is_a_half_open_whole_day_window(string type)
+    {
+        using var db = Context();
+
+        var sql = sp_AdvanceSearch.Query(db, EveryFilter(type)).ToQueryString();
+
+        // >= From and < To+1day, so a caller posting a bare To date still gets that whole day.
+        Assert.Contains(">=", sql, StringComparison.Ordinal);
+        Assert.Contains("2026-01-01T00:00:00", sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("2025-12-31T23:59:59", sql, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -84,8 +104,43 @@ public sealed class AdvanceSearchQueryTranslationTests
         var sql = sp_AdvanceSearch.Query(db, EveryFilter(type)).ToQueryString();
 
         Assert.Contains("SELECT", sql, StringComparison.Ordinal);
-        // The multi-mode selection becomes an IN over the permutations of the chosen modes.
         Assert.Contains("ORDER BY", sql, StringComparison.Ordinal);
+        // Port Of Discharge is a contains match, not an exact one.
+        Assert.Contains("LIKE", sql, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [MemberData(nameof(EveryType))]
+    public void A_multi_country_selection_matches_any_of_the_selected_ids(string type)
+    {
+        using var db = Context();
+
+        var sql = sp_AdvanceSearch.Query(db, EveryFilter(type)).ToQueryString();
+
+        // Both ids reach the SQL. The legacy predicate compared the picked string whole, so
+        // only one literal "5,12" appeared and nothing matched it.
+        Assert.Contains("5", sql, StringComparison.Ordinal);
+        Assert.Contains("12", sql, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("Border Import Licence")]
+    [InlineData("Border Export Licence")]
+    [InlineData("Border Import Permit")]
+    [InlineData("Border Export Permit")]
+    public void Office_filters_SakhanId_on_the_Border_types(string type)
+    {
+        using var db = Context();
+
+        var withOffice = sp_AdvanceSearch.Query(db, EveryFilter(type)).ToQueryString();
+
+        var request = EveryFilter(type);
+        request.Office = 0;
+        var withoutOffice = sp_AdvanceSearch.Query(db, request).ToQueryString();
+
+        // The box did nothing at all before: both queries were identical.
+        Assert.NotEqual(withoutOffice, withOffice);
+        Assert.Contains("SakhanId", withOffice, StringComparison.Ordinal);
     }
 
     [Theory]

@@ -51,6 +51,16 @@ public sealed class sp_AdvanceSearchRequest
     public int Incoterm { get; set; }
     public int StatementCode { get; set; }
     public string ApplyType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Sakhan id, from the Office box on the four Border screens; <c>0</c> is "all".
+    ///
+    /// The legacy repository never referenced its own <c>data.Office</c>, so the box sat on the
+    /// screen filtering nothing. It filters now -- the customer's complaint was that a search
+    /// returns rows it did not ask for, and a control that silently does nothing is the same
+    /// defect seen from the other side.
+    /// </summary>
+    public int Office { get; set; }
 }
 
 /// <summary>
@@ -71,7 +81,18 @@ public sealed class sp_AdvanceSearchResult
     public string? Sakhan { get; set; }
 
     public string? LicenceNo { get; set; }
+
+    /// <summary>The column the date range binds. Shown as the grid's "Licence Date".</summary>
     public DateTime? LicenceDate { get; set; }
+
+    /// <summary>
+    /// Shown beside <see cref="LicenceDate"/> so the grid stops appearing to contradict the
+    /// search. An amended or extended licence keeps its original <c>LicenceDate</c> while
+    /// carrying a later <c>IssuedDate</c>; with only one of the two on screen that read as
+    /// "I searched 2026 and got 2025 data".
+    /// </summary>
+    public DateTime? IssuedDate { get; set; }
+
     public string? CompanyRegistrationNo { get; set; }
     public string? CompanyName { get; set; }
 
@@ -214,19 +235,33 @@ public static class AdvanceSearchCountryNames
 /// The filters below are that pipeline, written once; the per-type differences are in
 /// <see cref="AdvanceSearchType"/> and the eight projections.
 ///
-/// Behaviour is the legacy one, with only its crashes repaired (see
-/// <see cref="AdvanceSearchCountryNames"/>, <see cref="ModeCombinations"/> and
-/// <see cref="Criteria"/>). In particular these legacy quirks are deliberately kept:
+/// The legacy crashes are repaired (see <see cref="AdvanceSearchCountryNames"/> and
+/// <see cref="Criteria"/>), and so are the defects behind the 2026-09 complaint that the results
+/// "do not match what I searched". Those changes, all of them deliberate departures from the
+/// legacy behaviour:
 /// <list type="bullet">
-/// <item>the date range binds <c>IssuedDate</c>, never <c>LicenceDate</c>, and is always applied;</item>
-/// <item>a multi-select Mode of Transport matches rows carrying <b>exactly</b> that set of modes,
-/// in any order -- not rows carrying any one of them;</item>
-/// <item>Port Of Discharge is an exact match on the name column;</item>
-/// <item>every join is an INNER join, so a licence with no item lines, or an unresolvable
-/// unit/currency/PaThaKa/Sakhan, does not appear at all;</item>
-/// <item><c>Office</c> is accepted by the screen but filters nothing -- the legacy repository
-/// never referenced it, and the Sakhan table is joined for display only.</item>
+/// <item><b>The date range binds <c>LicenceDate</c></b>, not <c>IssuedDate</c>. The legacy query
+/// filtered <c>IssuedDate</c> while projecting <c>LicenceDate</c>, so an amended licence dated
+/// 2025 and re-issued in 2026 answered a 2026 search showing a 2025 date. It also made this the
+/// only issued-licence report in the app not keyed on <c>LicenceDate</c> -- every comparable
+/// report (<c>sp_HSCodeReport</c> and the listing reports) ranges on <c>LicenceDate</c>, so the
+/// same period disagreed across reports. <c>IssuedDate</c> is now projected and shown beside it.</item>
+/// <item><b>The range is normalised server-side</b> to <c>[From.Date, To.Date + 1 day)</c>, so a
+/// caller that posts a bare date still gets the whole of the last day.</item>
+/// <item><b>Country of Origin / Consigned Country match "any of the selected"</b>, delimiter-safe
+/// against the comma-joined id columns. The legacy predicate compared the whole picked string to
+/// the whole stored string, so even a single selection missed any row carrying more than one
+/// country, and a multi-selection on the two <c>int</c> columns matched nothing at all.</item>
+/// <item><b>A multi-select Mode of Transport matches rows carrying any one of the modes</b>, not
+/// rows whose set is exactly that.</item>
+/// <item><b>Port Of Discharge is a contains match</b>, not an exact one.</item>
+/// <item><b><c>Office</c> filters</b> the four Border branches on <c>SakhanId</c>. The legacy
+/// repository never referenced it, so the box sat on the screen doing nothing.</item>
 /// </list>
+///
+/// Kept from the legacy behaviour: every join is an INNER join, so a licence with no item lines,
+/// or an unresolvable unit/currency/PaThaKa/Sakhan, does not appear at all. This is load-bearing
+/// for row-count comparisons against the old screen.
 /// </summary>
 public static class sp_AdvanceSearch
 {
@@ -313,8 +348,17 @@ public static class sp_AdvanceSearch
     /// </summary>
     private sealed class Criteria
     {
+        /// <summary>Midnight on the From day.</summary>
         public DateTime From { get; private set; }
-        public DateTime To { get; private set; }
+
+        /// <summary>
+        /// Midnight on the day <b>after</b> the To day -- the branches compare <c>&lt; ToExclusive</c>.
+        /// The grid already widens its To edge to 23:59:59, but this report is also reachable by
+        /// URL, by the Excel endpoint and by anything posting a bare date, and those used to lose
+        /// the whole of the last day.
+        /// </summary>
+        public DateTime ToExclusive { get; private set; }
+
         public string? PaThaKaId { get; private set; }
 
         /// <summary>A PaThaKa No was given that no card carries -- the whole result is empty.</summary>
@@ -323,23 +367,25 @@ public static class sp_AdvanceSearch
         public int? SectionId { get; private set; }
         public int? SellerCountryId { get; private set; }
         public string? PortOfDischarge { get; private set; }
-        public List<string>? ModeCombinations { get; private set; }
+        public List<string>? Modes { get; private set; }
         public int? MethodId { get; private set; }
-        public string? CountryOfOriginText { get; private set; }
-        public int? CountryOfOriginNumber { get; private set; }
-        public string? ConsignedCountryText { get; private set; }
-        public int? ConsignedCountryNumber { get; private set; }
+        public List<int>? CountryOfOriginIds { get; private set; }
+        public List<int>? ConsignedCountryIds { get; private set; }
         public string? Description { get; private set; }
         public int? IncotermId { get; private set; }
         public int? StatementCodeId { get; private set; }
         public string? ApplyType { get; private set; }
 
+        /// <summary>Sakhan id from the Office box; null is "all". Border branches only.</summary>
+        public int? OfficeId { get; private set; }
+
         public static Criteria Build(TradeNetDbContext db, sp_AdvanceSearchRequest r)
         {
             var c = new Criteria
             {
-                From = r.StartDate,
-                To = r.EndDate,
+                // Whole days, and the To edge exclusive -- see ToExclusive.
+                From = r.StartDate.Date,
+                ToExclusive = r.EndDate.Date.AddDays(1),
                 SectionId = string.IsNullOrEmpty(r.Section)
                     ? null
                     : int.TryParse(r.Section, NumberStyles.Integer, CultureInfo.InvariantCulture, out var section)
@@ -347,7 +393,7 @@ public static class sp_AdvanceSearch
                         : NoMatchId,
                 SellerCountryId = r.SellerCountry == 0 ? null : r.SellerCountry,
                 PortOfDischarge = string.IsNullOrWhiteSpace(r.PortOfDischarge) ? null : r.PortOfDischarge,
-                ModeCombinations = ModeCombinations(r.ModeOfTransport),
+                Modes = SplitModes(r.ModeOfTransport),
                 // The legacy code looked the method id up by id and used the result
                 // (`.Where(x => x.Id == id).First().Id`) purely to throw when it did not exist.
                 // Filtering on the id directly gives the same rows, and an unknown id now simply
@@ -357,10 +403,10 @@ public static class sp_AdvanceSearch
                 IncotermId = r.Incoterm == 0 ? null : r.Incoterm,
                 StatementCodeId = r.StatementCode == 0 ? null : r.StatementCode,
                 ApplyType = string.IsNullOrWhiteSpace(r.ApplyType) ? null : r.ApplyType,
+                OfficeId = r.Office == 0 ? null : r.Office,
+                CountryOfOriginIds = SplitCountryIds(r.CountryOfOrigin),
+                ConsignedCountryIds = SplitCountryIds(r.ConsignedCountry),
             };
-
-            (c.CountryOfOriginText, c.CountryOfOriginNumber) = SplitCountry(r.CountryOfOrigin);
-            (c.ConsignedCountryText, c.ConsignedCountryNumber) = SplitCountry(r.ConsignedCountry);
 
             if (!string.IsNullOrEmpty(r.Pathaka))
             {
@@ -381,74 +427,75 @@ public static class sp_AdvanceSearch
     }
 
     /// <summary>
-    /// The comma-joined country selection, as both shapes the eight header tables use: the raw
-    /// string for the six <c>nvarchar</c> columns, and a single parsed id for the two <c>int</c>
-    /// ones — <see cref="NoMatchId"/> when the user picked more than one, since there is no
-    /// single integer to compare and the legacy <c>Convert.ToInt32("5,12")</c> threw.
+    /// The country ids the user picked, from the comma-joined string the box posts. Null when the
+    /// box is empty, which means "all".
+    ///
+    /// The legacy code kept the selection as one opaque string and compared it whole, so it only
+    /// ever matched a row whose stored list was byte-identical (and, on the two <c>int</c>
+    /// columns, <c>Convert.ToInt32("5,12")</c> threw). Ids are the right unit: see
+    /// <see cref="AnyCsvId"/> and <see cref="AnyId"/>.
     ///
     /// Internal so the contract tests can pin it.
     /// </summary>
-    internal static (string? Text, int? Number) SplitCountry(string? value)
+    internal static List<int>? SplitCountryIds(string? value)
     {
-        if (string.IsNullOrEmpty(value))
-        {
-            return (null, null);
-        }
+        var ids = SplitIds(value);
 
-        return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id)
-            ? (value, id)
-            : (value, NoMatchId);
+        // A selection that parses to nothing at all (a non-numeric id) must not silently widen
+        // into "all" -- it matches nothing, as it did before.
+        return value is { Length: > 0 } && ids.Count == 0 ? new List<int> { NoMatchId } : ids.Count == 0 ? null : ids;
     }
 
-    /// <summary>An empty, provider-agnostic result — used where the legacy code threw instead.</summary>
-    private static IQueryable<sp_AdvanceSearchResult> NoResults()
-        => Enumerable.Empty<sp_AdvanceSearchResult>().AsQueryable();
+    private static List<int> SplitIds(string? value)
+    {
+        var ids = new List<int>();
+
+        if (string.IsNullOrEmpty(value))
+        {
+            return ids;
+        }
+
+        foreach (var token in value.Split(','))
+        {
+            if (int.TryParse(token.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var id)
+                && !ids.Contains(id))
+            {
+                ids.Add(id);
+            }
+        }
+
+        return ids;
+    }
 
     /// <summary>
-    /// Every ordering of the selected modes, because <c>ModeofTransport</c> is a denormalised
-    /// comma-joined column and the legacy predicate matched it whole
-    /// (<c>motQuery.Contains(x.ModeofTransport)</c>).
+    /// The transport modes the user picked. Null when the box is empty, which means "all".
     ///
-    /// The legacy builder (AdvanceSearchRepository.cs:32-74) spelled the one- and two-mode cases
-    /// out by hand and read <c>modeList[3]</c> in the three-mode case -- past the end of a
-    /// three-element list, so picking all three modes was an HTTP 400. Generating the
-    /// permutations gives the two working cases byte for byte and makes the third work.
+    /// The legacy builder permuted the selection and matched the comma-joined column whole, so
+    /// picking Sea and Road meant "carries exactly Sea and Road and nothing else" and almost never
+    /// matched. Each mode is now matched on its own -- see <see cref="AnyCsvValue"/>.
     ///
     /// Internal so the contract tests can pin it.
     /// </summary>
-    internal static List<string>? ModeCombinations(string? modeOfTransport)
+    internal static List<string>? SplitModes(string? modeOfTransport)
     {
         if (string.IsNullOrEmpty(modeOfTransport))
         {
             return null;
         }
 
-        var modes = modeOfTransport.Split(',').ToList();
-        var combinations = new List<string>();
+        var modes = modeOfTransport
+            .Split(',')
+            .Select(mode => mode.Trim())
+            .Where(mode => mode.Length > 0)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
 
-        Permute(modes, new List<string>(), combinations);
-
-        return combinations;
+        return modes.Count == 0 ? null : modes;
     }
 
-    private static void Permute(List<string> remaining, List<string> prefix, List<string> results)
-    {
-        if (remaining.Count == 0)
-        {
-            results.Add(string.Join(",", prefix));
-            return;
-        }
-
-        for (var i = 0; i < remaining.Count; i++)
-        {
-            var next = new List<string>(remaining);
-            next.RemoveAt(i);
-
-            prefix.Add(remaining[i]);
-            Permute(next, prefix, results);
-            prefix.RemoveAt(prefix.Count - 1);
-        }
-    }
+    /// <summary>An empty, provider-agnostic result — used where the legacy code threw instead.</summary>
+    private static IQueryable<sp_AdvanceSearchResult> NoResults()
+        => Enumerable.Empty<sp_AdvanceSearchResult>().AsQueryable();
 
     private static IQueryable<T> WhereIf<T>(
         this IQueryable<T> source,
@@ -456,22 +503,111 @@ public static class sp_AdvanceSearch
         Expression<Func<T, bool>> predicate)
         => condition ? source.Where(predicate) : source;
 
+    /// <summary>
+    /// <c>column IN (ids)</c>, for the two header tables whose country column is a real
+    /// <c>int</c> (Export Licence and Border Export Licence).
+    /// </summary>
+    private static IQueryable<T> WhereAnyId<T>(
+        this IQueryable<T> source,
+        List<int>? ids,
+        Expression<Func<T, int>> column)
+        => ids == null ? source : source.Where(AnyId(ids, column));
+
+    private static Expression<Func<T, bool>> AnyId<T>(List<int> ids, Expression<Func<T, int>> column)
+    {
+        // `ids.Contains(column)` -- EF Core renders this as an IN list.
+        var contains = Expression.Call(
+            typeof(Enumerable),
+            nameof(Enumerable.Contains),
+            new[] { typeof(int) },
+            Expression.Constant(ids),
+            column.Body);
+
+        return Expression.Lambda<Func<T, bool>>(contains, column.Parameters);
+    }
+
+    /// <summary>
+    /// "The column holds any one of these ids", for the six header tables that store the country
+    /// selection denormalised as a comma-joined string.
+    ///
+    /// Matched delimiter-safe -- <c>(',' + column + ',') LIKE '%,5,%'</c> in effect -- so id 5
+    /// never matches a stored 15 or 52.
+    /// </summary>
+    private static IQueryable<T> WhereAnyCsvId<T>(
+        this IQueryable<T> source,
+        List<int>? ids,
+        Expression<Func<T, string?>> column)
+        => ids == null
+            ? source
+            : source.Where(AnyCsvId(ids, column));
+
+    private static Expression<Func<T, bool>> AnyCsvId<T>(
+        List<int> ids,
+        Expression<Func<T, string?>> column)
+        => AnyCsvValue(
+            ids.Select(id => id.ToString(CultureInfo.InvariantCulture)).ToList(),
+            column);
+
+    /// <summary>
+    /// "The comma-joined column holds any one of these values" -- the shared shape behind the
+    /// country and Mode of Transport predicates.
+    ///
+    /// A local <c>List&lt;T&gt;.Any(...)</c> is not translatable, so the values are folded into an
+    /// <c>OR</c> chain, which is.
+    /// </summary>
+    private static Expression<Func<T, bool>> AnyCsvValue<T>(
+        List<string> values,
+        Expression<Func<T, string?>> column)
+    {
+        var comma = Expression.Constant(",");
+        var concat = typeof(string).GetMethod(nameof(string.Concat), new[] { typeof(string), typeof(string) })!;
+        var contains = typeof(string).GetMethod(nameof(string.Contains), new[] { typeof(string) })!;
+
+        // "," + column + ","  -- so the first and last entries carry a delimiter on both sides.
+        var padded = Expression.Call(
+            concat,
+            Expression.Call(concat, comma, column.Body),
+            comma);
+
+        Expression? any = null;
+
+        foreach (var value in values)
+        {
+            var needle = Expression.Constant($",{value},");
+            var test = Expression.Call(padded, contains, needle);
+
+            any = any == null ? test : Expression.OrElse(any, test);
+        }
+
+        return Expression.Lambda<Func<T, bool>>(any ?? Expression.Constant(false), column.Parameters);
+    }
+
+    /// <summary>
+    /// Mode of Transport: the column is comma-joined, so a pick of Sea and Road matches a row
+    /// carrying either.
+    /// </summary>
+    private static IQueryable<T> WhereAnyMode<T>(
+        this IQueryable<T> source,
+        List<string>? modes,
+        Expression<Func<T, string?>> column)
+        => modes == null ? source : source.Where(AnyCsvValue(modes, column));
+
     // --- the eight branches -------------------------------------------------
 
     private static IQueryable<sp_AdvanceSearchResult> ImportLicenceRows(TradeNetDbContext db, Criteria c)
     {
         var licences = db.ImportLicences.AsNoTracking()
             .Where(x => x.ImportLicenceNo != "")
-            .Where(x => x.IssuedDate >= c.From)
-            .Where(x => x.IssuedDate <= c.To)
+            .Where(x => x.LicenceDate >= c.From)
+            .Where(x => x.LicenceDate < c.ToExclusive)
             .WhereIf(c.PaThaKaId != null, x => x.PaThaKaId == c.PaThaKaId)
             .WhereIf(c.SectionId != null, x => x.ExportImportSectionId == c.SectionId)
             .WhereIf(c.SellerCountryId != null, x => x.SellerCountryId == c.SellerCountryId)
-            .WhereIf(c.PortOfDischarge != null, x => x.PortofDischarge == c.PortOfDischarge)
-            .WhereIf(c.ModeCombinations != null, x => c.ModeCombinations!.Contains(x.ModeofTransport))
+            .WhereIf(c.PortOfDischarge != null, x => x.PortofDischarge!.Contains(c.PortOfDischarge!))
+            .WhereAnyMode(c.Modes, x => x.ModeofTransport)
             .WhereIf(c.MethodId != null, x => x.ExportImportMethodId == c.MethodId)
-            .WhereIf(c.CountryOfOriginText != null, x => x.CountryofOriginId == c.CountryOfOriginText)
-            .WhereIf(c.ConsignedCountryText != null, x => x.ConsignedCountryId == c.ConsignedCountryText)
+            .WhereAnyCsvId(c.CountryOfOriginIds, x => x.CountryofOriginId)
+            .WhereAnyCsvId(c.ConsignedCountryIds, x => x.ConsignedCountryId)
             .WhereIf(c.IncotermId != null, x => x.ExportImportIncotermId == c.IncotermId)
             .WhereIf(c.StatementCodeId != null, x => x.ProductItemId == c.StatementCodeId)
             .WhereIf(c.ApplyType != null, x => x.ApplyType == c.ApplyType);
@@ -491,6 +627,7 @@ public static class sp_AdvanceSearch
                    Section = section.Code,
                    LicenceNo = licence.ImportLicenceNo,
                    LicenceDate = licence.LicenceDate,
+                   IssuedDate = licence.IssuedDate,
                    CompanyRegistrationNo = pathaka.CompanyRegistrationNo,
                    CompanyName = pathaka.CompanyName,
                    UnitLevel = pathaka.UnitLevel,
@@ -523,17 +660,17 @@ public static class sp_AdvanceSearch
     {
         var licences = db.ExportLicences.AsNoTracking()
             .Where(x => x.ExportLicenceNo != "")
-            .Where(x => x.IssuedDate >= c.From)
-            .Where(x => x.IssuedDate <= c.To)
+            .Where(x => x.LicenceDate >= c.From)
+            .Where(x => x.LicenceDate < c.ToExclusive)
             .WhereIf(c.PaThaKaId != null, x => x.PaThaKaId == c.PaThaKaId)
             .WhereIf(c.SectionId != null, x => x.ExportImportSectionId == c.SectionId)
             // The Export types filter the "Seller Country" box against the BUYER column.
             .WhereIf(c.SellerCountryId != null, x => x.BuyerCountryId == c.SellerCountryId)
-            .WhereIf(c.PortOfDischarge != null, x => x.PortofDischarge == c.PortOfDischarge)
-            .WhereIf(c.ModeCombinations != null, x => c.ModeCombinations!.Contains(x.ModeofTransport))
+            .WhereIf(c.PortOfDischarge != null, x => x.PortofDischarge!.Contains(c.PortOfDischarge!))
+            .WhereAnyMode(c.Modes, x => x.ModeofTransport)
             .WhereIf(c.MethodId != null, x => x.ExportImportMethodId == c.MethodId)
-            .WhereIf(c.CountryOfOriginNumber != null, x => x.CountryofOriginId == c.CountryOfOriginNumber)
-            .WhereIf(c.ConsignedCountryNumber != null, x => x.ConsignedCountryId == c.ConsignedCountryNumber)
+            .WhereAnyId(c.CountryOfOriginIds, x => x.CountryofOriginId)
+            .WhereAnyId(c.ConsignedCountryIds, x => x.ConsignedCountryId)
             .WhereIf(c.IncotermId != null, x => x.ExportImportIncotermId == c.IncotermId)
             .WhereIf(c.StatementCodeId != null, x => x.ProductItemId == c.StatementCodeId)
             .WhereIf(c.ApplyType != null, x => x.ApplyType == c.ApplyType);
@@ -553,6 +690,7 @@ public static class sp_AdvanceSearch
                    Section = section.Code,
                    LicenceNo = licence.ExportLicenceNo,
                    LicenceDate = licence.LicenceDate,
+                   IssuedDate = licence.IssuedDate,
                    CompanyRegistrationNo = pathaka.CompanyRegistrationNo,
                    CompanyName = pathaka.CompanyName,
                    UnitLevel = pathaka.UnitLevel,
@@ -587,13 +725,13 @@ public static class sp_AdvanceSearch
         // of those columns, which is why the legacy branch had them commented out (:480-507).
         var permits = db.ImportPermits.AsNoTracking()
             .Where(x => x.ImportPermitNo != "")
-            .Where(x => x.IssuedDate >= c.From)
-            .Where(x => x.IssuedDate <= c.To)
+            .Where(x => x.LicenceDate >= c.From)
+            .Where(x => x.LicenceDate < c.ToExclusive)
             .WhereIf(c.PaThaKaId != null, x => x.PaThaKaId == c.PaThaKaId)
             .WhereIf(c.SectionId != null, x => x.ExportImportSectionId == c.SectionId)
             .WhereIf(c.SellerCountryId != null, x => x.SellerCountryId == c.SellerCountryId)
-            .WhereIf(c.PortOfDischarge != null, x => x.PortofDischarge == c.PortOfDischarge)
-            .WhereIf(c.CountryOfOriginText != null, x => x.CountryofOriginId == c.CountryOfOriginText)
+            .WhereIf(c.PortOfDischarge != null, x => x.PortofDischarge!.Contains(c.PortOfDischarge!))
+            .WhereAnyCsvId(c.CountryOfOriginIds, x => x.CountryofOriginId)
             .WhereIf(c.StatementCodeId != null, x => x.ProductItemId == c.StatementCodeId)
             .WhereIf(c.ApplyType != null, x => x.ApplyType == c.ApplyType);
 
@@ -611,6 +749,7 @@ public static class sp_AdvanceSearch
                    Section = section.Code,
                    LicenceNo = permit.ImportPermitNo,
                    LicenceDate = permit.LicenceDate,
+                   IssuedDate = permit.IssuedDate,
                    CompanyRegistrationNo = pathaka.CompanyRegistrationNo,
                    CompanyName = pathaka.CompanyName,
                    UnitLevel = pathaka.UnitLevel,
@@ -642,15 +781,15 @@ public static class sp_AdvanceSearch
         // No Method or Incoterm: ExportPermit carries neither column (legacy :372-374, :394-395).
         var permits = db.ExportPermits.AsNoTracking()
             .Where(x => x.ExportPermitNo != "")
-            .Where(x => x.IssuedDate >= c.From)
-            .Where(x => x.IssuedDate <= c.To)
+            .Where(x => x.LicenceDate >= c.From)
+            .Where(x => x.LicenceDate < c.ToExclusive)
             .WhereIf(c.PaThaKaId != null, x => x.PaThaKaId == c.PaThaKaId)
             .WhereIf(c.SectionId != null, x => x.ExportImportSectionId == c.SectionId)
             .WhereIf(c.SellerCountryId != null, x => x.BuyerCountryId == c.SellerCountryId)
-            .WhereIf(c.PortOfDischarge != null, x => x.PortofDischarge == c.PortOfDischarge)
-            .WhereIf(c.ModeCombinations != null, x => c.ModeCombinations!.Contains(x.ModeofTransport))
-            .WhereIf(c.CountryOfOriginText != null, x => x.CountryofOriginId == c.CountryOfOriginText)
-            .WhereIf(c.ConsignedCountryNumber != null, x => x.ConsignedCountryId == c.ConsignedCountryNumber)
+            .WhereIf(c.PortOfDischarge != null, x => x.PortofDischarge!.Contains(c.PortOfDischarge!))
+            .WhereAnyMode(c.Modes, x => x.ModeofTransport)
+            .WhereAnyCsvId(c.CountryOfOriginIds, x => x.CountryofOriginId)
+            .WhereAnyId(c.ConsignedCountryIds, x => x.ConsignedCountryId)
             .WhereIf(c.StatementCodeId != null, x => x.ProductItemId == c.StatementCodeId)
             .WhereIf(c.ApplyType != null, x => x.ApplyType == c.ApplyType);
 
@@ -668,6 +807,7 @@ public static class sp_AdvanceSearch
                    Section = section.Code,
                    LicenceNo = permit.ExportPermitNo,
                    LicenceDate = permit.LicenceDate,
+                   IssuedDate = permit.IssuedDate,
                    CompanyRegistrationNo = pathaka.CompanyRegistrationNo,
                    CompanyName = pathaka.CompanyName,
                    UnitLevel = pathaka.UnitLevel,
@@ -700,19 +840,20 @@ public static class sp_AdvanceSearch
     {
         var licences = db.BorderImportLicences.AsNoTracking()
             .Where(x => x.ImportLicenceNo != "")
-            .Where(x => x.IssuedDate >= c.From)
-            .Where(x => x.IssuedDate <= c.To)
+            .Where(x => x.LicenceDate >= c.From)
+            .Where(x => x.LicenceDate < c.ToExclusive)
             .WhereIf(c.PaThaKaId != null, x => x.PaThaKaId == c.PaThaKaId)
             .WhereIf(c.SectionId != null, x => x.ExportImportSectionId == c.SectionId)
             .WhereIf(c.SellerCountryId != null, x => x.SellerCountryId == c.SellerCountryId)
-            .WhereIf(c.PortOfDischarge != null, x => x.PortofDischarge == c.PortOfDischarge)
-            .WhereIf(c.ModeCombinations != null, x => c.ModeCombinations!.Contains(x.ModeofTransport))
+            .WhereIf(c.PortOfDischarge != null, x => x.PortofDischarge!.Contains(c.PortOfDischarge!))
+            .WhereAnyMode(c.Modes, x => x.ModeofTransport)
             .WhereIf(c.MethodId != null, x => x.ExportImportMethodId == c.MethodId)
-            .WhereIf(c.CountryOfOriginText != null, x => x.CountryofOriginId == c.CountryOfOriginText)
-            .WhereIf(c.ConsignedCountryText != null, x => x.ConsignedCountryId == c.ConsignedCountryText)
+            .WhereAnyCsvId(c.CountryOfOriginIds, x => x.CountryofOriginId)
+            .WhereAnyCsvId(c.ConsignedCountryIds, x => x.ConsignedCountryId)
             .WhereIf(c.IncotermId != null, x => x.ExportImportIncotermId == c.IncotermId)
             .WhereIf(c.StatementCodeId != null, x => x.ProductItemId == c.StatementCodeId)
-            .WhereIf(c.ApplyType != null, x => x.ApplyType == c.ApplyType);
+            .WhereIf(c.ApplyType != null, x => x.ApplyType == c.ApplyType)
+            .WhereIf(c.OfficeId != null, x => x.SakhanId == c.OfficeId);
 
         var items = db.BorderImportLicenceItems.AsNoTracking()
             .WhereIf(c.Description != null, x => x.Description!.Contains(c.Description!));
@@ -731,6 +872,7 @@ public static class sp_AdvanceSearch
                    Sakhan = sakhan.Code,
                    LicenceNo = licence.ImportLicenceNo,
                    LicenceDate = licence.LicenceDate,
+                   IssuedDate = licence.IssuedDate,
                    CompanyRegistrationNo = pathaka.CompanyRegistrationNo,
                    CompanyName = pathaka.CompanyName,
                    UnitLevel = pathaka.UnitLevel,
@@ -763,19 +905,20 @@ public static class sp_AdvanceSearch
     {
         var licences = db.BorderExportLicences.AsNoTracking()
             .Where(x => x.ExportLicenceNo != "")
-            .Where(x => x.IssuedDate >= c.From)
-            .Where(x => x.IssuedDate <= c.To)
+            .Where(x => x.LicenceDate >= c.From)
+            .Where(x => x.LicenceDate < c.ToExclusive)
             .WhereIf(c.PaThaKaId != null, x => x.PaThaKaId == c.PaThaKaId)
             .WhereIf(c.SectionId != null, x => x.ExportImportSectionId == c.SectionId)
             .WhereIf(c.SellerCountryId != null, x => x.BuyerCountryId == c.SellerCountryId)
-            .WhereIf(c.PortOfDischarge != null, x => x.PortofDischarge == c.PortOfDischarge)
-            .WhereIf(c.ModeCombinations != null, x => c.ModeCombinations!.Contains(x.ModeofTransport))
+            .WhereIf(c.PortOfDischarge != null, x => x.PortofDischarge!.Contains(c.PortOfDischarge!))
+            .WhereAnyMode(c.Modes, x => x.ModeofTransport)
             .WhereIf(c.MethodId != null, x => x.ExportImportMethodId == c.MethodId)
-            .WhereIf(c.CountryOfOriginNumber != null, x => x.CountryofOriginId == c.CountryOfOriginNumber)
-            .WhereIf(c.ConsignedCountryNumber != null, x => x.ConsignedCountryId == c.ConsignedCountryNumber)
+            .WhereAnyId(c.CountryOfOriginIds, x => x.CountryofOriginId)
+            .WhereAnyId(c.ConsignedCountryIds, x => x.ConsignedCountryId)
             .WhereIf(c.IncotermId != null, x => x.ExportImportIncotermId == c.IncotermId)
             .WhereIf(c.StatementCodeId != null, x => x.ProductItemId == c.StatementCodeId)
-            .WhereIf(c.ApplyType != null, x => x.ApplyType == c.ApplyType);
+            .WhereIf(c.ApplyType != null, x => x.ApplyType == c.ApplyType)
+            .WhereIf(c.OfficeId != null, x => x.SakhanId == c.OfficeId);
 
         var items = db.BorderExportLicenceItems.AsNoTracking()
             .WhereIf(c.Description != null, x => x.Description!.Contains(c.Description!));
@@ -794,6 +937,7 @@ public static class sp_AdvanceSearch
                    Sakhan = sakhan.Code,
                    LicenceNo = licence.ExportLicenceNo,
                    LicenceDate = licence.LicenceDate,
+                   IssuedDate = licence.IssuedDate,
                    CompanyRegistrationNo = pathaka.CompanyRegistrationNo,
                    CompanyName = pathaka.CompanyName,
                    UnitLevel = pathaka.UnitLevel,
@@ -827,15 +971,16 @@ public static class sp_AdvanceSearch
         // No Mode of Transport, Method, Incoterm or Consigned Country -- as Import Permit.
         var permits = db.BorderImportPermits.AsNoTracking()
             .Where(x => x.ImportPermitNo != "")
-            .Where(x => x.IssuedDate >= c.From)
-            .Where(x => x.IssuedDate <= c.To)
+            .Where(x => x.LicenceDate >= c.From)
+            .Where(x => x.LicenceDate < c.ToExclusive)
             .WhereIf(c.PaThaKaId != null, x => x.PaThaKaId == c.PaThaKaId)
             .WhereIf(c.SectionId != null, x => x.ExportImportSectionId == c.SectionId)
             .WhereIf(c.SellerCountryId != null, x => x.SellerCountryId == c.SellerCountryId)
-            .WhereIf(c.PortOfDischarge != null, x => x.PortofDischarge == c.PortOfDischarge)
-            .WhereIf(c.CountryOfOriginText != null, x => x.CountryofOriginId == c.CountryOfOriginText)
+            .WhereIf(c.PortOfDischarge != null, x => x.PortofDischarge!.Contains(c.PortOfDischarge!))
+            .WhereAnyCsvId(c.CountryOfOriginIds, x => x.CountryofOriginId)
             .WhereIf(c.StatementCodeId != null, x => x.ProductItemId == c.StatementCodeId)
-            .WhereIf(c.ApplyType != null, x => x.ApplyType == c.ApplyType);
+            .WhereIf(c.ApplyType != null, x => x.ApplyType == c.ApplyType)
+            .WhereIf(c.OfficeId != null, x => x.SakhanId == c.OfficeId);
 
         var items = db.BorderImportPermitItems.AsNoTracking()
             .WhereIf(c.Description != null, x => x.Description!.Contains(c.Description!));
@@ -853,6 +998,7 @@ public static class sp_AdvanceSearch
                    Sakhan = sakhan.Code,
                    LicenceNo = permit.ImportPermitNo,
                    LicenceDate = permit.LicenceDate,
+                   IssuedDate = permit.IssuedDate,
                    CompanyRegistrationNo = pathaka.CompanyRegistrationNo,
                    CompanyName = pathaka.CompanyName,
                    UnitLevel = pathaka.UnitLevel,
@@ -884,17 +1030,18 @@ public static class sp_AdvanceSearch
         // No Method or Incoterm -- as Export Permit.
         var permits = db.BorderExportPermits.AsNoTracking()
             .Where(x => x.ExportPermitNo != "")
-            .Where(x => x.IssuedDate >= c.From)
-            .Where(x => x.IssuedDate <= c.To)
+            .Where(x => x.LicenceDate >= c.From)
+            .Where(x => x.LicenceDate < c.ToExclusive)
             .WhereIf(c.PaThaKaId != null, x => x.PaThaKaId == c.PaThaKaId)
             .WhereIf(c.SectionId != null, x => x.ExportImportSectionId == c.SectionId)
             .WhereIf(c.SellerCountryId != null, x => x.BuyerCountryId == c.SellerCountryId)
-            .WhereIf(c.PortOfDischarge != null, x => x.PortofDischarge == c.PortOfDischarge)
-            .WhereIf(c.ModeCombinations != null, x => c.ModeCombinations!.Contains(x.ModeofTransport))
-            .WhereIf(c.CountryOfOriginText != null, x => x.CountryofOriginId == c.CountryOfOriginText)
-            .WhereIf(c.ConsignedCountryNumber != null, x => x.ConsignedCountryId == c.ConsignedCountryNumber)
+            .WhereIf(c.PortOfDischarge != null, x => x.PortofDischarge!.Contains(c.PortOfDischarge!))
+            .WhereAnyMode(c.Modes, x => x.ModeofTransport)
+            .WhereAnyCsvId(c.CountryOfOriginIds, x => x.CountryofOriginId)
+            .WhereAnyId(c.ConsignedCountryIds, x => x.ConsignedCountryId)
             .WhereIf(c.StatementCodeId != null, x => x.ProductItemId == c.StatementCodeId)
-            .WhereIf(c.ApplyType != null, x => x.ApplyType == c.ApplyType);
+            .WhereIf(c.ApplyType != null, x => x.ApplyType == c.ApplyType)
+            .WhereIf(c.OfficeId != null, x => x.SakhanId == c.OfficeId);
 
         var items = db.BorderExportPermitItems.AsNoTracking()
             .WhereIf(c.Description != null, x => x.Description!.Contains(c.Description!));
@@ -912,6 +1059,7 @@ public static class sp_AdvanceSearch
                    Sakhan = sakhan.Code,
                    LicenceNo = permit.ExportPermitNo,
                    LicenceDate = permit.LicenceDate,
+                   IssuedDate = permit.IssuedDate,
                    CompanyRegistrationNo = pathaka.CompanyRegistrationNo,
                    CompanyName = pathaka.CompanyName,
                    UnitLevel = pathaka.UnitLevel,

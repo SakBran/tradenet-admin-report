@@ -578,6 +578,7 @@ const renderFilter = (
     return (
       <DatePicker.RangePicker
         allowClear={false}
+        format={filter.displayFormat}
         placeholder={[
           filter.fromLabel ?? 'From Date',
           filter.toLabel ?? 'To Date',
@@ -588,7 +589,13 @@ const renderFilter = (
   }
 
   if (filter.type === 'date') {
-    return <DatePicker allowClear={false} style={{ width: '100%' }} />;
+    return (
+      <DatePicker
+        allowClear={false}
+        format={filter.displayFormat}
+        style={{ width: '100%' }}
+      />
+    );
   }
 
   if (filter.type === 'number') {

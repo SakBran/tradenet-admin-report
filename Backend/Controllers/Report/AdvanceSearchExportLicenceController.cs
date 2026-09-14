@@ -21,6 +21,11 @@ namespace Backend.Controllers.Report
     /// the Excel export job. The query is the legacy Web API's, ported in
     /// <see cref="sp_AdvanceSearch"/>.
     /// </summary>
+    // 2: the 2026-09 "results do not match what I searched" round -- an Issued Date column,
+    //    DD/MM/YYYY dates, and a date range that now binds LicenceDate. Both the layout AND
+    //    which rows an unchanged request returns have changed, so cached closed-period files
+    //    must not be reused (see ExcelExportJobService).
+    [ExcelFormatVersion(2)]
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]

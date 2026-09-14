@@ -134,64 +134,60 @@ public sealed class AdvanceSearchContractTests
 
     // --- the repaired defects ------------------------------------------------
 
-    [Fact]
-    public void Picking_all_three_transport_modes_no_longer_throws()
+    [Theory]
+    [InlineData("Sea", new[] { "Sea" })]
+    [InlineData("Sea,Road", new[] { "Sea", "Road" })]
+    // The legacy builder read modeList[3] of a three-element list, so this was an HTTP 400.
+    [InlineData("Sea,Road,Air", new[] { "Sea", "Road", "Air" })]
+    public void A_mode_selection_is_kept_as_the_modes_themselves(string modes, string[] expected)
     {
-        // The legacy builder read modeList[3] of a three-element list, so this was an HTTP 400.
-        var combinations = sp_AdvanceSearch.ModeCombinations("Sea,Road,Air");
-
-        Assert.NotNull(combinations);
-        Assert.Equal(6, combinations!.Count);
-        Assert.Equal(6, combinations.Distinct().Count());
-        Assert.Contains("Sea,Road,Air", combinations);
-        Assert.Contains("Air,Road,Sea", combinations);
+        // Each mode is matched on its own against the comma-joined column, so picking several
+        // means "carries any of them". The legacy code permuted the selection and matched the
+        // column whole, which meant "carries exactly this set" and almost never hit.
+        Assert.Equal(expected, sp_AdvanceSearch.SplitModes(modes));
     }
 
-    [Theory]
-    [InlineData("Sea", 1)]
-    [InlineData("Sea,Road", 2)]
-    public void One_and_two_mode_selections_keep_the_legacy_combinations(string modes, int expected)
+    [Fact]
+    public void A_repeated_or_padded_mode_is_normalised()
     {
-        var combinations = sp_AdvanceSearch.ModeCombinations(modes);
-
-        Assert.NotNull(combinations);
-        Assert.Equal(expected, combinations!.Count);
-        // The column stores a comma-joined list, so the predicate matched it whole in either order.
-        Assert.All(modes.Split(','), mode => Assert.Contains(mode, combinations[0].Split(',')));
+        Assert.Equal(new[] { "Sea", "Road" }, sp_AdvanceSearch.SplitModes(" Sea , Road ,Sea "));
     }
 
     [Fact]
     public void No_mode_selected_means_no_mode_filter()
     {
-        Assert.Null(sp_AdvanceSearch.ModeCombinations(""));
-        Assert.Null(sp_AdvanceSearch.ModeCombinations(null));
+        Assert.Null(sp_AdvanceSearch.SplitModes(""));
+        Assert.Null(sp_AdvanceSearch.SplitModes(null));
+        Assert.Null(sp_AdvanceSearch.SplitModes(" , "));
     }
 
     [Fact]
-    public void A_single_country_gives_both_column_shapes()
+    public void A_single_country_is_one_id()
     {
-        var (text, number) = sp_AdvanceSearch.SplitCountry("12");
-
-        Assert.Equal("12", text);
-        Assert.Equal(12, number);
+        Assert.Equal(new[] { 12 }, sp_AdvanceSearch.SplitCountryIds("12"));
     }
 
     [Fact]
-    public void A_multi_country_selection_matches_nothing_on_an_int_column_instead_of_throwing()
+    public void A_multi_country_selection_keeps_every_id()
     {
-        // The legacy predicate reached Convert.ToInt32("5,12") on Export Licence and Border
-        // Export Licence and returned HTTP 400. The string-column types still get the raw value.
-        var (text, number) = sp_AdvanceSearch.SplitCountry("5,12");
+        // The legacy predicate compared the whole picked string to the whole stored column, and
+        // on the two int columns reached Convert.ToInt32("5,12") and returned HTTP 400. Every
+        // selected id is now matched on its own -- "any of these countries".
+        Assert.Equal(new[] { 5, 12 }, sp_AdvanceSearch.SplitCountryIds("5,12"));
+    }
 
-        Assert.Equal("5,12", text);
-        Assert.Equal(sp_AdvanceSearch.NoMatchId, number);
+    [Fact]
+    public void A_country_selection_that_parses_to_nothing_still_matches_nothing()
+    {
+        // It must not widen into "all" -- that would silently return every row.
+        Assert.Equal(new[] { sp_AdvanceSearch.NoMatchId }, sp_AdvanceSearch.SplitCountryIds("abc"));
     }
 
     [Fact]
     public void No_country_selected_means_no_country_filter()
     {
-        Assert.Equal((null, null), sp_AdvanceSearch.SplitCountry(""));
-        Assert.Equal((null, null), sp_AdvanceSearch.SplitCountry(null));
+        Assert.Null(sp_AdvanceSearch.SplitCountryIds(""));
+        Assert.Null(sp_AdvanceSearch.SplitCountryIds(null));
     }
 
     // --- country names, the step that crashed the four Permit screens ---------

@@ -1,3 +1,4 @@
+import { formatLegacyReportDate } from '../reportPresentation';
 import {
   ReportColumnConfig,
   ReportFilterConfig,
@@ -17,9 +18,19 @@ import {
 // its defects were repaired — is documented.
 
 /**
- * The legacy grid's 23 headers, in order (AdvanceSearch.cshtml:163-188). They are unspaced
- * identifiers (`LicenceNo`, not `Licence No`) everywhere except `Last Date`; that is how the
- * old screen printed them, so that is what they say here.
+ * Dates print `DD/MM/YYYY`, matching the picker (`advanceSearchDateRange.displayFormat`).
+ *
+ * The legacy screen reformatted its rows in C# after paging, to `MM/dd/yyyy HH:mm:ss`, and this
+ * grid copied that. Against an antd picker showing `YYYY-MM-DD` it meant 3 February printed as
+ * `02/03/2026` beside a box reading `2026-02-03` — read here as 2 March, which was part of the
+ * 2026-09 "the dates are not the ones I searched" complaint.
+ */
+const advanceSearchDateFormat = 'DD/MM/YYYY HH:mm:ss';
+
+/**
+ * The legacy grid's 23 headers, in order (AdvanceSearch.cshtml:163-188), plus `Issued Date`.
+ * They are unspaced identifiers (`LicenceNo`, not `Licence No`) everywhere except the dates;
+ * that is how the old screen printed them, so that is what they say here.
  *
  * `Sakhan` appears on the four Border types only — the old markup emitted that column under
  * `@if (ViewBag.type.StartsWith("Border"))`.
@@ -33,10 +44,21 @@ const advanceSearchColumns = (withSakhan: boolean): ReportColumnConfig[] => [
   {
     key: 'LicenceDate',
     dataIndex: 'licenceDate',
-    title: 'LicenceDate',
+    // The column the date range binds. Named in full, and in the filter's label, so the grid
+    // says which of its two dates answered the search.
+    title: 'Licence Date',
     dataType: 'date',
-    // The legacy rows were reformatted in C# after paging, to MM/dd/yyyy HH:mm:ss.
-    dateFormat: 'MM/DD/YYYY HH:mm:ss',
+    dateFormat: advanceSearchDateFormat,
+  },
+  {
+    key: 'IssuedDate',
+    dataIndex: 'issuedDate',
+    // Not a legacy column. An amended or extended licence keeps its original Licence Date while
+    // carrying a later Issued Date; with only one of the two on screen, that read as "I searched
+    // 2026 and got 2025 data". Shown beside it, the two explain each other.
+    title: 'Issued Date',
+    dataType: 'date',
+    dateFormat: advanceSearchDateFormat,
   },
   {
     key: 'CompanyRegistrationNo',
@@ -69,7 +91,7 @@ const advanceSearchColumns = (withSakhan: boolean): ReportColumnConfig[] => [
     dataIndex: 'lastDate',
     title: 'Last Date',
     dataType: 'date',
-    dateFormat: 'MM/DD/YYYY HH:mm:ss',
+    dateFormat: advanceSearchDateFormat,
   },
   { key: 'Method', dataIndex: 'method', title: 'Method' },
   {
@@ -111,19 +133,27 @@ const advanceSearchColumns = (withSakhan: boolean): ReportColumnConfig[] => [
 ];
 
 /**
- * From Date / To Date (AdvanceSearch.cshtml:23-35). Both were required and both defaulted to
- * today, which `defaultDateRangeMonths: 0` reproduces. They bind `IssuedDate` in the query.
+ * From Date / To Date (AdvanceSearch.cshtml:23-35), binding `LicenceDate`.
+ *
+ * Three departures from the legacy screen, all from the 2026-09 complaint that the results did
+ * not match the search:
+ * - **The labels name the column.** The old boxes said only "From Date"/"To Date", so nothing on
+ *   the screen said which of the row's dates was being searched.
+ * - **`DD/MM/YYYY`**, so the picker and the grid agree — see `advanceSearchDateFormat`.
+ * - **The range opens on the current month**, as every other report in this app does. The legacy
+ *   screen seeded both boxes with `DateTime.Now` (`defaultDateRangeMonths: 0`), so the first
+ *   search covered a single day and usually came back empty.
  */
 const advanceSearchDateRange: ReportFilterConfig = {
   name: 'dateRange',
-  label: 'From Date / To Date',
+  label: 'Licence Date (From / To)',
   type: 'dateRange',
   fromName: 'FromDate',
   toName: 'ToDate',
-  fromLabel: 'From Date',
-  toLabel: 'To Date',
+  fromLabel: 'Licence From Date',
+  toLabel: 'Licence To Date',
+  displayFormat: 'DD/MM/YYYY',
   required: true,
-  defaultDateRangeMonths: 0,
 };
 
 /**
@@ -153,6 +183,7 @@ const pathakaFilter: ReportFilterConfig = {
   type: 'text',
 };
 
+/** Matches any port whose name contains what is typed; the legacy predicate was exact. */
 const portOfDischargeFilter: ReportFilterConfig = {
   name: 'PortOfDischarge',
   label: 'Port Of Discharge',
@@ -164,8 +195,8 @@ const portOfDischargeFilter: ReportFilterConfig = {
  * bound `new SelectList(transportList, "Text", "Text")`, so it posted `Sea`/`Road`/`Air` and
  * never the `S`/`R`/`A` codes beside them.
  *
- * Picking more than one means "carries exactly these modes", not "carries any of them": the
- * column is a comma-joined string and the query matches it whole.
+ * Picking more than one means "carries any of them". The legacy predicate matched the
+ * comma-joined column whole, so it meant "carries exactly this set" and almost never matched.
  */
 const modeOfTransportFilter: ReportFilterConfig = {
   name: 'ModeOfTransport',
@@ -178,6 +209,14 @@ const modeOfTransportFilter: ReportFilterConfig = {
   ],
 };
 
+/**
+ * Country of Origin / Consigned Country. Selecting several means "any of them".
+ *
+ * The legacy query compared the whole picked string to the whole stored column, so it only ever
+ * matched a row whose country list was byte-identical — and on the two types whose column is a
+ * real `int` (Export Licence, Border Export Licence) more than one selection matched nothing at
+ * all. Both are fixed in sp_AdvanceSearch.cs.
+ */
 const countryOfOriginFilter: ReportFilterConfig = {
   name: 'CountryOfOrigin',
   label: 'Country of Origin',
@@ -230,10 +269,9 @@ const statementCodeFilter = (lookupName: string): ReportFilterConfig => ({
  * Office (Sakhan), on the four Border screens only — the legacy model builder left the list
  * empty for the oversea types.
  *
- * It does not filter, and never has: `data.Office` has no references in the legacy repository,
- * which joins Sakhan for display only. Kept as the old screen had it (the customer's call was
- * to repair the crashes and change nothing else), so the new grid keeps the old row counts.
- * Making it work is one predicate in sp_AdvanceSearch.cs — see the note on `NoMatchId`.
+ * It filters `SakhanId` now. The legacy repository never referenced its own `data.Office`, so
+ * the box sat on the screen doing nothing, which is the same defect as the rest of this
+ * complaint seen from the other side: the results did not answer the search.
  */
 const officeFilter: ReportFilterConfig = {
   name: 'Office',
@@ -300,6 +338,19 @@ const advanceSearchFilters = (o: AdvanceSearchOptions): ReportFilterConfig[] => 
   applyTypeFilter,
 ];
 
+/**
+ * The header line under the title, echoing the range that produced the rows on screen.
+ *
+ * The old screen printed nothing of the sort, which is half of why the 2026-09 complaint was
+ * "I do not know what I searched or what came out": the boxes could be edited without pressing
+ * Filter, and nothing on the grid said which range it answered.
+ */
+const advanceSearchSubtitle =
+  (title: string) => (filters: Record<string, unknown>) =>
+    `${title} — Licence Date (${formatLegacyReportDate(
+      filters.FromDate
+    )}) To (${formatLegacyReportDate(filters.ToDate)})`;
+
 const advanceSearchConfig = (
   controllerName: string,
   title: string,
@@ -310,6 +361,7 @@ const advanceSearchConfig = (
   apiRoute: controllerName,
   excelRoute: `${controllerName}/Excel`,
   excelFileName: `${controllerName}.xlsx`,
+  reportSubtitle: advanceSearchSubtitle(title),
   // The legacy grid pulled 1000 rows at a time (AdvanceSearchreports.js); a 10-row first page
   // would read as missing data beside it.
   defaultPageSize: 1000,

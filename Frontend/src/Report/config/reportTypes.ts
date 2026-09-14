@@ -106,6 +106,16 @@ export interface ReportFilterConfig {
   fromLabel?: string;
   toLabel?: string;
   showTime?: boolean;
+  /**
+   * How the `date`/`dateRange` picker prints and parses a date, e.g. `'DD/MM/YYYY'`.
+   * Omitted, antd's default (`YYYY-MM-DD`) is used, which is what every report other
+   * than Advance Search still shows.
+   *
+   * Set it where the picker would otherwise disagree with the grid's own `dateFormat`:
+   * a picker reading `2026-02-03` beside a column reading `02/03/2026` is how a correct
+   * result comes to look like the wrong month.
+   */
+  displayFormat?: string;
   defaultValue?: string | number | boolean;
   /**
    * How wide the `dateRange` box opens on first load: `n` months back to today (default 1,

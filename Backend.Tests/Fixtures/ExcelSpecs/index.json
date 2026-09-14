@@ -37,7 +37,7 @@
       "isBespokePage": false,
       "isComposite": false,
       "hasExcelButton": true,
-      "columnCount": 23
+      "columnCount": 24
     },
     {
       "configKey": "AdvanceSearchBorderExportPermit",
@@ -52,7 +52,7 @@
       "isBespokePage": false,
       "isComposite": false,
       "hasExcelButton": true,
-      "columnCount": 23
+      "columnCount": 24
     },
     {
       "configKey": "AdvanceSearchBorderImportLicence",
@@ -67,7 +67,7 @@
       "isBespokePage": false,
       "isComposite": false,
       "hasExcelButton": true,
-      "columnCount": 23
+      "columnCount": 24
     },
     {
       "configKey": "AdvanceSearchBorderImportPermit",
@@ -82,7 +82,7 @@
       "isBespokePage": false,
       "isComposite": false,
       "hasExcelButton": true,
-      "columnCount": 23
+      "columnCount": 24
     },
     {
       "configKey": "AdvanceSearchExportLicence",
@@ -97,7 +97,7 @@
       "isBespokePage": false,
       "isComposite": false,
       "hasExcelButton": true,
-      "columnCount": 22
+      "columnCount": 23
     },
     {
       "configKey": "AdvanceSearchExportPermit",
@@ -112,7 +112,7 @@
       "isBespokePage": false,
       "isComposite": false,
       "hasExcelButton": true,
-      "columnCount": 22
+      "columnCount": 23
     },
     {
       "configKey": "AdvanceSearchImportLicence",
@@ -127,7 +127,7 @@
       "isBespokePage": false,
       "isComposite": false,
       "hasExcelButton": true,
-      "columnCount": 22
+      "columnCount": 23
     },
     {
       "configKey": "AdvanceSearchImportPermit",
@@ -142,7 +142,7 @@
       "isBespokePage": false,
       "isComposite": false,
       "hasExcelButton": true,
-      "columnCount": 22
+      "columnCount": 23
     },
     {
       "configKey": "AlcoholicBeveragesImportationDetailReport",

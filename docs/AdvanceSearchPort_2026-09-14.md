@@ -1,5 +1,12 @@
 # Advance Search — ported from Tradenet 2.0 Admin (2026-09-14)
 
+> **Superseded in part — see [AdvanceSearchDataCorrectness_2026-09-14.md](AdvanceSearchDataCorrectness_2026-09-14.md).**
+> The customer reported that the results did not match the search. The two "Still owed" decisions
+> below (Office, multi-select country) are now taken, the date range binds `LicenceDate` instead
+> of `IssuedDate`, and several legacy quirks recorded here as deliberate have since been repaired.
+> This document still describes the port itself accurately; where the two disagree about current
+> behaviour, the newer one wins.
+
 The old admin had an **Advance Search** feature that had never been brought over. It is not a
 panel on a report: it was its own top-nav entry (`_Layout.cshtml:1262-1277` on `origin/master`)
 opening `Reports/AdvanceSearch?type=menu`, a page of **eight tiles**

@@ -24,6 +24,11 @@ namespace Backend.Controllers.Report
     /// This type carries no Method of Import and Incoterms column, so the legacy branch
     /// had those predicates commented out and the filter box does not offer them.
     /// </summary>
+    // 2: the 2026-09 "results do not match what I searched" round -- an Issued Date column,
+    //    DD/MM/YYYY dates, and a date range that now binds LicenceDate. Both the layout AND
+    //    which rows an unchanged request returns have changed, so cached closed-period files
+    //    must not be reused (see ExcelExportJobService).
+    [ExcelFormatVersion(2)]
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
@@ -129,6 +134,7 @@ namespace Backend.Controllers.Report
                 Description = request.Description?.Trim() ?? string.Empty,
                 StatementCode = request.StatementCode,
                 ApplyType = request.ApplyType?.Trim() ?? string.Empty,
+                Office = request.Office,
             };
 
             return true;
@@ -159,11 +165,11 @@ namespace Backend.Controllers.Report
         public int StatementCode { get; set; }
 
         /// <summary>
-        /// Accepted and ignored, exactly as in the legacy Web API: <c>data.Office</c> has no
-        /// references in <c>AdvanceSearchRepository.cs</c>, so the Office (Sakhan) box on this
-        /// screen has never filtered anything -- the Sakhan table is joined for display only.
-        /// Making it filter is one predicate (<c>x.SakhanId == Office</c>) but it would move row
-        /// counts away from the old screen, so it needs its own customer decision.
+        /// Sakhan id; <c>0</c> is "all". Filters <c>SakhanId</c> on this screen.
+        ///
+        /// The legacy Web API never referenced its own <c>data.Office</c>, so the box sat here
+        /// filtering nothing. That was reported in 2026-09 as part of "the results do not match
+        /// what I searched", and row counts now move away from the old screen by design.
         /// </summary>
         public int Office { get; set; }
 

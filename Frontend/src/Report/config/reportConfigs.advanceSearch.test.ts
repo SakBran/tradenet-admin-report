@@ -19,13 +19,19 @@ const BORDER_KEYS = [
 
 const ALL_KEYS = [...OVERSEA_KEYS, ...BORDER_KEYS];
 
-// AdvanceSearch.cshtml:163-188 — the legacy <th> text, verbatim. Unspaced identifiers
-// everywhere except "Last Date"; `Sakhan` is emitted only under
+// AdvanceSearch.cshtml:163-188 — the legacy <th> text, verbatim, with two departures from the
+// 2026-09 "the results do not match what I searched" round:
+//   - `LicenceDate` is spelled `Licence Date`, because the filter label now names it too;
+//   - `Issued Date` is new. The range binds Licence Date, but an amended or extended licence
+//     carries a later Issued Date, and showing only one of the two is what made a correct row
+//     look like it answered the wrong year.
+// Unspaced identifiers otherwise; `Sakhan` is emitted only under
 // `@if (ViewBag.type.StartsWith("Border"))`.
 const LEGACY_COLUMN_TITLES = [
   'Section',
   'LicenceNo',
-  'LicenceDate',
+  'Licence Date',
+  'Issued Date',
   'CompanyRegistrationNo',
   'CompanyName',
   'CompanyAddress',
@@ -290,16 +296,52 @@ describe('Advance Search report configs', () => {
     ).toBe('Method of Import');
   });
 
-  it('opens both date boxes on today, as the legacy screen did', () => {
+  it('opens the date range on the current month, not the legacy single day', () => {
     ALL_KEYS.forEach((key) => {
       const range = reportConfigs[key].filters.find(
         (filter) => filter.type === 'dateRange'
       );
 
       expect(range?.required).toBe(true);
-      expect(range?.defaultDateRangeMonths).toBe(0);
+      // The legacy screen seeded both boxes with DateTime.Now (defaultDateRangeMonths: 0), so
+      // the first search covered one day and usually came back empty. Left unset, the shared
+      // default of 1 opens on the start of this month, as every other report here does.
+      expect(range?.defaultDateRangeMonths).toBeUndefined();
       expect(range?.fromName).toBe('FromDate');
       expect(range?.toName).toBe('ToDate');
+    });
+  });
+
+  it('names the column the date range binds, in the labels and the subtitle', () => {
+    ALL_KEYS.forEach((key) => {
+      const config = reportConfigs[key];
+      const range = config.filters.find((filter) => filter.type === 'dateRange');
+
+      // "From Date"/"To Date" alone never said which of the row's dates was searched.
+      expect(range?.label).toBe('Licence Date (From / To)');
+      expect(range?.fromLabel).toBe('Licence From Date');
+      expect(range?.toLabel).toBe('Licence To Date');
+
+      // The picker printed antd's YYYY-MM-DD beside a grid printing MM/DD/YYYY, so 3 February
+      // showed as 02/03/2026 next to a box reading 2026-02-03.
+      expect(range?.displayFormat).toBe('DD/MM/YYYY');
+
+      expect(
+        config.reportSubtitle?.({
+          FromDate: '2026-02-03T00:00:00',
+          ToDate: '2026-02-28T23:59:59',
+        })
+      ).toBe(`${config.title} — Licence Date (03/02/2026) To (28/02/2026)`);
+    });
+  });
+
+  it('prints every date column in the same order as the picker', () => {
+    ALL_KEYS.forEach((key) => {
+      reportConfigs[key].columns
+        .filter((column) => column.dataType === 'date')
+        .forEach((column) => {
+          expect(column.dateFormat).toBe('DD/MM/YYYY HH:mm:ss');
+        });
     });
   });
 

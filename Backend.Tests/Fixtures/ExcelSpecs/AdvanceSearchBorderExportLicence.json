@@ -5,7 +5,7 @@
   "title": "Advance Search for Border Export Licence",
   "fileName": "AdvanceSearchBorderExportLicence.xlsx",
   "headerLines": [
-    "Advance Search for Border Export Licence"
+    "Advance Search for Border Export Licence — Licence Date (01/02/2026) To (28/02/2026)"
   ],
   "showRowNumber": true,
   "rowNumberTitle": "No",
@@ -28,9 +28,16 @@
     {
       "key": "LicenceDate",
       "dataIndex": "licenceDate",
-      "title": "LicenceDate",
+      "title": "Licence Date",
       "dataType": "date",
-      "dateFormat": "MM/DD/YYYY HH:mm:ss"
+      "dateFormat": "DD/MM/YYYY HH:mm:ss"
+    },
+    {
+      "key": "IssuedDate",
+      "dataIndex": "issuedDate",
+      "title": "Issued Date",
+      "dataType": "date",
+      "dateFormat": "DD/MM/YYYY HH:mm:ss"
     },
     {
       "key": "CompanyRegistrationNo",
@@ -79,7 +86,7 @@
       "dataIndex": "lastDate",
       "title": "Last Date",
       "dataType": "date",
-      "dateFormat": "MM/DD/YYYY HH:mm:ss"
+      "dateFormat": "DD/MM/YYYY HH:mm:ss"
     },
     {
       "key": "Method",
