@@ -36,7 +36,7 @@ describe('Payment report configs', () => {
     expect(withShowTime).toEqual(PAYMENT_REPORT_KEYS);
   });
 
-  it('every Payment date column prints mm/dd/yyyy and every amount drops the commas', () => {
+  it('every Payment date column prints mm/dd/yyyy and every amount is 4 decimals, comma-less', () => {
     for (const key of PAYMENT_REPORT_KEYS) {
       const config = reportConfigs[key];
 
@@ -54,7 +54,7 @@ describe('Payment report configs', () => {
         // The money columns, plus the 'number' columns that hold an amount.
         // A plain identifier (ChequeNoReport's Cheque Id) keeps no format.
         if (column.dataType === 'money' || column.dataIndex === 'amount') {
-          expect(column.numberFormat, `${key}.${column.key}`).toBe('0.00');
+          expect(column.numberFormat, `${key}.${column.key}`).toBe('0.0000');
           expect(column.numberFormat).not.toContain(',');
         }
       }

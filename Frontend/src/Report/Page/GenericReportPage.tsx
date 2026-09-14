@@ -203,9 +203,6 @@ const toTransactionAmountNumber = (value: unknown) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const formatTransactionAmount = (value: unknown) =>
-  toTransactionAmountNumber(value).toFixed(2);
-
 const toMoneyNumber = (value: unknown) => {
   const parsed = Number(value?.toString().replace(/,/g, ''));
   return Number.isFinite(parsed) ? parsed : 0;
@@ -360,15 +357,26 @@ const buildRequest = (
 const toTableColumn = (
   column: ReportColumnConfig
 ): BasicTableColumn<AnyObject> => {
+  // The three MPU columns below DERIVE their number before it is printed, so they
+  // short-circuit the ordinary paths. They must still honour the column's own
+  // numberFormat — otherwise they would be the only amounts on the page not
+  // printing the agreed decimals.
+  const formatAmount = column.numberFormat
+    ? formatWithNumberFormat(column.numberFormat)
+    : formatMoney;
+
   if (column.dataIndex === 'transactionAmount' && column.dataType === 'money') {
-    return { ...column, render: formatTransactionAmount };
+    return {
+      ...column,
+      render: (value) => formatAmount(toTransactionAmountNumber(value)),
+    };
   }
 
   if (column.dataIndex === 'mpuAmount') {
     return {
       ...column,
       render: (value, row) =>
-        formatMoney(hasValue(value) ? value : getMpuAmount(row)),
+        formatAmount(hasValue(value) ? value : getMpuAmount(row)),
     };
   }
 
@@ -376,7 +384,7 @@ const toTableColumn = (
     return {
       ...column,
       render: (value, row) =>
-        formatMoney(hasValue(value) ? value : getAmountDiff(row)),
+        formatAmount(hasValue(value) ? value : getAmountDiff(row)),
     };
   }
 

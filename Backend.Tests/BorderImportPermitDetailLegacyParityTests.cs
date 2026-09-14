@@ -210,8 +210,12 @@ public sealed class BorderImportPermitDetailLegacyParityTests
 
         // rdlc:2705-2864: FORMAT(Price,"N4"), FORMAT(Quantity,"N2"), FORMAT(Amount,"N4"); the
         // model's sLicenceDate / LastDate are .ToString("dd/MM/yyyy").
+        //
+        // Quantity is the one deliberate departure from the rdlc: the customer asked
+        // (2026-09-14) for EVERY column carrying a decimal point to show four places,
+        // across every report, so its N2 became N4 with the rest.
         Assert.Equal("#,##0.0000", ExtractColumnOption(config, "price", "numberFormat"));
-        Assert.Equal("#,##0.00", ExtractColumnOption(config, "quantity", "numberFormat"));
+        Assert.Equal("#,##0.0000", ExtractColumnOption(config, "quantity", "numberFormat"));
         Assert.Equal("#,##0.0000", ExtractColumnOption(config, "amount", "numberFormat"));
         Assert.Equal("DD/MM/YYYY", ExtractColumnOption(config, "licenceDate", "dateFormat"));
         Assert.Equal("DD/MM/YYYY", ExtractColumnOption(config, "lastDate", "dateFormat"));

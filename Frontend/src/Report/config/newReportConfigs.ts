@@ -217,7 +217,8 @@ const summaryColumns = [
 
 // Legacy RDLC voucher tail order: Total Amount, then Payment Type, Voucher No, Voucher Date.
 const paymentColumns = [
-  column('TotalAmount', 'Total Amount', 'number'),
+  // Four decimal places, like every other amount in the system (2026-09-14).
+  { ...column('TotalAmount', 'Total Amount', 'number'), numberFormat: '#,##0.0000' },
   column('PaymentType', 'Payment Type'),
   column('VoucherNo', 'Voucher No'),
   column('VoucherDate', 'Voucher Date', 'date'),

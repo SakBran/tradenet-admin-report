@@ -295,10 +295,14 @@ describe('Border Import Permit report configs', () => {
 
     // rdlc:2705-2864 FORMAT(Price,"N4") / FORMAT(Quantity,"N2") / FORMAT(Amount,"N4"); the
     // model's sLicenceDate / LastDate are .ToString("dd/MM/yyyy").
+    //
+    // Quantity is the one deliberate departure from the rdlc: the customer asked
+    // (2026-09-14) for EVERY column that carries a decimal point to show four places,
+    // across every report, so its N2 became N4 with the rest.
     const column = (dataIndex: string) =>
       cfg.columns.find((candidate) => candidate.dataIndex === dataIndex);
     expect(column('price')).toMatchObject({ dataType: 'money', numberFormat: '#,##0.0000' });
-    expect(column('quantity')).toMatchObject({ dataType: 'money', numberFormat: '#,##0.00' });
+    expect(column('quantity')).toMatchObject({ dataType: 'money', numberFormat: '#,##0.0000' });
     expect(column('amount')).toMatchObject({ dataType: 'money', numberFormat: '#,##0.0000' });
     expect(column('licenceDate')).toMatchObject({ dataType: 'date', dateFormat: 'DD/MM/YYYY' });
     expect(column('lastDate')).toMatchObject({ dataType: 'date', dateFormat: 'DD/MM/YYYY' });

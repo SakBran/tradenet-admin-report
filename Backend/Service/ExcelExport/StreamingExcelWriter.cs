@@ -55,6 +55,8 @@ namespace API.Service.ExcelExport
         private const int StyleNumberPlain = 16;
         private const int StyleTotalMoneyPlain = 17;
         private const int StyleTotalNumberPlain = 18;
+        private const int StyleMoney4Plain = 19;
+        private const int StyleTotalMoney4Plain = 20;
 
         private readonly ZipArchive _archive;
         private readonly string _worksheetBaseName;
@@ -687,6 +689,7 @@ namespace API.Service.ExcelExport
             ExcelCellFormat.DateTimeUs => StyleDateTimeUs,
             ExcelCellFormat.MoneyPlain => StyleMoneyPlain,
             ExcelCellFormat.NumberPlain => StyleNumberPlain,
+            ExcelCellFormat.Money4Plain => StyleMoney4Plain,
             _ => StyleDefault,
         };
 
@@ -697,6 +700,7 @@ namespace API.Service.ExcelExport
             ExcelCellFormat.Integer => StyleTotalInteger,
             ExcelCellFormat.MoneyPlain => StyleTotalMoneyPlain,
             ExcelCellFormat.NumberPlain => StyleTotalNumberPlain,
+            ExcelCellFormat.Money4Plain => StyleTotalMoney4Plain,
             _ => StyleTotalLabel,
         };
 
@@ -933,7 +937,7 @@ namespace API.Service.ExcelExport
         private const string StylesXml =
             "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>" +
             "<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">" +
-            "<numFmts count=\"9\">" +
+            "<numFmts count=\"10\">" +
             "<numFmt numFmtId=\"164\" formatCode=\"dd/mm/yyyy\"/>" +
             "<numFmt numFmtId=\"165\" formatCode=\"#,##0.00\"/>" +
             "<numFmt numFmtId=\"166\" formatCode=\"yyyy-mm-dd hh:mm:ss\"/>" +
@@ -944,6 +948,7 @@ namespace API.Service.ExcelExport
             "<numFmt numFmtId=\"170\" formatCode=\"mm/dd/yyyy hh:mm:ss\"/>" +
             "<numFmt numFmtId=\"171\" formatCode=\"0.00\"/>" +
             "<numFmt numFmtId=\"172\" formatCode=\"0\"/>" +
+            "<numFmt numFmtId=\"173\" formatCode=\"0.0000\"/>" +
             "</numFmts>" +
             "<fonts count=\"3\">" +
             "<font><sz val=\"11\"/><name val=\"Calibri\"/></font>" +
@@ -956,7 +961,7 @@ namespace API.Service.ExcelExport
             "</fills>" +
             "<borders count=\"1\"><border><left/><right/><top/><bottom/><diagonal/></border></borders>" +
             "<cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs>" +
-            "<cellXfs count=\"19\">" +
+            "<cellXfs count=\"21\">" +
             // 0 body
             "<xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/>" +
             // 1 title
@@ -998,6 +1003,10 @@ namespace API.Service.ExcelExport
             "<xf numFmtId=\"171\" fontId=\"2\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\" applyFont=\"1\"/>" +
             // 18 totals whole number, no thousands separators (Payment, bold)
             "<xf numFmtId=\"172\" fontId=\"2\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\" applyFont=\"1\"/>" +
+            // 19 money to 4 decimals, no thousands separators (Payment)
+            "<xf numFmtId=\"173\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\"/>" +
+            // 20 totals money to 4 decimals, no thousands separators (Payment, bold)
+            "<xf numFmtId=\"173\" fontId=\"2\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\" applyFont=\"1\"/>" +
             "</cellXfs>" +
             "</styleSheet>";
     }
