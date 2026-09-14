@@ -168,6 +168,14 @@ import OGARecommendationHistoryReport from './Page/OGARecommendationHistoryRepor
 import EICCCertificateReport from './Page/EICCCertificateReport';
 import EICCLicencePermitReport from './Page/EICCLicencePermitReport';
 import EICCBorderLicencePermitReport from './Page/EICCBorderLicencePermitReport';
+import AdvanceSearchImportLicence from './Page/AdvanceSearchImportLicence';
+import AdvanceSearchExportLicence from './Page/AdvanceSearchExportLicence';
+import AdvanceSearchImportPermit from './Page/AdvanceSearchImportPermit';
+import AdvanceSearchExportPermit from './Page/AdvanceSearchExportPermit';
+import AdvanceSearchBorderImportLicence from './Page/AdvanceSearchBorderImportLicence';
+import AdvanceSearchBorderExportLicence from './Page/AdvanceSearchBorderExportLicence';
+import AdvanceSearchBorderImportPermit from './Page/AdvanceSearchBorderImportPermit';
+import AdvanceSearchBorderExportPermit from './Page/AdvanceSearchBorderExportPermit';
 import ExportsDrive from './Page/ExportsDrive';
 
 export const reportRoutes = [
@@ -348,5 +356,31 @@ export const reportRoutes = [
   {
     path: 'EICCBorderLicencePermitReport',
     element: <EICCBorderLicencePermitReport />,
+  },
+  {
+    path: 'AdvanceSearchImportLicence',
+    element: <AdvanceSearchImportLicence />,
+  },
+  {
+    path: 'AdvanceSearchExportLicence',
+    element: <AdvanceSearchExportLicence />,
+  },
+  { path: 'AdvanceSearchImportPermit', element: <AdvanceSearchImportPermit /> },
+  { path: 'AdvanceSearchExportPermit', element: <AdvanceSearchExportPermit /> },
+  {
+    path: 'AdvanceSearchBorderImportLicence',
+    element: <AdvanceSearchBorderImportLicence />,
+  },
+  {
+    path: 'AdvanceSearchBorderExportLicence',
+    element: <AdvanceSearchBorderExportLicence />,
+  },
+  {
+    path: 'AdvanceSearchBorderImportPermit',
+    element: <AdvanceSearchBorderImportPermit />,
+  },
+  {
+    path: 'AdvanceSearchBorderExportPermit',
+    element: <AdvanceSearchBorderExportPermit />,
   },
 ];
