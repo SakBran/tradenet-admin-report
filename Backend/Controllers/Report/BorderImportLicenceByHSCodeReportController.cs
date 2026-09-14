@@ -16,6 +16,12 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // v2: the summary is no longer split per buyer company -- BorderHSCodeReport.rdlc groups on
+    // (HSCodeId, Currency) only (rdlc:1159-1162), so 2025 goes from 9,213 rows to the old report's
+    // 2,881 (2026 to 14/09: 7,420 -> 2,690), and each Total Value is now the whole HS code's sum
+    // (customer complaint 2026-09-14). The export cache keys on payload + this version; without
+    // the bump a closed-period request keeps serving the company-split workbook.
+    [ExcelFormatVersion(2)]
     public class BorderImportLicenceByHSCodeReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "BorderImportLicenceByHSCodeReport";
@@ -83,15 +89,17 @@ namespace Backend.Controllers.Report
             procedureRequest!.HSCode = procedureRequest.HSCode?.Trim() ?? string.Empty;
 
             // Row order already equals the grid's, so no re-sort here. The grid pages
-            // through sp_HSCodeReport_pagination ("ORDER BY result.HSCode,
-            // result.CompanyName, result.Currency") when no Export Section is chosen, and
-            // through AggregateQuery otherwise -- and AggregateQuery, which is also what
-            // GetAggregateRowsAsync streams, ends with exactly that ORDER BY server-side.
-            // Re-sorting with ReportAggregationService.OrderGroups(...,
-            // ReportAggregateDimension.HSCode, includeSakhan: false) would sort on the same
-            // three keys but with StringComparer.OrdinalIgnoreCase, trading the DB
-            // collation for ordinal semantics -- it could only move Excel rows AWAY from
-            // the grid order.
+            // through sp_HSCodeReport_pagination's Border Import Licence branch ("ORDER BY
+            // result.HSCode,result.Currency,result.HSCodeId" -- BorderHSCodeReport.rdlc's
+            // (HS code, currency) grain, HSCodeId only as the unique page-window tie-break)
+            // when no Import Section is chosen, and through AggregateQuery otherwise -- and
+            // AggregateQuery, which is also what GetAggregateRowsAsync streams, ends with
+            // ORDER BY (HSCode, Currency) server-side: the same key in the same DB
+            // collation. Re-sorting with ReportAggregationService.OrderGroups(...,
+            // ReportAggregateDimension.HSCode, includeSakhan: false) would sort on
+            // (HSCode, CompanyName, Currency) -- CompanyName is always null at this grain --
+            // with StringComparer.OrdinalIgnoreCase, trading the DB collation for ordinal
+            // semantics -- it could only move Excel rows AWAY from the grid order.
             var rows = await sp_HSCodeReport.GetAggregateRowsAsync(_context, procedureRequest);
             sink.Append(rows);
         }
@@ -136,6 +144,12 @@ namespace Backend.Controllers.Report
                 HSCode = request.HSCode ?? string.Empty,
                 ExportImportSectionId = request.ExportImportSectionId,
                 SakhanId = request.SakhanId,
+                // The HS Code detail drill (BorderImportLicenceHSCodeDetailReport) posts
+                // GroupBy='Company' to get HSCodeDetailReport.rdlc's (HS code, company) rows --
+                // what the old screen's BorderHSCodeDetailReport action (ReportsController.cs:10526 on origin/master)
+                // rendered. The summary posts nothing and keeps BorderHSCodeReport.rdlc's
+                // (HS code, currency) grain.
+                GroupByCompany = string.Equals(request.GroupBy, "Company", StringComparison.OrdinalIgnoreCase),
             };
 
             return true;
@@ -151,6 +165,12 @@ namespace Backend.Controllers.Report
         public string HSCode { get; set; } = string.Empty;
         public int ExportImportSectionId { get; set; }
         public int SakhanId { get; set; }
+
+        /// <summary>
+        /// 'Company' from the HS Code detail drill; empty from the summary. A string, not a bool,
+        /// because the page posts derived filter values as strings.
+        /// </summary>
+        public string GroupBy { get; set; } = string.Empty;
     }
 }
 

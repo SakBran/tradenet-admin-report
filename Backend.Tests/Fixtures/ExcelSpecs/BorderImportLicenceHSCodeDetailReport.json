@@ -5,10 +5,10 @@
   "title": "HS Code Detail Report",
   "fileName": "BorderImportLicenceHSCodeDetailReport.xlsx",
   "headerLines": [
-    "List of Border Import Licence By HS Code From (01/02/2026) To (28/02/2026)"
+    "List of Border Import Licences By HS Code From (01/02/2026) To (28/02/2026)"
   ],
   "showRowNumber": true,
-  "rowNumberTitle": "No",
+  "rowNumberTitle": "Sr.No.",
   "columns": [
     {
       "key": "hsCode",

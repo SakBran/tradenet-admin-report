@@ -3982,15 +3982,27 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       },
     ],
   },
+  // One row per (HS code, currency) -- BorderHSCodeReport.rdlc's row group (rdlc:1160-1161).
+  // The backend used to add the buyer company to that key, which printed one invisible row per
+  // buyer with a partial Total Value (9213 rows against the old report's 2881 for 2025; one
+  // HS code in THB split into 95 rows); see sp_HSCodeReport_pagination.sql's Border Import
+  // Licence branch.
   BorderImportLicenceByHSCodeReport: {
     controllerName: 'BorderImportLicenceByHSCodeReport',
-    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Licence By HS Code', true),
+    // Legacy header verbatim, plural "Licences" (ReportsController.cs:12432 on origin/master).
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Licences By HS Code', true),
     title: 'Border Import Licence By HS Code Report',
     apiRoute: 'BorderImportLicenceByHSCodeReport',
     excelRoute: 'BorderImportLicenceByHSCodeReport/Excel',
     excelFileName: 'BorderImportLicenceByHSCodeReport.xlsx',
     initialSortColumn: 'SakhanId',
+    // Legacy RDLC printed every row on one scrolling page; these summaries are a
+    // handful of (HS code, currency) rows, so a 10-row page looked like missing data
+    // next to the old report.
+    defaultPageSize: 1000,
     showRowNumber: true,
+    // BorderHSCodeReport.rdlc:177 prints "Sr.No.".
+    rowNumberTitle: 'Sr.No.',
     filters: [
       {
         name: 'dateRange',
@@ -4041,9 +4053,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'hsCode',
         title: 'HS Code',
         drilldown: {
+          // The old screen's HS Code cell opens Reports/BorderHSCodeDetailReport in a new tab
+          // (BorderHSCodeReport.rdlc:581 window.open(...,'_blank'); ReportsController.cs:12430
+          // on origin/master) -- HSCodeDetailReport.rdlc's (HS code, company) list, not the
+          // Border Import Licence Detail report.
           targetReportKey: 'BorderImportLicenceHSCodeDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'ExportImportSectionId', 'FilterType', 'SakhanId'],
           rowParams: { hsCode: 'hsCode' },
+          openInNewTab: true,
         },
       },
       {
@@ -4055,11 +4072,16 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'NoOfLicences',
         dataIndex: 'noOfLicences',
         title: 'No of Licences',
+        dataType: 'number',
       },
       {
         key: 'TotalValue',
         dataIndex: 'totalValue',
         title: 'Total Value',
+        // 'money' + '#,##0.0000' is the Money4 cell format in the .xlsx and the grid's N4
+        // render, matching old BorderHSCodeReport.rdlc:713
+        // =FORMAT(Sum(Fields!Amount.Value),"N4").
+        dataType: 'money',
         numberFormat: '#,##0.0000',
       },
       {
@@ -4076,13 +4098,19 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     // visible rendered a second row with the summary's own key and link.
     hideInMenu: true,
     controllerName: 'BorderImportLicenceByHSCodeReport',
-    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Licence By HS Code', true),
+    // Old BorderHSCodeDetailReport header is "List of " + FormType + "s By HS Code From (..) To
+    // (..)" (ReportsController.cs:10589 on origin/master), i.e. plural "Licences".
+    reportSubtitle: importLicenceRangeSubtitle('List of Border Import Licences By HS Code', true),
     title: 'HS Code Detail Report',
     apiRoute: 'BorderImportLicenceByHSCodeReport',
     excelRoute: 'BorderImportLicenceByHSCodeReport/Excel',
     excelFileName: 'BorderImportLicenceHSCodeDetailReport.xlsx',
     initialSortColumn: 'hsCode',
+    // Legacy RDLC printed every row on one scrolling page.
+    defaultPageSize: 1000,
     showRowNumber: true,
+    // HSCodeDetailReport.rdlc:445 prints "Sr.No.".
+    rowNumberTitle: 'Sr.No.',
     filters: [
       importLicenceDateRangeFilter,
       importLicenceFormTypeFilter,
@@ -4093,6 +4121,18 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       importLicenceFilterTypeFilter,
       importLicenceHSCodeFilter,
       borderImportLicenceSakhanFilter,
+      // This drill shares BorderImportLicenceByHSCodeReport's controller. The old
+      // HSCodeDetailReport.rdlc groups on (HS code, company) (rdlc:1263-1264) while the
+      // summary's BorderHSCodeReport.rdlc groups on (HS code, currency) (rdlc:1160-1161), and
+      // the two arrive at the backend as the same parameters -- so the drill has to say which
+      // shape it wants. Never rendered; always posted (see getDerivedFilterValues in
+      // reportPresentation.ts).
+      {
+        name: 'GroupBy',
+        label: 'Group By',
+        type: 'text',
+        constantValue: 'Company',
+      },
     ],
     columns: hsCodeDetailColumns,
   },

@@ -317,11 +317,12 @@ Extra in new (0): _None_
 ### BorderImportLicenceByHSCodeReport
 
 Title: Border Import Licence By HS Code Report
-Old source: `BorderHSCodeReport.rdlc`, `HSCodeDetailReport.rdlc`
-Old columns (7): `Sr.No.`, `HS Code`, `Description`, `No of Licences`, `Total Value`, `Currency`, `Company Name`
-New columns (7): `No`, `HS Code`, `Description`, `No of Licences`, `Total Value`, `Currency`, `Company Name`
+Old source: `BorderHSCodeReport.rdlc` (summary; the `Company Name` column belongs to the `HSCodeDetailReport.rdlc` drill, `BorderImportLicenceHSCodeDetailReport`)
+Old columns (6): `Sr.No.`, `HS Code`, `Description`, `No of Licences`, `Total Value`, `Currency`
+New columns (6): `Sr.No.`, `HS Code`, `Description`, `No of Licences`, `Total Value`, `Currency`
 Need in new (0): _None_
 Extra in new (0): _None_
+Grain: one row per (HS code, currency) since 2026-09-14 (`BorderHSCodeReport.rdlc:1160-1161`); see `docs/BorderImportLicenceByHSCodeComplaints_2026-09-14.md`.
 
 ### BorderImportLicenceByMethodReport
 
@@ -1325,7 +1326,7 @@ The following current-config differences were verified directly against the old 
 
 | Report | Verified current difference |
 |---|---|
-| Border Import Licence By HS Code | Old `Company Name` column is intentionally removed by newer customer feedback. |
+| Border Import Licence By HS Code | The summary RDLC (`BorderHSCodeReport.rdlc`) never had a `Company Name` column — it belongs to the `HSCodeDetailReport.rdlc` drill, which the new `BorderImportLicenceHSCodeDetailReport` renders. Since 2026-09-14 the summary also groups on (HS code, currency) like the RDLC, not per buyer. |
 | Border Import Licence New Report | Missing old readonly Company Name filter; new has an Auto filter not present in old admin. |
 | Border Export Permit Actual Amendment | Missing old readonly Company Name filter; `HS Code` header differs from old `HSCode`. |
 | Border Export Permit Amendment | Missing old readonly Company Name filter and old HSCode column. |

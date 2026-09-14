@@ -98,7 +98,8 @@ Owner decisions (2026-09-08): **HS-code-string order**, keeping the paged proced
 `LegacyOrder` LINQ path (the legacy `ORDER BY HSCode.Id` sequence would abandon SQL paging, and
 within one HS code the old order is genuinely nondeterministic — the legacy proc has no ORDER BY
 there); and **only these two reports** — Import Licence, Export Permit and Border Import Licence By
-HS Code still carry the identical defect and are left for a later round.
+HS Code still carried the identical defect and were left for a later round (Border Import
+Licence: fixed 2026-09-14, `docs/BorderImportLicenceByHSCodeComplaints_2026-09-14.md`).
 
 ### Application
 
@@ -173,6 +174,8 @@ as the RDLC did.
   `(HSCode, Currency)` with no `HSCodeId` tiebreaker — `ReportAggregateResult` has no such field to
   order by after projection. Same theoretical page-window ambiguity as above, but only where two
   `HSCode` rows share a code string, and it predates this change on six other reports.
-- Import Licence, Export Permit and Border Import Licence By HS Code still group by company
+- Import Licence and Export Permit By HS Code still group by company
   (`sp_HSCodeReport_pagination.sql` and `GroupsByCompany`). Same one-line change per branch plus a
-  `GroupBy='Company'` pin on each drill config.
+  `GroupBy='Company'` pin on each drill config. (Border Import Licence was fixed the same way on
+  2026-09-14 — `docs/BorderImportLicenceByHSCodeComplaints_2026-09-14.md`, release folder
+  `StoredProcedureMigrations/Deployments/2026-09-14_BorderImportLicenceByHSCodeParity/`.)
