@@ -1,3 +1,76 @@
+/* =====================================================================================
+   Border Import Licence By HS Code parity deployment - 2026-09-14
+   Run this ONE file to apply the procedure, or run 01_sp_HSCodeReport_pagination.sql
+   directly. Either way: PROCEDURE FIRST, APPLICATION SECOND.
+
+   Target database: TradeNetDB  (NOT ReportTemplateDB - that one only holds the Excel
+   export job queue; deploying report procedures into it is a known trap.)
+
+   What changes - ONE @FormType branch of sp_HSCodeReport_pagination, nothing else:
+
+     'Border Import Licence'  (3 sub-branches: @HSCode='' / @FilterType='Start' / End.
+                               This FormType has no @IncludeTotalCount=0 fast page; every
+                               sub-branch returns COUNT(*) OVER() TotalCount.)
+
+   1. It now GROUPs BY (HSCodeId, HSCode, HSDescription, Currency) instead of additionally
+      on the buyer company. BorderHSCodeReport.rdlc's only row group is
+      =Fields!HSCodeId.Value + =Fields!Currency.Value (rdlc:1159-1162) and the grid renders
+      no company column (Sr.No. | HS Code | Description | No of Licences | Total Value |
+      Currency), so the extra key silently split one HS code into one row per buyer, each
+      carrying only that buyer's slice of Total Value. Customer complaint 2026-09-14: "one
+      HS code in USD applied 3 times shows 3 rows - the old report shows one row with the
+      values summed". Measured on the live PROD API (FilterType Start, HSCode '', Sakhan 0,
+      Section 0), paging the whole result and collapsing on distinct (HS code, currency):
+
+                                              old report   before    after
+        2025-01-01 .. 2025-12-31 23:59:59         2,881     9,213    2,881
+        2026-01-01 .. 2026-09-14 23:59:59         2,690     7,420    2,690
+
+      "Total No of License" (12,435 / 6,496) already matched and is unaffected: it is a
+      separate whole-set COUNT(DISTINCT LicenceNo) computed in C#, the RDLC footer's
+      =CountDistinct(Fields!LicenceNo.Value). The sum of Total Value over the whole 2025
+      result (14,032,670,046.0979) is unchanged as well - rows merge, money does not move.
+
+   2. ORDER BY is now (HSCode, Currency, HSCodeId) - a UNIQUE key. It used to be
+      (HSCode, CompanyName, Currency) over a group key that also contained
+      CompanyRegistrationNo and HSDescription, so tied rows were ordered arbitrarily and
+      OFFSET/FETCH could return one row on two pages and another on none.
+
+   The outer SELECT keeps its 8-column shape - CompanyRegistrationNo / CompanyName become
+   CAST(NULL AS nvarchar(200)) / CAST(NULL AS nvarchar(500)) placeholders - so the caller's
+   DTO (sp_HSCodeAggregateReportResult) is unchanged. Same shape the 'Import Permit',
+   'Export Licence' and 'Border Export Licence' branches already use.
+
+   The other seven @FormType branches are UNCHANGED. Import Licence and Export Permit By
+   HS Code still carry the company in their key - the last two families with the defect.
+
+   The HS Code DETAIL drill (BorderImportLicenceHSCodeDetailReport) does NOT use this
+   procedure: it posts GroupBy='Company' and runs the LINQ twin
+   (sp_HSCodeReport.AggregateQuery), which keys on (HSCodeId, HSCode, CompanyRegistrationNo)
+   - HSCodeDetailReport.rdlc:1262-1265.
+
+   ⚠ Do NOT re-run the sp_HSCodeReport_pagination copies under
+   Deployments/Done For Fix/2026-09-05_ImportPermitParityRound1/,
+   .../2026-09-05_BorderImportPermitComplaints/ or
+   .../2026-09-08_ExportLicenceByHSCodeParity/. Those are frozen snapshots of what was
+   deployed on those dates and would revert this change.
+
+   Generated from the repository files of the same name; see README.md in this folder.
+   ===================================================================================== */
+
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+USE [TradeNetDB];
+GO
+
+-- ============================================================================
+-- sp_HSCodeReport_pagination   (file 01_sp_HSCodeReport_pagination.sql)
+-- ============================================================================
+PRINT N'Applying sp_HSCodeReport_pagination ...';
+GO
+
 CREATE OR ALTER PROCEDURE [dbo].[sp_HSCodeReport_pagination]
 	@FromDate datetime,
 	@ToDate datetime,
@@ -892,3 +965,8 @@ END
 GO
 
 
+
+GO
+
+PRINT N'sp_HSCodeReport_pagination applied. Now run VerifyDeployment.sql before deploying the application.';
+GO

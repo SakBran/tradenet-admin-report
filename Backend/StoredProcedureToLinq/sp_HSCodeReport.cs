@@ -483,12 +483,17 @@ public static partial class sp_HSCodeReport
     /// adds the company (rdlc:1263-1264). Keeping the company in the key splits one HS code into
     /// one invisible row per buyer, each with a partial Total Value: that is what made Export
     /// Licence By HS Code print 1058 rows against the old report's 304, and Border Export Licence
-    /// 76 against 33 (customer complaint 2026-09-08, window 31/08-01/09/2026). A report whose HS
-    /// Code DETAIL drill shares this controller asks for the company shape explicitly via
-    /// <see cref="sp_HSCodeReportRequest.GroupByCompany"/> (the config posts GroupBy='Company'),
-    /// so the summary never has to inherit it. The remaining form types still need it here:
-    /// their *HSCodeDetailReport configs render Company Name off this same query without
-    /// asking, and changing them is a separate parity round.
+    /// 76 against 33 (customer complaint 2026-09-08, window 31/08-01/09/2026), and what made
+    /// Border Import Licence By HS Code print 9,213 rows for 2025 on PROD against the old report's
+    /// 2,881 -- 2026 to 14/09: 7,420 against 2,690 -- (customer complaint 2026-09-14: one HS code
+    /// applied three times in USD showed three rows where the old report summed them into one;
+    /// BorderHSCodeReport.rdlc:1159-1162). A report whose HS Code DETAIL drill shares this
+    /// controller asks for the company shape explicitly via
+    /// <see cref="sp_HSCodeReportRequest.GroupByCompany"/> (the config posts GroupBy='Company' --
+    /// BorderImportLicenceHSCodeDetailReport does), so the summary never has to inherit it. Two
+    /// form types still need it here by default, Import Licence and Export Permit: their
+    /// *HSCodeDetailReport configs render Company Name off this same query without asking, and
+    /// changing them is a separate parity round.
     /// Keep this in step with sp_HSCodeReport_pagination.sql's GROUP BY per branch, or the grid
     /// (procedure) and the .xlsx (this query) disagree.
     /// </summary>
@@ -499,7 +504,7 @@ public static partial class sp_HSCodeReport
             return true;
         }
 
-        if (request.FormType is "Import Permit" or "Export Licence" or "Border Export Licence")
+        if (request.FormType is "Import Permit" or "Export Licence" or "Border Export Licence" or "Border Import Licence")
         {
             return false;
         }

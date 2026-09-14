@@ -302,11 +302,104 @@ describe('Border Import Licence report configs', () => {
     expect(cfg.filters.find((filter) => filter.name === 'SakhanId')?.lookupName).toBe(
       'sakhans'
     );
+    // The old HS Code cell opens Reports/BorderHSCodeDetailReport in a new window
+    // (BorderHSCodeReport.rdlc:581 window.open(...,'_blank'); ReportsController.cs:12430 on
+    // origin/master) -- the (HS code, company) list, not the Border Import Licence Detail report.
     expect(cfg.columns.find((column) => column.key === 'hsCode')?.drilldown).toEqual({
       targetReportKey: 'BorderImportLicenceHSCodeDetailReport',
       carryFilters: ['FromDate', 'ToDate', 'ExportImportSectionId', 'FilterType', 'SakhanId'],
       rowParams: { hsCode: 'hsCode' },
+      openInNewTab: true,
     });
+  });
+
+  it('By HS Code prints the old rdlc shape, one row per (HS code, currency)', () => {
+    // Complaint 2026-09-14: one HS code applied for 3 times in USD printed 3 rows, the old
+    // report one row with the values summed. BorderHSCodeReport.rdlc has no company column
+    // (rdlc:232-452) and groups on HSCodeId + Currency only (rdlc:1160-1161); the backend had
+    // added the buyer company to that key (9213 rows against the old report's 2881 for 2025).
+    const cfg = reportConfigs.BorderImportLicenceByHSCodeReport;
+
+    // BorderHSCodeReport.rdlc:232/287/342/397/452.
+    expect(cfg.columns.map((column) => column.title)).toEqual([
+      'HS Code',
+      'Description',
+      'No of Licences',
+      'Total Value',
+      'Currency',
+    ]);
+    // BorderHSCodeReport.rdlc:177 prints "Sr.No.", :713 prints Total Value as FORMAT(...,"N4").
+    expect(cfg.rowNumberTitle).toBe('Sr.No.');
+    expect(cfg.columns.find((column) => column.key === 'TotalValue')).toMatchObject({
+      dataType: 'money',
+      numberFormat: '#,##0.0000',
+    });
+    expect(cfg.columns.find((column) => column.key === 'NoOfLicences')?.dataType).toBe(
+      'number'
+    );
+    // The RDLC scrolled every row on one page.
+    expect(cfg.defaultPageSize).toBe(1000);
+    // Legacy header verbatim, plural "Licences" (ReportsController.cs:12432 on origin/master).
+    expect(
+      cfg.reportSubtitle?.({ FromDate: '2025-01-01', ToDate: '2025-12-31' })
+    ).toBe('List of Border Import Licences By HS Code From (01/01/2025) To (31/12/2025)');
+
+    // The old form offers Start / End only, Start first, no All option.
+    const filterType = cfg.filters.find((filter) => filter.name === 'FilterType');
+    expect(filterType?.defaultValue).toBe('Start');
+    expect(filterType?.options).toEqual([
+      { label: 'Start', value: 'Start' },
+      { label: 'End', value: 'End' },
+    ]);
+  });
+
+  it('HS Code detail drill pins the company grouping its controller cannot infer', () => {
+    const detail = reportConfigs.BorderImportLicenceHSCodeDetailReport;
+
+    // Same endpoint as the summary, so it must stay out of the menu (createReportItem keys
+    // the menu off controllerName).
+    expect(detail.hideInMenu).toBe(true);
+    expect(detail.controllerName).toBe('BorderImportLicenceByHSCodeReport');
+    expect(detail.filters.map((filter) => filter.name)).toEqual([
+      'dateRange',
+      'FormType',
+      'ExportImportSectionId',
+      'FilterType',
+      'hsCode',
+      'SakhanId',
+      'GroupBy',
+    ]);
+    // HSCodeDetailReport.rdlc groups on (HS code, company) (rdlc:1263-1264); the summary's
+    // BorderHSCodeReport.rdlc on (HS code, currency), and both post the same parameters.
+    expect(detail.filters.find((filter) => filter.name === 'GroupBy')?.constantValue).toBe(
+      'Company'
+    );
+    expect(
+      reportConfigs.BorderImportLicenceByHSCodeReport.filters.some(
+        (filter) => filter.name === 'GroupBy'
+      )
+    ).toBe(false);
+    expect(
+      detail.filters.find((filter) => filter.name === 'ExportImportSectionId')?.lookupName
+    ).toBe('borderImportLicenceSections');
+    expect(detail.filters.find((filter) => filter.name === 'SakhanId')?.lookupName).toBe(
+      'sakhans'
+    );
+    // HSCodeDetailReport.rdlc:500/555/610/665 -- Company Name, and no Currency / Total Value.
+    expect(detail.columns.map((column) => column.title)).toEqual([
+      'HS Code',
+      'Description',
+      'Company Name',
+      'No of Licences',
+    ]);
+    // HSCodeDetailReport.rdlc:445 prints "Sr.No."; the RDLC scrolled every row on one page.
+    expect(detail.rowNumberTitle).toBe('Sr.No.');
+    expect(detail.defaultPageSize).toBe(1000);
+    // Old BorderHSCodeDetailReport header: "List of " + FormType + "s By HS Code From (..) To
+    // (..)" (ReportsController.cs:10589 on origin/master).
+    expect(
+      detail.reportSubtitle?.({ FromDate: '2025-01-01', ToDate: '2025-12-31' })
+    ).toBe('List of Border Import Licences By HS Code From (01/01/2025) To (31/12/2025)');
   });
 
   it('summary reports link to Border Import Licence detail like Import Licence references', () => {
