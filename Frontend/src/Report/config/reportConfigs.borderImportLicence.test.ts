@@ -403,6 +403,10 @@ describe('Border Import Licence report configs', () => {
   });
 
   it('summary reports link to Border Import Licence detail like Import Licence references', () => {
+    // All four drills open a NEW TAB: every old By-X rdlc wraps the cell in
+    // window.open(..., '_blank') -- BorderImportLicence{ByCompany,BySection,ByMethod,
+    // BySellerCountry}Report.rdlc on origin/master. Only By Section carried the flag until
+    // the 2026-09-17 complaint ("link တွေကို click လိုက်ရင် new tab နဲ့သွားပေးပါရန်").
     expect(
       reportConfigs.BorderImportLicenceBySectionReport.columns.find(
         (column) => column.key === 'Section'
@@ -434,6 +438,7 @@ describe('Border Import Licence report configs', () => {
         'ExportImportSectionId',
       ],
       rowParams: { ExportImportMethodId: 'methodId', Currency: 'currency' },
+      openInNewTab: true,
     });
 
     expect(
@@ -451,6 +456,7 @@ describe('Border Import Licence report configs', () => {
         'ExportImportMethodId',
       ],
       rowParams: { SellerCountryId: 'countryId', Currency: 'currency' },
+      openInNewTab: true,
     });
 
     expect(
@@ -468,6 +474,7 @@ describe('Border Import Licence report configs', () => {
         'ExportImportMethodId',
       ],
       rowParams: { CompanyRegistrationNo: 'companyRegistrationNo', Currency: 'currency' },
+      openInNewTab: true,
     });
   });
 });

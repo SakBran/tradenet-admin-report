@@ -4360,6 +4360,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
             'ExportImportSectionId',
           ],
           rowParams: { ExportImportMethodId: 'methodId', Currency: 'currency' },
+          openInNewTab: true,
         },
       },
       {
@@ -4452,6 +4453,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
             'ExportImportMethodId',
           ],
           rowParams: { SellerCountryId: 'countryId', Currency: 'currency' },
+          openInNewTab: true,
         },
       },
       {
@@ -4582,6 +4584,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
             'ExportImportMethodId',
           ],
           rowParams: { CompanyRegistrationNo: 'companyRegistrationNo', Currency: 'currency' },
+          openInNewTab: true,
         },
       },
       {
@@ -9948,9 +9951,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'methodName',
         title: 'Method',
         drilldown: {
-          targetReportKey: 'ImportLicenceDetailByLicenceReport',
+          targetReportKey: 'ImportLicenceDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId'],
-          rowParams: { ExportImportMethodId: 'methodId', Currency: 'currency' },
+          rowParams: { ExportImportMethodId: 'methodId' },
+          openInNewTab: true,
         },
       },
       {
@@ -9990,9 +9994,9 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'sectionName',
         title: 'Section',
         drilldown: {
-          targetReportKey: 'ImportLicenceDetailByLicenceReport',
+          targetReportKey: 'ImportLicenceDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportMethodId'],
-          rowParams: { ExportImportSectionId: 'sectionId', Currency: 'currency' },
+          rowParams: { ExportImportSectionId: 'sectionId' },
           openInNewTab: true,
         },
       },
@@ -10033,9 +10037,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'country',
         title: 'Country',
         drilldown: {
-          targetReportKey: 'ImportLicenceDetailByLicenceReport',
+          targetReportKey: 'ImportLicenceDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId', 'ExportImportMethodId'],
-          rowParams: { SellerCountryId: 'countryId', Currency: 'currency' },
+          rowParams: { SellerCountryId: 'countryId' },
+          openInNewTab: true,
         },
       },
       {
@@ -10153,9 +10158,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'companyName',
         title: 'Company Name',
         drilldown: {
-          targetReportKey: 'ImportLicenceDetailByLicenceReport',
+          targetReportKey: 'ImportLicenceDetailReport',
           carryFilters: ['FromDate', 'ToDate', 'PaThaKaTypeId', 'ExportImportSectionId', 'ExportImportMethodId'],
-          rowParams: { CompanyRegistrationNo: 'companyRegistrationNo', Currency: 'currency' },
+          rowParams: { CompanyRegistrationNo: 'companyRegistrationNo' },
+          openInNewTab: true,
         },
       },
       {
@@ -10239,14 +10245,23 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     filters: [],
     columns: [],
   },
-  // Licence-level drill target (one row per licence + currency) reached from the
-  // By Section / Method / Seller Country / Company summaries. Its record count
-  // equals the "No of Licences" of the clicked cell (the per-item Detail report
-  // fans out per HS line, so its count never matched).
+  // Licence-level view (one row per licence + currency). NO LONGER A DRILL TARGET.
+  //
+  // It was introduced so a drill's record count would equal the "No of Licences" of the
+  // clicked cell, but that was never how Tradenet 2.0 behaved: all four By-X summaries
+  // opened the per-item ImportLicenceDetailReport, which fans out per HS line
+  // (ImportLicenceByCompanyReport.rdlc:592 -> ReportsController.cs:5915 on origin/master,
+  // and :5101 / :5207 / :5806 for Section / Method / Seller Country). Customers read the
+  // 9 columns here as "columns are missing", so the four summaries were re-pointed back at
+  // ImportLicenceDetailReport and its 26 legacy columns.
+  //
+  // Retained, hidden and reachable by route only: its controller, proc and Excel spec
+  // fixture are still wired, and deleting it would churn reportRoutes.tsx and the
+  // Backend.Tests ExcelSpecs fixtures for no user-visible gain.
   ImportLicenceDetailByLicenceReport: {
-    // Drill target only (see the note above): the sitemap has one "Import Licence Detail
-    // Report", the per-item ImportLicenceDetailReport. Two identically titled menu rows is
-    // what the customer reported.
+    // Kept out of the sidebar: the sitemap has one "Import Licence Detail Report", the
+    // per-item ImportLicenceDetailReport. Two identically titled menu rows is what a
+    // customer reported before.
     hideInMenu: true,
     controllerName: 'ImportLicenceDetailByLicenceReport',
     title: 'Import Licence Detail Report',
