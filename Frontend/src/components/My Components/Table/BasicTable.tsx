@@ -16,6 +16,7 @@ import NameConvert from '../../../services/NameConvert';
 import { AnyObject } from '../../../types/AnyObject';
 import { PaginationType } from '../../../types/PaginationType';
 import { ReportColumnDrilldown } from '../../../Report/config/reportTypes';
+import { formatNumberWithFormat } from '../../../Report/numberFormat';
 import { FileExcelOutlined } from '@ant-design/icons';
 
 export type SortOrder = 'asc' | 'desc';
@@ -562,14 +563,10 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   ) => {
     // An explicit RDLC number format wins, so the footer total prints with the
     // same decimals — and the same grouping — as the column it sits under.
-    // '#,##0.00' groups; '0.00' (the Payment reports) prints plain digits.
+    // '#,##0.00' groups; '0.00' (the Payment reports) prints plain digits;
+    // '0.####' prints as stored. Read by the same helper the cells use.
     if (numberFormat) {
-      const decimals = numberFormat.split('.')[1]?.length ?? 0;
-      return Number(value).toLocaleString('en-US', {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals,
-        useGrouping: numberFormat.includes(','),
-      });
+      return formatNumberWithFormat(Number(value), numberFormat);
     }
 
     if (dataType === 'money') {

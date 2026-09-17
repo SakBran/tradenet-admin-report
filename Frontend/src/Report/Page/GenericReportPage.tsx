@@ -23,6 +23,7 @@ import {
 } from '../../components/My Components/Table/BasicTable';
 import { AnyObject } from '../../types/AnyObject';
 import { PaginationType } from '../../types/PaginationType';
+import { formatNumberWithFormat } from '../numberFormat';
 import {
   ReportColumnConfig,
   ReportColumnDrilldown,
@@ -153,23 +154,11 @@ const formatMoney = (value: unknown) => {
 
 /**
  * Legacy RDLC `FORMAT(..., "Nx")` rendering for a numeric cell, driven by the
- * column's `numberFormat`: the fixed decimal count the format string carries
- * ('#,##0.0000' -> 4, '#,##0' -> 0). Keeps the grid and the Excel sheet — which
- * gets the same `numberFormat` via the presentation spec — printing the identical
- * string.
+ * column's `numberFormat`. Keeps the grid and the Excel sheet — which gets the
+ * same `numberFormat` via the presentation spec — printing the identical string.
+ * The format string is read by `formatNumberWithFormat`, shared with the Total
+ * footer in `BasicTable`.
  */
-const decimalsInNumberFormat = (numberFormat: string) =>
-  numberFormat.split('.')[1]?.length ?? 0;
-
-/**
- * Thousands separators come from the format string itself, exactly as they do in
- * Excel: '#,##0.00' groups, '0.00' does not. Every legacy RDLC format carries the
- * comma, so this is a no-op for them; the Payment reports ask for plain digits
- * (the accounting department re-keys the figures elsewhere).
- */
-const groupsInNumberFormat = (numberFormat: string) =>
-  numberFormat.includes(',');
-
 const formatWithNumberFormat =
   (numberFormat: string) =>
   (value: unknown): string => {
@@ -182,12 +171,7 @@ const formatWithNumberFormat =
       return value?.toString() ?? 'N/A';
     }
 
-    const decimals = decimalsInNumberFormat(numberFormat);
-    return parsed.toLocaleString('en-US', {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-      useGrouping: groupsInNumberFormat(numberFormat),
-    });
+    return formatNumberWithFormat(parsed, numberFormat);
   };
 
 const toTransactionAmountNumber = (value: unknown) => {

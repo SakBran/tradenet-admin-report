@@ -30,6 +30,11 @@ namespace API.Service.ExcelExport
         private const string MoneyPlainFormat = "0.00";
         private const string NumberPlainFormat = "0";
         private const string Money4PlainFormat = "0.0000";
+
+        // 2026-09-17, ငွေစာရင်း: no padding at all. '#' is Excel's optional digit, so
+        // 3000 prints "3000" and 3000.5 prints "3000.5" — what the old Tradenet 2.0
+        // screens showed. The four-# cap keeps SQL float noise off the sheet.
+        private const string MoneyAsStoredFormat = "0.####";
         private const string DateUsFormat = "MM/DD/YYYY";
         private const string DateTimeUsFormat = "MM/DD/YYYY HH:mm:ss";
 
@@ -314,13 +319,7 @@ namespace API.Service.ExcelExport
             // no decimals); the matching cell style keeps the sheet printing the same string.
             // '0.00' / '0' carry no comma, so neither does the sheet (the Payment reports).
             "number" => NumericFormatFor(spec.NumberFormat) ?? ExcelCellFormat.Number,
-            "money" => string.Equals(spec.NumberFormat, Money4Format, StringComparison.Ordinal)
-                ? ExcelCellFormat.Money4
-                : string.Equals(spec.NumberFormat, MoneyPlainFormat, StringComparison.Ordinal)
-                    ? ExcelCellFormat.MoneyPlain
-                    : string.Equals(spec.NumberFormat, Money4PlainFormat, StringComparison.Ordinal)
-                        ? ExcelCellFormat.Money4Plain
-                        : ExcelCellFormat.Money,
+            "money" => NumericFormatFor(spec.NumberFormat) ?? ExcelCellFormat.Money,
             // dateFormat mirrors the grid's dayjs pattern: only the US order is mapped,
             // anything else falls back to the default rendering.
             "date" => string.Equals(spec.DateFormat, DateUsFormat, StringComparison.Ordinal)
@@ -341,6 +340,7 @@ namespace API.Service.ExcelExport
         {
             Money4Format => ExcelCellFormat.Money4,
             Money4PlainFormat => ExcelCellFormat.Money4Plain,
+            MoneyAsStoredFormat => ExcelCellFormat.MoneyAsStored,
             MoneyPlainFormat => ExcelCellFormat.MoneyPlain,
             IntegerFormat => ExcelCellFormat.Integer,
             NumberPlainFormat => ExcelCellFormat.NumberPlain,
@@ -361,6 +361,7 @@ namespace API.Service.ExcelExport
             ExcelCellFormat.Money4 => 16,
             ExcelCellFormat.MoneyPlain => 16,
             ExcelCellFormat.Money4Plain => 18,
+            ExcelCellFormat.MoneyAsStored => 16,
             ExcelCellFormat.Number => 12,
             ExcelCellFormat.Integer => 12,
             ExcelCellFormat.NumberPlain => 12,
@@ -380,6 +381,7 @@ namespace API.Service.ExcelExport
                 case ExcelCellFormat.Money4:
                 case ExcelCellFormat.MoneyPlain:
                 case ExcelCellFormat.Money4Plain:
+                case ExcelCellFormat.MoneyAsStored:
                     if (!HasValue(raw))
                     {
                         return null;

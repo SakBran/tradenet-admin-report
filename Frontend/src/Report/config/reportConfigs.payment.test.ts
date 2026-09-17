@@ -53,8 +53,10 @@ describe('Payment report configs', () => {
 
         // The money columns, plus the 'number' columns that hold an amount.
         // A plain identifier (ChequeNoReport's Cheque Id) keeps no format.
+        // '0.####' prints the value as stored — the department asked for no
+        // padding at all on 2026-09-17 — and carries no comma, as ever.
         if (column.dataType === 'money' || column.dataIndex === 'amount') {
-          expect(column.numberFormat, `${key}.${column.key}`).toBe('0.0000');
+          expect(column.numberFormat, `${key}.${column.key}`).toBe('0.####');
           expect(column.numberFormat).not.toContain(',');
         }
       }

@@ -33,7 +33,7 @@
       "dataIndex": "amount",
       "title": "Amount",
       "dataType": "number",
-      "numberFormat": "0.0000"
+      "numberFormat": "0.####"
     }
   ]
 }

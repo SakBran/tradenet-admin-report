@@ -188,9 +188,31 @@ public static class sp_MPUReport_V3
             new SqlParameter("@PaymentType", request.PaymentType ?? string.Empty),
         };
 
+        // The footer has to sum exactly the rows the grid shows, so this mirrors
+        // sp_MPUReport_V3_pagination.sql step for step -- including the rule that neither
+        // sequence may be numbered over the report's own filtered rows. See that file for
+        // why (2026-09-17 ငွေစာရင်း voucher complaint).
         const string sql = @"
+DROP TABLE IF EXISTS #idsTotals;
+DROP TABLE IF EXISTS #mpuAllTotals;
 DROP TABLE IF EXISTS #mpuTotals;
 DROP TABLE IF EXISTS #accTotals;
+
+SELECT DISTINCT m.TransactionId
+INTO #idsTotals
+FROM dbo.MPUPaymentTransaction m
+WHERE m.TransactionDateTime >= @FromDate
+    AND m.TransactionDateTime <= @ToDate
+    AND m.ResponseCode = '00'
+    AND m.FormType IS NOT NULL
+    AND m.FormType LIKE (CASE WHEN @FormType = '' THEN m.FormType + '%' ELSE @FormType + '%' END)
+    AND (@PaymentType = ''
+        OR m.PaymentType = @PaymentType
+        OR (@PaymentType = 'CitizenPay'
+            AND REPLACE(REPLACE(REPLACE(LOWER(ISNULL(m.PaymentType, '')), ' ', ''), '-', ''), '_', '')
+                IN ('citizenpay', 'citizen', 'cp')));
+
+CREATE INDEX IX_idsTotals_TransactionId ON #idsTotals(TransactionId);
 
 SELECT
     m.*,
@@ -198,11 +220,18 @@ SELECT
         PARTITION BY m.TransactionId
         ORDER BY m.TransactionDateTime, m.Id
     ) AS rn
-INTO #mpuTotals
+INTO #mpuAllTotals
 FROM dbo.MPUPaymentTransaction m
+WHERE m.ResponseCode = '00'
+    AND EXISTS (SELECT 1 FROM #idsTotals i WHERE i.TransactionId = m.TransactionId);
+
+CREATE INDEX IX_mpuAllTotals_TransactionId_rn ON #mpuAllTotals(TransactionId, rn);
+
+SELECT *
+INTO #mpuTotals
+FROM #mpuAllTotals m
 WHERE m.TransactionDateTime >= @FromDate
     AND m.TransactionDateTime <= @ToDate
-    AND m.ResponseCode = '00'
     AND m.FormType IS NOT NULL
     AND m.FormType LIKE (CASE WHEN @FormType = '' THEN m.FormType + '%' ELSE @FormType + '%' END)
     AND (@PaymentType = ''
@@ -223,11 +252,15 @@ SELECT
     ) AS rn
 INTO #accTotals
 FROM dbo.AccountTransaction a
-WHERE EXISTS (
-    SELECT 1
-    FROM #mpuTotals m
-    WHERE m.TransactionId = a.TransactionId
-);
+WHERE a.IsPayment = 1
+    AND a.VoucherNo IS NOT NULL
+    AND EXISTS (SELECT 1 FROM #idsTotals i WHERE i.TransactionId = a.TransactionId)
+    AND EXISTS (
+        SELECT 1
+        FROM #mpuAllTotals m
+        WHERE m.TransactionId = a.TransactionId
+            AND m.TransactionDateTime IS NOT NULL
+            AND ABS(DATEDIFF(day, ISNULL(a.PaymentDate, a.CreatedDate), m.TransactionDateTime)) <= 2);
 
 CREATE INDEX IX_accTotals_TransactionId_rn ON #accTotals(TransactionId, rn);
 
@@ -252,9 +285,10 @@ CROSS APPLY (
             END), 0) AS TransactionAmount,
         ISNULL(TRY_CONVERT(decimal(18, 2), m.MOCAmount), 0) AS MOCAmount,
         ISNULL(TRY_CONVERT(decimal(18, 2), m.IMAmount), 0) AS IMAmount
-) amounts
-WHERE a.VoucherNo IS NOT NULL;
+) amounts;
 
+DROP TABLE IF EXISTS #idsTotals;
+DROP TABLE IF EXISTS #mpuAllTotals;
 DROP TABLE IF EXISTS #mpuTotals;
 DROP TABLE IF EXISTS #accTotals;";
 
@@ -282,13 +316,27 @@ DROP TABLE IF EXISTS #accTotals;";
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(request);
 
+        // Both sequences are numbered over the universe the pairing assumes -- successful
+        // charges against payment vouchers -- and over the WHOLE history, never over the
+        // report's filtered rows. Mirrors sp_MPUReport_V3_pagination.sql; see there for
+        // the 2026-09-17 ငွေစာရင်း voucher complaint that pinned these rules down.
+        //
+        // NOTE: nothing calls this method -- the grid, the Excel export and the footer all
+        // go through the stored procedure. It is kept as the readable statement of what
+        // that procedure does, so it deliberately omits the procedure's third rule (drop
+        // payments more than two days from any of the application's charges): expressing
+        // it here would mean a correlated Any() inside the row-number Count(), which EF
+        // translates into something far slower than the temp tables the procedure uses.
+        // If this method is ever made live, port that rule across first.
         var mpuRows =
             from transaction in db.MpupaymentTransactions
+            where transaction.ResponseCode == "00"
             select new
             {
                 Transaction = transaction,
                 RowNumber = db.MpupaymentTransactions.Count(other =>
                     other.TransactionId == transaction.TransactionId
+                    && other.ResponseCode == "00"
                     && (other.TransactionDateTime == null
                         || other.TransactionDateTime < transaction.TransactionDateTime
                         || (other.TransactionDateTime == transaction.TransactionDateTime
@@ -297,11 +345,14 @@ DROP TABLE IF EXISTS #accTotals;";
 
         var accountRows =
             from account in db.AccountTransactions
+            where account.IsPayment && account.VoucherNo != null
             select new
             {
                 Account = account,
                 RowNumber = db.AccountTransactions.Count(other =>
                     other.TransactionId == account.TransactionId
+                    && other.IsPayment
+                    && other.VoucherNo != null
                     && (other.CreatedDate < account.CreatedDate
                         || (other.CreatedDate == account.CreatedDate
                             && string.Compare(other.Id, account.Id) <= 0)))
@@ -312,12 +363,8 @@ DROP TABLE IF EXISTS #accTotals;";
             join accountRow in accountRows
                 on new { mpuRow.Transaction.TransactionId, mpuRow.RowNumber }
                 equals new { accountRow.Account.TransactionId, accountRow.RowNumber }
-                into accountGroup
-            from accountRow in accountGroup.DefaultIfEmpty()
             where mpuRow.Transaction.TransactionDateTime >= request.FromDate
                 && mpuRow.Transaction.TransactionDateTime <= request.ToDate
-                && mpuRow.Transaction.ResponseCode == "00"
-                && accountRow.Account.VoucherNo != null
                 && mpuRow.Transaction.FormType != null
                 && (request.FormType == string.Empty || EF.Functions.Like(mpuRow.Transaction.FormType, request.FormType + "%"))
                 && mpuRow.Transaction.PaymentType == request.PaymentType

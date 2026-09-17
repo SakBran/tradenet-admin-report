@@ -77,28 +77,28 @@
       "dataIndex": "transactionAmount",
       "title": "Trxn Amount",
       "dataType": "money",
-      "numberFormat": "0.0000"
+      "numberFormat": "0.####"
     },
     {
       "key": "MOC",
       "dataIndex": "mocAmount",
       "title": "MOC",
       "dataType": "money",
-      "numberFormat": "0.0000"
+      "numberFormat": "0.####"
     },
     {
       "key": "IM",
       "dataIndex": "imAmount",
       "title": "IM",
       "dataType": "money",
-      "numberFormat": "0.0000"
+      "numberFormat": "0.####"
     },
     {
       "key": "MPU",
       "dataIndex": "mpuAmount",
       "title": "MPU",
       "dataType": "money",
-      "numberFormat": "0.0000"
+      "numberFormat": "0.####"
     },
     {
       "key": "VoucherNo",
@@ -110,14 +110,14 @@
       "dataIndex": "totalAmount",
       "title": "Total Amount",
       "dataType": "money",
-      "numberFormat": "0.0000"
+      "numberFormat": "0.####"
     },
     {
       "key": "AmountDiff",
       "dataIndex": "amountDiff",
       "title": "Amount Diff",
       "dataType": "money",
-      "numberFormat": "0.0000"
+      "numberFormat": "0.####"
     }
   ]
 }
