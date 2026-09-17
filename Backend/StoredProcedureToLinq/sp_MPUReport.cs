@@ -200,6 +200,8 @@ OUTER APPLY (
     SELECT TOP 1 CAST(a.TotalAmount AS decimal(18, 2)) AS TotalAmount
     FROM dbo.AccountTransaction a
     WHERE m.TransactionId = a.TransactionId
+        AND a.IsPayment = 1
+        AND a.VoucherNo IS NOT NULL
         AND ((m.MOCAmount = @OnlineFeeAmount AND a.TotalAmount = @OnlineFeeTotalAmount)
             OR (m.MOCAmount <> @OnlineFeeAmount AND a.TotalAmount <> @OnlineFeeTotalAmount))
     ORDER BY a.CreatedDate DESC
@@ -280,8 +282,13 @@ WHERE m.ResponseCode = '00'
                 IMAmount = transaction.Imamount,
                 FormType = transaction.FormType,
                 ApplyType = transaction.ApplyType,
+                // Only rows Account Summary can display are candidates — see
+                // sp_MPUReport_pagination.sql (2026-09-17 ငွေစာရင်း complaint). The two
+                // subqueries must filter identically or they answer from different rows.
                 VoucherNo = db.AccountTransactions
                     .Where(accountTransaction => accountTransaction.TransactionId == transaction.TransactionId
+                        && accountTransaction.IsPayment
+                        && accountTransaction.VoucherNo != null
                         && (includeOnlineFeeRows
                             ? accountTransaction.TotalAmount == onlineFeeTotalAmount
                             : accountTransaction.TotalAmount != onlineFeeTotalAmount))
@@ -290,6 +297,8 @@ WHERE m.ResponseCode = '00'
                     .FirstOrDefault(),
                 TotalAmount = db.AccountTransactions
                     .Where(accountTransaction => accountTransaction.TransactionId == transaction.TransactionId
+                        && accountTransaction.IsPayment
+                        && accountTransaction.VoucherNo != null
                         && (includeOnlineFeeRows
                             ? accountTransaction.TotalAmount == onlineFeeTotalAmount
                             : accountTransaction.TotalAmount != onlineFeeTotalAmount))

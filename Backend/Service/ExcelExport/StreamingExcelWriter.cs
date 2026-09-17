@@ -57,6 +57,8 @@ namespace API.Service.ExcelExport
         private const int StyleTotalNumberPlain = 18;
         private const int StyleMoney4Plain = 19;
         private const int StyleTotalMoney4Plain = 20;
+        private const int StyleMoneyAsStored = 21;
+        private const int StyleTotalMoneyAsStored = 22;
 
         private readonly ZipArchive _archive;
         private readonly string _worksheetBaseName;
@@ -653,7 +655,11 @@ namespace API.Service.ExcelExport
 
                 if (_columns[i].IncludeInTotals)
                 {
-                    WriteCell(_sheetWriter, reference, _totals[i], ExcelCellFormat.Money, StyleTotalMoney);
+                    // The total prints through the COLUMN's own format, not a hard-coded
+                    // "#,##0.00" — otherwise a column of 3000 sits above a total reading
+                    // 3,000.00. FooterStyleFor is the same mapping the typed footer uses.
+                    var format = _columns[i].Format;
+                    WriteCell(_sheetWriter, reference, _totals[i], format, FooterStyleFor(format));
                 }
                 else if (i == labelIndex)
                 {
@@ -690,6 +696,7 @@ namespace API.Service.ExcelExport
             ExcelCellFormat.MoneyPlain => StyleMoneyPlain,
             ExcelCellFormat.NumberPlain => StyleNumberPlain,
             ExcelCellFormat.Money4Plain => StyleMoney4Plain,
+            ExcelCellFormat.MoneyAsStored => StyleMoneyAsStored,
             _ => StyleDefault,
         };
 
@@ -701,6 +708,7 @@ namespace API.Service.ExcelExport
             ExcelCellFormat.MoneyPlain => StyleTotalMoneyPlain,
             ExcelCellFormat.NumberPlain => StyleTotalNumberPlain,
             ExcelCellFormat.Money4Plain => StyleTotalMoney4Plain,
+            ExcelCellFormat.MoneyAsStored => StyleTotalMoneyAsStored,
             _ => StyleTotalLabel,
         };
 
@@ -937,7 +945,7 @@ namespace API.Service.ExcelExport
         private const string StylesXml =
             "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>" +
             "<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">" +
-            "<numFmts count=\"10\">" +
+            "<numFmts count=\"11\">" +
             "<numFmt numFmtId=\"164\" formatCode=\"dd/mm/yyyy\"/>" +
             "<numFmt numFmtId=\"165\" formatCode=\"#,##0.00\"/>" +
             "<numFmt numFmtId=\"166\" formatCode=\"yyyy-mm-dd hh:mm:ss\"/>" +
@@ -949,6 +957,8 @@ namespace API.Service.ExcelExport
             "<numFmt numFmtId=\"171\" formatCode=\"0.00\"/>" +
             "<numFmt numFmtId=\"172\" formatCode=\"0\"/>" +
             "<numFmt numFmtId=\"173\" formatCode=\"0.0000\"/>" +
+            // 2026-09-17, ငွေစာရင်း: as stored, no padding. '#' is Excel's optional digit.
+            "<numFmt numFmtId=\"174\" formatCode=\"0.####\"/>" +
             "</numFmts>" +
             "<fonts count=\"3\">" +
             "<font><sz val=\"11\"/><name val=\"Calibri\"/></font>" +
@@ -961,7 +971,7 @@ namespace API.Service.ExcelExport
             "</fills>" +
             "<borders count=\"1\"><border><left/><right/><top/><bottom/><diagonal/></border></borders>" +
             "<cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs>" +
-            "<cellXfs count=\"21\">" +
+            "<cellXfs count=\"23\">" +
             // 0 body
             "<xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/>" +
             // 1 title
@@ -1007,6 +1017,10 @@ namespace API.Service.ExcelExport
             "<xf numFmtId=\"173\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\"/>" +
             // 20 totals money to 4 decimals, no thousands separators (Payment, bold)
             "<xf numFmtId=\"173\" fontId=\"2\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\" applyFont=\"1\"/>" +
+            // 21 money as stored, no padding, no thousands separators (ငွေစာရင်း)
+            "<xf numFmtId=\"174\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\"/>" +
+            // 22 totals money as stored (ငွေစာရင်း, bold)
+            "<xf numFmtId=\"174\" fontId=\"2\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\" applyFont=\"1\"/>" +
             "</cellXfs>" +
             "</styleSheet>";
     }

@@ -19,7 +19,8 @@ namespace Backend.Controllers.Report
     [ApiController]
     [Route("api/[controller]")]
     // 2: mm/dd/yyyy dates and comma-less amounts (2026-09-13 complaint round).
-    [ExcelFormatVersion(2)]
+    // 3: amounts print as stored, no padding (2026-09-17 ငွေစာရင်း complaint).
+    [ExcelFormatVersion(3)]
     public class MPUReportController : ControllerBase, IStreamingExcelReport, IExcelFooterTotalsProvider
     {
         private const string ReportKey = "MPUReport";

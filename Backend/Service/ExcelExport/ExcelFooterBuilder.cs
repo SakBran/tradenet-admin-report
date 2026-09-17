@@ -253,6 +253,7 @@ namespace API.Service.ExcelExport
             ExcelCellFormat.MoneyPlain => ExcelCellFormat.MoneyPlain,
             ExcelCellFormat.NumberPlain => ExcelCellFormat.NumberPlain,
             ExcelCellFormat.Money4Plain => ExcelCellFormat.Money4Plain,
+            ExcelCellFormat.MoneyAsStored => ExcelCellFormat.MoneyAsStored,
             _ => ExcelCellFormat.Text,
         };
 

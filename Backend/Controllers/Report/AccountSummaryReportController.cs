@@ -27,7 +27,9 @@ namespace Backend.Controllers.Report
     //      (DccaWorkbookWriter) instead of through StreamingExcelWriter, so its bytes changed.
     // 4: mm/dd/yyyy Entry Date and comma-less Deducted Fees (2026-09-13 complaint round).
     // 5: Deducted Fees to 4 decimals (2026-09-14: every money column shows .0000).
-    [ExcelFormatVersion(5)]
+    // 6: ...and back out again — the ငွေစာရင်း department asked for no padding at all
+    //    on 2026-09-17, so Deducted Fees prints as stored ("0.####").
+    [ExcelFormatVersion(6)]
     public class AccountSummaryReportController
         : ControllerBase,
           IStreamingExcelReport,
@@ -163,7 +165,7 @@ namespace Backend.Controllers.Report
                     ExcelColumn.Text<sp_AccountSummaryReportResult>("Transaction Title", row => row.TransactionTitle, width: 30),
                     // Bound to "amount" so the footer builder places Post's
                     // ColumnTotals["amount"] under this column instead of re-summing.
-                    ExcelColumn.Money4Plain<sp_AccountSummaryReportResult>("Deducted Fees", row => row.Amount, includeInTotals: true)
+                    ExcelColumn.MoneyAsStored<sp_AccountSummaryReportResult>("Deducted Fees", row => row.Amount, includeInTotals: true)
                         .Bind("DeductedFees", "amount"),
                     // Unbound in the old RDLC too — a header with a deliberately empty body.
                     ExcelColumn.Blank("Remark", width: 18),

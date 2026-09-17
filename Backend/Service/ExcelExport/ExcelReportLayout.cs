@@ -45,6 +45,12 @@ namespace API.Service.ExcelExport
 
         /// <summary>Money to 4 decimals with NO thousands separators — "0.0000" (the Payment reports).</summary>
         Money4Plain = 12,
+
+        /// <summary>
+        /// Money printed AS STORED, with no padding and no separators — "0.####" (the
+        /// ငွေစာရင်း reports, 2026-09-17): 3000 shows as 3000, 3000.5 as 3000.5.
+        /// </summary>
+        MoneyAsStored = 13,
     }
 
     /// <summary>Where one preamble line sits in the sheet's header block.</summary>
@@ -203,6 +209,11 @@ namespace API.Service.ExcelExport
             string header, Func<TRow, object?> selector, double? width = 18, bool includeInTotals = false)
             => Create(header, ExcelCellFormat.Money4Plain, width, includeInTotals, selector);
 
+        /// <summary>A money column printed as stored — "0.####" (the ငွေစာရင်း reports).</summary>
+        public static ExcelColumn MoneyAsStored<TRow>(
+            string header, Func<TRow, object?> selector, double? width = 16, bool includeInTotals = false)
+            => Create(header, ExcelCellFormat.MoneyAsStored, width, includeInTotals, selector);
+
         /// <summary>A date + time column ("yyyy-mm-dd hh:mm:ss").</summary>
         public static ExcelColumn Timestamp<TRow>(string header, Func<TRow, System.DateTime?> selector, double? width = 20)
         {
@@ -244,7 +255,7 @@ namespace API.Service.ExcelExport
             => format is ExcelCellFormat.Number or ExcelCellFormat.Integer
                 or ExcelCellFormat.Money or ExcelCellFormat.Money4
                 or ExcelCellFormat.MoneyPlain or ExcelCellFormat.NumberPlain
-                or ExcelCellFormat.Money4Plain;
+                or ExcelCellFormat.Money4Plain or ExcelCellFormat.MoneyAsStored;
 
         private static ExcelColumn Create<TRow>(
             string header,

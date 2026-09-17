@@ -661,6 +661,87 @@ public sealed class StreamingExcelWriterTests
         }
     }
 
+    /// <summary>
+    /// 2026-09-17, ငွေစာရင်း: "ဒသမနောက် လေးလုံး မထည့်ပေးပါနှင့်". Deducted Fees now
+    /// carries the as-stored format, so the sheet must say 0.#### — which is what makes
+    /// Excel print 3000 as "3000" rather than "3000.0000". The bold TOTAL under it has
+    /// to use the same number format or the column disagrees with its own total.
+    /// </summary>
+    [Fact]
+    public void Ngwe_sayin_amounts_are_written_with_the_as_stored_number_format()
+    {
+        var bytes = WriteWithLayout([[AccountRow(1, 3000), AccountRow(2, 3000.5)]]);
+
+        using var archive = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
+        var styles = ReadStyles(archive);
+        var ns = styles.Root!.Name.Namespace;
+
+        var asStored = styles.Descendants(ns + "numFmt")
+            .Single(fmt => fmt.Attribute("formatCode")?.Value == "0.####")
+            .Attribute("numFmtId")!.Value;
+
+        // Every cellXfs index that renders as-stored, body and bold total alike.
+        var asStoredStyles = styles.Descendants(ns + "cellXfs").Single().Elements(ns + "xf")
+            .Select((xf, index) => (xf, index))
+            .Where(entry => entry.xf.Attribute("numFmtId")?.Value == asStored)
+            .Select(entry => entry.index.ToString())
+            .ToHashSet();
+
+        Assert.Equal(2, asStoredStyles.Count);
+
+        var doc = ReadSheet(archive, 1);
+        var sheetNs = doc.Root!.Name.Namespace;
+        var rows = doc.Descendants(sheetNs + "row").ToList();
+
+        // Find Deducted Fees by its header rather than by a hard-coded letter, so
+        // inserting a column ahead of it does not silently make this test vacuous.
+        var amountColumn = rows[1].Elements(sheetNs + "c")
+            .Single(cell => cell.Descendants(sheetNs + "t").FirstOrDefault()?.Value == "Deducted Fees")
+            .Attribute("r")!.Value;
+        amountColumn = new string(amountColumn.TakeWhile(char.IsLetter).ToArray());
+
+        var written = rows
+            .SelectMany(row => row.Elements(sheetNs + "c"))
+            .Where(cell =>
+                new string(cell.Attribute("r")!.Value.TakeWhile(char.IsLetter).ToArray()) == amountColumn)
+            .Where(cell => asStoredStyles.Contains(cell.Attribute("s")?.Value ?? "0"))
+            .Select(cell => cell.Element(sheetNs + "v")?.Value)
+            .ToList();
+
+        // The two data cells plus the TOTAL, all through the as-stored styles, and
+        // written as raw numbers so Excel itself does the formatting.
+        Assert.Equal(["3000", "3000.5", "6000.5"], written);
+    }
+
+    /// <summary>
+    /// Excel calls a workbook corrupt when a count attribute disagrees with the number
+    /// of elements it introduces, and the style indexes are hand-numbered constants. A
+    /// wrong count only shows up when a customer opens the file, so it is pinned here.
+    /// </summary>
+    [Fact]
+    public void Style_counts_match_the_elements_they_introduce()
+    {
+        var bytes = WriteWithLayout([[AccountRow(1, 1000)]]);
+
+        using var archive = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
+        var styles = ReadStyles(archive);
+        var ns = styles.Root!.Name.Namespace;
+
+        foreach (var name in new[] { "numFmts", "fonts", "fills", "borders", "cellStyleXfs", "cellXfs" })
+        {
+            var element = styles.Descendants(ns + name).Single();
+            Assert.Equal(
+                element.Attribute("count")?.Value,
+                element.Elements().Count().ToString());
+        }
+    }
+
+    private static XDocument ReadStyles(ZipArchive archive)
+    {
+        using var stream = archive.GetEntry("xl/styles.xml")!.Open();
+        return XDocument.Load(stream);
+    }
+
     private static XDocument ReadSheet(ZipArchive archive, int index)
     {
         var entry = archive.GetEntry($"xl/worksheets/sheet{index}.xml")!;

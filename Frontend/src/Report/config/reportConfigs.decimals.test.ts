@@ -6,9 +6,13 @@ import { reportConfigs } from './reportConfigs';
  * in every report, whether or not the value has anything after the point — 2000 reads
  * "2,000.0000" and 2000.1 reads "2,000.1000".
  *
- * The Payment reports print theirs without thousands separators (see
- * reportConfigs.payment.test.ts), so they use '0.0000' and everything else
- * '#,##0.0000'. Both are 4 decimals; only the grouping differs.
+ * 2026-09-17, ငွေစာရင်း department: "ဒသမနောက် လေးလုံး မထည့်ပေးပါနှင့်" — NOT in their
+ * reports. So the rule now has one exception, and it is the whole Payment group: those
+ * six print the value AS STORED with '0.####' (3000 reads "3000", 3000.5 reads
+ * "3000.5"), which is what the old Tradenet 2.0 screens did — their RDLCs carry no
+ * Format at all and the amounts are SQL float. Everything else keeps '#,##0.0000'.
+ *
+ * The Payment formats are also comma-less (see reportConfigs.payment.test.ts).
  */
 const PAYMENT = new Set([
   'AccountSummaryReport',
@@ -43,8 +47,8 @@ const COUNTS = new Set([
 const isVoucherFee = (reportKey: string, dataIndex?: string) =>
   reportKey.includes('Voucher') && dataIndex === 'amount';
 
-describe('decimal columns show four places', () => {
-  it('every amount column asks for 4 decimals', () => {
+describe('decimal columns show four places, except ငွေစာရင်း', () => {
+  it('every amount column asks for 4 decimals, or for as-stored in Payment', () => {
     const wrong: string[] = [];
 
     for (const [key, config] of Object.entries(reportConfigs)) {
@@ -56,7 +60,7 @@ describe('decimal columns show four places', () => {
           continue;
         }
 
-        const expected = PAYMENT.has(key) ? '0.0000' : '#,##0.0000';
+        const expected = PAYMENT.has(key) ? '0.####' : '#,##0.0000';
         if (column.numberFormat !== expected) {
           wrong.push(
             `${key}.${column.key}: ${String(column.numberFormat)} (want ${expected})`
@@ -82,7 +86,7 @@ describe('decimal columns show four places', () => {
     expect(wrong).toEqual([]);
   });
 
-  it('a 4-decimal format is never asked for with fewer places', () => {
+  it('no format pads to fewer than four places', () => {
     const formats = new Set<string>();
 
     for (const config of Object.values(reportConfigs)) {
@@ -93,7 +97,9 @@ describe('decimal columns show four places', () => {
       }
     }
 
-    // '#,##0' is the voucher fee's N0; everything else prints four places.
-    expect([...formats].sort()).toEqual(['#,##0', '#,##0.0000', '0.0000']);
+    // '#,##0' is the voucher fee's N0 and '0.####' the ငွေစာရင်း as-stored format;
+    // everything else pads to four places. A '0.00' or '#,##0.00' reappearing here
+    // is the 2026-09-14 complaint coming back.
+    expect([...formats].sort()).toEqual(['#,##0', '#,##0.0000', '0.####']);
   });
 });

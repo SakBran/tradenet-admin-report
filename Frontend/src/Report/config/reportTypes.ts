@@ -66,6 +66,11 @@ export interface ReportColumnConfig {
    * legacy one: '#,##0.0000' is the RDLC `FORMAT(..., "N4")` value format and
    * '#,##0' is `"N0"`. Applied by the grid (BasicTable) and carried into the
    * Excel presentation spec, so both surfaces print the same string.
+   *
+   * The tokens are Excel's: a `0` after the point is a required digit, a `#` an
+   * optional one, and a `,` turns on thousands separators. So '0.####' — the
+   * ငွေစာရင်း (Payment) reports — prints the value as stored, 3000 as `3000` and
+   * 3000.5 as `3000.5`. See `Report/numberFormat.ts`.
    */
   numberFormat?: string;
   /**
