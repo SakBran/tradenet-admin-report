@@ -17,6 +17,11 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // v2: rows are no longer split by Sakhan -- the legacy rdlc groups on
+    // (MethodName, Currency) only (BorderImportLicenceByMethodReport.rdlc:1078-1079), and
+    // this grid has no Sakhan column -- and the TOTAL row is count-only, so cached .xlsx
+    // files from the pre-fix shape must not be reused.
+    [ExcelFormatVersion(2)]
     public class BorderImportLicenceByMethodReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "BorderImportLicenceByMethodReport";
@@ -40,9 +45,18 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
+            // includeSakhan: false -- the legacy report groups on (MethodName, Currency) only
+            // (BorderImportLicenceByMethodReport.rdlc:1078-1079); Sakhan is a *filter* there,
+            // never a group key. Keeping it in the key split one "Normal TT / THB" row into
+            // one row per border office, with nothing in the grid to tell them apart.
+            //
+            // CountOnly matches the legacy TOTAL row, which prints CountDistinct(LicenceNo)
+            // under "No of Licences" (rdlc:905) and leaves the Total Value and Currency cells
+            // blank -- each grid row is one (method, currency) pair, so summing the value
+            // column adds THB + USD + CNY into a meaningless number.
             var result = await sp_ImportLicenceDetailReport_Fast.CreateAggregateResultAsync(
-                _context, procedureRequest!, request!, ReportAggregateDimension.Method, includeSakhan: true,
-                includeColumnTotals: true);
+                _context, procedureRequest!, request!, ReportAggregateDimension.Method, includeSakhan: false,
+                includeColumnTotals: true, columnTotalsMode: ReportColumnTotalsMode.CountOnly);
 
             return Ok(result);
         }
@@ -80,12 +94,12 @@ namespace Backend.Controllers.Report
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
             var rows = await sp_ImportLicenceDetailReport_Fast.GetAggregateRowsAsync(
-                _context, procedureRequest!, ReportAggregateDimension.Method, includeSakhan: true);
+                _context, procedureRequest!, ReportAggregateDimension.Method, includeSakhan: false);
             // Same canonical ordering the JSON grid path applies (CreateAggregateResultAsync ->
             // CreatePagedResultFromGroups -> Order), so the exported rows appear in the grid's
             // order. GetAggregateRowsAsync/AggregateInSqlAsync only GROUP BY -- it returns the
             // groups unordered.
-            sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Method, includeSakhan: true));
+            sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Method, includeSakhan: false));
         }
 
         private bool TryCreateReportRequest(
