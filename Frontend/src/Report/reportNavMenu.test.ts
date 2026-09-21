@@ -56,6 +56,7 @@ describe('report sidebar menu', () => {
     'BorderImportLicenceHSCodeDetailReport',
     'BorderImportPermitHSCodeDetailReport',
     'ExportLicenceHSCodeDetailReport',
+    'ExportPermitHSCodeDetailReport',
     'ImportLicenceDetailByLicenceReport',
   ])('%s is hidden from the menu', (configKey) => {
     expect(reportConfigs[configKey].hideInMenu).toBe(true);
@@ -66,8 +67,8 @@ describe('report sidebar menu', () => {
       (config) => config.title === 'HS Code Detail Report'
     );
 
-    // All five families have one, and every one of them must be hidden.
-    expect(hidden).toHaveLength(5);
+    // All six families have one, and every one of them must be hidden.
+    expect(hidden).toHaveLength(6);
     expect(hidden.every((config) => config.hideInMenu)).toBe(true);
   });
 

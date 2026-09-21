@@ -16,6 +16,9 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // 2 = the (HS code, currency) grain of HSCodeReport.rdlc:1152-1153. Version 1 was the
+    // company-split workbook; without this bump the Excel job queue keeps serving it.
+    [ExcelFormatVersion(2)]
     public class ExportPermitByHSCodeReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ExportPermitByHSCodeReport";
@@ -84,13 +87,15 @@ namespace Backend.Controllers.Report
             procedureRequest!.HSCode = procedureRequest.HSCode?.Trim() ?? string.Empty;
 
             // Row order already equals the grid's, so no re-sort here. The grid pages through
-            // sp_HSCodeReport_pagination ("ORDER BY result.HSCode, result.CompanyName,
-            // result.Currency"), and AggregateQuery -- what GetAggregateRowsAsync streams --
-            // ends with exactly that ORDER BY server-side. Re-sorting with
-            // ReportAggregationService.OrderGroups(..., ReportAggregateDimension.HSCode,
-            // includeSakhan: false) would sort on the same three keys but with
-            // StringComparer.OrdinalIgnoreCase, trading the DB collation for ordinal semantics
-            // -- it could only move Excel rows AWAY from the grid order.
+            // sp_HSCodeReport_pagination ("ORDER BY result.HSCode, result.Currency,
+            // result.HSCodeId" since 2026-09-21), and AggregateQuery -- what GetAggregateRowsAsync
+            // streams -- ends with the same leading keys server-side (the HSCodeId tie-break only
+            // exists inside the procedure, where it makes OFFSET/FETCH a unique-key sort; it can
+            // separate rows here only when two HS code IDs share a code string AND a currency).
+            // Re-sorting with ReportAggregationService.OrderGroups(...,
+            // ReportAggregateDimension.HSCode, includeSakhan: false) would sort on the same keys
+            // but with StringComparer.OrdinalIgnoreCase, trading the DB collation for ordinal
+            // semantics -- it could only move Excel rows AWAY from the grid order.
             var rows = await sp_HSCodeReport.GetAggregateRowsAsync(_context, procedureRequest);
             sink.Append(rows);
         }
@@ -134,6 +139,13 @@ namespace Backend.Controllers.Report
                 FilterType = request.FilterType ?? string.Empty,
                 HSCode = request.HSCode ?? string.Empty,
                 SakhanId = request.SakhanId,
+                ExportImportSectionId = request.ExportImportSectionId,
+                // The HS Code detail drill (ExportPermitHSCodeDetailReport) posts
+                // GroupBy='Company' to get HSCodeDetailReport.rdlc's (HS code, company) rows.
+                // The summary posts nothing and keeps the RDLC's (HS code, currency) grain; the
+                // two arrive here as otherwise identical parameters, so the config has to say
+                // which shape it wants.
+                GroupByCompany = string.Equals(request.GroupBy, "Company", StringComparison.OrdinalIgnoreCase),
             };
 
             return true;
@@ -148,6 +160,20 @@ namespace Backend.Controllers.Report
         public string FilterType { get; set; } = string.Empty;
         public string HSCode { get; set; } = string.Empty;
         public int SakhanId { get; set; }
+
+        /// <summary>
+        /// The old ExportPermitByHSCodeReport.cshtml's "Export Section" dropdown
+        /// (ReportsController.cs:7650, exportImportSectionRepository.GetAll(ExportPermit)).
+        /// A non-zero value takes the report off sp_HSCodeReport_pagination onto the LINQ twin,
+        /// which is the only path that filters on it.
+        /// </summary>
+        public int ExportImportSectionId { get; set; }
+
+        /// <summary>
+        /// 'Company' from the HS Code detail drill; empty from the summary. A string, not a bool,
+        /// because the page posts derived filter values as strings.
+        /// </summary>
+        public string GroupBy { get; set; } = string.Empty;
     }
 }
 

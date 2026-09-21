@@ -17,6 +17,11 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // v2: rows are no longer split by Sakhan -- the legacy rdlc groups on
+    // (sLicenceDate, Currency) only (BorderImportLicenceByDailyReport.rdlc:1269-1272), and
+    // this grid has no Sakhan column -- and the TOTAL row no longer sums Total Value, so
+    // cached .xlsx files from the pre-fix shape must not be reused.
+    [ExcelFormatVersion(2)]
     public class BorderImportLicenceDailyReportNewLicenceReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "BorderImportLicenceDailyReportNewLicenceReport";
@@ -40,9 +45,20 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
+            // includeSakhan: false -- the legacy report groups on (sLicenceDate, Currency) only
+            // (BorderImportLicenceByDailyReport.rdlc:1269-1272); Sakhan is a *filter* there,
+            // never a group key. Keeping it in the key split one "2026-01-01 / THB" row into
+            // one row per border office, with nothing in the grid to tell them apart.
+            //
+            // CountOnly matches the legacy TOTAL row, which prints CountDistinct(LicenceNo)
+            // under "No of Licences" (rdlc:1039) and leaves the Total Value cell blank
+            // (Textbox7) -- each grid row is one (date, currency) pair, so summing the value
+            // column adds THB + USD + CNY into a meaningless number. BuildColumnTotals still
+            // emits totalUSDValue for the Daily dimension, which is what the legacy footer
+            // prints in the last cell (rdlc:1200).
             var result = await sp_ImportLicenceDetailReport_Fast.CreateAggregateResultAsync(
-                _context, procedureRequest!, request!, ReportAggregateDimension.Daily, includeSakhan: true,
-                includeColumnTotals: true);
+                _context, procedureRequest!, request!, ReportAggregateDimension.Daily, includeSakhan: false,
+                includeColumnTotals: true, columnTotalsMode: ReportColumnTotalsMode.CountOnly);
 
             return Ok(result);
         }
@@ -80,12 +96,12 @@ namespace Backend.Controllers.Report
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
             var rows = await sp_ImportLicenceDetailReport_Fast.GetAggregateRowsAsync(
-                _context, procedureRequest!, ReportAggregateDimension.Daily, includeSakhan: true);
+                _context, procedureRequest!, ReportAggregateDimension.Daily, includeSakhan: false);
             // Same canonical ordering the JSON grid path applies (CreateAggregateResultAsync ->
             // CreatePagedResultFromGroups -> Order), so the exported rows appear in the grid's
             // order. GetAggregateRowsAsync/AggregateInSqlAsync only GROUP BY -- it returns the
             // groups unordered.
-            sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Daily, includeSakhan: true));
+            sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Daily, includeSakhan: false));
         }
 
         private bool TryCreateReportRequest(

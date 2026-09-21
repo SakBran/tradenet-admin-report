@@ -159,10 +159,12 @@ public sealed class BorderExportPermitByHSCodeBorderSourceTests
     [Fact]
     public void The_oversea_report_itself_is_untouched_by_the_legacy_flags()
     {
-        // Unchanged by the 2026-09-10 switch, and deliberately built on its OWN oversea request:
-        // the LegacyOrder branch sits ahead of the per-FormType company split, and without the flag
-        // the oversea ExportPermitByHSCodeReport must still get its (HS code, company, currency)
-        // rows -- its ExportPermitHSCodeDetailReport config renders Company Name off this query.
+        // Deliberately built on its OWN oversea request: the LegacyOrder branch sits ahead of the
+        // per-FormType company split, so dropping the flag must land the oversea
+        // ExportPermitByHSCodeReport on its own summary shape and not on the border screen's.
+        // That shape stopped being the company split on 2026-09-21 (customer complaint: one HS
+        // code in USD printed three rows) -- ExportPermitHSCodeDetailReport now asks for the
+        // company grain explicitly with GroupBy='Company'.
         using var db = ReportTestHelper.CreateSqlServerDbContext();
 
         var request = BorderRequest(groupByCompany: false);
@@ -170,7 +172,11 @@ public sealed class BorderExportPermitByHSCodeBorderSourceTests
         request.LegacyOrder = false;
         var groupBy = GroupByClause(sp_HSCodeReport.AggregateQuery(db, request).ToQueryString());
 
-        Assert.Contains("[CompanyRegistrationNo]", groupBy, StringComparison.Ordinal);
+        Assert.Contains("[HSCodeId]", groupBy, StringComparison.Ordinal);
+        Assert.DoesNotContain("[CompanyRegistrationNo]", groupBy, StringComparison.Ordinal);
+        Assert.DoesNotContain("[CompanyName]", groupBy, StringComparison.Ordinal);
+        // The oversea tables, not the border ones -- that is the half this test was written for.
+        Assert.Contains("[ExportPermit]", sp_HSCodeReport.AggregateQuery(db, request).ToQueryString(), StringComparison.Ordinal);
     }
 
     [Fact]

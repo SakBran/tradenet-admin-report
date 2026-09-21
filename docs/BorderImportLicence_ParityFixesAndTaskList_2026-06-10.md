@@ -56,9 +56,19 @@ Current report filter sets:
 ### Report title and Detail column parity
 
 - [x] Added old-admin style report subtitles to the six created Border Import Licence reports.
-- [x] Corrected Border Import Licence Detail date headers to match the old RDLC: `Create Date` and `Approve Date`.
-- [x] Kept the old data mapping for `Create Date`: the legacy RDLC label is `Create Date`, while its dataset field is formatted from `LicenceDate`.
+- [x] ~~Corrected Border Import Licence Detail date headers to match the old RDLC: `Create Date` and `Approve Date`.~~
+      **SUPERSEDED 2026-09-21 — this was wrong.** It was based on `docs/ReportColumnComparison.md`,
+      not on the RDLC itself. `BorderImportLicenceDetailReport.rdlc:643` reads **`Licence Date`**,
+      and the RDLC contains no `Create Date` cell at all. The header is now `Licence Date` again on
+      both the Detail and Pending configs.
+- [x] ~~Kept the old data mapping for `Create Date`: the legacy RDLC label is `Create Date`, while its dataset field is formatted from `LicenceDate`.~~
+      **SUPERSEDED 2026-09-21.** The mapping was right, the label was not: `rdlc:2116` binds the
+      column to `=Fields!sLicenceDate.Value`, which `Reports.cs:498` formats from the proc's
+      `LicenceDate` result column — matching today's `licence.IssuedDate LicenceDate` projection in
+      `sp_BorderImportLicenceDetailReport_pagination.sql:106`. Only the header text changed.
 - [x] Added the missing `Approve Date` UI column using the existing `approveDate` API field.
+      **Flagged 2026-09-21:** the legacy RDLC has no `Approve Date` column either. Left in place on
+      the owner's call, pending customer confirmation — do not delete on doc evidence alone.
 
 ### Regression tests
 

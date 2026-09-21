@@ -19,7 +19,10 @@ namespace Backend.Controllers.Report
     [Route("api/[controller]")]
     // v2: the grand-total footer lost its Total Value cell (legacy parity), so cached
     // closed-period .xlsx files must not be reused.
-    [ExcelFormatVersion(2)]
+    // v3: rows are no longer split by Sakhan -- the legacy rdlc groups on
+    // (sLicenceDate, Currency) only (BorderImportPermitByDailyReport.rdlc:1269-1270) and this
+    // grid has no Sakhan column, so the v2 row shape must not be reused either.
+    [ExcelFormatVersion(3)]
     public class BorderImportPermitDailyReportNewPermitReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "BorderImportPermitDailyReportNewPermitReport";
@@ -43,8 +46,12 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
+            // includeSakhan: false -- the legacy report groups on (sLicenceDate, Currency) only
+            // (BorderImportPermitByDailyReport.rdlc:1269-1270); Sakhan is a *filter* there,
+            // never a group key. Keeping it in the key repeated the same (date, currency) pair
+            // once per border office, with nothing in the grid to tell them apart.
             var result = await sp_ImportPermitDetailReport_Fast.CreateAggregateResultAsync(
-                _context, procedureRequest!, request!, ReportAggregateDimension.Daily, includeSakhan: true,
+                _context, procedureRequest!, request!, ReportAggregateDimension.Daily, includeSakhan: false,
                 // The legacy TOTAL row prints only CountDistinct(LicenceNo) — the Total Value
                 // cell is blank, because each row is one (group, currency) pair and summing
                 // across currencies is meaningless (BorderImportPermitByDailyReport.rdlc).
@@ -86,11 +93,11 @@ namespace Backend.Controllers.Report
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
             var rows = await sp_ImportPermitDetailReport_Fast.GetAggregateRowsAsync(
-                _context, procedureRequest!, ReportAggregateDimension.Daily, includeSakhan: true);
+                _context, procedureRequest!, ReportAggregateDimension.Daily, includeSakhan: false);
 
             // Same canonical ordering the JSON grid path applies (CreatePagedResultFromGroups -> Order),
             // so the exported rows appear in the order the user saw on screen.
-            sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Daily, includeSakhan: true));
+            sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Daily, includeSakhan: false));
         }
 
         private bool TryCreateReportRequest(

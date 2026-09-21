@@ -37,11 +37,15 @@ whose RDLCs group without it:
 | Old RDLC | group keys | Sakhan column? | new flag | status |
 |---|---|---|---|---|
 | BorderImportLicenceByMethodReport.rdlc:1078 | Method, Currency | no | was `true` | **fixed here** |
-| BorderImportLicenceByDailyReport.rdlc:1270 | Date, Currency | no | `true` | same bug, **deferred by owner** |
-| BorderImportPermitByDailyReport.rdlc:1269 | Date, Currency | no | `true` | same bug, **deferred by owner** |
-| BorderExportPermitByDailyReport.rdlc:1277 | Date, Currency | no | `true` | same bug, **deferred by owner** |
+| BorderImportLicenceByDailyReport.rdlc:1270 | Date, Currency | no | was `true` | **fixed 2026-09-21** (the complaint that released the batch) |
+| BorderImportPermitByDailyReport.rdlc:1269 | Date, Currency | no | was `true` | **fixed 2026-09-21** |
+| BorderExportPermitByDailyReport.rdlc:1277 | Date, Currency | no | was `true` | **fixed 2026-09-21** |
 | BorderExportLicenceByDailyReport.rdlc:1445 | Date, Currency, SakhanId | yes | `true` | correct, leave |
 | BorderExportLicenceByMethodReport.rdlc:1240 | Method, Currency | yes (arbitrary row) | `true` | legacy quirk, owner said leave |
+
+The three Daily rows above were deferred by the owner on 2026-09-18 and released on
+2026-09-21, after the predicted "same date repeated" complaint arrived against Border Import
+Licence Daily — see `BorderDailyReports_SakhanSplit_2026-09-21.md`.
 
 ## Measured on PROD before the fix
 

@@ -382,19 +382,25 @@ Extra in new (0): _None_
 
 Title: Border Import Licence Detail Report
 Old source: `BorderImportLicenceDetailReport.rdlc`
-Old columns (27): `Sr.No.`, `Section`, `Application Date`, `Application No`, `Licence No`, `Create Date`, `Approve Date`, `Company Registration No`, `Company Name`, `Company Address`, `Seller Name`, `Seller Address`, `Seller Country`, `Place/Port of Discharge`, `Last Date`, `Method`, `Consigned Country`, `Country of Orign`, `HSCode`, `Decription`, `A/U`, `Price`, `Qty`, `Value`, `Currency`, `Commodity Type`, `Conditions`
-New columns (27): `No`, `Section`, `Application Date`, `Application No`, `Licence No`, `Create Date`, `Approve Date`, `Company Registration No`, `Company Name`, `Company Address`, `Seller Name`, `Seller Address`, `Seller Country`, `Place/Port of Discharge`, `Last Date`, `Method`, `Consigned Country`, `Country of Orign`, `HSCode`, `Decription`, `A/U`, `Price`, `Qty`, `Value`, `Currency`, `Commodity Type`, `Conditions`
+Corrected 2026-09-21 against the RDLC XML on `origin/master`: the old column list below previously
+read `Create Date`, `Approve Date` here. Both were wrong. The RDLC header row (`rdlc:353`) has 26
+columns; column 6 is `Licence Date` (`rdlc:643`, bound to `=Fields!sLicenceDate.Value` at
+`rdlc:2116`), and the RDLC has no `Create Date` and no `Approve Date` cell anywhere.
+Old columns (26): `Sr.No.`, `Section`, `Application Date`, `Application No`, `Licence No`, `Licence Date`, `Company Registration No`, `Company Name`, `Company Address`, `Seller Name`, `Seller Address`, `Seller Country`, `Place/Port of Discharge`, `Last Date`, `Method`, `Consigned Country`, `Country of Orign`, `HSCode`, `Decription`, `A/U`, `Price`, `Qty`, `Value`, `Currency`, `Commodity Type`, `Conditions`
+New columns (27): `No`, `Section`, `Application Date`, `Application No`, `Licence No`, `Licence Date`, `Approve Date`, `Company Registration No`, `Company Name`, `Company Address`, `Seller Name`, `Seller Address`, `Seller Country`, `Place/Port of Discharge`, `Last Date`, `Method`, `Consigned Country`, `Country of Orign`, `HSCode`, `Decription`, `A/U`, `Price`, `Qty`, `Value`, `Currency`, `Commodity Type`, `Conditions`
 Need in new (0): _None_
-Extra in new (0): _None_
+Extra in new (1): `Approve Date` — kept deliberately, pending customer confirmation; not in the legacy RDLC.
 
 ### BorderImportLicenceDetailReportPending
 
 Title: Border Import Licence Detail Report (Pending)
-Old source: `BorderImportLicenceDetailReport.rdlc`
-Old columns (27): `Sr.No.`, `Section`, `Application Date`, `Application No`, `Licence No`, `Create Date`, `Approve Date`, `Company Registration No`, `Company Name`, `Company Address`, `Seller Name`, `Seller Address`, `Seller Country`, `Place/Port of Discharge`, `Last Date`, `Method`, `Consigned Country`, `Country of Orign`, `HSCode`, `Decription`, `A/U`, `Price`, `Qty`, `Value`, `Currency`, `Commodity Type`, `Conditions`
-New columns (26): `No`, `Section`, `Application Date`, `Application No`, `Licence No`, `Licence Date`, `Company Registration No`, `Company Name`, `Company Address`, `Seller Name`, `Seller Address`, `Seller Country`, `Place/Port of Discharge`, `Last Date`, `Method`, `Consigned Country`, `Country of Orign`, `HSCode`, `Decription`, `A/U`, `Price`, `Qty`, `Value`, `Currency`, `Commodity Type`, `Conditions`
-Need in new (2): `Create Date`, `Approve Date`
-Extra in new (1): `Licence Date`
+Old source: `BorderImportLicenceDetailReport.rdlc` (the legacy Pending binder points at the same
+RDLC — `ReportsController.cs:11335`), so its columns are identical to the Detail report above.
+Corrected 2026-09-21: see the note under `BorderImportLicenceDetailReport`.
+Old columns (26): `Sr.No.`, `Section`, `Application Date`, `Application No`, `Licence No`, `Licence Date`, `Company Registration No`, `Company Name`, `Company Address`, `Seller Name`, `Seller Address`, `Seller Country`, `Place/Port of Discharge`, `Last Date`, `Method`, `Consigned Country`, `Country of Orign`, `HSCode`, `Decription`, `A/U`, `Price`, `Qty`, `Value`, `Currency`, `Commodity Type`, `Conditions`
+New columns (27): `No`, `Section`, `Application Date`, `Application No`, `Licence No`, `Licence Date`, `Approve Date`, `Company Registration No`, `Company Name`, `Company Address`, `Seller Name`, `Seller Address`, `Seller Country`, `Place/Port of Discharge`, `Last Date`, `Method`, `Consigned Country`, `Country of Orign`, `HSCode`, `Decription`, `A/U`, `Price`, `Qty`, `Value`, `Currency`, `Commodity Type`, `Conditions`
+Need in new (0): _None_
+Extra in new (1): `Approve Date` — kept deliberately, pending customer confirmation; not in the legacy RDLC.
 
 ### BorderImportLicenceExtensionReport
 

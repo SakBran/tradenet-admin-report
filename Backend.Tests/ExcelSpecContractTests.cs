@@ -406,12 +406,13 @@ public sealed class ExcelSpecContractTests
     {
         // Renamed "Seller" → "Buyer" on the page only (see the Export Permit round-2 pass).
         ["ExportPermitBySellerCountryReport"] = "Export Permit By Seller Country Report",
-        // The 5 HS Code alias configs share a controller and post their own alias title.
+        // The 6 HS Code alias configs share a controller and post their own alias title.
         ["BorderExportLicenceByHSCodeReport"] = "Border Export Licence By HS Code Report",
         ["BorderExportPermitByHSCodeReport"] = "Border Export Permit By HS Code Report",
         ["BorderImportLicenceByHSCodeReport"] = "Border Import Licence By HS Code Report",
         ["BorderImportPermitByHSCodeReport"] = "Border Import Permit By HS Code Report",
         ["ExportLicenceByHSCodeReport"] = "Export Licence By HS Code Report",
+        ["ExportPermitByHSCodeReport"] = "Export Permit By HS Code Report",
         // Legacy tab names kept because users recognise them on the Exports drive.
         ["BusinessServiceAgencyRegistrationByVoucher"] = "BSA Registration By Voucher",
         ["ImportLicenceDetailByLicenceReport"] = "Import Licence Detail (By Licence) Report",

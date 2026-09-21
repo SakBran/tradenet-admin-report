@@ -80,6 +80,7 @@ import ExportLicenceVoucherReport from './Page/ExportLicenceVoucherReport';
 import ExportPermitActualAmendmentReport from './Page/ExportPermitActualAmendmentReport';
 import ExportPermitAmendmentReport from './Page/ExportPermitAmendmentReport';
 import ExportPermitByHSCodeReport from './Page/ExportPermitByHSCodeReport';
+import ExportPermitHSCodeDetailReport from './Page/ExportPermitHSCodeDetailReport';
 import ExportPermitBySectionReport from './Page/ExportPermitBySectionReport';
 import ExportPermitBySellerCountryReport from './Page/ExportPermitBySellerCountryReport';
 import ExportPermitCancellationReport from './Page/ExportPermitCancellationReport';
@@ -263,6 +264,7 @@ export const reportRoutes = [
   { path: 'ExportPermitActualAmendmentReport', element: <ExportPermitActualAmendmentReport /> },
   { path: 'ExportPermitAmendmentReport', element: <ExportPermitAmendmentReport /> },
   { path: 'ExportPermitByHSCodeReport', element: <ExportPermitByHSCodeReport /> },
+  { path: 'ExportPermitHSCodeDetailReport', element: <ExportPermitHSCodeDetailReport /> },
   { path: 'ExportPermitBySectionReport', element: <ExportPermitBySectionReport /> },
   { path: 'ExportPermitBySellerCountryReport', element: <ExportPermitBySellerCountryReport /> },
   { path: 'ExportPermitCancellationReport', element: <ExportPermitCancellationReport /> },

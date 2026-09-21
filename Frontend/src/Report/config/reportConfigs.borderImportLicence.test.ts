@@ -57,9 +57,12 @@ describe('Border Import Licence report configs', () => {
       .filter((c) => ['ApplicationDate', 'LicenceDate', 'ApproveDate'].includes(c.key))
       .map((c) => [c.key, c.dataIndex, c.title]);
 
+    // Header text per BorderImportLicenceDetailReport.rdlc:643 ("Licence Date", bound to
+    // Fields!sLicenceDate). The old RDLC has no "Create Date" column; Approve Date is an
+    // extra the new report adds.
     expect(dateColumns).toEqual([
       ['ApplicationDate', 'applicationDate', 'Application Date'],
-      ['LicenceDate', 'licenceDate', 'Create Date'],
+      ['LicenceDate', 'licenceDate', 'Licence Date'],
       ['ApproveDate', 'approveDate', 'Approve Date'],
     ]);
   });
@@ -80,9 +83,11 @@ describe('Border Import Licence report configs', () => {
       .filter((c) => ['ApplicationDate', 'LicenceDate', 'ApproveDate'].includes(c.key))
       .map((c) => [c.key, c.dataIndex, c.title]);
 
+    // Same RDLC as the Detail report (ReportsController.cs:11335 points the Pending binder
+    // at BorderImportLicenceDetailReport.rdlc), so the headers must match it too.
     expect(dateColumns).toEqual([
       ['ApplicationDate', 'applicationDate', 'Application Date'],
-      ['LicenceDate', 'licenceDate', 'Create Date'],
+      ['LicenceDate', 'licenceDate', 'Licence Date'],
       ['ApproveDate', 'approveDate', 'Approve Date'],
     ]);
   });

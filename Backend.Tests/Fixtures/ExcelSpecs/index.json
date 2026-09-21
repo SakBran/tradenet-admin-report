@@ -1938,7 +1938,7 @@
       "hasSingleDate": false,
       "hasCurrencyTotalsColumns": false,
       "showRowNumber": true,
-      "rowNumberTitle": "No",
+      "rowNumberTitle": "Sr.No.",
       "isBespokePage": false,
       "isComposite": false,
       "hasExcelButton": true,
@@ -2048,6 +2048,21 @@
       "isComposite": false,
       "hasExcelButton": true,
       "columnCount": 9
+    },
+    {
+      "configKey": "ExportPermitHSCodeDetailReport",
+      "controllerName": "ExportPermitByHSCodeReport",
+      "file": "ExportPermitHSCodeDetailReport.json",
+      "variant": null,
+      "hasDateRange": true,
+      "hasSingleDate": false,
+      "hasCurrencyTotalsColumns": false,
+      "showRowNumber": true,
+      "rowNumberTitle": "Sr.No.",
+      "isBespokePage": false,
+      "isComposite": false,
+      "hasExcelButton": true,
+      "columnCount": 4
     },
     {
       "configKey": "ExportPermitNewReportNewReport",

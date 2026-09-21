@@ -1,3 +1,73 @@
+/* =====================================================================================
+   Export Permit By HS Code parity deployment - 2026-09-21
+   Run this ONE file to apply the procedure, or run 01_sp_HSCodeReport_pagination.sql
+   directly. Either way: PROCEDURE FIRST, APPLICATION SECOND.
+
+   Target database: TradeNetDB  (NOT ReportTemplateDB - that one only holds the Excel
+   export job queue; deploying report procedures into it is a known trap.)
+
+   What changes - ONE @FormType branch of sp_HSCodeReport_pagination, nothing else:
+
+     'Export Permit'  (3 sub-branches: @HSCode='' / @FilterType='Start' / End.
+                       This FormType has no @IncludeTotalCount=0 fast page; every
+                       sub-branch returns COUNT(*) OVER() TotalCount.)
+
+   1. It now GROUPs BY (HSCodeId, HSCode, HSDescription, Currency) instead of additionally
+      on the buyer company. HSCodeReport.rdlc's only row group is =Fields!HSCodeId.Value +
+      =Fields!Currency.Value (rdlc:1150-1160) and the grid renders no company column
+      (Sr.No. | HS Code | Description | No of Licences | Total Value | Currency), so the
+      extra key silently split one HS code into one row per buyer, each carrying only that
+      buyer's slice of Total Value. Customer complaint 2026-09-21: "HS Code တစ်ခုမှာ
+      Description / USD တန်ဖိုးတူတယ်ဆိုရင် ပေါင်းဖော်ပြပေးပါရန်" - merge the rows that share an
+      HS code, a description and a currency. Measured on the live PROD API (FilterType
+      Start, HSCode '', Sakhan 0, Section 0), paging the whole result and collapsing on
+      distinct (HS code, currency):
+
+                                              old report   before    after
+        2025-01-01 .. 2025-01-03 23:59:59             3         5        3
+        2025-01-01 .. 2025-12-31 23:59:59           353       605      353
+
+      The screenshot's row: 8807300000 in USD came back three times (1 + 4 + 1 licences,
+      500.0000 + 3,450.0000 + 9,000.0000) where the old report prints one row of
+      6 / 12,950.0000.
+
+      The footer does NOT change: "Total No of License" is a separate whole-set
+      COUNT(DISTINCT LicenceNo) in sp_HSCodeReport.cs (= rdlc:978), 1,147 for 2025 before
+      and after. Neither does the sum of every Total Value: 144,929,409.1551 for 2025.
+
+   2. ORDER BY becomes (HSCode, Currency, HSCodeId) instead of
+      (HSCode, CompanyName, Currency). CompanyName is a literal NULL on the new result, so
+      the old page window was no longer a unique key and OFFSET/FETCH could repeat one row
+      across pages while dropping another.
+
+   The outer SELECT still returns CompanyRegistrationNo and CompanyName - as
+   CAST(NULL AS nvarchar(...)) - so the DTO and the HS Code detail drill keep one shape.
+
+   NOT changed by this file: the HS Code DETAIL drill. ExportPermitHSCodeDetailReport posts
+   GroupBy='Company' and runs the LINQ twin (sp_HSCodeReport.AggregateQuery), which groups
+   on (HSCodeId, HSCode, CompanyRegistrationNo) like HSCodeDetailReport.rdlc:1262-1265.
+
+   Order of operations:
+     1. CaptureRollback.sql   (save the result grid - it is the rollback artifact)
+     2. VerifyDeployment.sql  section 1 (record what is deployed today)
+     3. THIS FILE
+     4. VerifyDeployment.sql  sections 1-4
+     5. deploy the application
+   ===================================================================================== */
+
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+USE [TradeNetDB];
+GO
+
+-- ============================================================================
+-- sp_HSCodeReport_pagination   (file 01_sp_HSCodeReport_pagination.sql)
+-- ============================================================================
+PRINT N'Applying sp_HSCodeReport_pagination ...';
+GO
+
 CREATE OR ALTER PROCEDURE [dbo].[sp_HSCodeReport_pagination]
 	@FromDate datetime,
 	@ToDate datetime,
@@ -903,5 +973,7 @@ BEGIN
 	END
 END
 GO
+GO
 
-
+PRINT N'sp_HSCodeReport_pagination applied. Now run VerifyDeployment.sql before deploying the application.';
+GO

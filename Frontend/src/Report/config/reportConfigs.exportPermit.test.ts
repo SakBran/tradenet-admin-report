@@ -154,4 +154,85 @@ describe('Export Permit report configs (production RDLC parity)', () => {
       ).toBeUndefined();
     }
   });
+
+  it('By HS Code prints HSCodeReport.rdlc\'s columns and keeps no company grain', () => {
+    // Customer complaint 2026-09-21: one HS Code with the same Description and the same
+    // currency printed on several rows (8807300000 / USD on three). HSCodeReport.rdlc's row
+    // group is =Fields!HSCodeId.Value + =Fields!Currency.Value only (rdlc:1150-1160), so the
+    // grid has no company column to render and must never grow one.
+    const cfg = reportConfigs.ExportPermitByHSCodeReport;
+
+    // rdlc:169/224/279/334/389/444, in order. "Sr.No." is the grid's own row number.
+    expect(cfg.showRowNumber).toBe(true);
+    expect(cfg.rowNumberTitle).toBe('Sr.No.');
+    expect(cfg.columns.map((column) => column.title)).toEqual([
+      'HS Code',
+      'Description',
+      'No of Licences',
+      'Total Value',
+      'Currency',
+    ]);
+    expect(
+      cfg.columns.some((column) => column.dataIndex === 'companyName'),
+      'the summary grid has no company column'
+    ).toBe(false);
+    // rdlc:705 = FORMAT(Sum(Fields!Amount.Value),"N4").
+    expect(cfg.columns.find((column) => column.key === 'TotalValue')?.numberFormat).toBe(
+      '#,##0.0000'
+    );
+    // Legacy RDLC printed every row on one scrolling page.
+    expect(cfg.defaultPageSize).toBe(1000);
+  });
+
+  it('By HS Code carries the old filter box, without the no-op Form Type input', () => {
+    // ExportPermitByHSCodeReport.cshtml: From/To Date (:26-34), Export Section (:40-48),
+    // Filter By (:56-57) and HS Code (:62-63). FormType is an @Html.HiddenFor (:21) and the
+    // controller hardcodes "Export Permit", so an editable box would be a visible no-op.
+    const cfg = reportConfigs.ExportPermitByHSCodeReport;
+    const names = cfg.filters.map((filter) => filter.name);
+
+    expect(names).toEqual(['dateRange', 'ExportImportSectionId', 'FilterType', 'hsCode']);
+    expect(
+      cfg.filters.find((filter) => filter.name === 'ExportImportSectionId')?.lookupName
+    ).toBe('exportPermitSections');
+  });
+
+  it('By HS Code drills to the legacy per-company HS Code detail', () => {
+    // The old HS Code cell opens HSCodeDetailReport in a new window (rdlc:573,
+    // ReportsController.cs:7702) -- the (HS code, company) breakdown of the clicked row.
+    const cfg = reportConfigs.ExportPermitByHSCodeReport;
+
+    expect(cfg.columns.find((column) => column.key === 'hsCode')?.drilldown).toEqual({
+      targetReportKey: 'ExportPermitHSCodeDetailReport',
+      carryFilters: ['FromDate', 'ToDate', 'ExportImportSectionId', 'FilterType'],
+      rowParams: { hsCode: 'hsCode' },
+      openInNewTab: true,
+    });
+  });
+
+  it('HS Code detail drill pins the company grouping its controller cannot infer', () => {
+    // The drill shares ExportPermitByHSCodeReport's controller and arrives with the same
+    // parameters as a summary that has an HS code typed, so the shape has to be posted.
+    const detail = reportConfigs.ExportPermitHSCodeDetailReport;
+
+    expect(detail.controllerName).toBe('ExportPermitByHSCodeReport');
+    expect(detail.hideInMenu).toBe(true);
+    expect(detail.filters.find((filter) => filter.name === 'GroupBy')?.constantValue).toBe(
+      'Company'
+    );
+    expect(
+      reportConfigs.ExportPermitByHSCodeReport.filters.some(
+        (filter) => filter.name === 'GroupBy'
+      )
+    ).toBe(false);
+    // HSCodeDetailReport.rdlc:445-665 -- Company Name, and no Currency / Total Value.
+    expect(detail.columns.map((column) => column.title)).toEqual([
+      'HS Code',
+      'Description',
+      'Company Name',
+      'No of Licences',
+    ]);
+    expect(detail.rowNumberTitle).toBe('Sr.No.');
+    expect(detail.defaultPageSize).toBe(1000);
+  });
 });

@@ -34,7 +34,7 @@
     {
       "key": "LicenceDate",
       "dataIndex": "licenceDate",
-      "title": "Create Date",
+      "title": "Licence Date",
       "dataType": "date"
     },
     {

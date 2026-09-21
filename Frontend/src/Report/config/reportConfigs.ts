@@ -382,6 +382,14 @@ const exportLicenceSectionFilter: ReportFilterConfig = {
   lookupName: 'exportLicenceSections',
 };
 
+// The old ExportPermitByHSCodeReport.cshtml:40-48 renders this dropdown from
+// exportImportSectionRepository.GetAll(AppConfig.ExportPermit) (ReportsController.cs:7650).
+const exportPermitSectionFilter: ReportFilterConfig = {
+  ...importLicenceSectionFilter,
+  label: 'Export Section',
+  lookupName: 'exportPermitSections',
+};
+
 const exportLicenceVoucherFilters: ReportFilterConfig[] = [
   importLicenceDateRangeFilter,
   importLicenceFormTypeFilter,
@@ -4683,7 +4691,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'LicenceDate',
         dataIndex: 'licenceDate',
-        title: 'Create Date',
+        title: 'Licence Date',
         dataType: 'date',
       },
       {
@@ -4844,7 +4852,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
       {
         key: 'LicenceDate',
         dataIndex: 'licenceDate',
-        title: 'Create Date',
+        title: 'Licence Date',
         dataType: 'date',
       },
       {
@@ -8688,49 +8696,33 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelRoute: 'ExportPermitByHSCodeReport/Excel',
     excelFileName: 'ExportPermitByHSCodeReport.xlsx',
     initialSortColumn: 'hsCode',
+    // Legacy RDLC printed every row on one scrolling page.
+    defaultPageSize: 1000,
     showRowNumber: true,
+    rowNumberTitle: 'Sr.No.',
     filters: [
       {
-        name: 'dateRange',
-        label: 'From Date / To Date',
-        type: 'dateRange',
-        fromName: 'FromDate',
-        toName: 'ToDate',
-        fromLabel: 'From Date',
-        toLabel: 'To Date',
-        required: true,
+        ...importLicenceDateRangeFilter,
+        defaultDateRangeMonths: 3,
       },
-      {
-        name: 'FormType',
-        label: 'Form Type',
-        type: 'text',
-        defaultValue: '',
-      },
-      {
-        name: 'FilterType',
-        label: 'Filter By',
-        type: 'select',
-        defaultValue: 'Start',
-        options: [
-          { label: 'Start', value: 'Start' },
-          { label: 'End', value: 'End' },
-        ],
-      },
-      {
-        name: 'hsCode',
-        label: 'HS Code',
-        type: 'text',
-        defaultValue: '',
-      },
+      // No Form Type box: the old ExportPermitByHSCodeReport.cshtml:21 carries FormType as an
+      // @Html.HiddenFor and ExportPermitByHSCodeReportController hardcodes "Export Permit"
+      // without ever reading request.FormType -- the input was a visible no-op.
+      exportPermitSectionFilter,
+      importLicenceFilterTypeFilter,
+      importLicenceHSCodeFilter,
     ],
     columns: [
       {
         key: 'hsCode',
         dataIndex: 'hsCode',
         title: 'HS Code',
+        // The old report's HS Code cell opens HSCodeDetailReport in a new window
+        // (HSCodeReport.rdlc:573, ReportsController.cs:7702) -- the (HS code, company)
+        // breakdown of the row, not the per-item permit detail.
         drilldown: {
-          targetReportKey: 'ExportPermitDetailReport',
-          carryFilters: ['FromDate', 'ToDate'],
+          targetReportKey: 'ExportPermitHSCodeDetailReport',
+          carryFilters: ['FromDate', 'ToDate', 'ExportImportSectionId', 'FilterType'],
           rowParams: { hsCode: 'hsCode' },
           openInNewTab: true,
         },
@@ -8744,11 +8736,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'NoOfLicences',
         dataIndex: 'noOfLicences',
         title: 'No of Licences',
+        dataType: 'number',
       },
       {
+        // HSCodeReport.rdlc:705 = FORMAT(Sum(Fields!Amount.Value),"N4").
         key: 'TotalValue',
         dataIndex: 'totalValue',
         title: 'Total Value',
+        dataType: 'money',
         numberFormat: '#,##0.0000',
       },
       {
@@ -8757,6 +8752,45 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Currency',
       },
     ],
+  },
+  ExportPermitHSCodeDetailReport: {
+    // Drill target only, reached from the By HS Code summary's HS Code cell. Its
+    // controllerName is deliberately the summary's (same endpoint), which is exactly why it
+    // needs hideInMenu: createReportItem keys the menu off controllerName, so leaving it
+    // visible rendered a second row with the summary's own key and link.
+    hideInMenu: true,
+    controllerName: 'ExportPermitByHSCodeReport',
+    reportSubtitle: importLicenceRangeSubtitle('List of Export Permit By HS Code', true),
+    title: 'HS Code Detail Report',
+    apiRoute: 'ExportPermitByHSCodeReport',
+    excelRoute: 'ExportPermitByHSCodeReport/Excel',
+    excelFileName: 'ExportPermitHSCodeDetailReport.xlsx',
+    initialSortColumn: 'hsCode',
+    // Legacy RDLC printed every row on one scrolling page.
+    defaultPageSize: 1000,
+    showRowNumber: true,
+    rowNumberTitle: 'Sr.No.',
+    filters: [
+      {
+        ...importLicenceDateRangeFilter,
+        defaultDateRangeMonths: 3,
+      },
+      exportPermitSectionFilter,
+      importLicenceFilterTypeFilter,
+      importLicenceHSCodeFilter,
+      // This drill shares ExportPermitByHSCodeReport's controller. The old
+      // HSCodeDetailReport.rdlc groups on (HS code, company) (rdlc:1262-1265) while the
+      // summary's HSCodeReport.rdlc groups on (HS code, currency), and the two arrive at
+      // the backend as the same parameters -- so the drill has to say which shape it
+      // wants. Never rendered; always posted (see getDerivedFilterValues).
+      {
+        name: 'GroupBy',
+        label: 'Group By',
+        type: 'text',
+        constantValue: 'Company',
+      },
+    ],
+    columns: hsCodeDetailColumns,
   },
   ExportPermitBySectionReport: {
     controllerName: 'ExportPermitBySectionReport',

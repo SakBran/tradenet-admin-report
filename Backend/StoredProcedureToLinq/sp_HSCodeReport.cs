@@ -387,8 +387,9 @@ public static partial class sp_HSCodeReport
             // legacy procedure returns ORDER BY HSCode.Id: groups in HS code ID order, and an
             // ID's currencies in the order their first permit row arrived (permits as created).
             // Decided BEFORE GroupsByCompany on purpose: the Border Export Permit screen runs the
-            // oversea 'Export Permit' source, whose default (non-legacy) shape is the company split
-            // that ExportPermitHSCodeDetailReport renders -- the legacy summary must not inherit it.
+            // oversea 'Export Permit' source, whose default shape now groups on the same four keys
+            // but orders by the HS code STRING (2026-09-21) -- the legacy summary must not inherit
+            // that ordering.
             return Query(db, request)
                 .GroupBy(row => new
                 {
@@ -490,10 +491,12 @@ public static partial class sp_HSCodeReport
     /// BorderHSCodeReport.rdlc:1159-1162). A report whose HS Code DETAIL drill shares this
     /// controller asks for the company shape explicitly via
     /// <see cref="sp_HSCodeReportRequest.GroupByCompany"/> (the config posts GroupBy='Company' --
-    /// BorderImportLicenceHSCodeDetailReport does), so the summary never has to inherit it. Two
-    /// form types still need it here by default, Import Licence and Export Permit: their
-    /// *HSCodeDetailReport configs render Company Name off this same query without asking, and
-    /// changing them is a separate parity round.
+    /// BorderImportLicenceHSCodeDetailReport does), so the summary never has to inherit it --
+    /// Export Permit joined that list on 2026-09-21 (customer complaint: 8807300000 in USD showed
+    /// three rows of 1+4+1 licences instead of one row of 6 / 12,950.0000; 2025 on PROD, 605 rows
+    /// against the old report's 353). One form type still needs the company here by default,
+    /// Import Licence: its *HSCodeDetailReport config renders Company Name off this same query
+    /// without asking, and changing it is a separate parity round.
     /// Keep this in step with sp_HSCodeReport_pagination.sql's GROUP BY per branch, or the grid
     /// (procedure) and the .xlsx (this query) disagree.
     /// </summary>
@@ -504,7 +507,11 @@ public static partial class sp_HSCodeReport
             return true;
         }
 
-        if (request.FormType is "Import Permit" or "Export Licence" or "Border Export Licence" or "Border Import Licence")
+        if (request.FormType is "Import Permit"
+            or "Export Permit"
+            or "Export Licence"
+            or "Border Export Licence"
+            or "Border Import Licence")
         {
             return false;
         }

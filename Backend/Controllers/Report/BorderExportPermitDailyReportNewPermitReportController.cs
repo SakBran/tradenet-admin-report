@@ -17,6 +17,11 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    // v2: rows are no longer split by Sakhan -- the legacy rdlc groups on
+    // (sLicenceDate, Currency) only (BorderExportPermitByDailyReport.rdlc:1277-1278), and
+    // this grid has no Sakhan column -- and the TOTAL row no longer sums Total Value, so
+    // cached .xlsx files from the pre-fix shape must not be reused.
+    [ExcelFormatVersion(2)]
     public class BorderExportPermitDailyReportNewPermitReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "BorderExportPermitDailyReportNewPermitReport";
@@ -40,9 +45,19 @@ namespace Backend.Controllers.Report
                 return errorResult!;
             }
 
+            // includeSakhan: false -- the legacy report groups on (sLicenceDate, Currency) only
+            // (BorderExportPermitByDailyReport.rdlc:1277-1278); Sakhan is a *filter* there,
+            // never a group key. Keeping it in the key repeated the same (date, currency) pair
+            // once per border office, with nothing in the grid to tell them apart.
+            //
+            // CountOnly matches the legacy TOTAL row, which prints CountDistinct(LicenceNo)
+            // under "No of Permits" (rdlc:1047) and leaves the Total Value cell blank -- each
+            // grid row is one (date, currency) pair, so summing the value column adds
+            // THB + USD + CNY into a meaningless number. BuildColumnTotals still emits
+            // totalUSDValue for the Daily dimension, as the legacy footer does (rdlc:1208).
             var result = await sp_ExportPermitDetailReport_Fast.CreateAggregateResultAsync(
-                _context, procedureRequest!, request!, ReportAggregateDimension.Daily, includeSakhan: true,
-                includeColumnTotals: true);
+                _context, procedureRequest!, request!, ReportAggregateDimension.Daily, includeSakhan: false,
+                includeColumnTotals: true, columnTotalsMode: ReportColumnTotalsMode.CountOnly);
 
             return Ok(result);
         }
@@ -80,13 +95,13 @@ namespace Backend.Controllers.Report
         {
             TryCreateReportRequest(request, out var procedureRequest, out _);
             var rows = await sp_ExportPermitDetailReport_Fast.GetAggregateRowsAsync(
-                _context, procedureRequest!, ReportAggregateDimension.Daily, includeSakhan: true);
+                _context, procedureRequest!, ReportAggregateDimension.Daily, includeSakhan: false);
 
             // Same ordering the JSON grid path applies (CreatePagedResultFromGroups -> Order): Date,
-            // then Sakhan (includeSakhan: true, matching this report's Post), then Currency. Stated
-            // here at the append site because that guarantee must not depend on the helper keeping its
-            // own internal OrderGroups call.
-            sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Daily, includeSakhan: true));
+            // then Currency (includeSakhan: false, matching this report's Post -- no Sakhan tie-break).
+            // Stated here at the append site because that guarantee must not depend on the helper
+            // keeping its own internal OrderGroups call.
+            sink.Append(ReportAggregationService.OrderGroups(rows, ReportAggregateDimension.Daily, includeSakhan: false));
         }
 
         private bool TryCreateReportRequest(
