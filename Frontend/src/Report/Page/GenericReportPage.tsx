@@ -41,6 +41,7 @@ import {
 import { buildExcelPresentation } from '../excel/buildExcelPresentation';
 import { enqueueExcelExport } from '../excel/excelEnqueue';
 import { filterOptionsByParent } from './filterCascade';
+import { extractDrillOnlyFilters } from './drillFilters';
 
 type FilterValue =
   | string
@@ -652,6 +653,25 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
   const [filters, setFilters] = useState<Record<string, unknown>>(() =>
     normalizeReportFilters(initialFormValues)
   );
+  // Drill-in params this report has no filter box for (e.g. the company drilled
+  // from the Company List report). `normalizeReportFilters` is a whitelist over
+  // `config.filters`, so anything rebuilt from the form would drop them — see
+  // ./drillFilters. Kept here so the grid AND the Excel body carry them, and
+  // cleared by Reset, which is the only way out of a drilled scope.
+  const [drillOnlyFilters, setDrillOnlyFilters] = useState<
+    Record<string, unknown>
+  >({});
+  // The one place form values become a request body. Everything the page posts —
+  // grid and both Excel buttons — goes through here, so the sheet can never be
+  // scoped differently from the grid. Drill-only keys are absent from
+  // `normalizeReportFilters`' output by definition, so nothing is overwritten.
+  const withDrillOnlyFilters = useCallback(
+    (values: FilterFormValues) => ({
+      ...normalizeReportFilters(values),
+      ...drillOnlyFilters,
+    }),
+    [drillOnlyFilters, normalizeReportFilters]
+  );
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [lookupOptions, setLookupOptions] = useState<
@@ -834,7 +854,7 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
       } catch {
         return;
       }
-      const currentFilters = normalizeReportFilters(values);
+      const currentFilters = withDrillOnlyFilters(values);
       // The presentation spec makes the sheet match this grid: same header
       // block, same columns in the same order with the same header text.
       await enqueueExcelExport(
@@ -844,7 +864,7 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
         config.excelFileName
       );
     },
-    [config, form, normalizeReportFilters]
+    [config, form, withDrillOnlyFilters]
   );
 
   // The optional second export button (`config.secondaryExcel`), for a report
@@ -865,7 +885,7 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
       } catch {
         return;
       }
-      const currentFilters = normalizeReportFilters(values);
+      const currentFilters = withDrillOnlyFilters(values);
       const spec = buildExcelPresentation(config, currentFilters);
 
       await enqueueExcelExport(
@@ -885,17 +905,21 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
         secondaryExcel.fileName
       );
     },
-    [config, form, normalizeReportFilters, secondaryExcel]
+    [config, form, withDrillOnlyFilters, secondaryExcel]
   );
 
   const applyFilters = (values: FilterFormValues) => {
-    setFilters(normalizeReportFilters(values));
+    // A drilled-in scope (e.g. one company) survives a Filter click — the grid
+    // would otherwise silently widen to every company, with no box on screen to
+    // show it had. Reset is the way out.
+    setFilters(withDrillOnlyFilters(values));
     setHasAppliedFilters(true);
     setRefreshKey((current) => current + 1);
   };
 
   const resetFilters = () => {
     form.setFieldsValue(initialFormValues);
+    setDrillOnlyFilters({});
     setFilters(normalizeReportFilters(initialFormValues));
     setParentFilterValues({});
     setHasAppliedFilters(false);
@@ -1056,10 +1080,25 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
     });
     form.setFieldsValue(formSeed);
 
-    setFilters({ ...derivedFilterValues, ...drill });
+    // Keep the params the form cannot reproduce, so every later request the page
+    // builds from the form (both Excel buttons, and a Filter click) still carries
+    // them. Before this, the Excel body lost them and exported every company.
+    setDrillOnlyFilters(extractDrillOnlyFilters(config.filters, drill));
+    // Normalize the seeded form first so the grid body also carries this report's
+    // own filter defaults — otherwise the grid and the sheet post different shapes.
+    setFilters({
+      ...normalizeReportFilters({ ...initialFormValues, ...formSeed }),
+      ...drill,
+    });
     setHasAppliedFilters(true);
     setRefreshKey((current) => current + 1);
-  }, [location, config.filters, derivedFilterValues, form]);
+  }, [
+    location,
+    config.filters,
+    form,
+    initialFormValues,
+    normalizeReportFilters,
+  ]);
 
   // Legacy RDLC-style report header rendered inside the grid, shown only once
   // filters are applied. Reflects the applied Type/Date via reportSubtitle.
