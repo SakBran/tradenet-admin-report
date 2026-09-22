@@ -1866,7 +1866,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'BorderExportLicenceDailyReportNewLicenceReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     defaultPageSize: 1000,
-    showRowNumber: false,
+    // BorderExportLicenceByDailyReport.rdlc:675 prints the serial column; blank header at
+    // rdlc:285. Same false negative as BorderImportLicenceDailyReportNewLicenceReport.
+    showRowNumber: true,
+    rowNumberTitle: 'Sr.No.',
     filters: [
       {
         name: 'dateRange',
@@ -3419,7 +3422,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'BorderExportPermitDailyReportNewPermitReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     defaultPageSize: 1000,
-    showRowNumber: false,
+    // BorderExportPermitByDailyReport.rdlc:616 prints the serial column; blank header at
+    // rdlc:281. Same false negative as BorderImportLicenceDailyReportNewLicenceReport.
+    showRowNumber: true,
+    rowNumberTitle: 'Sr.No.',
     filters: [
       {
         name: 'dateRange',
@@ -4622,7 +4628,14 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     reportSubtitle: importLicenceRangeSubtitle('List of Border Import Licences By Daily', true),
     initialSortColumn: 'PaThaKaTypeId',
     defaultPageSize: 1000,
-    showRowNumber: false,
+    // BorderImportLicenceByDailyReport.rdlc:608 prints a leading serial column
+    // (=Variables!GroupCountValue.Value, Code.getGroupCounter at rdlc:1329-1333), but its
+    // header cell is EMPTY (rdlc:273) -- so the 2026-05-29 column-compare pass read "no
+    // column" and switched the row number off on all eight Daily reports. Customer
+    // complaint 2026-09-22: "ထိပ်ဆုံးမှာ Sr No column မပါလာလို့ပါတဲ့". Every other Border
+    // Import Licence rdlc labels that slot Sr.No. (BorderImportLicenceBySectionReport.rdlc:261).
+    showRowNumber: true,
+    rowNumberTitle: 'Sr.No.',
     filters: borderImportLicenceDailyFilters,
     columns: [
       {
@@ -6168,7 +6181,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'BorderImportPermitDailyReportNewPermitReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     defaultPageSize: 1000,
-    showRowNumber: false,
+    // BorderImportPermitByDailyReport.rdlc:608 prints the serial column; blank header at
+    // rdlc:273. Same false negative as BorderImportLicenceDailyReportNewLicenceReport.
+    showRowNumber: true,
+    rowNumberTitle: 'Sr.No.',
     filters: [
       {
         name: 'dateRange',
@@ -7913,7 +7929,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ExportLicenceDailyReportNewLicenceReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     defaultPageSize: 1000,
-    showRowNumber: false,
+    // ExportLicenceByDailyReport.rdlc:616 prints the serial column; blank header at
+    // rdlc:281. Same false negative as BorderImportLicenceDailyReportNewLicenceReport.
+    showRowNumber: true,
+    rowNumberTitle: 'Sr.No.',
     filters: [
       {
         name: 'dateRange',
@@ -9126,7 +9145,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ExportPermitDailyReportNewPermitReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     defaultPageSize: 1000,
-    showRowNumber: false,
+    // ExportPermitByDailyReport.rdlc:616 prints the serial column; blank header at
+    // rdlc:281. Same false negative as BorderImportLicenceDailyReportNewLicenceReport.
+    showRowNumber: true,
+    rowNumberTitle: 'Sr.No.',
     filters: [
       {
         name: 'dateRange',
@@ -11711,7 +11733,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportPermitDailyReportNewPermitReport.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     defaultPageSize: 1000,
-    showRowNumber: false,
+    // ImportPermitByDailyReport.rdlc:608 prints the serial column; blank header at
+    // rdlc:273. Same false negative as BorderImportLicenceDailyReportNewLicenceReport.
+    showRowNumber: true,
+    rowNumberTitle: 'Sr.No.',
     filters: [
       {
         name: 'dateRange',

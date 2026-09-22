@@ -7,8 +7,8 @@
   "headerLines": [
     "Border Import Permit Daily Report (New Permit Report)"
   ],
-  "showRowNumber": false,
-  "rowNumberTitle": "No.",
+  "showRowNumber": true,
+  "rowNumberTitle": "Sr.No.",
   "columns": [
     {
       "key": "Date",

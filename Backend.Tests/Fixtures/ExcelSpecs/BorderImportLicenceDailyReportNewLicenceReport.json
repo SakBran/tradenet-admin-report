@@ -7,8 +7,8 @@
   "headerLines": [
     "List of Border Import Licences By Daily From (01/02/2026) To (28/02/2026)"
   ],
-  "showRowNumber": false,
-  "rowNumberTitle": "No",
+  "showRowNumber": true,
+  "rowNumberTitle": "Sr.No.",
   "columns": [
     {
       "key": "Date",

@@ -9,8 +9,8 @@
     "Directorate of Trade",
     "List of Import Permit By Daily From (01/02/2026) To (28/02/2026)"
   ],
-  "showRowNumber": false,
-  "rowNumberTitle": "No",
+  "showRowNumber": true,
+  "rowNumberTitle": "Sr.No.",
   "columns": [
     {
       "key": "Date",

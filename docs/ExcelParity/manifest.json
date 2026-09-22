@@ -1,22 +1,23 @@
 {
   "generatedFrom": {
-    "head": "73bd94e5c1bc491ac33344a910e8e96c4287df63",
+    "head": "f3413ebe411c45f5b48539c178443037685a0d7d",
     "plan": "docs/ExcelParity/Contract.md"
   },
   "counts": {
-    "total": 160,
+    "total": 171,
     "byGroup": {
-      "A": 69,
-      "B": 32,
+      "A": 67,
+      "B": 35,
       "C": 44,
       "D": 4,
       "E": 1,
-      "F": 10
+      "F": 10,
+      "UNKNOWN": 10
     },
-    "hasColumnTotals": 44,
-    "hasCurrencyTotals": 39,
+    "hasColumnTotals": 50,
+    "hasCurrencyTotals": 41,
     "both": 1,
-    "aliases": 4,
+    "aliases": 6,
     "variants": 7,
     "titleMismatch": 4,
     "bespokePages": 8
@@ -38,7 +39,18 @@
       "reason": "class declaration does not implement IStreamingExcelReport"
     }
   ],
-  "unknown": [],
+  "unknown": [
+    "AdvanceSearchBorderExportLicenceController",
+    "AdvanceSearchBorderExportPermitController",
+    "AdvanceSearchBorderImportLicenceController",
+    "AdvanceSearchBorderImportPermitController",
+    "AdvanceSearchExportLicenceController",
+    "AdvanceSearchExportPermitController",
+    "AdvanceSearchImportLicenceController",
+    "AdvanceSearchImportPermitController",
+    "ListOfDirectorsByCompanyRegistrationNoController",
+    "ListOfTopCapitalCompanyController"
+  ],
   "controllersWithoutConfig": [],
   "configsWithoutController": [
     "CardListsByCompanyRegistrationNumber",
@@ -77,9 +89,297 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": true,
-      "formatVersion": 2,
+      "formatVersion": 6,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/AccountSummaryReport.json"
+      ]
+    },
+    {
+      "controller": "AdvanceSearchBorderExportLicenceController",
+      "reportKey": "AdvanceSearchBorderExportLicence",
+      "controllerFile": "Backend/Controllers/Report/AdvanceSearchBorderExportLicenceController.cs",
+      "requestType": "AdvanceSearchBorderExportLicenceRequest",
+      "group": "UNKNOWN",
+      "shape": null,
+      "configKeys": [
+        "AdvanceSearchBorderExportLicence"
+      ],
+      "aliasConfigKeys": [],
+      "configTitle": "Advance Search for Border Export Licence",
+      "excelWorksheetTitle": "Advance Search for Border Export Licence",
+      "titleMismatch": false,
+      "subtitleSample": "Advance Search for Border Export Licence — Licence Date (01/02/2026) To (28/02/2026)",
+      "reportHeading": [],
+      "showRowNumber": true,
+      "dateShape": "range",
+      "requestDateProps": [
+        "FromDate",
+        "ToDate"
+      ],
+      "dateShapeDisagrees": false,
+      "hasColumnTotals": false,
+      "hasCurrencyTotals": false,
+      "currencyTotalsColumns": null,
+      "variants": [],
+      "columnCount": 24,
+      "bespokePage": null,
+      "excelPagePattern": "generic",
+      "hasLayoutProvider": false,
+      "formatVersion": 2,
+      "fixtureFiles": [
+        "Backend.Tests/Fixtures/ExcelSpecs/AdvanceSearchBorderExportLicence.json"
+      ]
+    },
+    {
+      "controller": "AdvanceSearchBorderExportPermitController",
+      "reportKey": "AdvanceSearchBorderExportPermit",
+      "controllerFile": "Backend/Controllers/Report/AdvanceSearchBorderExportPermitController.cs",
+      "requestType": "AdvanceSearchBorderExportPermitRequest",
+      "group": "UNKNOWN",
+      "shape": null,
+      "configKeys": [
+        "AdvanceSearchBorderExportPermit"
+      ],
+      "aliasConfigKeys": [],
+      "configTitle": "Advance Search for Border Export Permit",
+      "excelWorksheetTitle": "Advance Search for Border Export Permit",
+      "titleMismatch": false,
+      "subtitleSample": "Advance Search for Border Export Permit — Licence Date (01/02/2026) To (28/02/2026)",
+      "reportHeading": [],
+      "showRowNumber": true,
+      "dateShape": "range",
+      "requestDateProps": [
+        "FromDate",
+        "ToDate"
+      ],
+      "dateShapeDisagrees": false,
+      "hasColumnTotals": false,
+      "hasCurrencyTotals": false,
+      "currencyTotalsColumns": null,
+      "variants": [],
+      "columnCount": 24,
+      "bespokePage": null,
+      "excelPagePattern": "generic",
+      "hasLayoutProvider": false,
+      "formatVersion": 2,
+      "fixtureFiles": [
+        "Backend.Tests/Fixtures/ExcelSpecs/AdvanceSearchBorderExportPermit.json"
+      ]
+    },
+    {
+      "controller": "AdvanceSearchBorderImportLicenceController",
+      "reportKey": "AdvanceSearchBorderImportLicence",
+      "controllerFile": "Backend/Controllers/Report/AdvanceSearchBorderImportLicenceController.cs",
+      "requestType": "AdvanceSearchBorderImportLicenceRequest",
+      "group": "UNKNOWN",
+      "shape": null,
+      "configKeys": [
+        "AdvanceSearchBorderImportLicence"
+      ],
+      "aliasConfigKeys": [],
+      "configTitle": "Advance Search for Border Import Licence",
+      "excelWorksheetTitle": "Advance Search for Border Import Licence",
+      "titleMismatch": false,
+      "subtitleSample": "Advance Search for Border Import Licence — Licence Date (01/02/2026) To (28/02/2026)",
+      "reportHeading": [],
+      "showRowNumber": true,
+      "dateShape": "range",
+      "requestDateProps": [
+        "FromDate",
+        "ToDate"
+      ],
+      "dateShapeDisagrees": false,
+      "hasColumnTotals": false,
+      "hasCurrencyTotals": false,
+      "currencyTotalsColumns": null,
+      "variants": [],
+      "columnCount": 24,
+      "bespokePage": null,
+      "excelPagePattern": "generic",
+      "hasLayoutProvider": false,
+      "formatVersion": 2,
+      "fixtureFiles": [
+        "Backend.Tests/Fixtures/ExcelSpecs/AdvanceSearchBorderImportLicence.json"
+      ]
+    },
+    {
+      "controller": "AdvanceSearchBorderImportPermitController",
+      "reportKey": "AdvanceSearchBorderImportPermit",
+      "controllerFile": "Backend/Controllers/Report/AdvanceSearchBorderImportPermitController.cs",
+      "requestType": "AdvanceSearchBorderImportPermitRequest",
+      "group": "UNKNOWN",
+      "shape": null,
+      "configKeys": [
+        "AdvanceSearchBorderImportPermit"
+      ],
+      "aliasConfigKeys": [],
+      "configTitle": "Advance Search for Border Import Permit",
+      "excelWorksheetTitle": "Advance Search for Border Import Permit",
+      "titleMismatch": false,
+      "subtitleSample": "Advance Search for Border Import Permit — Licence Date (01/02/2026) To (28/02/2026)",
+      "reportHeading": [],
+      "showRowNumber": true,
+      "dateShape": "range",
+      "requestDateProps": [
+        "FromDate",
+        "ToDate"
+      ],
+      "dateShapeDisagrees": false,
+      "hasColumnTotals": false,
+      "hasCurrencyTotals": false,
+      "currencyTotalsColumns": null,
+      "variants": [],
+      "columnCount": 24,
+      "bespokePage": null,
+      "excelPagePattern": "generic",
+      "hasLayoutProvider": false,
+      "formatVersion": 2,
+      "fixtureFiles": [
+        "Backend.Tests/Fixtures/ExcelSpecs/AdvanceSearchBorderImportPermit.json"
+      ]
+    },
+    {
+      "controller": "AdvanceSearchExportLicenceController",
+      "reportKey": "AdvanceSearchExportLicence",
+      "controllerFile": "Backend/Controllers/Report/AdvanceSearchExportLicenceController.cs",
+      "requestType": "AdvanceSearchExportLicenceRequest",
+      "group": "UNKNOWN",
+      "shape": null,
+      "configKeys": [
+        "AdvanceSearchExportLicence"
+      ],
+      "aliasConfigKeys": [],
+      "configTitle": "Advance Search for Export Licence",
+      "excelWorksheetTitle": "Advance Search for Export Licence",
+      "titleMismatch": false,
+      "subtitleSample": "Advance Search for Export Licence — Licence Date (01/02/2026) To (28/02/2026)",
+      "reportHeading": [],
+      "showRowNumber": true,
+      "dateShape": "range",
+      "requestDateProps": [
+        "FromDate",
+        "ToDate"
+      ],
+      "dateShapeDisagrees": false,
+      "hasColumnTotals": false,
+      "hasCurrencyTotals": false,
+      "currencyTotalsColumns": null,
+      "variants": [],
+      "columnCount": 23,
+      "bespokePage": null,
+      "excelPagePattern": "generic",
+      "hasLayoutProvider": false,
+      "formatVersion": 2,
+      "fixtureFiles": [
+        "Backend.Tests/Fixtures/ExcelSpecs/AdvanceSearchExportLicence.json"
+      ]
+    },
+    {
+      "controller": "AdvanceSearchExportPermitController",
+      "reportKey": "AdvanceSearchExportPermit",
+      "controllerFile": "Backend/Controllers/Report/AdvanceSearchExportPermitController.cs",
+      "requestType": "AdvanceSearchExportPermitRequest",
+      "group": "UNKNOWN",
+      "shape": null,
+      "configKeys": [
+        "AdvanceSearchExportPermit"
+      ],
+      "aliasConfigKeys": [],
+      "configTitle": "Advance Search for Export Permit",
+      "excelWorksheetTitle": "Advance Search for Export Permit",
+      "titleMismatch": false,
+      "subtitleSample": "Advance Search for Export Permit — Licence Date (01/02/2026) To (28/02/2026)",
+      "reportHeading": [],
+      "showRowNumber": true,
+      "dateShape": "range",
+      "requestDateProps": [
+        "FromDate",
+        "ToDate"
+      ],
+      "dateShapeDisagrees": false,
+      "hasColumnTotals": false,
+      "hasCurrencyTotals": false,
+      "currencyTotalsColumns": null,
+      "variants": [],
+      "columnCount": 23,
+      "bespokePage": null,
+      "excelPagePattern": "generic",
+      "hasLayoutProvider": false,
+      "formatVersion": 2,
+      "fixtureFiles": [
+        "Backend.Tests/Fixtures/ExcelSpecs/AdvanceSearchExportPermit.json"
+      ]
+    },
+    {
+      "controller": "AdvanceSearchImportLicenceController",
+      "reportKey": "AdvanceSearchImportLicence",
+      "controllerFile": "Backend/Controllers/Report/AdvanceSearchImportLicenceController.cs",
+      "requestType": "AdvanceSearchImportLicenceRequest",
+      "group": "UNKNOWN",
+      "shape": null,
+      "configKeys": [
+        "AdvanceSearchImportLicence"
+      ],
+      "aliasConfigKeys": [],
+      "configTitle": "Advance Search for Import Licence",
+      "excelWorksheetTitle": "Advance Search for Import Licence",
+      "titleMismatch": false,
+      "subtitleSample": "Advance Search for Import Licence — Licence Date (01/02/2026) To (28/02/2026)",
+      "reportHeading": [],
+      "showRowNumber": true,
+      "dateShape": "range",
+      "requestDateProps": [
+        "FromDate",
+        "ToDate"
+      ],
+      "dateShapeDisagrees": false,
+      "hasColumnTotals": false,
+      "hasCurrencyTotals": false,
+      "currencyTotalsColumns": null,
+      "variants": [],
+      "columnCount": 23,
+      "bespokePage": null,
+      "excelPagePattern": "generic",
+      "hasLayoutProvider": false,
+      "formatVersion": 2,
+      "fixtureFiles": [
+        "Backend.Tests/Fixtures/ExcelSpecs/AdvanceSearchImportLicence.json"
+      ]
+    },
+    {
+      "controller": "AdvanceSearchImportPermitController",
+      "reportKey": "AdvanceSearchImportPermit",
+      "controllerFile": "Backend/Controllers/Report/AdvanceSearchImportPermitController.cs",
+      "requestType": "AdvanceSearchImportPermitRequest",
+      "group": "UNKNOWN",
+      "shape": null,
+      "configKeys": [
+        "AdvanceSearchImportPermit"
+      ],
+      "aliasConfigKeys": [],
+      "configTitle": "Advance Search for Import Permit",
+      "excelWorksheetTitle": "Advance Search for Import Permit",
+      "titleMismatch": false,
+      "subtitleSample": "Advance Search for Import Permit — Licence Date (01/02/2026) To (28/02/2026)",
+      "reportHeading": [],
+      "showRowNumber": true,
+      "dateShape": "range",
+      "requestDateProps": [
+        "FromDate",
+        "ToDate"
+      ],
+      "dateShapeDisagrees": false,
+      "hasColumnTotals": false,
+      "hasCurrencyTotals": false,
+      "currencyTotalsColumns": null,
+      "variants": [],
+      "columnCount": 23,
+      "bespokePage": null,
+      "excelPagePattern": "generic",
+      "hasLayoutProvider": false,
+      "formatVersion": 2,
+      "fixtureFiles": [
+        "Backend.Tests/Fixtures/ExcelSpecs/AdvanceSearchImportPermit.json"
       ]
     },
     {
@@ -287,9 +587,12 @@
       "group": "C",
       "shape": "sp_HSCodeReport.GetAggregateRowsAsync()",
       "configKeys": [
-        "BorderExportLicenceByHSCodeReport"
+        "BorderExportLicenceByHSCodeReport",
+        "BorderExportLicenceHSCodeDetailReport"
       ],
-      "aliasConfigKeys": [],
+      "aliasConfigKeys": [
+        "BorderExportLicenceHSCodeDetailReport"
+      ],
       "configTitle": "Border Export Licence By HS Code Report",
       "excelWorksheetTitle": "Border Export Licence By HS Code Report",
       "titleMismatch": false,
@@ -310,9 +613,10 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
-        "Backend.Tests/Fixtures/ExcelSpecs/BorderExportLicenceByHSCodeReport.json"
+        "Backend.Tests/Fixtures/ExcelSpecs/BorderExportLicenceByHSCodeReport.json",
+        "Backend.Tests/Fixtures/ExcelSpecs/BorderExportLicenceHSCodeDetailReport.json"
       ]
     },
     {
@@ -514,7 +818,7 @@
       "titleMismatch": false,
       "subtitleSample": "List of Border Export Licences By Daily From (01/02/2026) To (28/02/2026)",
       "reportHeading": [],
-      "showRowNumber": false,
+      "showRowNumber": true,
       "dateShape": "range",
       "requestDateProps": [
         "FromDate",
@@ -677,7 +981,7 @@
       "variants": [],
       "columnCount": 3,
       "bespokePage": "BorderExportLicenceTotalValueLicencesReport",
-      "excelPagePattern": "bespoke-queue",
+      "excelPagePattern": "none",
       "hasLayoutProvider": true,
       "formatVersion": 2,
       "fixtureFiles": [
@@ -905,7 +1209,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 3,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderExportPermitByHSCodeReport.json",
         "Backend.Tests/Fixtures/ExcelSpecs/BorderExportPermitHSCodeDetailReport.json"
@@ -958,8 +1262,8 @@
         "BorderExportPermitBySellerCountryReport"
       ],
       "aliasConfigKeys": [],
-      "configTitle": "Border Export Permit By Seller Country Report",
-      "excelWorksheetTitle": "Border Export Permit By Seller Country Report",
+      "configTitle": "Border Export Permit By Buyer Country Report",
+      "excelWorksheetTitle": "Border Export Permit By Buyer Country Report",
       "titleMismatch": false,
       "subtitleSample": "List of Export Permit By Buyer Country From (01/02/2026) To (28/02/2026)",
       "reportHeading": [],
@@ -1064,7 +1368,7 @@
       "controllerFile": "Backend/Controllers/Report/BorderExportPermitDailyReportNewPermitReportController.cs",
       "requestType": "BorderExportPermitDailyReportNewPermitReportRequest",
       "group": "C",
-      "shape": "sp_ExportPermitDetailReport_Fast.GetAggregateRowsAsync(, Daily, includeSakhan:true)",
+      "shape": "sp_ExportPermitDetailReport_Fast.GetAggregateRowsAsync(, Daily, includeSakhan:false)",
       "configKeys": [
         "BorderExportPermitDailyReportNewPermitReport"
       ],
@@ -1074,7 +1378,7 @@
       "titleMismatch": false,
       "subtitleSample": "List of Border Export Permit By Daily From (01/02/2026) To (28/02/2026)",
       "reportHeading": [],
-      "showRowNumber": false,
+      "showRowNumber": true,
       "dateShape": "range",
       "requestDateProps": [
         "FromDate",
@@ -1089,7 +1393,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderExportPermitDailyReportNewPermitReport.json"
       ]
@@ -1217,7 +1521,7 @@
       "controllerFile": "Backend/Controllers/Report/BorderExportPermitVoucherReportController.cs",
       "requestType": "BorderExportPermitVoucherReportRequest",
       "group": "A",
-      "shape": "sp_VoucherReport.ExecuteQueryable()",
+      "shape": "sp_VoucherReport.ExecuteQueryable(, sortColumn:\"Date\", sortOrder:\"ASC\")",
       "configKeys": [
         "BorderExportPermitVoucherReport"
       ],
@@ -1311,7 +1615,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 2,
+      "formatVersion": 3,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderExportPermitVoucherReport.json",
         "Backend.Tests/Fixtures/ExcelSpecs/BorderExportPermitVoucherReport.ApplyType-Amend.json",
@@ -1415,7 +1719,7 @@
       "configTitle": "Border Import Licence By HS Code Report",
       "excelWorksheetTitle": "Border Import Licence By HS Code Report",
       "titleMismatch": false,
-      "subtitleSample": "List of Border Import Licence By HS Code From (01/02/2026) To (28/02/2026)",
+      "subtitleSample": "List of Border Import Licences By HS Code From (01/02/2026) To (28/02/2026)",
       "reportHeading": [],
       "showRowNumber": true,
       "dateShape": "range",
@@ -1432,7 +1736,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderImportLicenceByHSCodeReport.json",
         "Backend.Tests/Fixtures/ExcelSpecs/BorderImportLicenceHSCodeDetailReport.json"
@@ -1444,7 +1748,7 @@
       "controllerFile": "Backend/Controllers/Report/BorderImportLicenceByMethodReportController.cs",
       "requestType": "BorderImportLicenceByMethodReportRequest",
       "group": "C",
-      "shape": "sp_ImportLicenceDetailReport_Fast.GetAggregateRowsAsync(, Method, includeSakhan:true)",
+      "shape": "sp_ImportLicenceDetailReport_Fast.GetAggregateRowsAsync(, Method, includeSakhan:false)",
       "configKeys": [
         "BorderImportLicenceByMethodReport"
       ],
@@ -1469,7 +1773,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderImportLicenceByMethodReport.json"
       ]
@@ -1627,7 +1931,7 @@
       "controllerFile": "Backend/Controllers/Report/BorderImportLicenceDailyReportNewLicenceReportController.cs",
       "requestType": "BorderImportLicenceDailyReportNewLicenceReportRequest",
       "group": "C",
-      "shape": "sp_ImportLicenceDetailReport_Fast.GetAggregateRowsAsync(, Daily, includeSakhan:true)",
+      "shape": "sp_ImportLicenceDetailReport_Fast.GetAggregateRowsAsync(, Daily, includeSakhan:false)",
       "configKeys": [
         "BorderImportLicenceDailyReportNewLicenceReport"
       ],
@@ -1637,7 +1941,7 @@
       "titleMismatch": false,
       "subtitleSample": "List of Border Import Licences By Daily From (01/02/2026) To (28/02/2026)",
       "reportHeading": [],
-      "showRowNumber": false,
+      "showRowNumber": true,
       "dateShape": "range",
       "requestDateProps": [
         "FromDate",
@@ -1652,7 +1956,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderImportLicenceDailyReportNewLicenceReport.json"
       ]
@@ -1813,7 +2117,7 @@
       "controllerFile": "Backend/Controllers/Report/BorderImportLicencePendingReportController.cs",
       "requestType": "BorderImportLicencePendingReportRequest",
       "group": "A",
-      "shape": "sp_PendingReport.ExecuteQueryable()",
+      "shape": "sp_PendingReport.Query() .OrderBy(row => row.ApplicationDate) .ThenBy(row => row.ApplicationNo)",
       "configKeys": [
         "BorderImportLicencePendingReport"
       ],
@@ -1872,7 +2176,7 @@
       "variants": [],
       "columnCount": 2,
       "bespokePage": "BorderImportLicenceTotalValueLicencesReport",
-      "excelPagePattern": "bespoke-queue",
+      "excelPagePattern": "none",
       "hasLayoutProvider": true,
       "formatVersion": 2,
       "fixtureFiles": [
@@ -1902,7 +2206,7 @@
         "ToDate"
       ],
       "dateShapeDisagrees": false,
-      "hasColumnTotals": false,
+      "hasColumnTotals": true,
       "hasCurrencyTotals": false,
       "currencyTotalsColumns": null,
       "variants": [
@@ -2116,11 +2420,11 @@
       "hasCurrencyTotals": false,
       "currencyTotalsColumns": null,
       "variants": [],
-      "columnCount": 6,
+      "columnCount": 5,
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 4,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderImportPermitByHSCodeReport.json",
         "Backend.Tests/Fixtures/ExcelSpecs/BorderImportPermitHSCodeDetailReport.json"
@@ -2132,7 +2436,7 @@
       "controllerFile": "Backend/Controllers/Report/BorderImportPermitBySectionReportController.cs",
       "requestType": "BorderImportPermitBySectionReportRequest",
       "group": "C",
-      "shape": "sp_ImportPermitDetailReport_Fast.GetAggregateRowsAsync(, Section, includeSakhan:false)",
+      "shape": "sp_ImportPermitDetailReport_Fast.GetAggregateRowsAsync(, Section, includeSakhan:false, ordering:ReportAggregateOrdering.SourceOrder)",
       "configKeys": [
         "BorderImportPermitBySectionReport"
       ],
@@ -2140,7 +2444,7 @@
       "configTitle": "Border Import Permit By Section Report",
       "excelWorksheetTitle": "Border Import Permit By Section Report",
       "titleMismatch": false,
-      "subtitleSample": null,
+      "subtitleSample": "List of Border Import Permit By Section From (01/02/2026) To (28/02/2026)",
       "reportHeading": [],
       "showRowNumber": true,
       "dateShape": "range",
@@ -2157,7 +2461,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 2,
+      "formatVersion": 3,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderImportPermitBySectionReport.json"
       ]
@@ -2243,7 +2547,7 @@
       "controllerFile": "Backend/Controllers/Report/BorderImportPermitCompanyListReportController.cs",
       "requestType": "BorderImportPermitCompanyListReportRequest",
       "group": "C",
-      "shape": "sp_ImportPermitDetailReport_Fast.GetAggregateRowsAsync(, Company, includeSakhan:false)",
+      "shape": "sp_ImportPermitDetailReport_Fast.GetAggregateRowsAsync(, Company, includeSakhan:false, ordering:ReportAggregateOrdering.SourceOrder)",
       "configKeys": [
         "BorderImportPermitCompanyListReport"
       ],
@@ -2251,7 +2555,7 @@
       "configTitle": "Border Import Permit Company List Report",
       "excelWorksheetTitle": "Border Import Permit Company List Report",
       "titleMismatch": false,
-      "subtitleSample": null,
+      "subtitleSample": "List of Import Permit By Company (01/02/2026) To (28/02/2026)",
       "reportHeading": [],
       "showRowNumber": true,
       "dateShape": "range",
@@ -2268,7 +2572,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 2,
+      "formatVersion": 3,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderImportPermitCompanyListReport.json"
       ]
@@ -2279,7 +2583,7 @@
       "controllerFile": "Backend/Controllers/Report/BorderImportPermitDailyReportNewPermitReportController.cs",
       "requestType": "BorderImportPermitDailyReportNewPermitReportRequest",
       "group": "C",
-      "shape": "sp_ImportPermitDetailReport_Fast.GetAggregateRowsAsync(, Daily, includeSakhan:true)",
+      "shape": "sp_ImportPermitDetailReport_Fast.GetAggregateRowsAsync(, Daily, includeSakhan:false)",
       "configKeys": [
         "BorderImportPermitDailyReportNewPermitReport"
       ],
@@ -2289,7 +2593,7 @@
       "titleMismatch": false,
       "subtitleSample": null,
       "reportHeading": [],
-      "showRowNumber": false,
+      "showRowNumber": true,
       "dateShape": "range",
       "requestDateProps": [
         "FromDate",
@@ -2304,7 +2608,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 2,
+      "formatVersion": 3,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderImportPermitDailyReportNewPermitReport.json"
       ]
@@ -2315,7 +2619,7 @@
       "controllerFile": "Backend/Controllers/Report/BorderImportPermitDetailReportController.cs",
       "requestType": "BorderImportPermitDetailReportRequest",
       "group": "B",
-      "shape": "sp_ImportPermitDetailReport_Fast.StreamResolvedChunksAsync(_cache, )",
+      "shape": "sp_BorderImportPermitDetailReport.StreamResolvedChunksAsync(_cache, )",
       "configKeys": [
         "BorderImportPermitDetailReport"
       ],
@@ -2323,7 +2627,7 @@
       "configTitle": "Border Import Permit Detail Report",
       "excelWorksheetTitle": "Border Import Permit Detail Report",
       "titleMismatch": false,
-      "subtitleSample": null,
+      "subtitleSample": "List of Border Import Permit By Detail From (01/02/2026) To (28/02/2026)",
       "reportHeading": [],
       "showRowNumber": true,
       "dateShape": "range",
@@ -2340,7 +2644,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderImportPermitDetailReport.json"
       ]
@@ -2408,7 +2712,7 @@
       ],
       "dateShapeDisagrees": false,
       "hasColumnTotals": false,
-      "hasCurrencyTotals": false,
+      "hasCurrencyTotals": true,
       "currencyTotalsColumns": {
         "labelColumnKey": "LicenceNo",
         "valueColumnKey": "TotalValue"
@@ -2418,7 +2722,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/BorderImportPermitNewReportNewReport.json"
       ]
@@ -2609,7 +2913,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 3,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ChequeNoDetailReport.json"
       ]
@@ -2645,7 +2949,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 3,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ChequeNoReport.json"
       ]
@@ -2679,7 +2983,7 @@
       "variants": [],
       "columnCount": 18,
       "bespokePage": "CompanyProfile",
-      "excelPagePattern": "bespoke-queue",
+      "excelPagePattern": "none",
       "hasLayoutProvider": false,
       "formatVersion": 1,
       "fixtureFiles": [
@@ -2803,6 +3107,111 @@
       "formatVersion": 1,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/DutyFreeShopSummaryReport.json"
+      ]
+    },
+    {
+      "controller": "EICCBorderLicencePermitReportController",
+      "reportKey": "EICCBorderLicencePermitReport",
+      "controllerFile": "Backend/Controllers/Report/EICCBorderLicencePermitReportController.cs",
+      "requestType": "EICCBorderLicencePermitReportRequest",
+      "group": "B",
+      "shape": "sp_EICCReport.Query()",
+      "configKeys": [
+        "EICCBorderLicencePermitReport"
+      ],
+      "aliasConfigKeys": [],
+      "configTitle": "EICC Border Licence and Permit Report",
+      "excelWorksheetTitle": "EICC Border Licence and Permit Report",
+      "titleMismatch": false,
+      "subtitleSample": "EICC BorderLicencePermit Report (15/02/2026)",
+      "reportHeading": [],
+      "showRowNumber": true,
+      "dateShape": "single",
+      "requestDateProps": [
+        "Date"
+      ],
+      "dateShapeDisagrees": false,
+      "hasColumnTotals": false,
+      "hasCurrencyTotals": false,
+      "currencyTotalsColumns": null,
+      "variants": [],
+      "columnCount": 9,
+      "bespokePage": null,
+      "excelPagePattern": "generic",
+      "hasLayoutProvider": false,
+      "formatVersion": 1,
+      "fixtureFiles": [
+        "Backend.Tests/Fixtures/ExcelSpecs/EICCBorderLicencePermitReport.json"
+      ]
+    },
+    {
+      "controller": "EICCCertificateReportController",
+      "reportKey": "EICCCertificateReport",
+      "controllerFile": "Backend/Controllers/Report/EICCCertificateReportController.cs",
+      "requestType": "EICCCertificateReportRequest",
+      "group": "B",
+      "shape": "sp_EICCReport.Query()",
+      "configKeys": [
+        "EICCCertificateReport"
+      ],
+      "aliasConfigKeys": [],
+      "configTitle": "EICC Certificate Report",
+      "excelWorksheetTitle": "EICC Certificate Report",
+      "titleMismatch": false,
+      "subtitleSample": "EICC Certificate Report (15/02/2026)",
+      "reportHeading": [],
+      "showRowNumber": true,
+      "dateShape": "single",
+      "requestDateProps": [
+        "Date"
+      ],
+      "dateShapeDisagrees": false,
+      "hasColumnTotals": false,
+      "hasCurrencyTotals": false,
+      "currencyTotalsColumns": null,
+      "variants": [],
+      "columnCount": 9,
+      "bespokePage": null,
+      "excelPagePattern": "generic",
+      "hasLayoutProvider": false,
+      "formatVersion": 1,
+      "fixtureFiles": [
+        "Backend.Tests/Fixtures/ExcelSpecs/EICCCertificateReport.json"
+      ]
+    },
+    {
+      "controller": "EICCLicencePermitReportController",
+      "reportKey": "EICCLicencePermitReport",
+      "controllerFile": "Backend/Controllers/Report/EICCLicencePermitReportController.cs",
+      "requestType": "EICCLicencePermitReportRequest",
+      "group": "B",
+      "shape": "sp_EICCReport.Query()",
+      "configKeys": [
+        "EICCLicencePermitReport"
+      ],
+      "aliasConfigKeys": [],
+      "configTitle": "EICC Licence and Permit Report",
+      "excelWorksheetTitle": "EICC Licence and Permit Report",
+      "titleMismatch": false,
+      "subtitleSample": "EICC LicencePermit Report (15/02/2026)",
+      "reportHeading": [],
+      "showRowNumber": true,
+      "dateShape": "single",
+      "requestDateProps": [
+        "Date"
+      ],
+      "dateShapeDisagrees": false,
+      "hasColumnTotals": false,
+      "hasCurrencyTotals": false,
+      "currencyTotalsColumns": null,
+      "variants": [],
+      "columnCount": 9,
+      "bespokePage": null,
+      "excelPagePattern": "generic",
+      "hasLayoutProvider": false,
+      "formatVersion": 1,
+      "fixtureFiles": [
+        "Backend.Tests/Fixtures/ExcelSpecs/EICCLicencePermitReport.json"
       ]
     },
     {
@@ -3112,7 +3521,7 @@
         "valueColumnKey": "TotalValue"
       },
       "variants": [],
-      "columnCount": 9,
+      "columnCount": 10,
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
@@ -3177,7 +3586,7 @@
       "configTitle": "Export Licence By HS Code Report",
       "excelWorksheetTitle": "Export Licence By HS Code Report",
       "titleMismatch": false,
-      "subtitleSample": "List of Export Licence By HS Code From (01/02/2026) To (28/02/2026)",
+      "subtitleSample": "List of Export Licences By HS Code From (01/02/2026) To (28/02/2026)",
       "reportHeading": [],
       "showRowNumber": true,
       "dateShape": "range",
@@ -3194,7 +3603,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ExportLicenceByHSCodeReport.json",
         "Backend.Tests/Fixtures/ExcelSpecs/ExportLicenceHSCodeDetailReport.json"
@@ -3332,17 +3741,17 @@
       ],
       "dateShapeDisagrees": false,
       "hasColumnTotals": false,
-      "hasCurrencyTotals": false,
+      "hasCurrencyTotals": true,
       "currencyTotalsColumns": {
         "labelColumnKey": "LicenceNo",
         "valueColumnKey": "TotalValue"
       },
       "variants": [],
-      "columnCount": 10,
+      "columnCount": 11,
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ExportLicenceCancellationReport.json"
       ]
@@ -3399,7 +3808,7 @@
       "titleMismatch": false,
       "subtitleSample": "List of Export Licences By Daily From (01/02/2026) To (28/02/2026)",
       "reportHeading": [],
-      "showRowNumber": false,
+      "showRowNumber": true,
       "dateShape": "range",
       "requestDateProps": [
         "FromDate",
@@ -3443,17 +3852,14 @@
       ],
       "dateShapeDisagrees": false,
       "hasColumnTotals": false,
-      "hasCurrencyTotals": true,
-      "currencyTotalsColumns": {
-        "labelColumnKey": "LicenceNo",
-        "valueColumnKey": "Value"
-      },
+      "hasCurrencyTotals": false,
+      "currencyTotalsColumns": null,
       "variants": [],
       "columnCount": 27,
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ExportLicenceDetailReport.json"
       ]
@@ -3521,7 +3927,7 @@
       ],
       "dateShapeDisagrees": false,
       "hasColumnTotals": false,
-      "hasCurrencyTotals": false,
+      "hasCurrencyTotals": true,
       "currencyTotalsColumns": {
         "labelColumnKey": "LicenceNo",
         "valueColumnKey": "TotalValue"
@@ -3531,7 +3937,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ExportLicenceNewReportNewReport.json"
       ]
@@ -3565,7 +3971,7 @@
       "variants": [],
       "columnCount": 2,
       "bespokePage": "ExportLicenceTotalValueLicencesReport",
-      "excelPagePattern": "bespoke-queue",
+      "excelPagePattern": "none",
       "hasLayoutProvider": true,
       "formatVersion": 2,
       "fixtureFiles": [
@@ -3595,7 +4001,7 @@
         "ToDate"
       ],
       "dateShapeDisagrees": false,
-      "hasColumnTotals": false,
+      "hasColumnTotals": true,
       "hasCurrencyTotals": false,
       "currencyTotalsColumns": null,
       "variants": [
@@ -3680,7 +4086,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 2,
+      "formatVersion": 3,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ExportLicenceVoucherReport.json",
         "Backend.Tests/Fixtures/ExcelSpecs/ExportLicenceVoucherReport.ApplyType-Amend.json",
@@ -3723,7 +4129,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 3,
+      "formatVersion": 4,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ExportPermitActualAmendmentReport.json"
       ]
@@ -3762,7 +4168,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 3,
+      "formatVersion": 4,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ExportPermitAmendmentReport.json"
       ]
@@ -3775,9 +4181,12 @@
       "group": "C",
       "shape": "sp_HSCodeReport.GetAggregateRowsAsync()",
       "configKeys": [
-        "ExportPermitByHSCodeReport"
+        "ExportPermitByHSCodeReport",
+        "ExportPermitHSCodeDetailReport"
       ],
-      "aliasConfigKeys": [],
+      "aliasConfigKeys": [
+        "ExportPermitHSCodeDetailReport"
+      ],
       "configTitle": "Export Permit By HS Code Report",
       "excelWorksheetTitle": "Export Permit By HS Code Report",
       "titleMismatch": false,
@@ -3798,9 +4207,10 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
-        "Backend.Tests/Fixtures/ExcelSpecs/ExportPermitByHSCodeReport.json"
+        "Backend.Tests/Fixtures/ExcelSpecs/ExportPermitByHSCodeReport.json",
+        "Backend.Tests/Fixtures/ExcelSpecs/ExportPermitHSCodeDetailReport.json"
       ]
     },
     {
@@ -3909,7 +4319,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 2,
+      "formatVersion": 3,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ExportPermitCancellationReport.json"
       ]
@@ -3966,7 +4376,7 @@
       "titleMismatch": false,
       "subtitleSample": "List of Export Permit By Daily From (01/02/2026) To (28/02/2026)",
       "reportHeading": [],
-      "showRowNumber": false,
+      "showRowNumber": true,
       "dateShape": "range",
       "requestDateProps": [
         "FromDate",
@@ -4056,7 +4466,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ExportPermitExtensionReport.json"
       ]
@@ -4095,7 +4505,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ExportPermitNewReportNewReport.json"
       ]
@@ -4216,7 +4626,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 3,
+      "formatVersion": 4,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ExportPermitVoucherReport.json",
         "Backend.Tests/Fixtures/ExcelSpecs/ExportPermitVoucherReport.ApplyType-Amend.json",
@@ -4362,7 +4772,7 @@
         "ToDate"
       ],
       "dateShapeDisagrees": false,
-      "hasColumnTotals": false,
+      "hasColumnTotals": true,
       "hasCurrencyTotals": false,
       "currencyTotalsColumns": null,
       "variants": [],
@@ -4370,7 +4780,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 2,
+      "formatVersion": 3,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ImportLicenceByMethodReport.json"
       ]
@@ -4398,7 +4808,7 @@
         "ToDate"
       ],
       "dateShapeDisagrees": false,
-      "hasColumnTotals": false,
+      "hasColumnTotals": true,
       "hasCurrencyTotals": false,
       "currencyTotalsColumns": null,
       "variants": [],
@@ -4406,7 +4816,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 2,
+      "formatVersion": 3,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ImportLicenceBySectionReport.json"
       ]
@@ -4434,7 +4844,7 @@
         "ToDate"
       ],
       "dateShapeDisagrees": false,
-      "hasColumnTotals": false,
+      "hasColumnTotals": true,
       "hasCurrencyTotals": false,
       "currencyTotalsColumns": null,
       "variants": [],
@@ -4442,7 +4852,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 2,
+      "formatVersion": 3,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ImportLicenceBySellerCountryReport.json"
       ]
@@ -4509,7 +4919,7 @@
         "ToDate"
       ],
       "dateShapeDisagrees": false,
-      "hasColumnTotals": false,
+      "hasColumnTotals": true,
       "hasCurrencyTotals": false,
       "currencyTotalsColumns": null,
       "variants": [],
@@ -4517,7 +4927,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 2,
+      "formatVersion": 3,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ImportLicenceCompanyListReport.json"
       ]
@@ -4812,7 +5222,7 @@
       "variants": [],
       "columnCount": 2,
       "bespokePage": "ImportLicenceTotalValueLicencesReport",
-      "excelPagePattern": "bespoke-queue",
+      "excelPagePattern": "none",
       "hasLayoutProvider": true,
       "formatVersion": 2,
       "fixtureFiles": [
@@ -5185,7 +5595,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 2,
+      "formatVersion": 3,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ImportPermitCancellationReport.json"
       ]
@@ -5248,7 +5658,7 @@
         "Ministry of Commerce",
         "Directorate of Trade"
       ],
-      "showRowNumber": false,
+      "showRowNumber": true,
       "dateShape": "range",
       "requestDateProps": [
         "FromDate",
@@ -5560,8 +5970,8 @@
       "reportKey": "ListOfDirectorsByCompanyRegistrationNo",
       "controllerFile": "Backend/Controllers/Report/ListOfDirectorsByCompanyRegistrationNoController.cs",
       "requestType": "ListOfDirectorsByCompanyRegistrationNoRequest",
-      "group": "A",
-      "shape": "sp_DirectorListReport.ExecuteQueryable()",
+      "group": "UNKNOWN",
+      "shape": "LoadDetailAsync( request.CompanyRegistrationNo?.Trim() ?? string.Empty)",
       "configKeys": [
         "ListOfDirectorsByCompanyRegistrationNo"
       ],
@@ -5585,8 +5995,8 @@
       "columnCount": 7,
       "bespokePage": "ListOfDirectorsByCompanyRegistrationNo",
       "excelPagePattern": "none",
-      "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "hasLayoutProvider": true,
+      "formatVersion": 2,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/ListOfDirectorsByCompanyRegistrationNo.json"
       ]
@@ -5605,8 +6015,11 @@
       "configTitle": "List of Directors",
       "excelWorksheetTitle": "List of Directors",
       "titleMismatch": false,
-      "subtitleSample": null,
-      "reportHeading": [],
+      "subtitleSample": "Directors List (01/02/2026) To (28/02/2026)",
+      "reportHeading": [
+        "Ministry of Commerce",
+        "Directorate of Trade"
+      ],
       "showRowNumber": true,
       "dateShape": "range",
       "requestDateProps": [
@@ -5620,7 +6033,7 @@
       "variants": [],
       "columnCount": 7,
       "bespokePage": "ListOfDirectors",
-      "excelPagePattern": "bespoke-queue",
+      "excelPagePattern": "none",
       "hasLayoutProvider": false,
       "formatVersion": 1,
       "fixtureFiles": [
@@ -5632,8 +6045,8 @@
       "reportKey": "ListOfTopCapitalCompany",
       "controllerFile": "Backend/Controllers/Report/ListOfTopCapitalCompanyController.cs",
       "requestType": "ListOfTopCapitalCompanyRequest",
-      "group": "A",
-      "shape": "sp_PaThaKaReport.ExecuteQueryable()",
+      "group": "UNKNOWN",
+      "shape": "TopCompaniesAsync(request)",
       "configKeys": [
         "ListOfTopCapitalCompany"
       ],
@@ -5735,7 +6148,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 3,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/MPUReport.json"
       ]
@@ -5771,7 +6184,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 3,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/MPUReportV3.json"
       ]
@@ -5790,8 +6203,11 @@
       "configTitle": "Member Registration Report",
       "excelWorksheetTitle": "Member Registration Report",
       "titleMismatch": false,
-      "subtitleSample": null,
-      "reportHeading": [],
+      "subtitleSample": "Member Registration (01/02/2026) To (28/02/2026)",
+      "reportHeading": [
+        "Ministry of Commerce",
+        "Directorate of Trade"
+      ],
       "showRowNumber": true,
       "dateShape": "range",
       "requestDateProps": [
@@ -5805,7 +6221,7 @@
       "variants": [],
       "columnCount": 8,
       "bespokePage": "MemberRegistrationReport",
-      "excelPagePattern": "legacy-sync",
+      "excelPagePattern": "none",
       "hasLayoutProvider": false,
       "formatVersion": 1,
       "fixtureFiles": [
@@ -5917,7 +6333,7 @@
       "bespokePage": null,
       "excelPagePattern": "generic",
       "hasLayoutProvider": false,
-      "formatVersion": 1,
+      "formatVersion": 3,
       "fixtureFiles": [
         "Backend.Tests/Fixtures/ExcelSpecs/OnlineFeesReport.json"
       ]
