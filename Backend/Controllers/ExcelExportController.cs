@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using API.DBContext;
@@ -23,11 +24,13 @@ namespace Backend.Controllers
     {
         private readonly ApplicationDbContext _db;
         private readonly IExcelExportFileStore _fileStore;
+        private readonly TradeNetDbContext _tradeNet;
 
-        public ExcelExportController(ApplicationDbContext db, IExcelExportFileStore fileStore)
+        public ExcelExportController(ApplicationDbContext db, IExcelExportFileStore fileStore, TradeNetDbContext tradeNet)
         {
             _db = db;
             _fileStore = fileStore;
+            _tradeNet = tradeNet;
         }
 
         /// <summary>All exports, newest first (shared visibility).</summary>
@@ -38,7 +41,8 @@ namespace Backend.Controllers
                 .OrderByDescending(j => j.CreatedAtUtc)
                 .ToListAsync();
 
-            return Ok(jobs.Select(ToDto));
+            var names = await ResolveUserNamesAsync(jobs.Select(j => j.RequestedByUserName));
+            return Ok(jobs.Select(j => ToDto(j, names)));
         }
 
         /// <summary>Single job status (for polling).</summary>
@@ -51,7 +55,8 @@ namespace Backend.Controllers
                 return NotFound();
             }
 
-            return Ok(ToDto(job));
+            var names = await ResolveUserNamesAsync(new[] { job.RequestedByUserName });
+            return Ok(ToDto(job, names));
         }
 
         [HttpGet("{id:guid}/download")]
@@ -109,7 +114,47 @@ namespace Backend.Controllers
             _ => status.ToString()
         };
 
-        private static object ToDto(ExcelExportJob j) => new
+        /// <summary>
+        /// Jobs store the JWT name claim, which is the TradeNet <c>User.Id</c>
+        /// (JWTManagerService), not a name. The users live in TradeNetDB and the jobs in
+        /// TemplateDB, so no SQL join is possible: one batched lookup per request instead.
+        /// Best effort — if TradeNetDB is unreachable the drive still lists every job with
+        /// the raw id rather than failing.
+        /// </summary>
+        private async Task<IReadOnlyDictionary<string, string>> ResolveUserNamesAsync(IEnumerable<string?> requestedBy)
+        {
+            var ids = requestedBy
+                .Select(v => int.TryParse(v, out var id) ? id : (int?)null)
+                .Where(id => id.HasValue)
+                .Select(id => id!.Value)
+                .Distinct()
+                .ToList();
+
+            if (ids.Count == 0)
+            {
+                return new Dictionary<string, string>();
+            }
+
+            try
+            {
+                return await _tradeNet.Users
+                    .AsNoTracking()
+                    .Where(u => ids.Contains(u.Id))
+                    .Select(u => new { u.Id, u.FullName })
+                    .ToDictionaryAsync(u => u.Id.ToString(), u => u.FullName);
+            }
+            catch
+            {
+                return new Dictionary<string, string>();
+            }
+        }
+
+        internal static string? DisplayName(string? requestedBy, IReadOnlyDictionary<string, string> names)
+            => requestedBy != null && names.TryGetValue(requestedBy, out var name) && !string.IsNullOrWhiteSpace(name)
+                ? name
+                : requestedBy;
+
+        private static object ToDto(ExcelExportJob j, IReadOnlyDictionary<string, string> names) => new
         {
             id = j.Id,
             reportKey = j.ReportKey,
@@ -120,7 +165,10 @@ namespace Backend.Controllers
             rowCount = j.RowCount,
             sheetCount = j.SheetCount,
             isPeriodClosed = j.IsPeriodClosed,
-            requestedBy = j.RequestedByUserName,
+            // The user's full name; falls back to the stored value (an id with no user
+            // row, or an older job) so the column is never blank.
+            requestedBy = DisplayName(j.RequestedByUserName, names),
+            requestedById = j.RequestedByUserName,
             // "<machine>:<guid>@<build>" of the worker that produced (or is producing) the file.
             // Two API instances sharing one TemplateDB both used to claim jobs, and a stale build
             // among them wrote stale sheets (2026-09-07: the Border Export Permit Voucher footer;
