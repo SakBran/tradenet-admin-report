@@ -214,6 +214,7 @@ const deliver = async (jobId: string, url: string, fileName: string) => {
   let file: Blob;
   try {
     file = await fetchFile(url);
+    saveFile(file, fileName);
   } catch (error) {
     if (isGone(error)) {
       notification.warning({
@@ -237,8 +238,6 @@ const deliver = async (jobId: string, url: string, fileName: string) => {
     });
     return;
   }
-
-  saveFile(file, fileName);
 
   // A download fired long after the click carries no user gesture, and a browser may
   // block it as an automatic download. The notice's Download button saves the kept file
