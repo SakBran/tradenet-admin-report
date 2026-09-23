@@ -879,7 +879,12 @@ const ImportLicenceDataImport = () => {
           loadJobs();
         }
       } catch {
-        message.error('Could not load import progress.');
+        // Keyed: this runs every 5 seconds, so a failing API keeps one toast up instead
+        // of stacking a new one on every poll.
+        message.error({
+          content: 'Could not load import progress.',
+          key: 'import-progress-error',
+        });
       }
     }, 5000);
 

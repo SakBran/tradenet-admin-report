@@ -1,11 +1,13 @@
+import { useEffect, useMemo } from 'react';
 import { RouterProvider } from 'react-router-dom';
-import { ConfigProvider, theme as antdTheme } from 'antd';
+import { ConfigProvider, theme as antdTheme, type ThemeConfig } from 'antd';
 
 import { HelmetProvider } from 'react-helmet-async';
 import { StylesContext } from './context';
 import routes from './routes/routes.tsx';
 import { useSelector } from 'react-redux';
 import { RootState } from './redux/store';
+import { setOpenExports } from './Report/excel/excelJobWatcher';
 import './App.css';
 
 // Brand palette aligned with the legacy TradenetAdmin (Stisla) look:
@@ -24,75 +26,87 @@ export const COLOR = {
   borderColor: '#E7EAF3B2',
 };
 
+// The Excel export notices' "Open Exports" button. Those notices render outside the
+// router (antd static notifications, see antdReact19Compat.ts), so they navigate
+// through it directly.
+setOpenExports(() => {
+  void routes.navigate('/Report/Exports');
+});
+
+const buildTheme = (mytheme: string): ThemeConfig => ({
+  token: {
+    colorPrimary: COLOR['500'],
+    borderRadius: 6,
+    fontFamily: "Poppins, Lato, -apple-system, 'Segoe UI', sans-serif",
+  },
+  components: {
+    Breadcrumb: {
+      // linkColor: 'rgba(0,0,0,.8)',
+      // itemColor: 'rgba(0,0,0,.8)',
+    },
+    Button: {
+      colorLink: COLOR['500'],
+      colorLinkActive: COLOR['700'],
+      colorLinkHover: COLOR['300'],
+    },
+    Calendar: {
+      colorBgContainer: 'none',
+    },
+    Card: {
+      colorBorderSecondary: COLOR['borderColor'],
+    },
+    Carousel: {
+      colorBgContainer: COLOR['800'],
+      dotWidth: 8,
+    },
+    Rate: {
+      colorFillContent: COLOR['100'],
+      colorText: COLOR['600'],
+    },
+    Segmented: {
+      colorBgLayout: COLOR['100'],
+      borderRadius: 6,
+      colorTextLabel: '#000000',
+    },
+    Table: {
+      borderColor: COLOR['100'],
+      colorBgContainer: 'none',
+      headerBg: '#f4f6f9',
+      headerColor: '#5a607f',
+      headerSplitColor: 'transparent',
+      cellPaddingBlock: 14,
+      rowHoverBg: COLOR['50'],
+    },
+    Tabs: {
+      colorBorderSecondary: COLOR['100'],
+    },
+    Timeline: {
+      dotBg: 'none',
+    },
+    Typography: {
+      colorLink: COLOR['500'],
+      colorLinkActive: COLOR['700'],
+      colorLinkHover: COLOR['300'],
+      linkHoverDecoration: 'underline',
+    },
+  },
+  algorithm:
+    mytheme === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
+});
+
 function App() {
   const { mytheme } = useSelector((state: RootState) => state.theme);
+  const theme = useMemo(() => buildTheme(mytheme), [mytheme]);
+
+  // antd's static message/notification/Modal render outside this tree, so they do not
+  // inherit the ConfigProvider below. Hand them the same theme.
+  useEffect(() => {
+    ConfigProvider.config({ theme });
+  }, [theme]);
 
   return (
     <HelmetProvider>
-      <ConfigProvider
-        theme={{
-          token: {
-            colorPrimary: COLOR['500'],
-            borderRadius: 6,
-            fontFamily: "Poppins, Lato, -apple-system, 'Segoe UI', sans-serif",
-          },
-          components: {
-            Breadcrumb: {
-              // linkColor: 'rgba(0,0,0,.8)',
-              // itemColor: 'rgba(0,0,0,.8)',
-            },
-            Button: {
-              colorLink: COLOR['500'],
-              colorLinkActive: COLOR['700'],
-              colorLinkHover: COLOR['300'],
-            },
-            Calendar: {
-              colorBgContainer: 'none',
-            },
-            Card: {
-              colorBorderSecondary: COLOR['borderColor'],
-            },
-            Carousel: {
-              colorBgContainer: COLOR['800'],
-              dotWidth: 8,
-            },
-            Rate: {
-              colorFillContent: COLOR['100'],
-              colorText: COLOR['600'],
-            },
-            Segmented: {
-              colorBgLayout: COLOR['100'],
-              borderRadius: 6,
-              colorTextLabel: '#000000',
-            },
-            Table: {
-              borderColor: COLOR['100'],
-              colorBgContainer: 'none',
-              headerBg: '#f4f6f9',
-              headerColor: '#5a607f',
-              headerSplitColor: 'transparent',
-              cellPaddingBlock: 14,
-              rowHoverBg: COLOR['50'],
-            },
-            Tabs: {
-              colorBorderSecondary: COLOR['100'],
-            },
-            Timeline: {
-              dotBg: 'none',
-            },
-            Typography: {
-              colorLink: COLOR['500'],
-              colorLinkActive: COLOR['700'],
-              colorLinkHover: COLOR['300'],
-              linkHoverDecoration: 'underline',
-            },
-          },
-          algorithm:
-            mytheme === 'dark'
-              ? antdTheme.darkAlgorithm
-              : antdTheme.defaultAlgorithm,
-        }}
-      >
+      <ConfigProvider theme={theme}>
         <StylesContext.Provider
           value={{
             rowProps: {

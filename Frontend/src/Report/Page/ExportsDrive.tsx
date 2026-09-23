@@ -88,7 +88,12 @@ const ExportsDrive = () => {
       );
       setJobs(response.data ?? []);
     } catch {
-      message.error('Could not load exports.');
+      // Keyed: this also runs on the 5-second refresh below, so a failing API keeps one
+      // toast up instead of stacking a new one on every poll.
+      message.error({
+        content: 'Could not load exports.',
+        key: 'exports-load-error',
+      });
     } finally {
       setLoading(false);
     }

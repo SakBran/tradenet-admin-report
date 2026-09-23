@@ -1,3 +1,5 @@
+// First: antd's static message/notification calls render nothing under React 19 without it.
+import './antdReact19Compat';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.tsx';

@@ -145,7 +145,10 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
         // Handle 401 errors
         if (error.response && error.response.status === 401) {
           console.log('401 Unauthorized: Logging out...');
+          // Keyed: every request in flight fails the same way, so the notice is shown once
+          // instead of once per request.
           message.open({
+            key: 'session-expired',
             type: 'error',
             content:
               'Please sign in again because your login session is expired. ',
