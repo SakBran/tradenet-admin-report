@@ -130,8 +130,20 @@ Per controller:
 3. **`_Fast` detail (CSV lookup)** — `Sp.StreamResolvedChunksAsync(_context, cache, procReq, chunkSize, ct)` (resolves lookups per chunk).
 4. **Aggregate / Section** — `Sp.GetAggregateRowsAsync(_context, procReq, dimension, includeSakhan)` / `GetSectionRowsAsync` / `sp_HSCodeReport.GetAggregateRowsAsync(_context, procReq)`; append the grouped list (small).
 
-No per-report frontend change — `GenericReportPage` drives enqueue/poll/download
-generically off `config.excelRoute`. All 158 controllers are converted.
+No per-report frontend change — every Excel button (GenericReportPage's and the bespoke
+pages') posts through `Frontend/src/Report/excel/excelEnqueue.ts` off `config.excelRoute`.
+All 158 controllers are converted.
+
+**The button never waits for the worker (2026-09-23).** `enqueueExcelExport` resolves as
+soon as the POST is answered and hands the job to `excelJobWatcher.tsx`, a module-level
+follower that outlives the page: it polls `GET ExcelExport/{id}` (1s → 2s → 5s → 15s,
+30-minute budget — each poll is an activity-log row), downloads the file when the job
+completes (even if the user has moved to another report), and reports every outcome in a
+notification with a gesture-safe **Download** button. Before this the button followed the
+job for up to 60s, so a quick export looked synchronous and a slow one silently stopped —
+customers read both as "this Excel is not a job". Those notifications, like every static
+antd `message`/`notification`/`Modal` call, only render because of
+`Frontend/src/antdReact19Compat.ts` (antd v5 renders nothing under React 19 without it).
 
 ---
 
@@ -148,7 +160,9 @@ Backend:
 - `ApplicationDbContext` DbSet + migration `AddExcelExportJobs`.
 
 Frontend:
-- `Frontend/src/Report/Page/GenericReportPage.tsx` — enqueue/poll/download.
+- `Frontend/src/Report/excel/excelEnqueue.ts` — enqueue (returns at once).
+- `Frontend/src/Report/excel/excelJobWatcher.tsx` — background follow, download, notices.
+- `Frontend/src/antdReact19Compat.ts` — lets antd's static notices render under React 19.
 - `Frontend/src/Report/Page/ExportsDrive.tsx` + route + nav entry.
 </content>
 </invoke>

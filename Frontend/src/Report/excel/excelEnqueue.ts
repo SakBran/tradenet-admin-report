@@ -9,10 +9,8 @@ import axios from 'axios';
 import { message } from 'antd';
 
 import axiosInstance from '../../services/AxiosInstance';
+import { deliverReadyExport, watchExcelJob } from './excelJobWatcher';
 import { ExcelEnqueueResult, ExcelPresentationSpec } from './excelTypes';
-
-const excelContentType =
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 /**
  * The backend refused the presentation spec (HTTP 400 from
@@ -32,17 +30,6 @@ export class ExcelSpecRejectedError extends Error {
     this.errors = errors;
   }
 }
-
-const downloadBlob = (blob: Blob, fileName: string) => {
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.URL.revokeObjectURL(url);
-};
 
 const rejectionErrors = (data: unknown): string[] => {
   if (!data || typeof data !== 'object') {
@@ -65,98 +52,15 @@ const rejectionErrors = (data: unknown): string[] => {
   return single ? [String(single)] : [];
 };
 
-/** One row of `GET ExcelExport/{id}`, the subset the wait loop reads. */
-interface ExcelJobStatus {
-  status: 'Queued' | 'Processing' | 'Completed' | 'Failed';
-  fileName?: string | null;
-  downloadUrl?: string | null;
-  errorMessage?: string | null;
-}
-
 /**
- * How long to follow a queued job before handing the user back to the Exports page.
- * Most reports finish in a second or two (the worker polls, so there is a small fixed
- * pickup delay); a genuinely large export outlives this budget and is collected from
- * Exports, exactly as before.
- */
-const POLL_INTERVAL_MS = 1_000;
-const POLL_BUDGET_MS = 60_000;
-
-const delay = (ms: number) =>
-  new Promise<void>((resolve) => {
-    setTimeout(resolve, ms);
-  });
-
-const download = async (url: string, fileName: string) => {
-  const fileResponse = await axiosInstance.get(url, { responseType: 'blob' });
-  const blob = new Blob([fileResponse.data], {
-    type: String(fileResponse.headers['content-type'] ?? excelContentType),
-  });
-  downloadBlob(blob, fileName);
-};
-
-/**
- * Follows a queued/processing job to completion and downloads it.
+ * Enqueues the export and returns as soon as the queue has accepted it.
  *
- * Without this the button only ever said "queued": nothing polled, so on every export
- * of an open period (and on every first export of any period) the user was silently
- * handed off to the Exports page and read that as "the report cannot be exported".
- *
- * @returns whether the outcome was reported to the user. Never throws: the job is
- *   already queued at this point, and BasicTable turns a throw into "Failed to generate
- *   Excel file" — so a blip while polling must not report a successful export as failed.
- *   Anything unresolved falls through to the caller's "it will appear in Exports" message.
- */
-const waitForJob = async (
-  jobId: string,
-  fallbackFileName: string
-): Promise<boolean> => {
-  const deadline = Date.now() + POLL_BUDGET_MS;
-
-  while (Date.now() < deadline) {
-    await delay(POLL_INTERVAL_MS);
-
-    let job: ExcelJobStatus;
-    try {
-      const { data } = await axiosInstance.get<ExcelJobStatus>(
-        `ExcelExport/${jobId}`
-      );
-      job = data;
-    } catch {
-      // Keep polling: one failed status read says nothing about the job.
-      continue;
-    }
-
-    if (job.status === 'Completed' && job.downloadUrl) {
-      try {
-        await download(job.downloadUrl, job.fileName ?? fallbackFileName);
-      } catch {
-        // The file exists but this download did not land; Exports still has it.
-        message.info(
-          'Your Excel export is ready. Open Exports to download it.'
-        );
-        return true;
-      }
-
-      message.success('Your Excel export is ready and downloading.');
-      return true;
-    }
-
-    if (job.status === 'Failed') {
-      message.error(
-        job.errorMessage
-          ? `Excel export failed: ${job.errorMessage}`
-          : 'Excel export failed. Please try again.'
-      );
-      return true;
-    }
-  }
-
-  return false;
-};
-
-/**
- * Enqueues the export, follows it to completion and reports its outcome to the user.
+ * The Excel button used to wait here, following the job for up to 60 seconds: an export
+ * that finished inside that window looked synchronous (spinner, then file) and a slower one
+ * simply stopped spinning, and customers read both as "this Excel is not a job". The job is
+ * now handed to `excelJobWatcher`, which follows it in the background, downloads the file
+ * when it is done -- even after the user has moved on to another report -- and reports
+ * every outcome in a notification.
  *
  * @param route            the report's `excelRoute` (e.g. `MPUReport/Excel`)
  * @param request          the grid request body (filters + paging)
@@ -193,22 +97,21 @@ export const enqueueExcelExport = async (
     throw error;
   }
 
+  const fileName = result.fileName ?? fallbackFileName;
+
   if (result.status === 'Ready' && result.downloadUrl) {
-    await download(result.downloadUrl, result.fileName ?? fallbackFileName);
-    message.success('Your Excel export is ready and downloading.');
+    deliverReadyExport(result.jobId, result.downloadUrl, fileName);
     return;
   }
 
-  if (result.jobId && (await waitForJob(result.jobId, fallbackFileName))) {
+  if (result.jobId) {
+    watchExcelJob(result.jobId, fileName, {
+      alreadyRunning: result.status === 'Processing',
+    });
     return;
   }
 
-  if (result.status === 'Processing') {
-    message.info(
-      'This export is already being generated. It will appear in Exports when ready.'
-    );
-    return;
-  }
-
+  // Every enqueue response carries a job id; if one ever does not, there is nothing to
+  // follow, and the Exports drive is still where the file will land.
   message.success('Export queued. It will appear in Exports when ready.');
 };
