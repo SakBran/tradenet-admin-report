@@ -1060,6 +1060,20 @@ New columns (5): `Date`, `No of Licences`, `Total Value`, `Currency`, `Total USD
 Need in new (0): _None_
 Extra in new (0): _None_
 
+### ImportPermitTotalValuePermitsReport
+
+Title: Import Permit Total Value & Permits Report
+Reference source: `ImportLicenceByTotalValueLicenceReport.rdlc` (Tradenet 2.0 has no Permit counterpart; this is the assignment's requested sibling report)
+Reference filters (4): `From Date`, `To Date`, `EIR Card Type`, `Import Section` (`Type=Oversea` is hidden)
+New filters (4): `From Date`, `To Date`, `EIR Card Type`, `Import Section` (`Type=Oversea` is hidden)
+Reference table 1 columns (3): `Sr.No.`, `Total Value`, `Currency`
+New table 1 columns (3): `Sr.No.`, `Total Value`, `Currency`
+Reference table 2 columns (3): `Sr.No.`, `Total Licences`, `Pa Tha Ka Type`
+New table 2 columns (3): `Sr.No.`, `Total Permits`, `Pa Tha Ka Type`
+Summary line: `Total USD Value`
+Need in new (0): _None_
+Extra in new (0): _None_
+
 ### ImportPermitDetailReport
 
 Title: Import Permit Detail Report

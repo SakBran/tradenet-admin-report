@@ -212,6 +212,91 @@ public static class sp_ImportPermitDetailReport_Fast
         return groups;
     }
 
+    /// <summary>
+    /// Builds the Import Permit Total Value &amp; Permits composite: item value grouped by
+    /// currency, distinct permit numbers grouped by Pa Tha Ka type, and a USD-normalised
+    /// grand total using the same daily CBM-rate conversion as the Permit Daily report.
+    /// </summary>
+    public static async Task<ImportPermitTotalValuePermitsSummary> GetTotalValuePermitsSummaryAsync(
+        TradeNetDbContext db,
+        sp_ImportPermitDetailReportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var rows = await Rows(db, request)
+            .Select(row => new TotalValuePermitSourceRow
+            {
+                PermitNo = row.LicenceNo,
+                PermitDate = row.LicenceDate,
+                PaThaKaType = row.PaThaKaTypeName,
+                Currency = row.Currency ?? string.Empty,
+                Amount = row.Amount,
+            })
+            .ToListAsync();
+
+        var dailyGroups = ReportAggregationService.Aggregate(
+            rows.Select(row => new AggregateSourceRow
+            {
+                LicenceNo = row.PermitNo,
+                LicenceDate = row.PermitDate,
+                Currency = row.Currency,
+                Amount = row.Amount,
+            }),
+            ReportAggregateDimension.Daily,
+            includeSakhan: false);
+        await ReportUsdConversionService.FillDailyUsdValuesAsync(db, dailyGroups);
+
+        var totalUsdValue = decimal.Round(
+            dailyGroups.Sum(group => group.TotalUSDValue ?? 0m),
+            4);
+
+        return AggregateTotalValuePermits(rows, totalUsdValue);
+    }
+
+    internal static ImportPermitTotalValuePermitsSummary AggregateTotalValuePermits(
+        IReadOnlyList<TotalValuePermitSourceRow> rows,
+        decimal totalUsdValue)
+    {
+        ArgumentNullException.ThrowIfNull(rows);
+
+        return new ImportPermitTotalValuePermitsSummary
+        {
+            TotalValueByCurrency = rows
+                .GroupBy(row => row.Currency, StringComparer.OrdinalIgnoreCase)
+                .Select(group => new TotalValueByCurrencyRow
+                {
+                    Currency = group.Key ?? string.Empty,
+                    TotalValue = group.Sum(row => row.Amount),
+                })
+                .OrderBy(row => row.Currency, StringComparer.OrdinalIgnoreCase)
+                .ToList(),
+            TotalPermitsByPaThaKaType = rows
+                .GroupBy(row => row.PaThaKaType, StringComparer.OrdinalIgnoreCase)
+                .Select(group => new TotalPermitsByPaThaKaTypeRow
+                {
+                    PaThaKaType = group.Key,
+                    NoOfPermits = group
+                        .Select(row => row.PermitNo)
+                        .Where(permitNo => !string.IsNullOrEmpty(permitNo))
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .Count(),
+                })
+                .OrderBy(row => row.PaThaKaType, StringComparer.OrdinalIgnoreCase)
+                .ToList(),
+            TotalUsdValue = totalUsdValue,
+        };
+    }
+
+    internal sealed class TotalValuePermitSourceRow
+    {
+        public string PermitNo { get; init; } = string.Empty;
+        public DateTime? PermitDate { get; init; }
+        public string PaThaKaType { get; init; } = string.Empty;
+        public string Currency { get; init; } = string.Empty;
+        public decimal Amount { get; init; }
+    }
+
     private static async Task<List<AggregateSourceRow>> AggregateSourceRowsAsync(
         TradeNetDbContext db,
         sp_ImportPermitDetailReportRequest request,

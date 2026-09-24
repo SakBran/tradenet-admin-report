@@ -41,13 +41,13 @@ public sealed class ExcelSpecContractTests
     /// per-controller <c>Backend.Tests/ExcelParity/*LayoutTests.cs</c> pins the sheet
     /// instead.
     /// <para>
-    /// All four controllers now HAVE that typed layout (<c>IExcelReportLayoutProvider</c> +
+    /// All five controllers now HAVE that typed layout (<c>IExcelReportLayoutProvider</c> +
     /// <c>[ExcelFormatVersion(2)]</c> + <c>BeginSection</c>/<c>AppendNote</c>, e.g.
     /// <c>ImportLicenceTotalValueLicencesReportController.cs:20-22,143-149</c>), so they ARE at
     /// parity: such a controller is handed the plain sink and bypasses
     /// <c>RowTypeAssertingSink</c> entirely
     /// (<c>ControllerStreamingExcelReportJobHandler.cs:103-105</c>). The set entries stay only
-    /// because all four fixtures still describe the old flat grid; drop an entry when the
+    /// because all five fixtures still describe the flat grid; drop an entry when the
     /// composite fixture (sections + summaryLines) replaces it, or
     /// <c>Every_column_binds_to_a_real_property_on_the_row_type_the_report_streams</c> starts
     /// failing on <c>totalValue</c>/<c>currency</c>/<c>noOfLicences</c>.
@@ -59,6 +59,7 @@ public sealed class ExcelSpecContractTests
         "BorderImportLicenceTotalValueLicencesReport",
         "ExportLicenceTotalValueLicencesReport",
         "ImportLicenceTotalValueLicencesReport",
+        "ImportPermitTotalValuePermitsReport",
     };
 
     public sealed record IndexEntry(
@@ -451,20 +452,25 @@ public sealed class ExcelSpecContractTests
     /// <summary>
     /// The binding exemption must not spread beyond the group-D composites: every name in
     /// <see cref="CompositesPendingTypedLayout"/> has to be a real streaming report whose
-    /// grid payload is the TotalValue &amp; Licences summary. A report that merely has a
+    /// grid payload is a typed Total Value summary. A report that merely has a
     /// broken dataIndex belongs in <c>allowlist.json</c> with a reason, not in here.
     /// </summary>
     [Fact]
-    public void Only_the_total_value_licences_composites_skip_the_column_binding_check()
+    public void Only_typed_total_value_composites_skip_the_column_binding_check()
     {
         foreach (var controllerName in CompositesPendingTypedLayout)
         {
             var controllerType = ControllerType(controllerName);
 
             Assert.True(typeof(IStreamingExcelReport).IsAssignableFrom(controllerType));
-            Assert.Equal(
-                typeof(ImportLicenceTotalValueLicencesSummary),
-                ExcelRowTypeResolver.Resolve(controllerType));
+            var rowType = ExcelRowTypeResolver.Resolve(controllerType);
+            Assert.Contains(
+                rowType,
+                new[]
+                {
+                    typeof(ImportLicenceTotalValueLicencesSummary),
+                    typeof(ImportPermitTotalValuePermitsSummary),
+                });
         }
     }
 

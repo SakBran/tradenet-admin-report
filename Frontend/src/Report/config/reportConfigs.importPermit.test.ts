@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { reportConfigs } from './reportConfigs';
+import { reportRoutes } from '../reportRoutes';
 
 // Guards the Import Permit complaint fixes (2026-06) against regression. These are static
 // config-integrity checks — no backend, no rendering — so they run fast and catch the exact
@@ -17,16 +18,42 @@ const IMPORT_PERMIT_KEYS = [
   'ImportPermitDetailReport',
   'ImportPermitExtensionReport',
   'ImportPermitNewReportNewReport',
+  'ImportPermitTotalValuePermitsReport',
   'ImportPermitVoucherReport',
 ];
 
 describe('Import Permit report configs', () => {
-  it('all 11 reports exist and carry the Ministry/Directorate heading', () => {
+  it('all Import Permit reports exist and carry the Ministry/Directorate heading', () => {
     for (const key of IMPORT_PERMIT_KEYS) {
       const cfg = reportConfigs[key];
       expect(cfg, `${key} should exist`).toBeDefined();
       expect(cfg.reportHeading).toEqual(['Ministry of Commerce', 'Directorate of Trade']);
     }
+  });
+
+  it('Total Value & Permits mirrors the legacy licence report filter and table contract', () => {
+    const cfg = reportConfigs.ImportPermitTotalValuePermitsReport;
+
+    expect(cfg.title).toBe('Import Permit Total Value & Permits Report');
+    expect(cfg.filters.map((filter) => filter.name)).toEqual([
+      'dateRange',
+      'Type',
+      'PaThaKaTypeId',
+      'ExportImportSectionId',
+    ]);
+    expect(
+      cfg.filters.find((filter) => filter.name === 'ExportImportSectionId')
+        ?.lookupName
+    ).toBe('importPermitSections');
+    expect(cfg.columns.map((column) => column.title)).toEqual([
+      'Total Value',
+      'Currency',
+    ]);
+    expect(
+      reportRoutes.some(
+        (route) => route.path === 'ImportPermitTotalValuePermitsReport'
+      )
+    ).toBe(true);
   });
 
   it('currencyTotalsColumns reference column keys that actually exist (else the footer cannot render)', () => {

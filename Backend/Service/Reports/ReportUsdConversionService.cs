@@ -111,7 +111,7 @@ namespace API.Service.Reports
             }
         }
 
-        private static decimal? ConvertToUsd(
+        internal static decimal? ConvertToUsd(
             decimal? amount,
             string? currency,
             DateTime? date,

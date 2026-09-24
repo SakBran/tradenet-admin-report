@@ -369,6 +369,16 @@ const importLicenceTotalValueFilters: ReportFilterConfig[] = [
   importLicenceSectionFilter,
 ];
 
+const importPermitTotalValueFilters: ReportFilterConfig[] = [
+  importLicenceDateRangeFilter,
+  importLicenceOverseaTypeFilter,
+  importLicencePaThaKaTypeFilter,
+  {
+    ...importLicenceSectionFilter,
+    lookupName: 'importPermitSections',
+  },
+];
+
 const exportLicenceTotalValueFilters: ReportFilterConfig[] = [
   {
     ...importLicenceDateRangeFilter,
@@ -11815,6 +11825,34 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataType: 'money',
         // Old rdlc:866 = FORMAT(Sum(Fields!totalUSDAmount.Value), "N4").
         numberFormat: '#,##0.0000',
+      },
+    ],
+  },
+  ImportPermitTotalValuePermitsReport: {
+    controllerName: 'ImportPermitTotalValuePermitsReport',
+    reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
+    title: 'Import Permit Total Value & Permits Report',
+    apiRoute: 'ImportPermitTotalValuePermitsReport',
+    excelRoute: 'ImportPermitTotalValuePermitsReport/Excel',
+    excelFileName: 'ImportPermitTotalValuePermitsReport.xlsx',
+    initialSortColumn: 'PaThaKaTypeId',
+    showRowNumber: true,
+    filters: importPermitTotalValueFilters,
+    reportSubtitle: importLicenceRangeSubtitle(
+      'Import Permits Total Value & Permits'
+    ),
+    columns: [
+      {
+        key: 'TotalValue',
+        dataIndex: 'totalValue',
+        title: 'Total Value',
+        dataType: 'number',
+        numberFormat: '#,##0.0000',
+      },
+      {
+        key: 'Currency',
+        dataIndex: 'currency',
+        title: 'Currency',
       },
     ],
   },
