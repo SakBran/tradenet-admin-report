@@ -311,6 +311,12 @@ const importLicenceSummaryDetailFilters: ReportFilterConfig[] = [
   importLicenceIncotermFilter,
 ];
 
+const importLicencePendingDetailFilters: ReportFilterConfig[] = [
+  ...importLicenceSummaryDetailFilters,
+  importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
+];
+
 const importLicenceSectionMethodFilters: ReportFilterConfig[] = [
   importLicenceDateRangeFilter,
   importLicenceOverseaTypeFilter,
@@ -628,6 +634,12 @@ const borderImportLicenceTotalValueFilters: ReportFilterConfig[] = [
 const borderImportLicenceDetailFilters: ReportFilterConfig[] = [
   ...borderImportLicenceSectionMethodFilters,
   borderImportLicenceIncotermFilter,
+];
+
+const borderImportLicencePendingDetailFilters: ReportFilterConfig[] = [
+  ...borderImportLicenceDetailFilters,
+  importLicenceCompanyRegistrationNoFilter,
+  importLicenceCompanyNameFilter,
 ];
 
 const formatLegacyReportDate = (value: unknown) => {
@@ -4839,7 +4851,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     reportSubtitle: importLicenceRangeSubtitle('List of Border Import Licences By Detail', true),
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
-    filters: borderImportLicenceDetailFilters,
+    filters: borderImportLicencePendingDetailFilters,
     columns: [
       {
         key: 'Section',
@@ -10552,7 +10564,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelFileName: 'ImportLicenceDetailReportPending.xlsx',
     initialSortColumn: 'PaThaKaTypeId',
     showRowNumber: true,
-    filters: importLicenceSummaryDetailFilters,
+    filters: importLicencePendingDetailFilters,
     reportSubtitle: importLicenceRangeSubtitle(
       'List of Import Licences By Detail',
       true
