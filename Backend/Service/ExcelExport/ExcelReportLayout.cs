@@ -51,6 +51,13 @@ namespace API.Service.ExcelExport
         /// ငွေစာရင်း reports, 2026-09-17): 3000 shows as 3000, 3000.5 as 3000.5.
         /// </summary>
         MoneyAsStored = 13,
+
+        /// <summary>
+        /// Always an inline string whose line breaks show: a wrapped, top-aligned,
+        /// bordered cell (the grouped-table body style, e.g. Company Profile's
+        /// "name / reg no / (date)" cell). "\n" starts a new line inside the cell.
+        /// </summary>
+        WrappedText = 14,
     }
 
     /// <summary>Where one preamble line sits in the sheet's header block.</summary>
@@ -102,7 +109,9 @@ namespace API.Service.ExcelExport
             bool isRowNumber = false,
             bool? isNumeric = null,
             string? key = null,
-            string? dataIndex = null)
+            string? dataIndex = null,
+            string? groupHeader = null,
+            bool mergeWithinRowGroup = false)
         {
             Header = header ?? string.Empty;
             Format = format;
@@ -113,6 +122,8 @@ namespace API.Service.ExcelExport
             _isNumeric = isNumeric ?? IsNumericFormat(format);
             Key = key;
             DataIndex = dataIndex;
+            GroupHeader = groupHeader;
+            MergeWithinRowGroup = mergeWithinRowGroup;
         }
 
         public string Header { get; }
@@ -141,6 +152,21 @@ namespace API.Service.ExcelExport
         public bool IsRowNumber { get; }
 
         /// <summary>
+        /// The band label over a run of neighbouring columns, e.g. "Board of Director" over
+        /// "Name" and "NRC No.". Any column carrying one switches the sheet to a two-row
+        /// header: the band on the first row, <see cref="Header"/> (the leaf title) under
+        /// it, and every ungrouped header cell merged down across both rows.
+        /// </summary>
+        public string? GroupHeader { get; }
+
+        /// <summary>
+        /// With <see cref="ExcelReportLayout.RowGroupKey"/> set, the value is printed on a
+        /// group's first row only and the cell is merged down over the group's rows — the
+        /// grid's rowSpan-merged company cells. The "No" column then counts groups.
+        /// </summary>
+        public bool MergeWithinRowGroup { get; }
+
+        /// <summary>
         /// Mirrors the grid's <c>isNumericColumn</c> (dataType number|money): drives the
         /// right-aligned/numeric footer cells and the fallback currency-totals placement.
         /// </summary>
@@ -154,7 +180,34 @@ namespace API.Service.ExcelExport
         /// Returns a copy — <see cref="ExcelColumn"/> is immutable.
         /// </summary>
         public ExcelColumn Bind(string? key, string? dataIndex)
-            => new(Header, Format, Width, IncludeInTotals, _value, IsRowNumber, _isNumeric, key, dataIndex);
+            => Clone(key: key, dataIndex: dataIndex);
+
+        /// <summary>A copy that sits under the <paramref name="groupHeader"/> band.</summary>
+        public ExcelColumn WithGroupHeader(string groupHeader)
+            => Clone(groupHeader: groupHeader);
+
+        /// <summary>A copy that merges down over each row group (see <see cref="MergeWithinRowGroup"/>).</summary>
+        public ExcelColumn MergedWithinRowGroup()
+            => Clone(mergeWithinRowGroup: true);
+
+        // Every copy goes through here so no copy method can drop another's field.
+        private ExcelColumn Clone(
+            string? key = null,
+            string? dataIndex = null,
+            string? groupHeader = null,
+            bool? mergeWithinRowGroup = null)
+            => new(
+                Header,
+                Format,
+                Width,
+                IncludeInTotals,
+                _value,
+                IsRowNumber,
+                _isNumeric,
+                key ?? Key,
+                dataIndex ?? DataIndex,
+                groupHeader ?? GroupHeader,
+                mergeWithinRowGroup ?? MergeWithinRowGroup);
 
         /// <summary>
         /// The grid's "No" column: 1..N, continuing across chunk boundaries and sheet
@@ -165,6 +218,10 @@ namespace API.Service.ExcelExport
 
         public static ExcelColumn Text<TRow>(string header, Func<TRow, object?> selector, double? width = null)
             => Create(header, ExcelCellFormat.Text, width, false, selector);
+
+        /// <summary>A multi-line text cell: wrapped, top-aligned and bordered ("\n" breaks the line).</summary>
+        public static ExcelColumn WrappedText<TRow>(string header, Func<TRow, object?> selector, double? width = null)
+            => Create(header, ExcelCellFormat.WrappedText, width, false, selector);
 
         public static ExcelColumn Number<TRow>(
             string header, Func<TRow, object?> selector, double? width = null, bool includeInTotals = false)
@@ -351,6 +408,15 @@ namespace API.Service.ExcelExport
         /// <summary>Freeze everything above the first data row so the headers stay put while scrolling.</summary>
         public bool FreezeHeader { get; init; } = true;
 
+        /// <summary>
+        /// Groups consecutive rows that return an equal key (e.g. one company's director
+        /// rows). Columns marked <see cref="ExcelColumn.MergeWithinRowGroup"/> print once per
+        /// group and merge down over it, the "No" column counts groups, and each group's
+        /// row heights are set so its wrapped text shows. Rows must arrive contiguous per
+        /// group. Null (the default) leaves every row independent. Single-grid layouts only.
+        /// </summary>
+        public Func<object, object?>? RowGroupKey { get; init; }
+
         internal bool HasExplicitColumns => Columns.Count > 0;
 
         internal bool HasSections => Sections.Count > 0;
@@ -366,7 +432,8 @@ namespace API.Service.ExcelExport
             IReadOnlyList<ExcelReportSection>? sections = null,
             bool? freezeHeader = null,
             string? totalsRowLabel = null,
-            bool? mergeTitleAcrossColumns = null)
+            bool? mergeTitleAcrossColumns = null,
+            Func<object, object?>? rowGroupKey = null)
             => new()
             {
                 TitleLines = titleLines ?? TitleLines,
@@ -377,6 +444,7 @@ namespace API.Service.ExcelExport
                 CurrencyTotalsColumns = currencyTotalsColumns ?? CurrencyTotalsColumns,
                 Sections = sections ?? Sections,
                 FreezeHeader = freezeHeader ?? FreezeHeader,
+                RowGroupKey = rowGroupKey ?? RowGroupKey,
             };
     }
 

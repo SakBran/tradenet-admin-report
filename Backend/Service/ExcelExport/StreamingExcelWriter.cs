@@ -23,6 +23,12 @@ namespace API.Service.ExcelExport
     /// then a bold header row of the layout's own column names, then the data, then the
     /// grid's footer rows.
     ///
+    /// A layout may also opt into a grouped table (<see cref="ExcelReportLayout.RowGroupKey"/>,
+    /// <see cref="ExcelColumn.MergeWithinRowGroup"/>, <see cref="ExcelColumn.GroupHeader"/>):
+    /// a two-row banded header, cells merged down over each row group, and row heights
+    /// sized to the wrapped text. A layout that uses none of it writes exactly the sheet
+    /// XML it always did.
+    ///
     /// Usage: append chunks, optionally <see cref="AppendFooterRows"/>, then
     /// <see cref="Finish"/>. Disposing without Finish leaves an incomplete (unreadable)
     /// archive — the worker deletes the file on failure.
@@ -59,6 +65,17 @@ namespace API.Service.ExcelExport
         private const int StyleTotalMoney4Plain = 20;
         private const int StyleMoneyAsStored = 21;
         private const int StyleTotalMoneyAsStored = 22;
+        private const int StyleWrapTop = 23;          // wrapped, top-aligned, bordered text
+        private const int StyleNumberTop = 24;        // a grouped table's "No": centered, top, bordered
+        private const int StyleHeaderBordered = 25;   // a grouped table's header cells
+
+        // Calibri 11's default row height, and the taller line a Myanmar-script run needs.
+        private const double LineHeightPoints = 15d;
+        private const double MyanmarLineHeightPoints = 22d;
+
+        // A group larger than this (a misused key) is written in slices instead of held in
+        // memory; each slice re-prints the group's values, like a sheet rollover does.
+        private const int MaxBufferedGroupRows = 5_000;
 
         private readonly ZipArchive _archive;
         private readonly string _worksheetBaseName;
@@ -72,6 +89,10 @@ namespace API.Service.ExcelExport
         private readonly int _headerRowIndex;       // the column header row; = _preambleRows in section mode
         private readonly double?[] _widths;
         private readonly double[]? _totals;         // one slot per column; null when no totals row
+        private readonly Func<object, object?>? _groupKey; // grouped table; null → every row independent
+        private readonly bool _twoRowHeader;        // some column carries a GroupHeader band
+        private readonly bool _tableMode;           // bordered header: two-row header or row groups
+        private readonly int[] _mergeColumns;       // column indexes merged down over each row group
 
         private ExcelColumn[]? _activeColumns;      // the section currently being written
         private PropertyInfo[]? _properties;        // legacy mode only
@@ -84,6 +105,15 @@ namespace API.Service.ExcelExport
         private long _sectionRows;     // rows in the active section (its own "No" ordinal)
         private int _activeSection = -1;
         private bool _footerWritten;
+
+        // Grouped table state. The current group's rows are buffered so their heights can
+        // be set once the group is complete (Excel never auto-fits a merged cell).
+        private readonly List<object> _pendingGroup = new();
+        private List<(int Start, int End)> _groupRuns = new(); // merged row ranges on the CURRENT sheet
+        private object? _currentGroupKey;
+        private bool _groupOpen;
+        private bool _groupFirstRowWritten;
+        private long _groupOrdinal;
 
         public StreamingExcelWriter(Stream output, string worksheetName)
             : this(output, worksheetName, null, MaxRowsPerSheetDefault)
@@ -108,10 +138,27 @@ namespace API.Service.ExcelExport
             _columns = _layout.HasExplicitColumns ? _layout.Columns.ToArray() : null;
             _sections = _layout.Sections.ToArray();
             _preambleRows = _titleLines.Length + _headerBlock.Length;
+            _groupKey = _layout.RowGroupKey;
+
+            var usesGrouping = _groupKey != null
+                || _layout.Columns.Any(c => c.GroupHeader != null || c.MergeWithinRowGroup)
+                || _sections.Any(section => section.Columns.Any(c => c.GroupHeader != null || c.MergeWithinRowGroup));
+            if (usesGrouping && (_columns == null || HasSections))
+            {
+                throw new ArgumentException(
+                    "Row groups and banded headers need a single-grid layout with explicit Columns (no Sections).",
+                    nameof(layout));
+            }
+
+            _twoRowHeader = _columns != null && _columns.Any(c => c.GroupHeader != null);
+            _tableMode = _twoRowHeader || _groupKey != null;
+            _mergeColumns = _groupKey != null && _columns != null
+                ? Enumerable.Range(0, _columns.Length).Where(i => _columns[i].MergeWithinRowGroup).ToArray()
+                : Array.Empty<int>();
 
             // A composite sheet writes one header row per section instead of a single
-            // global one, so nothing but the preamble is frozen.
-            _headerRowIndex = HasSections ? _preambleRows : _preambleRows + 1;
+            // global one, so nothing but the preamble is frozen. A banded header is two rows.
+            _headerRowIndex = HasSections ? _preambleRows : _preambleRows + (_twoRowHeader ? 2 : 1);
             _activeColumns = _columns;
             _widths = BuildWidths();
             _totals = _layout.TotalsRowLabel != null && _columns != null && _columns.Any(c => c.IncludeInTotals)
@@ -153,6 +200,12 @@ namespace API.Service.ExcelExport
                     // A composite report that never called BeginSection still gets its
                     // first table's headers instead of a naked block of values.
                     BeginSection(0);
+                }
+
+                if (_groupKey != null)
+                {
+                    AppendGroupedRow(row);
+                    continue;
                 }
 
                 if (_sheetWriter == null || _rowInSheet >= _maxRowsPerSheet)
@@ -225,6 +278,8 @@ namespace API.Service.ExcelExport
                 return;
             }
 
+            FlushGroup();
+
             if (_sheetWriter == null)
             {
                 StartNewSheet();
@@ -247,6 +302,9 @@ namespace API.Service.ExcelExport
             // consulted they are the answer, and "the grid shows no footer" must not turn
             // into the layout's self-summed row under a different column.
             _footerWritten = true;
+
+            // The last group's rows are still buffered; they go above the footer.
+            FlushGroup();
 
             if (footerRows == null || footerRows.Count == 0)
             {
@@ -292,6 +350,8 @@ namespace API.Service.ExcelExport
         /// <summary>Closes the current sheet and writes the workbook manifest parts.</summary>
         public void Finish()
         {
+            FlushGroup();
+
             // Ensure at least one (header only) sheet exists.
             if (_sheetWriter == null)
             {
@@ -330,6 +390,7 @@ namespace API.Service.ExcelExport
 
             _sheetCount++;
             _mergeRefs = new List<string>();
+            _groupRuns = new List<(int Start, int End)>();
             var entry = _archive.CreateEntry($"xl/worksheets/sheet{_sheetCount}.xml", CompressionLevel.Optimal);
             _sheetStream = entry.Open();
             _sheetWriter = XmlWriter.Create(_sheetStream, new XmlWriterSettings
@@ -392,6 +453,13 @@ namespace API.Service.ExcelExport
                     WriteHeaderRow(_sheetWriter, _rowInSheet);
                 }
 
+                return;
+            }
+
+            if (_twoRowHeader)
+            {
+                WriteBandedHeaderRows(_sheetWriter, _rowInSheet + 1);
+                _rowInSheet += 2;
                 return;
             }
 
@@ -524,13 +592,16 @@ namespace API.Service.ExcelExport
         /// </summary>
         private void WriteMergedTitleCells(XmlWriter writer)
         {
-            if (_mergeRefs.Count == 0)
+            // Group runs are kept as row pairs and only expanded here, so a long sheet of
+            // small groups doesn't hold a string per merged cell.
+            var count = _mergeRefs.Count + _groupRuns.Count * _mergeColumns.Length;
+            if (count == 0)
             {
                 return;
             }
 
             writer.WriteStartElement("mergeCells");
-            writer.WriteAttributeString("count", _mergeRefs.Count.ToString(CultureInfo.InvariantCulture));
+            writer.WriteAttributeString("count", count.ToString(CultureInfo.InvariantCulture));
             foreach (var reference in _mergeRefs)
             {
                 writer.WriteStartElement("mergeCell");
@@ -538,8 +609,21 @@ namespace API.Service.ExcelExport
                 writer.WriteEndElement();
             }
 
+            foreach (var (start, end) in _groupRuns)
+            {
+                foreach (var columnIndex in _mergeColumns)
+                {
+                    writer.WriteStartElement("mergeCell");
+                    writer.WriteAttributeString("ref", MergeReference(columnIndex + 1, start, columnIndex + 1, end));
+                    writer.WriteEndElement();
+                }
+            }
+
             writer.WriteEndElement();
         }
+
+        private static string MergeReference(int firstColumn, int firstRow, int lastColumn, int lastRow)
+            => GetCellReference(firstColumn, firstRow) + ":" + GetCellReference(lastColumn, lastRow);
 
         private void WriteHeaderRow(XmlWriter writer, int rowNumber)
         {
@@ -550,7 +634,12 @@ namespace API.Service.ExcelExport
             {
                 for (var i = 0; i < _activeColumns.Length; i++)
                 {
-                    WriteCell(writer, GetCellReference(i + 1, rowNumber), _activeColumns[i].Header, ExcelCellFormat.Text, StyleHeader);
+                    WriteCell(
+                        writer,
+                        GetCellReference(i + 1, rowNumber),
+                        _activeColumns[i].Header,
+                        ExcelCellFormat.Text,
+                        _tableMode ? StyleHeaderBordered : StyleHeader);
                 }
             }
             else
@@ -565,6 +654,253 @@ namespace API.Service.ExcelExport
             }
 
             writer.WriteEndElement();
+        }
+
+        /// <summary>
+        /// The two-row header of a layout with <see cref="ExcelColumn.GroupHeader"/> bands:
+        /// each band spans its run of columns on the first row with the leaf titles under
+        /// it; every other header cell is merged down across both rows. The covered cells
+        /// are written empty but styled, so the borders draw.
+        /// </summary>
+        private void WriteBandedHeaderRows(XmlWriter writer, int firstRow)
+        {
+            var columns = _columns!;
+            var secondRow = firstRow + 1;
+
+            writer.WriteStartElement("row");
+            writer.WriteAttributeString("r", firstRow.ToString(CultureInfo.InvariantCulture));
+            for (var i = 0; i < columns.Length; i++)
+            {
+                var band = columns[i].GroupHeader;
+                var reference = GetCellReference(i + 1, firstRow);
+
+                if (band == null)
+                {
+                    WriteCell(writer, reference, columns[i].Header, ExcelCellFormat.Text, StyleHeaderBordered);
+                    _mergeRefs.Add(MergeReference(i + 1, firstRow, i + 1, secondRow));
+                }
+                else if (i == 0 || !string.Equals(columns[i - 1].GroupHeader, band, StringComparison.Ordinal))
+                {
+                    var last = i;
+                    while (last + 1 < columns.Length
+                        && string.Equals(columns[last + 1].GroupHeader, band, StringComparison.Ordinal))
+                    {
+                        last++;
+                    }
+
+                    WriteCell(writer, reference, band, ExcelCellFormat.Text, StyleHeaderBordered);
+                    if (last > i)
+                    {
+                        _mergeRefs.Add(MergeReference(i + 1, firstRow, last + 1, firstRow));
+                    }
+                }
+                else
+                {
+                    WriteCell(writer, reference, null, ExcelCellFormat.Text, StyleHeaderBordered);
+                }
+            }
+
+            writer.WriteEndElement();
+
+            writer.WriteStartElement("row");
+            writer.WriteAttributeString("r", secondRow.ToString(CultureInfo.InvariantCulture));
+            for (var i = 0; i < columns.Length; i++)
+            {
+                WriteCell(
+                    writer,
+                    GetCellReference(i + 1, secondRow),
+                    columns[i].GroupHeader == null ? null : columns[i].Header,
+                    ExcelCellFormat.Text,
+                    StyleHeaderBordered);
+            }
+
+            writer.WriteEndElement();
+        }
+
+        /// <summary>Buffers one row of a grouped table; a new key writes out the previous group.</summary>
+        private void AppendGroupedRow(object row)
+        {
+            var key = _groupKey!(row);
+            var sameGroup = _groupOpen && key != null && Equals(key, _currentGroupKey);
+
+            if (!sameGroup)
+            {
+                FlushGroup();
+                _groupOrdinal++;
+                _currentGroupKey = key;
+                _groupOpen = true;
+                _groupFirstRowWritten = false;
+            }
+            else if (_pendingGroup.Count >= MaxBufferedGroupRows)
+            {
+                FlushGroup();
+            }
+
+            _pendingGroup.Add(row);
+
+            // Counted on arrival: the footer builder reads TotalDataRows before Finish.
+            _totalDataRows++;
+        }
+
+        /// <summary>
+        /// Writes the buffered group, split at sheet boundaries. Every slice prints the
+        /// merged columns on its first row, so a group spilling onto a new sheet still
+        /// reads standalone there, with the same "No".
+        /// </summary>
+        private void FlushGroup()
+        {
+            if (_pendingGroup.Count == 0)
+            {
+                return;
+            }
+
+            var index = 0;
+            while (index < _pendingGroup.Count)
+            {
+                if (_sheetWriter == null || _rowInSheet >= _maxRowsPerSheet)
+                {
+                    StartNewSheet();
+                }
+
+                var take = Math.Max(1, Math.Min(_maxRowsPerSheet - _rowInSheet, _pendingGroup.Count - index));
+                WriteGroupSlice(index, take);
+                index += take;
+            }
+
+            _pendingGroup.Clear();
+        }
+
+        private void WriteGroupSlice(int offset, int count)
+        {
+            var columns = _columns!;
+            var writer = _sheetWriter!;
+
+            // Merged columns are read from the slice's first row only.
+            var values = new object?[count][];
+            for (var r = 0; r < count; r++)
+            {
+                values[r] = new object?[columns.Length];
+                for (var c = 0; c < columns.Length; c++)
+                {
+                    if (r == 0 || !columns[c].MergeWithinRowGroup)
+                    {
+                        values[r][c] = columns[c].GetValue(_pendingGroup[offset + r], _groupOrdinal);
+                    }
+                }
+            }
+
+            var heights = GroupRowHeights(columns, values);
+            var firstRow = _rowInSheet + 1;
+
+            for (var r = 0; r < count; r++)
+            {
+                _rowInSheet++;
+                writer.WriteStartElement("row");
+                writer.WriteAttributeString("r", _rowInSheet.ToString(CultureInfo.InvariantCulture));
+                if (heights[r] > LineHeightPoints)
+                {
+                    writer.WriteAttributeString("ht", heights[r].ToString("0.##", CultureInfo.InvariantCulture));
+                    writer.WriteAttributeString("customHeight", "1");
+                }
+
+                for (var c = 0; c < columns.Length; c++)
+                {
+                    var column = columns[c];
+                    var style = column.IsRowNumber ? StyleNumberTop : StyleFor(column.Format);
+                    var reference = GetCellReference(c + 1, _rowInSheet);
+
+                    if (r > 0 && column.MergeWithinRowGroup)
+                    {
+                        WriteCell(writer, reference, null, column.Format, style);
+                        continue;
+                    }
+
+                    // A merged value is one number per group, even when a slice re-prints it.
+                    if (_totals != null && column.IncludeInTotals
+                        && (!column.MergeWithinRowGroup || !_groupFirstRowWritten))
+                    {
+                        _totals[c] += ToDoubleOrZero(values[r][c]);
+                    }
+
+                    WriteCell(writer, reference, values[r][c], column.Format, style);
+                }
+
+                writer.WriteEndElement();
+                _groupFirstRowWritten = true;
+            }
+
+            if (count > 1 && _mergeColumns.Length > 0)
+            {
+                _groupRuns.Add((firstRow, firstRow + count - 1));
+            }
+        }
+
+        /// <summary>
+        /// Heights for one slice: each row fits its own wrapped cells, and the merged cells'
+        /// text — which Excel will not auto-fit — is spread over the slice's rows.
+        /// </summary>
+        private double[] GroupRowHeights(ExcelColumn[] columns, object?[][] values)
+        {
+            var count = values.Length;
+            var heights = new double[count];
+            var mergedNeed = LineHeightPoints;
+
+            for (var r = 0; r < count; r++)
+            {
+                heights[r] = LineHeightPoints;
+                for (var c = 0; c < columns.Length; c++)
+                {
+                    var need = EstimateCellHeight(values[r][c], columns[c]);
+                    if (columns[c].MergeWithinRowGroup)
+                    {
+                        mergedNeed = Math.Max(mergedNeed, need);
+                    }
+                    else
+                    {
+                        heights[r] = Math.Max(heights[r], need);
+                    }
+                }
+            }
+
+            var shortfall = mergedNeed - heights.Sum();
+            if (shortfall > 0)
+            {
+                for (var r = 0; r < count; r++)
+                {
+                    heights[r] += shortfall / count;
+                }
+            }
+
+            for (var r = 0; r < count; r++)
+            {
+                heights[r] = Math.Ceiling(heights[r] * 4) / 4; // quarter points, like Excel stores them
+            }
+
+            return heights;
+        }
+
+        /// <summary>
+        /// Approximate height of a wrapped cell: lines per "\n"-separated part at the
+        /// column's width (a width unit is one '0'; capitals run ~10% wider).
+        /// </summary>
+        private static double EstimateCellHeight(object? value, ExcelColumn column)
+        {
+            if (column.Format != ExcelCellFormat.WrappedText || value is not string text || text.Length == 0)
+            {
+                return LineHeightPoints;
+            }
+
+            var charsPerLine = Math.Max(1d, (column.Width ?? 18d) - 1d);
+            var height = 0d;
+
+            foreach (var part in text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n'))
+            {
+                var lines = Math.Max(1d, Math.Ceiling(part.Length * 1.1d / charsPerLine));
+                var myanmar = part.Any(ch => ch >= '\u1000' && ch <= '\u109F');
+                height += lines * (myanmar ? MyanmarLineHeightPoints : LineHeightPoints);
+            }
+
+            return height;
         }
 
         private void WriteBlankRow()
@@ -697,6 +1033,7 @@ namespace API.Service.ExcelExport
             ExcelCellFormat.NumberPlain => StyleNumberPlain,
             ExcelCellFormat.Money4Plain => StyleMoney4Plain,
             ExcelCellFormat.MoneyAsStored => StyleMoneyAsStored,
+            ExcelCellFormat.WrappedText => StyleWrapTop,
             _ => StyleDefault,
         };
 
@@ -768,7 +1105,8 @@ namespace API.Service.ExcelExport
                 {
                     writer.WriteElementString("v", serial);
                 }
-                else if (format != ExcelCellFormat.Text && TryGetNumericValue(value, out var numericValue))
+                else if (format is not (ExcelCellFormat.Text or ExcelCellFormat.WrappedText)
+                    && TryGetNumericValue(value, out var numericValue))
                 {
                     writer.WriteElementString("v", numericValue);
                 }
@@ -777,13 +1115,41 @@ namespace API.Service.ExcelExport
                     writer.WriteAttributeString("t", "inlineStr");
                     writer.WriteStartElement("is");
                     writer.WriteStartElement("t");
-                    writer.WriteString(FormatValue(value));
+                    if (format == ExcelCellFormat.WrappedText)
+                    {
+                        WriteMultilineText(writer, FormatValue(value));
+                    }
+                    else
+                    {
+                        writer.WriteString(FormatValue(value));
+                    }
+
                     writer.WriteEndElement();
                     writer.WriteEndElement();
                 }
             }
 
             writer.WriteEndElement();
+        }
+
+        /// <summary>
+        /// Line breaks as "&amp;#xA;" character entities, so they survive whatever newline
+        /// handling the XmlWriter or the reading parser applies.
+        /// </summary>
+        private static void WriteMultilineText(XmlWriter writer, string text)
+        {
+            writer.WriteAttributeString("xml", "space", "http://www.w3.org/XML/1998/namespace", "preserve");
+
+            var parts = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+            for (var i = 0; i < parts.Length; i++)
+            {
+                if (i > 0)
+                {
+                    writer.WriteCharEntity('\n');
+                }
+
+                writer.WriteString(parts[i]);
+            }
         }
 
         /// <summary>
@@ -969,9 +1335,14 @@ namespace API.Service.ExcelExport
             "<fill><patternFill patternType=\"none\"/></fill>" +
             "<fill><patternFill patternType=\"gray125\"/></fill>" +
             "</fills>" +
-            "<borders count=\"1\"><border><left/><right/><top/><bottom/><diagonal/></border></borders>" +
+            "<borders count=\"2\">" +
+            "<border><left/><right/><top/><bottom/><diagonal/></border>" +
+            // 1 thin all round — the grouped table's grid (styles 23-25)
+            "<border><left style=\"thin\"><color auto=\"1\"/></left><right style=\"thin\"><color auto=\"1\"/></right>" +
+            "<top style=\"thin\"><color auto=\"1\"/></top><bottom style=\"thin\"><color auto=\"1\"/></bottom><diagonal/></border>" +
+            "</borders>" +
             "<cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs>" +
-            "<cellXfs count=\"23\">" +
+            "<cellXfs count=\"26\">" +
             // 0 body
             "<xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/>" +
             // 1 title
@@ -1021,6 +1392,15 @@ namespace API.Service.ExcelExport
             "<xf numFmtId=\"174\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\"/>" +
             // 22 totals money as stored (ငွေစာရင်း, bold)
             "<xf numFmtId=\"174\" fontId=\"2\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\" applyFont=\"1\"/>" +
+            // 23 wrapped multi-line text, top-aligned, bordered (grouped table body)
+            "<xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"1\" xfId=\"0\" applyBorder=\"1\" applyAlignment=\"1\">" +
+            "<alignment vertical=\"top\" wrapText=\"1\"/></xf>" +
+            // 24 a grouped table's "No": centered, top-aligned, bordered
+            "<xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"1\" xfId=\"0\" applyBorder=\"1\" applyAlignment=\"1\">" +
+            "<alignment horizontal=\"center\" vertical=\"top\"/></xf>" +
+            // 25 a grouped table's header: the header style with a border
+            "<xf numFmtId=\"0\" fontId=\"2\" fillId=\"0\" borderId=\"1\" xfId=\"0\" applyFont=\"1\" applyBorder=\"1\" applyAlignment=\"1\">" +
+            "<alignment horizontal=\"center\" vertical=\"center\" wrapText=\"1\"/></xf>" +
             "</cellXfs>" +
             "</styleSheet>";
     }

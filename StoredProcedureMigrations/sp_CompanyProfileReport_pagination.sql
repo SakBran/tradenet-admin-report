@@ -30,6 +30,14 @@
      The @CompanyRegistrationNo predicate is added only when supplied, so an index
        seek stays available instead of the non-sargable CASE wrapper.
 
+   2026-09-25 (complaint: the "11 ministries" layout): Phase 2 also returns
+     PaThaKa.StartDate (the EIR validity is StartDate to EndDate) and the capital's
+     currency code (Currency.Code via PaThaKa.CurrencyId, LEFT JOIN: CurrencyId is
+     nullable), and lists each company's directors in their SortOrder instead of by
+     their GUID. The page of companies and TotalCount are unchanged.
+     DEPLOY BEFORE THE APPLICATION: the app maps StartDate/CapitalCurrency and EF
+     throws on a result set without them.
+
    Idempotent: CREATE OR ALTER.
    ============================================= */
 CREATE OR ALTER PROCEDURE [dbo].[sp_CompanyProfileReport_pagination]
@@ -89,8 +97,9 @@ BEGIN
 
     -- Phase 2: expand the paged companies to one row per director and enrich ONLY
     -- those rows with the expensive per-company lookups. Ordering keeps each
-    -- company's directors contiguous (sort key, then company id, then director id)
-    -- so the UI can group them into one nested block per company.
+    -- company's directors contiguous (sort key, then company id) so the UI and the
+    -- .xlsx can group them into one merged block per company; within a company the
+    -- directors follow their SortOrder whatever the sort direction.
     SET @Sql = @Sql + N';
 
         SELECT PaThaKa.Id, PaThaKa.CompanyRegistrationNo, PaThaKa.EndDate, PaThaKa.CompanyName,
@@ -100,6 +109,7 @@ BEGIN
                PaThaKa.State, PaThaKa.Country, PaThaKa.PostalCode, PaThaKa.Capital,
                PaThaKaDirectors.Name AS DirectorName, PaThaKaDirectors.NRC AS DirectorNRC,
                PaThaKaDirectors.Position AS DirectorPosition,
+               PaThaKa.StartDate, currency.Code AS CapitalCurrency,
                ISNULL(dbo.fn_GetPermitBusiness(PaThaKa.Id), '''') AS PermitBusiness,
                (SELECT COUNT(Id) FROM PaThaKaRegistration
                 WHERE PaThaKaRegistration.CompanyRegistrationNo = PaThaKa.CompanyRegistrationNo
@@ -110,7 +120,9 @@ BEGIN
         INNER JOIN PaThaKaDirectors ON PaThaKaDirectors.PaThaKaId = PaThaKa.Id
         INNER JOIN BusinessType businessType ON PaThaKa.BusinessTypeId = businessType.Id
         INNER JOIN LineofBusiness lineofBusiness ON PaThaKa.LineofBusinessId = lineofBusiness.Id
-        ORDER BY ' + @OrderBy + N' ' + @Direction + N', PaThaKa.Id ' + @Direction + N', PaThaKaDirectors.Id ' + @Direction + N';
+        LEFT JOIN Currency currency ON currency.Id = PaThaKa.CurrencyId
+        ORDER BY ' + @OrderBy + N' ' + @Direction + N', PaThaKa.Id ' + @Direction + N',
+                 ISNULL(PaThaKaDirectors.SortOrder, 2147483647), PaThaKaDirectors.Id;
 
         DROP TABLE #page;';
 
