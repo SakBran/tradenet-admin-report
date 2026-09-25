@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -36,6 +37,15 @@ public sealed class sp_CompanyProfileReportResult
     public string? DirectorPosition { get; set; }
     public string PermitBusiness { get; set; } = string.Empty;
     public int ExtensionCount { get; set; }
+    public DateTime StartDate { get; set; }
+    public string? CapitalCurrency { get; set; }
+
+    // Display text for the 2026-09 "11 ministries" layout, built once here so the grid
+    // and the .xlsx print the same strings (see CompanyProfileFormat).
+    public string CompanyAddress { get; set; } = string.Empty;
+    public string EirValidity { get; set; } = string.Empty;
+    public string CapitalText { get; set; } = string.Empty;
+    public string DirectorTitle { get; set; } = string.Empty;
 }
 
 public sealed class sp_CompanyProfileReportRow
@@ -59,6 +69,8 @@ public sealed class sp_CompanyProfileReportRow
     public string? DirectorPosition { get; set; }
     public string PermitBusiness { get; set; } = string.Empty;
     public int ExtensionCount { get; set; }
+    public DateTime StartDate { get; set; }
+    public string? CapitalCurrency { get; set; }
     public int TotalCount { get; set; }
 
     public sp_CompanyProfileReportResult ToResult() => new()
@@ -82,7 +94,53 @@ public sealed class sp_CompanyProfileReportRow
         DirectorPosition = DirectorPosition,
         PermitBusiness = PermitBusiness,
         ExtensionCount = ExtensionCount,
+        StartDate = StartDate,
+        CapitalCurrency = CapitalCurrency,
+        CompanyAddress = CompanyProfileFormat.Address(
+            UnitLevel, StreetNumberStreetName, QuarterCityTownship, State, Country, PostalCode),
+        EirValidity = CompanyProfileFormat.Validity(StartDate, EndDate),
+        CapitalText = CompanyProfileFormat.Capital(Capital, CapitalCurrency),
+        DirectorTitle = CompanyProfileFormat.DirectorTitle(DirectorPosition),
     };
+}
+
+/// <summary>
+/// The cell text of the Company Profile layout the customer sends to the 11 ministries
+/// (complaint 2026-09-25). InvariantCulture throughout, so a server culture with other
+/// digits or separators cannot change what the ministries receive.
+/// </summary>
+public static class CompanyProfileFormat
+{
+    /// <summary>The address parts that are present, joined with ", " in the order the form captures them.</summary>
+    public static string Address(params string?[] parts)
+        => string.Join(", ", parts.Select(part => part?.Trim()).Where(part => !string.IsNullOrEmpty(part)));
+
+    /// <summary>The EIR validity period: "1-8-2026 to 31-7-2031" (no leading zeros).</summary>
+    public static string Validity(DateTime startDate, DateTime endDate)
+        => string.Format(CultureInfo.InvariantCulture, "{0:d-M-yyyy} to {1:d-M-yyyy}", startDate, endDate);
+
+    /// <summary>
+    /// "K-10000000" for kyat (the currency code for anything else, e.g. "USD-50000"),
+    /// the amount as stored with no separators; "" when the company declared none.
+    /// </summary>
+    public static string Capital(double? capital, string? currencyCode)
+    {
+        if (capital == null)
+        {
+            return string.Empty;
+        }
+
+        var code = currencyCode?.Trim();
+        var prefix = string.IsNullOrEmpty(code) || string.Equals(code, "MMK", StringComparison.OrdinalIgnoreCase)
+            ? "K"
+            : code.ToUpperInvariant();
+
+        return prefix + "-" + capital.Value.ToString("0.##", CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>Everyone listed sits on the Board of Director, so a blank position reads "Director".</summary>
+    public static string DirectorTitle(string? position)
+        => string.IsNullOrWhiteSpace(position) ? "Director" : position.Trim();
 }
 
 /// <summary>

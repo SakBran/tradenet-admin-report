@@ -1398,11 +1398,11 @@
       "hasSingleDate": false,
       "hasCurrencyTotalsColumns": false,
       "showRowNumber": true,
-      "rowNumberTitle": "စဥ်",
+      "rowNumberTitle": "No",
       "isBespokePage": true,
       "isComposite": false,
       "hasExcelButton": true,
-      "columnCount": 11
+      "columnCount": 9
     },
     {
       "configKey": "DutyFreeShopDetailReport",

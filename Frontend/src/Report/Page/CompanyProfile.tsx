@@ -29,20 +29,29 @@ import { buildCompanyProfileExcelSpec } from '../excel/bespoke/companyProfile';
 import { enqueueExcelExport } from '../excel/excelEnqueue';
 
 // CompanyProfile is rendered by this bespoke page (not GenericReportPage) so it can
-// reproduce the legacy Tradenet 2.0 layout exactly: Myanmar column headers, the
-// combined "RegNo / (date)" and single Address cells, and the nested
-// "ဒါရိုက်တာအဖွဲ့၀င်များ" directors sub-grid with rowSpan-merged company cells.
+// print the layout the customer sends to the 11 ministries (complaint 2026-09-25;
+// it replaced the legacy Tradenet 2.0 Myanmar-header layout): composed
+// "name / reg no / (date)" and "EIR no / validity" cells, and the "Board of Director"
+// Name / NRC No. band with rowSpan-merged company cells. The Excel export draws the
+// same sheet (CompanyProfileController.GetExcelLayout).
 // The backend (sp_CompanyProfileReport_pagination) pages at the COMPANY grain and
-// returns one flat row per (company, director); we group those rows back into one
-// block per company here. reportConfigs.CompanyProfile is kept only for the nav.
+// returns one flat row per (company, director), with the address, validity, capital
+// and title text already formatted; we group those rows back into one block per
+// company here. reportConfigs.CompanyProfile is kept only for the nav.
 
 const API_ROUTE = 'CompanyProfile';
 const EXCEL_ROUTE = 'CompanyProfile/Excel';
 const EXCEL_FILE_NAME = 'CompanyProfile.xlsx';
 const TABLE_ID = 'companyProfileTable';
 
-// 9 company-level columns + 3 nested director columns.
-const TOTAL_COLUMN_COUNT = 12;
+// 7 company-level columns + the 2-column "Board of Director" band + Title.
+const TOTAL_COLUMN_COUNT = 10;
+
+// The customer's sample centres every header cell, band included.
+const HEADER_CELL_STYLE = {
+  textAlign: 'center',
+  verticalAlign: 'middle',
+} as const;
 
 // The index signature makes these the "applied filters" record the bespoke Excel spec
 // builder reads (it formats FromDate/ToDate into the sheet's header line).
@@ -61,7 +70,7 @@ interface CompanyProfileFormValues {
 interface DirectorEntry {
   directorName: string;
   directorNrc: string;
-  directorPosition: string;
+  directorTitle: string;
 }
 
 interface CompanyRow {
@@ -69,17 +78,11 @@ interface CompanyRow {
   companyRegistrationNo: string;
   companyName: string;
   companyRegistrationDate: string;
-  endDate: string;
+  companyAddress: string;
+  eirValidity: string;
   businessType: string;
-  unitLevel?: string;
-  streetNumberStreetName?: string;
-  quarterCityTownship?: string;
-  state?: string;
-  country?: string;
-  postalCode?: string;
-  capital?: number | string | null;
   permitBusiness?: string;
-  extensionCount?: number;
+  capitalText: string;
   directors: DirectorEntry[];
 }
 
@@ -121,21 +124,6 @@ const formatDate = (value: unknown) => {
   return parsed.isValid() ? parsed.format('DD/MM/YYYY') : String(value);
 };
 
-// Single combined address cell, matching the legacy "ကုမ္ပဏီလိပ်စာ" column which
-// joined the address parts into one value.
-const joinAddress = (company: CompanyRow) =>
-  [
-    company.unitLevel,
-    company.streetNumberStreetName,
-    company.quarterCityTownship,
-    company.state,
-    company.country,
-    company.postalCode,
-  ]
-    .map((part) => (part ?? '').toString().trim())
-    .filter(Boolean)
-    .join(', ');
-
 // The legacy report exploded the comma-separated permit businesses onto separate
 // lines (Replace(PermitBusiness, ",", NewLine)).
 const renderPermitBusiness = (permitBusiness?: string) => {
@@ -168,19 +156,11 @@ const groupByCompany = (rows: AnyObject[]): CompanyRow[] => {
         companyRegistrationNo: String(row.companyRegistrationNo ?? ''),
         companyName: String(row.companyName ?? ''),
         companyRegistrationDate: String(row.companyRegistrationDate ?? ''),
-        endDate: String(row.endDate ?? ''),
+        companyAddress: String(row.companyAddress ?? ''),
+        eirValidity: String(row.eirValidity ?? ''),
         businessType: String(row.businessType ?? ''),
-        unitLevel: row.unitLevel as string | undefined,
-        streetNumberStreetName: row.streetNumberStreetName as
-          | string
-          | undefined,
-        quarterCityTownship: row.quarterCityTownship as string | undefined,
-        state: row.state as string | undefined,
-        country: row.country as string | undefined,
-        postalCode: row.postalCode as string | undefined,
-        capital: row.capital as number | string | null | undefined,
         permitBusiness: row.permitBusiness as string | undefined,
-        extensionCount: row.extensionCount as number | undefined,
+        capitalText: String(row.capitalText ?? ''),
         directors: [],
       };
       byId.set(id, company);
@@ -190,7 +170,7 @@ const groupByCompany = (rows: AnyObject[]): CompanyRow[] => {
     company.directors.push({
       directorName: String(row.directorName ?? ''),
       directorNrc: String(row.directorNrc ?? ''),
-      directorPosition: String(row.directorPosition ?? ''),
+      directorTitle: String(row.directorTitle ?? ''),
     });
   });
 
@@ -260,11 +240,19 @@ const CompanyProfile = () => {
   const companies = useMemo(() => groupByCompany(page?.data ?? []), [page]);
 
   const generateExcel = useCallback(async () => {
-    let values: CompanyProfileFormValues;
-    try {
-      values = await form.validateFields();
-    } catch {
-      return;
+    // The sheet must hold exactly what the grid shows (complaint 2026-09-25: "UI 6, Excel
+    // 37"), so once a Filter has been applied the export uses those applied filters, not
+    // whatever the form currently holds. Before the first Filter click there is nothing
+    // applied, and the form's (validated) values are the only filter there is.
+    let applied: CompanyProfileFilters;
+    if (hasAppliedFilters) {
+      applied = filters;
+    } else {
+      try {
+        applied = toFilters(await form.validateFields());
+      } catch {
+        return;
+      }
     }
 
     setExcelLoading(true);
@@ -272,9 +260,8 @@ const CompanyProfile = () => {
 
     try {
       // The endpoint REJECTS a request that carries no presentation spec, which is why this
-      // export always failed. buildCompanyProfileExcelSpec describes this page's hand-built
-      // Myanmar columns (the generic builder would describe the nav-only config instead).
-      const applied = toFilters(values);
+      // export once failed. buildCompanyProfileExcelSpec is the column contract of this
+      // page's hand-built layout (the generic builder would describe the nav-only config).
       await enqueueExcelExport(
         EXCEL_ROUTE,
         buildRequest(applied, { pageIndex, pageSize }),
@@ -286,7 +273,7 @@ const CompanyProfile = () => {
     } finally {
       setExcelLoading(false);
     }
-  }, [form, pageIndex, pageSize]);
+  }, [filters, form, hasAppliedFilters, pageIndex, pageSize]);
 
   const applyFilters = (values: CompanyProfileFormValues) => {
     setFilters(toFilters(values));
@@ -434,23 +421,37 @@ const CompanyProfile = () => {
                   </tr>
                 ))}
               <tr>
-                <th rowSpan={2}>စဥ်</th>
-                <th rowSpan={2}>ပသက / အမှတ်/ရက်စွဲ</th>
-                <th rowSpan={2}>သက်တမ်းကုန်ဆုံးရက်</th>
-                <th rowSpan={2}>ကုမ္ပဏီအမည်</th>
-                <th rowSpan={2}>ကုမ္ပဏီလိပ်စာ</th>
-                <th rowSpan={2}>ကုမ္ပဏီအမျိုးအစား</th>
-                <th rowSpan={2}>လုပ်ငန်းရည်ရွယ်ချက်</th>
-                <th rowSpan={2}>မတည်ငွေရင်း</th>
-                <th rowSpan={2}>ပသက သက်တမ်းတိုး</th>
-                <th colSpan={3} style={{ textAlign: 'center' }}>
-                  ဒါရိုက်တာအဖွဲ့၀င်များ
+                <th rowSpan={2} style={HEADER_CELL_STYLE}>
+                  No
+                </th>
+                <th rowSpan={2} style={HEADER_CELL_STYLE}>
+                  Company&apos;s Name
+                </th>
+                <th rowSpan={2} style={HEADER_CELL_STYLE}>
+                  Address
+                </th>
+                <th rowSpan={2} style={HEADER_CELL_STYLE}>
+                  EIR No. &amp; Date
+                </th>
+                <th rowSpan={2} style={HEADER_CELL_STYLE}>
+                  Type of Organization
+                </th>
+                <th rowSpan={2} style={HEADER_CELL_STYLE}>
+                  လုပ်ငန်းရည်ရွယ်ချက်
+                </th>
+                <th rowSpan={2} style={HEADER_CELL_STYLE}>
+                  Capital
+                </th>
+                <th colSpan={2} style={HEADER_CELL_STYLE}>
+                  Board of Director
+                </th>
+                <th rowSpan={2} style={HEADER_CELL_STYLE}>
+                  Title
                 </th>
               </tr>
               <tr>
-                <th>အမည်</th>
-                <th>နိုင်ငံသားအမှတ်</th>
-                <th>ရာထူး</th>
+                <th style={HEADER_CELL_STYLE}>Name</th>
+                <th style={HEADER_CELL_STYLE}>NRC No.</th>
               </tr>
             </thead>
 
@@ -464,18 +465,23 @@ const CompanyProfile = () => {
                           {
                             directorName: '',
                             directorNrc: '',
-                            directorPosition: '',
+                            directorTitle: '',
                           },
                         ];
                     const serial = companyIndex + 1 + pageIndex * pageSize;
-                    const address = joinAddress(company);
 
                     return directors.map((director, directorIndex) => (
                       <tr key={`${company.id}-${directorIndex}`}>
                         {directorIndex === 0 && (
                           <>
-                            <td rowSpan={directors.length}>{serial}</td>
+                            <td
+                              rowSpan={directors.length}
+                              style={{ textAlign: 'center' }}
+                            >
+                              {serial}
+                            </td>
                             <td rowSpan={directors.length}>
+                              <div>{company.companyName}</div>
                               <div>{company.companyRegistrationNo}</div>
                               {company.companyRegistrationDate && (
                                 <div>
@@ -485,13 +491,23 @@ const CompanyProfile = () => {
                               )}
                             </td>
                             <td rowSpan={directors.length}>
-                              {formatDate(company.endDate)}
+                              {company.companyAddress}
                             </td>
-                            <td rowSpan={directors.length}>
-                              {company.companyName}
+                            <td
+                              rowSpan={directors.length}
+                              style={{ textAlign: 'center' }}
+                            >
+                              <div>{company.companyRegistrationNo}</div>
+                              {/* Kept on one line, like the sample: a hyphenated
+                                  date must not break mid-date. */}
+                              <div style={{ whiteSpace: 'nowrap' }}>
+                                {company.eirValidity}
+                              </div>
                             </td>
-                            <td rowSpan={directors.length}>{address}</td>
-                            <td rowSpan={directors.length}>
+                            <td
+                              rowSpan={directors.length}
+                              style={{ textAlign: 'center' }}
+                            >
                               {company.businessType}
                             </td>
                             <td rowSpan={directors.length}>
@@ -499,25 +515,18 @@ const CompanyProfile = () => {
                             </td>
                             <td
                               rowSpan={directors.length}
-                              style={{ textAlign: 'right' }}
+                              style={{
+                                textAlign: 'center',
+                                whiteSpace: 'nowrap',
+                              }}
                             >
-                              {company.capital !== null &&
-                              company.capital !== undefined &&
-                              company.capital !== ''
-                                ? String(company.capital)
-                                : ''}
-                            </td>
-                            <td
-                              rowSpan={directors.length}
-                              style={{ textAlign: 'center' }}
-                            >
-                              {company.extensionCount ?? 0}
+                              {company.capitalText}
                             </td>
                           </>
                         )}
                         <td>{director.directorName}</td>
                         <td>{director.directorNrc}</td>
-                        <td>{director.directorPosition}</td>
+                        <td>{director.directorTitle}</td>
                       </tr>
                     ));
                   })
