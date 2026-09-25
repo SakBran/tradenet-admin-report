@@ -1,3 +1,44 @@
+/* =====================================================================================
+   Company Profile "11 ministries" layout deployment - 2026-09-25
+   Run this ONE file to apply the procedure, or run 01 individually.
+   Either way: PROCEDURE FIRST, APPLICATION SECOND.
+
+   Target database: TradeNetDB  (NOT ReportTemplateDB - that one only holds the Excel
+   export job queue; deploying report procedures into it is a known trap.)
+
+   What changes in sp_CompanyProfileReport_pagination (Phase 2 only):
+     - two new columns: PaThaKa.StartDate, and the capital's currency code
+       (Currency.Code via PaThaKa.CurrencyId, LEFT JOIN - CurrencyId is nullable);
+     - each company's directors are listed in PaThaKaDirectors.SortOrder (NULLs last)
+       instead of by their GUID, and no longer flip with the sort direction.
+
+   Why: the customer's new Company Profile layout prints the EIR validity as
+   "StartDate to EndDate" (e.g. 1-8-2026 to 31-7-2031) and the capital as "K-10000000",
+   and lists the directors in the order the company registered them.
+
+   RUN THIS BEFORE SHIPPING THE APPLICATION. The new application maps StartDate and
+   CapitalCurrency; against the old procedure EF Core throws on the missing columns and
+   the Company Profile report (grid and Excel) fails with HTTP 500 on every request.
+
+   Deliberately untouched: the filters, the page of companies (Phase 1), TotalCount,
+   the sort whitelist, and the legacy dbo.sp_CompanyProfileReport.
+
+   Generated from the repository files of the same name; see README.md in this folder.
+   ===================================================================================== */
+
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+USE [TradeNetDB];
+GO
+
+-- ============================================================================
+-- sp_CompanyProfileReport_pagination   (file 01_sp_CompanyProfileReport_pagination.sql)
+-- ============================================================================
+PRINT N'Applying sp_CompanyProfileReport_pagination ...';
+GO
+
 /* =============================================
    sp_CompanyProfileReport_pagination
 
@@ -131,4 +172,9 @@ BEGIN
         @FromDate = @FromDate, @ToDate = @ToDate, @CompanyRegistrationNo = @CompanyRegistrationNo,
         @PageIndex = @PageIndex, @PageSize = @PageSize;
 END
+GO
+
+GO
+
+PRINT N'Done. Now run VerifyDeployment.sql.';
 GO

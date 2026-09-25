@@ -3,71 +3,50 @@
  *
  * `CompanyProfile.tsx` is a hand-built page: its grid is NOT
  * `reportConfigs.CompanyProfile.columns` (that config exists only to register
- * the route/filters — see the note at `reportConfigs.ts:6495`), it renders 12
- * hand-written `<th>`s with Myanmar labels and a 2-row director group, plus the
- * two ministry heading lines above the table. So the generic
- * `buildExcelPresentation(config, applied)` would describe columns the UI never
- * shows (rules M2/M4) and drop the page's real header block (M1).
+ * the route/filters — see the note above `reportConfigs.CompanyProfile`). Since the
+ * 2026-09-25 complaint it prints the layout the customer sends to the 11
+ * ministries: composed company cells merged over each company's director rows,
+ * and Name / NRC No. under a "Board of Director" band.
  *
- * This builder mirrors the page exactly:
- *   - header lines  → `CompanyProfile.tsx:339-351` (`reportHeaderLines`)
- *   - row number    → `CompanyProfile.tsx:471` (`<th rowSpan={2}>စဥ်</th>`)
- *   - the 11 data columns, in page order, with the leaf header texts of the
- *     director group → `CompanyProfile.tsx:471-487`
- *   - no footer: the page has no totals row, so no `currencyTotalsColumns` and
- *     no `summaryLines`.
+ * A flat spec cannot describe that sheet, so the controller's typed layout draws
+ * it (`CompanyProfileController.GetExcelLayout`: merged cells, the banded
+ * two-row header, wrapped multi-line cells). This spec still rides on the Excel
+ * POST and is the column contract: `ExcelSpecContractTests` compares the typed
+ * layout's headers to `rowNumberTitle` + these titles, in order — the band label
+ * is not a column, so the leaf titles "Name" and "NRC No." stand for it — and
+ * every `dataIndex` must exist on `sp_CompanyProfileReportResult`.
  *
- * Two cells the page COMPOSES cannot be expressed as spec columns — the
- * "ပသက / အမှတ်/ရက်စွဲ" cell prints `CompanyRegistrationNo` above
- * `(CompanyRegistrationDate)` (`CompanyProfile.tsx:513-521`) and
- * "လုပ်ငန်းရည်ရွယ်ချက်" splits `PermitBusiness` on commas onto separate lines
- * (`CompanyProfile.tsx:146-153`). Those need the controller's typed
- * `IExcelReportLayoutProvider` (Contract.md §6/§9); this spec is the column
- * contract that layout must match (`ExcelSpecContractTests` compares a typed
- * layout's header texts to the spec's titles).
+ *   - header lines  → `CompanyProfile.tsx` `reportHeaderLines`
+ *   - row number    → the page's "No" (one per company)
+ *   - no footer: the page has no totals row.
  */
 import { formatLegacyReportDate } from '../../reportPresentation';
 import { buildExcelPresentationFromInput } from '../buildExcelPresentation';
 import { ExcelPresentationSpec, ExcelSpecColumn } from '../excelTypes';
 
-/** The page's 12 header cells, minus the row-number column. */
+/** The page's 10 header cells, minus the row-number column, in page order. */
 const columns: ExcelSpecColumn[] = [
   {
-    key: 'CompanyRegistrationNo',
-    dataIndex: 'companyRegistrationNo',
-    title: 'ပသက / အမှတ်/ရက်စွဲ',
-  },
-  {
-    key: 'EndDate',
-    dataIndex: 'endDate',
-    title: 'သက်တမ်းကုန်ဆုံးရက်',
-    dataType: 'date',
-  },
-  {
+    // name / reg no / (registration date) — composed by the typed layout.
     key: 'CompanyName',
     dataIndex: 'companyName',
-    title: 'ကုမ္ပဏီအမည်',
+    title: "Company's Name",
   },
   {
-    // One combined cell, exactly like the page's joinAddress helper
-    // (CompanyProfile.tsx:133-144): the row type has no CompanyAddress
-    // property, so the fallbacks supply the parts joined with ", ".
     key: 'CompanyAddress',
     dataIndex: 'companyAddress',
-    title: 'ကုမ္ပဏီလိပ်စာ',
-    fallbackDataIndexes: [
-      'unitLevel',
-      'streetNumberStreetName',
-      'quarterCityTownship',
-      'state',
-      'country',
-      'postalCode',
-    ],
+    title: 'Address',
+  },
+  {
+    // reg no / "d-M-yyyy to d-M-yyyy" — composed by the typed layout.
+    key: 'EirValidity',
+    dataIndex: 'eirValidity',
+    title: 'EIR No. & Date',
   },
   {
     key: 'BusinessType',
     dataIndex: 'businessType',
-    title: 'ကုမ္ပဏီအမျိုးအစား',
+    title: 'Type of Organization',
   },
   {
     key: 'PermitBusiness',
@@ -75,31 +54,24 @@ const columns: ExcelSpecColumn[] = [
     title: 'လုပ်ငန်းရည်ရွယ်ချက်',
   },
   {
-    key: 'Capital',
-    dataIndex: 'capital',
-    title: 'မတည်ငွေရင်း',
-    dataType: 'number',
-  },
-  {
-    key: 'ExtensionCount',
-    dataIndex: 'extensionCount',
-    title: 'ပသက သက်တမ်းတိုး',
-    dataType: 'number',
+    key: 'CapitalText',
+    dataIndex: 'capitalText',
+    title: 'Capital',
   },
   {
     key: 'DirectorName',
     dataIndex: 'directorName',
-    title: 'အမည်',
+    title: 'Name',
   },
   {
     key: 'DirectorNrc',
     dataIndex: 'directorNrc',
-    title: 'နိုင်ငံသားအမှတ်',
+    title: 'NRC No.',
   },
   {
-    key: 'DirectorPosition',
-    dataIndex: 'directorPosition',
-    title: 'ရာထူး',
+    key: 'DirectorTitle',
+    dataIndex: 'directorTitle',
+    title: 'Title',
   },
 ];
 
@@ -119,6 +91,6 @@ export const buildCompanyProfileExcelSpec = (
       )}) To (${formatLegacyReportDate(applied.ToDate)})`,
     ],
     showRowNumber: true,
-    rowNumberTitle: 'စဥ်',
+    rowNumberTitle: 'No',
     columns,
   });

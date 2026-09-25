@@ -118,7 +118,9 @@ namespace API.Service.ExcelExport
 
             writer.AppendFooterRows(ExcelFooterBuilder.Build(layout, totals, writer.TotalDataRows));
             writer.Finish();
-            context.RowCount = (int)Math.Min(writer.TotalDataRows, int.MaxValue);
+            // Groups for a grouped table (the grid's "6 companies"), data rows otherwise: the
+            // Exports drive shows this, and a director-row count there re-opened "UI 6, Excel 37".
+            context.RowCount = (int)Math.Min(writer.ReportedRowCount, int.MaxValue);
             context.SheetCount = writer.SheetCount;
         }
 

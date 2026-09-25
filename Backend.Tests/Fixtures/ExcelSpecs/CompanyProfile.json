@@ -10,41 +10,27 @@
     "Company Profile (01/02/2026) To (28/02/2026)"
   ],
   "showRowNumber": true,
-  "rowNumberTitle": "စဥ်",
+  "rowNumberTitle": "No",
   "columns": [
-    {
-      "key": "CompanyRegistrationNo",
-      "dataIndex": "companyRegistrationNo",
-      "title": "ပသက / အမှတ်/ရက်စွဲ"
-    },
-    {
-      "key": "EndDate",
-      "dataIndex": "endDate",
-      "title": "သက်တမ်းကုန်ဆုံးရက်",
-      "dataType": "date"
-    },
     {
       "key": "CompanyName",
       "dataIndex": "companyName",
-      "title": "ကုမ္ပဏီအမည်"
+      "title": "Company's Name"
     },
     {
       "key": "CompanyAddress",
       "dataIndex": "companyAddress",
-      "title": "ကုမ္ပဏီလိပ်စာ",
-      "fallbackDataIndexes": [
-        "unitLevel",
-        "streetNumberStreetName",
-        "quarterCityTownship",
-        "state",
-        "country",
-        "postalCode"
-      ]
+      "title": "Address"
+    },
+    {
+      "key": "EirValidity",
+      "dataIndex": "eirValidity",
+      "title": "EIR No. & Date"
     },
     {
       "key": "BusinessType",
       "dataIndex": "businessType",
-      "title": "ကုမ္ပဏီအမျိုးအစား"
+      "title": "Type of Organization"
     },
     {
       "key": "PermitBusiness",
@@ -52,31 +38,24 @@
       "title": "လုပ်ငန်းရည်ရွယ်ချက်"
     },
     {
-      "key": "Capital",
-      "dataIndex": "capital",
-      "title": "မတည်ငွေရင်း",
-      "dataType": "number"
-    },
-    {
-      "key": "ExtensionCount",
-      "dataIndex": "extensionCount",
-      "title": "ပသက သက်တမ်းတိုး",
-      "dataType": "number"
+      "key": "CapitalText",
+      "dataIndex": "capitalText",
+      "title": "Capital"
     },
     {
       "key": "DirectorName",
       "dataIndex": "directorName",
-      "title": "အမည်"
+      "title": "Name"
     },
     {
       "key": "DirectorNrc",
       "dataIndex": "directorNrc",
-      "title": "နိုင်ငံသားအမှတ်"
+      "title": "NRC No."
     },
     {
-      "key": "DirectorPosition",
-      "dataIndex": "directorPosition",
-      "title": "ရာထူး"
+      "key": "DirectorTitle",
+      "dataIndex": "directorTitle",
+      "title": "Title"
     }
   ]
 }

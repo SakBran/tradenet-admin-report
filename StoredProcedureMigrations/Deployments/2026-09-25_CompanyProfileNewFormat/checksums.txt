@@ -1,0 +1,4 @@
+# SHA-256 of the repository originals these copies were taken from.
+# Verify with:  shasum -a 256 -c checksums.txt   (run from StoredProcedureMigrations/)
+#
+35f695f9434708db30168a7f160704ca23d9a2fb9051e25d74d3a85abe31d06d  sp_CompanyProfileReport_pagination.sql
