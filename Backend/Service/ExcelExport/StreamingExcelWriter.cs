@@ -25,8 +25,9 @@ namespace API.Service.ExcelExport
     ///
     /// A layout may also opt into a grouped table (<see cref="ExcelReportLayout.RowGroupKey"/>,
     /// <see cref="ExcelColumn.MergeWithinRowGroup"/>, <see cref="ExcelColumn.GroupHeader"/>):
-    /// a two-row banded header, cells merged down over each row group, and row heights
-    /// sized to the wrapped text. A layout that uses none of it writes exactly the sheet
+    /// a two-row banded header, cells merged down over each row group, row heights sized
+    /// to the wrapped text, and a landscape fit-to-width print setup that repeats the
+    /// header rows on every page. A layout that uses none of it writes exactly the sheet
     /// XML it always did.
     ///
     /// Usage: append chunks, optionally <see cref="AppendFooterRows"/>, then
@@ -68,6 +69,7 @@ namespace API.Service.ExcelExport
         private const int StyleWrapTop = 23;          // wrapped, top-aligned, bordered text
         private const int StyleNumberTop = 24;        // a grouped table's "No": centered, top, bordered
         private const int StyleHeaderBordered = 25;   // a grouped table's header cells
+        private const int StyleWrapTopCentered = 26;  // StyleWrapTop, centered
 
         // Calibri 11's default row height, and the taller line a Myanmar-script run needs.
         private const double LineHeightPoints = 15d;
@@ -403,7 +405,9 @@ namespace API.Service.ExcelExport
             _sheetWriter.WriteStartDocument();
             _sheetWriter.WriteStartElement("worksheet", SpreadsheetNamespace);
 
-            // CT_Worksheet sequence: sheetViews, cols, sheetData, mergeCells.
+            // CT_Worksheet sequence: sheetPr, sheetViews, cols, sheetData, mergeCells,
+            // pageMargins, pageSetup.
+            WriteFitToPageProperty(_sheetWriter);
             WriteSheetViews(_sheetWriter);
             WriteColumnWidths(_sheetWriter);
 
@@ -476,6 +480,7 @@ namespace API.Service.ExcelExport
 
             _sheetWriter.WriteEndElement(); // sheetData
             WriteMergedTitleCells(_sheetWriter);
+            WritePageSetup(_sheetWriter);
             _sheetWriter.WriteEndElement(); // worksheet
             _sheetWriter.WriteEndDocument();
             _sheetWriter.Flush();
@@ -508,6 +513,47 @@ namespace API.Service.ExcelExport
             writer.WriteAttributeString("state", "frozen");
             writer.WriteEndElement();
             writer.WriteEndElement();
+            writer.WriteEndElement();
+        }
+
+        /// <summary>
+        /// A grouped table is a document people print and send (Company Profile goes to
+        /// 11 ministries), so it prints landscape, every column on one page width.
+        /// </summary>
+        private void WriteFitToPageProperty(XmlWriter writer)
+        {
+            if (!_tableMode)
+            {
+                return;
+            }
+
+            writer.WriteStartElement("sheetPr");
+            writer.WriteStartElement("pageSetUpPr");
+            writer.WriteAttributeString("fitToPage", "1");
+            writer.WriteEndElement();
+            writer.WriteEndElement();
+        }
+
+        private void WritePageSetup(XmlWriter writer)
+        {
+            if (!_tableMode)
+            {
+                return;
+            }
+
+            writer.WriteStartElement("pageMargins");
+            writer.WriteAttributeString("left", "0.4");
+            writer.WriteAttributeString("right", "0.4");
+            writer.WriteAttributeString("top", "0.5");
+            writer.WriteAttributeString("bottom", "0.5");
+            writer.WriteAttributeString("header", "0.3");
+            writer.WriteAttributeString("footer", "0.3");
+            writer.WriteEndElement();
+
+            writer.WriteStartElement("pageSetup");
+            writer.WriteAttributeString("orientation", "landscape");
+            writer.WriteAttributeString("fitToWidth", "1");
+            writer.WriteAttributeString("fitToHeight", "0");
             writer.WriteEndElement();
         }
 
@@ -881,11 +927,14 @@ namespace API.Service.ExcelExport
 
         /// <summary>
         /// Approximate height of a wrapped cell: lines per "\n"-separated part at the
-        /// column's width (a width unit is one '0'; capitals run ~10% wider).
+        /// column's width (a width unit is one '0'; capitals run ~15% wider). Erring tall
+        /// only leaves white space; erring short would hide text.
         /// </summary>
         private static double EstimateCellHeight(object? value, ExcelColumn column)
         {
-            if (column.Format != ExcelCellFormat.WrappedText || value is not string text || text.Length == 0)
+            if (column.Format is not (ExcelCellFormat.WrappedText or ExcelCellFormat.WrappedTextCentered)
+                || value is not string text
+                || text.Length == 0)
             {
                 return LineHeightPoints;
             }
@@ -895,7 +944,9 @@ namespace API.Service.ExcelExport
 
             foreach (var part in text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n'))
             {
-                var lines = Math.Max(1d, Math.Ceiling(part.Length * 1.1d / charsPerLine));
+                var width = part.Length * 1.15d;
+                // Word wrapping leaves the end of each wrapped line short.
+                var lines = width <= charsPerLine ? 1d : Math.Ceiling(width / (charsPerLine * 0.85d));
                 var myanmar = part.Any(ch => ch >= '\u1000' && ch <= '\u109F');
                 height += lines * (myanmar ? MyanmarLineHeightPoints : LineHeightPoints);
             }
@@ -1034,6 +1085,7 @@ namespace API.Service.ExcelExport
             ExcelCellFormat.Money4Plain => StyleMoney4Plain,
             ExcelCellFormat.MoneyAsStored => StyleMoneyAsStored,
             ExcelCellFormat.WrappedText => StyleWrapTop,
+            ExcelCellFormat.WrappedTextCentered => StyleWrapTopCentered,
             _ => StyleDefault,
         };
 
@@ -1105,7 +1157,8 @@ namespace API.Service.ExcelExport
                 {
                     writer.WriteElementString("v", serial);
                 }
-                else if (format is not (ExcelCellFormat.Text or ExcelCellFormat.WrappedText)
+                else if (format is not (ExcelCellFormat.Text or ExcelCellFormat.WrappedText
+                        or ExcelCellFormat.WrappedTextCentered)
                     && TryGetNumericValue(value, out var numericValue))
                 {
                     writer.WriteElementString("v", numericValue);
@@ -1115,7 +1168,7 @@ namespace API.Service.ExcelExport
                     writer.WriteAttributeString("t", "inlineStr");
                     writer.WriteStartElement("is");
                     writer.WriteStartElement("t");
-                    if (format == ExcelCellFormat.WrappedText)
+                    if (format is ExcelCellFormat.WrappedText or ExcelCellFormat.WrappedTextCentered)
                     {
                         WriteMultilineText(writer, FormatValue(value));
                     }
@@ -1262,7 +1315,28 @@ namespace API.Service.ExcelExport
                 sb.Append($"<sheet name=\"{SecurityElement.Escape(name)}\" sheetId=\"{i}\" r:id=\"rId{i}\"/>");
             }
 
-            sb.Append("</sheets></workbook>");
+            sb.Append("</sheets>");
+
+            // A grouped table repeats its column header rows at the top of every printed page.
+            if (_tableMode)
+            {
+                var firstHeaderRow = (_preambleRows + 1).ToString(CultureInfo.InvariantCulture);
+                var lastHeaderRow = _headerRowIndex.ToString(CultureInfo.InvariantCulture);
+
+                sb.Append("<definedNames>");
+                for (var i = 1; i <= sheetCount; i++)
+                {
+                    var name = sheetCount == 1 ? baseName : $"{baseName} ({i.ToString(CultureInfo.InvariantCulture)})";
+                    var reference = $"'{name.Replace("'", "''")}'!${firstHeaderRow}:${lastHeaderRow}";
+                    sb.Append(
+                        $"<definedName name=\"_xlnm.Print_Titles\" localSheetId=\"{(i - 1).ToString(CultureInfo.InvariantCulture)}\">" +
+                        $"{SecurityElement.Escape(reference)}</definedName>");
+                }
+
+                sb.Append("</definedNames>");
+            }
+
+            sb.Append("</workbook>");
             return sb.ToString();
         }
 
@@ -1337,12 +1411,12 @@ namespace API.Service.ExcelExport
             "</fills>" +
             "<borders count=\"2\">" +
             "<border><left/><right/><top/><bottom/><diagonal/></border>" +
-            // 1 thin all round — the grouped table's grid (styles 23-25)
+            // 1 thin all round — the grouped table's grid (styles 23-26)
             "<border><left style=\"thin\"><color auto=\"1\"/></left><right style=\"thin\"><color auto=\"1\"/></right>" +
             "<top style=\"thin\"><color auto=\"1\"/></top><bottom style=\"thin\"><color auto=\"1\"/></bottom><diagonal/></border>" +
             "</borders>" +
             "<cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs>" +
-            "<cellXfs count=\"26\">" +
+            "<cellXfs count=\"27\">" +
             // 0 body
             "<xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/>" +
             // 1 title
@@ -1401,6 +1475,9 @@ namespace API.Service.ExcelExport
             // 25 a grouped table's header: the header style with a border
             "<xf numFmtId=\"0\" fontId=\"2\" fillId=\"0\" borderId=\"1\" xfId=\"0\" applyFont=\"1\" applyBorder=\"1\" applyAlignment=\"1\">" +
             "<alignment horizontal=\"center\" vertical=\"center\" wrapText=\"1\"/></xf>" +
+            // 26 wrapped multi-line text, centered, top-aligned, bordered
+            "<xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"1\" xfId=\"0\" applyBorder=\"1\" applyAlignment=\"1\">" +
+            "<alignment horizontal=\"center\" vertical=\"top\" wrapText=\"1\"/></xf>" +
             "</cellXfs>" +
             "</styleSheet>";
     }

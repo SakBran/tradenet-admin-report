@@ -58,6 +58,9 @@ namespace API.Service.ExcelExport
         /// "name / reg no / (date)" cell). "\n" starts a new line inside the cell.
         /// </summary>
         WrappedText = 14,
+
+        /// <summary><see cref="WrappedText"/>, centered (e.g. Company Profile's EIR No. &amp; Date and Capital).</summary>
+        WrappedTextCentered = 15,
     }
 
     /// <summary>Where one preamble line sits in the sheet's header block.</summary>
@@ -220,8 +223,14 @@ namespace API.Service.ExcelExport
             => Create(header, ExcelCellFormat.Text, width, false, selector);
 
         /// <summary>A multi-line text cell: wrapped, top-aligned and bordered ("\n" breaks the line).</summary>
-        public static ExcelColumn WrappedText<TRow>(string header, Func<TRow, object?> selector, double? width = null)
-            => Create(header, ExcelCellFormat.WrappedText, width, false, selector);
+        public static ExcelColumn WrappedText<TRow>(
+            string header, Func<TRow, object?> selector, double? width = null, bool centered = false)
+            => Create(
+                header,
+                centered ? ExcelCellFormat.WrappedTextCentered : ExcelCellFormat.WrappedText,
+                width,
+                false,
+                selector);
 
         public static ExcelColumn Number<TRow>(
             string header, Func<TRow, object?> selector, double? width = null, bool includeInTotals = false)

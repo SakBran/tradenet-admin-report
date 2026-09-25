@@ -125,17 +125,18 @@ namespace Backend.Controllers.Report
                         .Bind("CompanyName", "companyName").MergedWithinRowGroup(),
                     ExcelColumn.WrappedText<sp_CompanyProfileReportResult>("Address", row => row.CompanyAddress, 32)
                         .Bind("CompanyAddress", "companyAddress").MergedWithinRowGroup(),
-                    ExcelColumn.WrappedText<sp_CompanyProfileReportResult>("EIR No. & Date", EirCell, 24)
+                    ExcelColumn.WrappedText<sp_CompanyProfileReportResult>("EIR No. & Date", EirCell, 24, centered: true)
                         .Bind("EirValidity", "eirValidity").MergedWithinRowGroup(),
-                    ExcelColumn.WrappedText<sp_CompanyProfileReportResult>("Type of Organization", row => row.BusinessType, 14)
+                    ExcelColumn.WrappedText<sp_CompanyProfileReportResult>(
+                            "Type of Organization", row => row.BusinessType, 14, centered: true)
                         .Bind("BusinessType", "businessType").MergedWithinRowGroup(),
                     ExcelColumn.WrappedText<sp_CompanyProfileReportResult>("လုပ်ငန်းရည်ရွယ်ချက်", PermitBusinessCell, 26)
                         .Bind("PermitBusiness", "permitBusiness").MergedWithinRowGroup(),
-                    ExcelColumn.WrappedText<sp_CompanyProfileReportResult>("Capital", row => row.CapitalText, 14)
+                    ExcelColumn.WrappedText<sp_CompanyProfileReportResult>("Capital", row => row.CapitalText, 14, centered: true)
                         .Bind("CapitalText", "capitalText").MergedWithinRowGroup(),
                     ExcelColumn.WrappedText<sp_CompanyProfileReportResult>("Name", row => row.DirectorName, 22)
                         .Bind("DirectorName", "directorName").WithGroupHeader(DirectorBand),
-                    ExcelColumn.WrappedText<sp_CompanyProfileReportResult>("NRC No.", row => row.DirectorNrc, 18)
+                    ExcelColumn.WrappedText<sp_CompanyProfileReportResult>("NRC No.", row => row.DirectorNrc, 20)
                         .Bind("DirectorNrc", "directorNrc").WithGroupHeader(DirectorBand),
                     ExcelColumn.WrappedText<sp_CompanyProfileReportResult>("Title", row => row.DirectorTitle, 12)
                         .Bind("DirectorTitle", "directorTitle"),

@@ -427,4 +427,45 @@ public sealed class ExcelLayoutBuilderTests
         Assert.DoesNotContain(layout.HeaderBlock, line => line.Text.Contains("Date:"));
         Assert.Contains(layout.HeaderBlock, line => line.Text.StartsWith("Exported: "));
     }
+
+    // ---- Grouped table options survive the copies the pipeline makes (2026-09-25) ----
+
+    [Fact]
+    public void The_standard_header_block_keeps_the_layouts_row_group_key()
+    {
+        Func<object, object?> key = row => row;
+        var layout = new ExcelReportLayout
+        {
+            RowGroupKey = key,
+            Columns = [ExcelColumn.Text<Row>("Company Name", row => row.CompanyName)],
+        };
+
+        var withBlock = ExcelLayoutBuilder.WithStandardHeaderBlock(
+            layout, null, "Company Profile", null, new DateTimeOffset(2026, 9, 25, 9, 0, 0, TimeSpan.Zero));
+
+        // Losing it here would silently export a flat, unmerged sheet.
+        Assert.Same(key, withBlock.RowGroupKey);
+        Assert.NotEmpty(withBlock.HeaderBlock);
+    }
+
+    [Fact]
+    public void Bind_and_the_grouping_copies_keep_each_others_fields()
+    {
+        var column = ExcelColumn.WrappedText<Row>("Name", row => row.CompanyName, 22)
+            .WithGroupHeader("Board of Director")
+            .MergedWithinRowGroup()
+            .Bind("DirectorName", "directorName");
+
+        Assert.Equal("Board of Director", column.GroupHeader);
+        Assert.True(column.MergeWithinRowGroup);
+        Assert.Equal("DirectorName", column.Key);
+        Assert.Equal("directorName", column.DataIndex);
+        Assert.Equal(ExcelCellFormat.WrappedText, column.Format);
+        Assert.Equal(22, column.Width);
+        Assert.False(column.IsNumeric);
+
+        var bound = ExcelColumn.RowNumber("No").Bind("No", "no").MergedWithinRowGroup();
+        Assert.True(bound.IsRowNumber);
+        Assert.Equal("no", bound.DataIndex);
+    }
 }

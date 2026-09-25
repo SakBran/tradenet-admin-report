@@ -491,7 +491,11 @@ const CompanyProfile = () => {
                               style={{ textAlign: 'center' }}
                             >
                               <div>{company.companyRegistrationNo}</div>
-                              <div>{company.eirValidity}</div>
+                              {/* Kept on one line, like the sample: a hyphenated
+                                  date must not break mid-date. */}
+                              <div style={{ whiteSpace: 'nowrap' }}>
+                                {company.eirValidity}
+                              </div>
                             </td>
                             <td
                               rowSpan={directors.length}
@@ -504,7 +508,10 @@ const CompanyProfile = () => {
                             </td>
                             <td
                               rowSpan={directors.length}
-                              style={{ textAlign: 'center' }}
+                              style={{
+                                textAlign: 'center',
+                                whiteSpace: 'nowrap',
+                              }}
                             >
                               {company.capitalText}
                             </td>

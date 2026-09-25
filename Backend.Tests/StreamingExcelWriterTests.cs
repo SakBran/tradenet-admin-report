@@ -736,6 +736,338 @@ public sealed class StreamingExcelWriterTests
         }
     }
 
+    // ---- Grouped table (Company Profile, 2026-09-25): banded header, merged groups ----
+
+    private sealed class GroupRow
+    {
+        public string CompanyId { get; init; } = string.Empty;
+        public string Company { get; init; } = string.Empty;
+        public string Director { get; init; } = string.Empty;
+        public string Nrc { get; init; } = string.Empty;
+    }
+
+    private static GroupRow Director(string companyId, string director, string? company = null)
+        => new() { CompanyId = companyId, Company = company ?? $"Company {companyId}", Director = director, Nrc = $"NRC-{director}" };
+
+    /// <summary>No | Company | [Board of Director: Name | NRC No.] | Title, grouped by company.</summary>
+    private static ExcelReportLayout GroupedLayout() => new()
+    {
+        RowGroupKey = row => ((GroupRow)row).CompanyId,
+        Columns =
+        [
+            ExcelColumn.RowNumber("No").MergedWithinRowGroup(),
+            ExcelColumn.WrappedText<GroupRow>("Company", row => row.Company, 30).MergedWithinRowGroup(),
+            ExcelColumn.WrappedText<GroupRow>("Name", row => row.Director, 20).WithGroupHeader("Board of Director"),
+            ExcelColumn.WrappedText<GroupRow>("NRC No.", row => row.Nrc, 18).WithGroupHeader("Board of Director"),
+            ExcelColumn.WrappedText<GroupRow>("Title", _ => "Director", 12),
+        ],
+    };
+
+    private static byte[] WriteGrouped(
+        IEnumerable<IReadOnlyList<GroupRow>> chunks,
+        ExcelReportLayout? layout = null,
+        int maxRowsPerSheet = 1_048_576,
+        Action<StreamingExcelWriter>? beforeFinish = null)
+    {
+        using var ms = new MemoryStream();
+        using (var writer = new StreamingExcelWriter(ms, "Company Profile", layout ?? GroupedLayout(), maxRowsPerSheet))
+        {
+            foreach (var chunk in chunks)
+            {
+                writer.AppendRows(chunk);
+            }
+
+            beforeFinish?.Invoke(writer);
+            writer.Finish();
+        }
+
+        return ms.ToArray();
+    }
+
+    private static XElement Cell(XDocument sheet, string reference)
+    {
+        var ns = sheet.Root!.Name.Namespace;
+        return sheet.Descendants(ns + "c").Single(c => c.Attribute("r")?.Value == reference);
+    }
+
+    private static string CellText(XDocument sheet, string reference)
+    {
+        var cell = Cell(sheet, reference);
+        var ns = sheet.Root!.Name.Namespace;
+        return cell.Descendants(ns + "t").FirstOrDefault()?.Value ?? cell.Element(ns + "v")?.Value ?? string.Empty;
+    }
+
+    private static List<string> MergeRefs(XDocument sheet)
+    {
+        var ns = sheet.Root!.Name.Namespace;
+        return sheet.Descendants(ns + "mergeCell").Select(m => m.Attribute("ref")!.Value).ToList();
+    }
+
+    [Fact]
+    public void A_banded_header_is_two_rows_with_the_band_merged_across_its_columns()
+    {
+        var bytes = WriteGrouped([[Director("1", "A")]]);
+
+        using var archive = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
+        var doc = ReadSheet(archive, 1);
+
+        Assert.Equal("No", CellText(doc, "A1"));
+        Assert.Equal("Company", CellText(doc, "B1"));
+        Assert.Equal("Board of Director", CellText(doc, "C1"));
+        Assert.Equal(string.Empty, CellText(doc, "D1"));
+        Assert.Equal("Title", CellText(doc, "E1"));
+        Assert.Equal("Name", CellText(doc, "C2"));
+        Assert.Equal("NRC No.", CellText(doc, "D2"));
+        Assert.Equal(string.Empty, CellText(doc, "A2"));
+
+        // Every cell under a merge is still written, styled, so the grid lines draw.
+        var ns = doc.Root!.Name.Namespace;
+        foreach (var cell in doc.Descendants(ns + "row").Take(2).SelectMany(row => row.Elements(ns + "c")))
+        {
+            Assert.Equal("25", cell.Attribute("s")?.Value);
+        }
+
+        Assert.Equal(["A1:A2", "B1:B2", "C1:D1", "E1:E2"], MergeRefs(doc));
+
+        // The pane freezes below BOTH header rows.
+        var pane = doc.Descendants(ns + "pane").Single();
+        Assert.Equal("2", pane.Attribute("ySplit")?.Value);
+        Assert.Equal("A3", pane.Attribute("topLeftCell")?.Value);
+        AssertRowIndexesAreSane(doc);
+    }
+
+    [Fact]
+    public void A_grouped_table_prints_landscape_on_one_page_width_repeating_its_header_rows()
+    {
+        var layout = GroupedLayout().With(headerBlock: [ExcelHeaderLine.Heading("Company Profile")]);
+        var bytes = WriteGrouped([[Director("1", "A")]], layout);
+
+        using var archive = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
+        var doc = ReadSheet(archive, 1);
+        var ns = doc.Root!.Name.Namespace;
+
+        // CT_Worksheet order: sheetPr first, pageMargins + pageSetup after mergeCells.
+        var children = doc.Root!.Elements().Select(e => e.Name.LocalName).ToList();
+        Assert.Equal(["sheetPr", "sheetViews", "cols", "sheetData", "mergeCells", "pageMargins", "pageSetup"], children);
+        Assert.Equal("1", doc.Descendants(ns + "pageSetUpPr").Single().Attribute("fitToPage")?.Value);
+
+        var setup = doc.Descendants(ns + "pageSetup").Single();
+        Assert.Equal("landscape", setup.Attribute("orientation")?.Value);
+        Assert.Equal("1", setup.Attribute("fitToWidth")?.Value);
+        Assert.Equal("0", setup.Attribute("fitToHeight")?.Value);
+
+        // Rows 2-3: the two header rows under the one heading line.
+        var workbook = XDocument.Load(archive.GetEntry("xl/workbook.xml")!.Open());
+        var printTitles = workbook.Descendants(workbook.Root!.Name.Namespace + "definedName").Single();
+        Assert.Equal("_xlnm.Print_Titles", printTitles.Attribute("name")?.Value);
+        Assert.Equal("0", printTitles.Attribute("localSheetId")?.Value);
+        Assert.Equal("'Company Profile'!$2:$3", printTitles.Value);
+    }
+
+    [Fact]
+    public void A_plain_layout_gets_no_print_setup_or_defined_names()
+    {
+        var bytes = WriteWithLayout([[AccountRow(1, 10)]]);
+
+        using var archive = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
+        var doc = ReadSheet(archive, 1);
+        var ns = doc.Root!.Name.Namespace;
+
+        Assert.Empty(doc.Descendants(ns + "sheetPr"));
+        Assert.Empty(doc.Descendants(ns + "pageSetup"));
+        using var reader = new StreamReader(archive.GetEntry("xl/workbook.xml")!.Open());
+        Assert.DoesNotContain("definedNames", reader.ReadToEnd());
+    }
+
+    [Fact]
+    public void Grouped_rows_merge_the_company_cells_across_a_chunk_boundary_and_number_the_groups()
+    {
+        // Company 1's three directors arrive split over two chunks.
+        var bytes = WriteGrouped(
+        [
+            [Director("1", "A"), Director("1", "B")],
+            [Director("1", "C"), Director("2", "D")],
+        ]);
+
+        using var archive = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
+        var doc = ReadSheet(archive, 1);
+
+        Assert.Equal("1", CellText(doc, "A3"));
+        Assert.Equal("Company 1", CellText(doc, "B3"));
+        Assert.Equal("2", CellText(doc, "A6"));
+        Assert.Equal("Company 2", CellText(doc, "B6"));
+
+        // Continuation rows: an empty, styled cell in each merged column; directors printed.
+        foreach (var reference in new[] { "A4", "A5", "B4", "B5" })
+        {
+            var cell = Cell(doc, reference);
+            Assert.Empty(cell.Elements());
+            Assert.NotNull(cell.Attribute("s"));
+        }
+
+        Assert.Equal("C", CellText(doc, "C5"));
+        Assert.Equal("24", Cell(doc, "A3").Attribute("s")?.Value);
+        Assert.Equal("23", Cell(doc, "B3").Attribute("s")?.Value);
+
+        // Company 2 has one director: nothing to merge.
+        Assert.Equal(["A1:A2", "B1:B2", "C1:D1", "E1:E2", "A3:A5", "B3:B5"], MergeRefs(doc));
+        AssertRowIndexesAreSane(doc);
+    }
+
+    [Fact]
+    public void A_group_split_by_a_sheet_rollover_reprints_its_values_and_number()
+    {
+        // 4 rows per sheet = 2 header rows + 2 data rows; company 1 has three directors.
+        var bytes = WriteGrouped(
+            [[Director("1", "A"), Director("1", "B"), Director("1", "C"), Director("2", "D")]],
+            maxRowsPerSheet: 4);
+
+        using var archive = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
+        var sheet1 = ReadSheet(archive, 1);
+        var sheet2 = ReadSheet(archive, 2);
+
+        Assert.Contains("A3:A4", MergeRefs(sheet1));
+        Assert.DoesNotContain(MergeRefs(sheet1), reference => reference.EndsWith("5"));
+
+        // Sheet 2 repeats both header rows, then re-prints company 1 with the same "No".
+        Assert.Equal("Board of Director", CellText(sheet2, "C1"));
+        Assert.Equal("Name", CellText(sheet2, "C2"));
+        Assert.Equal("1", CellText(sheet2, "A3"));
+        Assert.Equal("Company 1", CellText(sheet2, "B3"));
+        Assert.Equal("C", CellText(sheet2, "C3"));
+        Assert.Equal("2", CellText(sheet2, "A4"));
+
+        AssertRowIndexesAreSane(sheet1);
+        AssertRowIndexesAreSane(sheet2);
+    }
+
+    [Fact]
+    public void Wrapped_text_keeps_its_line_breaks_and_stays_a_string()
+    {
+        var layout = new ExcelReportLayout
+        {
+            Columns = [ExcelColumn.WrappedText<GroupRow>("EIR No. & Date", row => row.Company, 24)],
+        };
+
+        var bytes = WriteGrouped(
+            [[Director("1", "A", "138468097\n1-8-2026 to 31-7-2031"), Director("2", "B", "138468097")]],
+            layout);
+
+        using var archive = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
+        var doc = ReadSheet(archive, 1);
+        var ns = doc.Root!.Name.Namespace;
+
+        var multiLine = Cell(doc, "A2");
+        Assert.Equal("inlineStr", multiLine.Attribute("t")?.Value);
+        Assert.Equal("23", multiLine.Attribute("s")?.Value);
+        Assert.Equal("138468097\n1-8-2026 to 31-7-2031", multiLine.Descendants(ns + "t").Single().Value);
+        Assert.Equal(
+            "preserve",
+            multiLine.Descendants(ns + "t").Single().Attribute(XNamespace.Xml + "space")?.Value);
+
+        // A number-looking EIR no is text, not a number Excel would reformat.
+        Assert.Equal("inlineStr", Cell(doc, "A3").Attribute("t")?.Value);
+
+        // The break is an entity in the file, so no newline handling can drop it.
+        using var reader = new StreamReader(archive.GetEntry("xl/worksheets/sheet1.xml")!.Open());
+        Assert.Contains("138468097&#xA;1-8-2026", reader.ReadToEnd());
+    }
+
+    [Fact]
+    public void A_groups_merged_text_sets_the_row_heights_that_excel_will_not_auto_fit()
+    {
+        // Three lines of company text (45pt) merged over two single-line director rows.
+        var bytes = WriteGrouped(
+        [
+            [Director("1", "A", "NAME\n138468097\n(25/08/2023)"), Director("1", "B"), Director("2", "C", "ONE LINE")],
+        ]);
+
+        using var archive = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
+        var doc = ReadSheet(archive, 1);
+        var ns = doc.Root!.Name.Namespace;
+        var rows = doc.Descendants(ns + "row").ToDictionary(row => row.Attribute("r")!.Value);
+
+        Assert.Equal("22.5", rows["3"].Attribute("ht")?.Value);
+        Assert.Equal("1", rows["3"].Attribute("customHeight")?.Value);
+        Assert.Equal("22.5", rows["4"].Attribute("ht")?.Value);
+
+        // A group that fits on the default height keeps it.
+        Assert.Null(rows["5"].Attribute("ht"));
+    }
+
+    [Fact]
+    public void Footer_rows_follow_the_buffered_last_group_and_are_never_merged()
+    {
+        long rowsBeforeFinish = 0;
+        var bytes = WriteGrouped(
+            [[Director("1", "A"), Director("1", "B")]],
+            beforeFinish: writer =>
+            {
+                // The footer builder reads TotalDataRows before Finish, while the last
+                // group is still buffered.
+                rowsBeforeFinish = writer.TotalDataRows;
+                writer.AppendFooterRows([new ExcelFooterRow([new ExcelFooterCell("TOTAL")])]);
+            });
+
+        Assert.Equal(2, rowsBeforeFinish);
+
+        using var archive = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
+        var doc = ReadSheet(archive, 1);
+
+        Assert.Equal("Company 1", CellText(doc, "B3"));
+        Assert.Equal("TOTAL", CellText(doc, "A5"));
+        Assert.Contains("A3:A4", MergeRefs(doc));
+        Assert.DoesNotContain(MergeRefs(doc), reference => reference.Contains('5'));
+        AssertRowIndexesAreSane(doc);
+    }
+
+    [Fact]
+    public void Grouping_needs_a_single_grid_with_explicit_columns()
+    {
+        var sectioned = new ExcelReportLayout
+        {
+            RowGroupKey = row => row,
+            Sections = [new ExcelReportSection { Columns = [ExcelColumn.RowNumber()] }],
+        };
+        var columnless = new ExcelReportLayout { RowGroupKey = row => row };
+        var bandedSection = new ExcelReportLayout
+        {
+            Sections =
+            [
+                new ExcelReportSection
+                {
+                    Columns = [ExcelColumn.Text<GroupRow>("Name", row => row.Director).WithGroupHeader("Board")],
+                },
+            ],
+        };
+
+        foreach (var layout in new[] { sectioned, columnless, bandedSection })
+        {
+            Assert.Throws<ArgumentException>(() => new StreamingExcelWriter(new MemoryStream(), "X", layout));
+        }
+    }
+
+    [Fact]
+    public void The_grouped_table_styles_are_appended_without_moving_the_existing_ones()
+    {
+        var bytes = WriteGrouped([[Director("1", "A")]]);
+
+        using var archive = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
+        var styles = ReadStyles(archive);
+        var ns = styles.Root!.Name.Namespace;
+        var xfs = styles.Descendants(ns + "cellXfs").Single().Elements(ns + "xf").ToList();
+
+        Assert.Equal(27, xfs.Count);
+        Assert.All(xfs.Take(23), xf => Assert.Equal("0", xf.Attribute("borderId")?.Value));
+        Assert.All(xfs.Skip(23), xf => Assert.Equal("1", xf.Attribute("borderId")?.Value));
+        Assert.Equal("1", xfs[23].Element(ns + "alignment")?.Attribute("wrapText")?.Value);
+        Assert.Equal("top", xfs[23].Element(ns + "alignment")?.Attribute("vertical")?.Value);
+        Assert.Equal("top", xfs[24].Element(ns + "alignment")?.Attribute("vertical")?.Value);
+        Assert.Equal("2", xfs[25].Attribute("fontId")?.Value);
+        Assert.Equal("center", xfs[26].Element(ns + "alignment")?.Attribute("horizontal")?.Value);
+        Assert.Equal(2, styles.Descendants(ns + "border").Count());
+    }
+
     private static XDocument ReadStyles(ZipArchive archive)
     {
         using var stream = archive.GetEntry("xl/styles.xml")!.Open();
