@@ -7,10 +7,10 @@
   "headerLines": [
     "Ministry of Commerce",
     "Directorate of Trade",
-    "(01/02/2026) To (28/02/2026)"
+    "Business Service Agency New List (01/02/2026) To (28/02/2026)"
   ],
   "showRowNumber": true,
-  "rowNumberTitle": "No",
+  "rowNumberTitle": "No.",
   "columns": [
     {
       "key": "Date",
@@ -56,7 +56,7 @@
       "dataIndex": "totalAmount",
       "title": "Total Amount",
       "dataType": "number",
-      "numberFormat": "#,##0.0000"
+      "numberFormat": "0.####"
     },
     {
       "key": "PaymentType",

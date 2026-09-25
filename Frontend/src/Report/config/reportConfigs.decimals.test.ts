@@ -13,6 +13,10 @@ import { reportConfigs } from './reportConfigs';
  * Format at all and the amounts are SQL float. Everything else keeps '#,##0.0000'.
  *
  * The Payment formats are also comma-less (see reportConfigs.payment.test.ts).
+ *
+ * 2026-09-25, BSA: "ဒသမနောက်က သုညလေးလုံး ဖြုတ်ပေးပါရန်" — the Business Service Agency
+ * Registration By Voucher's Total Amount went '0.####' too (its old RDLC has no Format).
+ * That one report only; its ten Registration-By-Voucher siblings keep four places.
  */
 const PAYMENT = new Set([
   'AccountSummaryReport',
@@ -22,6 +26,8 @@ const PAYMENT = new Set([
   'MPUReportV3',
   'OnlineFeesReport',
 ]);
+
+const AS_STORED_REGISTRATION = new Set(['BusinessServiceAgencyRegistrationByVoucher']);
 
 /** Amount-bearing columns. */
 const MONEY_DATA_INDEXES = new Set([
@@ -47,8 +53,8 @@ const COUNTS = new Set([
 const isVoucherFee = (reportKey: string, dataIndex?: string) =>
   reportKey.includes('Voucher') && dataIndex === 'amount';
 
-describe('decimal columns show four places, except ငွေစာရင်း', () => {
-  it('every amount column asks for 4 decimals, or for as-stored in Payment', () => {
+describe('decimal columns show four places, except ငွေစာရင်း and BSA voucher', () => {
+  it('every amount column asks for 4 decimals, or for as-stored in Payment and BSA voucher', () => {
     const wrong: string[] = [];
 
     for (const [key, config] of Object.entries(reportConfigs)) {
@@ -60,7 +66,8 @@ describe('decimal columns show four places, except ငွေစာရင်း',
           continue;
         }
 
-        const expected = PAYMENT.has(key) ? '0.####' : '#,##0.0000';
+        const expected =
+          PAYMENT.has(key) || AS_STORED_REGISTRATION.has(key) ? '0.####' : '#,##0.0000';
         if (column.numberFormat !== expected) {
           wrong.push(
             `${key}.${column.key}: ${String(column.numberFormat)} (want ${expected})`
