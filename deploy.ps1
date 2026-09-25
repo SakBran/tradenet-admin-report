@@ -4,6 +4,31 @@ Deploy backend and frontend from the repo to M:\ (T20-ADMIN-REPORT-*).
 
 .DESCRIPTION
 Pulls latest git changes, builds and publishes the Backend, runs Frontend build, and copies the outputs to the target deployment folders.
+
+Taking the backend offline is a TWO-STAGE affair, because dropping app_offline.htm alone is not
+reliably enough to release API.dll:
+
+  1. app_offline.htm is written into the target root. ANCM detects it, shuts the app down and is
+     expected to release the lock on API.dll.
+  2. If API.dll is STILL locked after -UnlockTimeoutSeconds, the app pool named -AppPoolName is
+     stopped on EVERY node listed in -IisServer. Both IIS servers publish this same content root, so
+     EITHER one's worker process can be the one holding the file open. Stopping the pool forcibly
+     ends that worker process. Every pool that was stopped is restarted by the finally block - also
+     when the copy, or the whole deploy, fails.
+
+The lock is then VERIFIED again before anything is copied. If it still cannot be released the deploy
+aborts with a clear message instead of letting robocopy fail halfway and leaving a half-updated site.
+
+Without stage 2 a healthy, busy app keeps API.dll mapped longer than the wait allows, robocopy
+fails with ERROR 32 (exit code >= 8) and the whole run aborts - including the frontend build that
+would otherwise have followed it.
+
+Frontend-only release: point -BackendTarget at a throwaway folder (e.g. %TEMP%\backend-scratch) so
+the backend is built and copied outside production while the frontend step runs normally.
+
+.NOTES
+Sync this script with the "Production Deployment" custom agent
+(<profile>\prompts\production-deployment.agent.md), which documents the same runbook.
 #>
 
 [CmdletBinding()]
@@ -16,7 +41,18 @@ param(
     [string]$FrontendTarget = 'M:\T20-ADMIN-REPORT-FRONTEND',
     # After the backend is back online, poll this URL until it returns 200 (non-fatal warning on failure).
     [string]$HealthUrl = 'https://reportapi.myanmartradenet.com/health',
-    [switch]$SkipHealthCheck
+    [switch]$SkipHealthCheck,
+
+    # How long to wait for ANCM to release API.dll after app_offline.htm is written (seconds).
+    [int]$UnlockTimeoutSeconds = 120,
+
+    # Fallback used when API.dll is still locked after -UnlockTimeoutSeconds: this app pool is stopped
+    # on every node listed here, so the worker process that still holds API.dll is forced to exit.
+    # Both IIS servers publish this same content root, so either one's worker can hold the file.
+    # Every pool that was stopped is restarted once the copy finishes (or the deploy fails).
+    # Pass -IisServer to limit this to a single node, or -AppPoolName '' to disable the fallback.
+    [string[]]$IisServer = @('adminvm.myanmartradenet.com', 'adminvm2.myanmartradenet.com'),
+    [string]$AppPoolName = 'ReportBackend'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -135,15 +171,16 @@ $AppOfflineHtml = @'
 function Wait-ForFileUnlock {
     # Block until $Path can be opened for write (i.e. ANCM has released the lock), or timeout.
     # A missing file is treated as already unlocked (first-ever deploy).
+    # Returns $true when the file is free to overwrite, $false when the timeout expired.
     param(
         [Parameter(Mandatory = $true)]
         [string]$Path,
 
-        [int]$TimeoutSeconds = 30
+        [int]$TimeoutSeconds = 120
     )
 
     if (-not (Test-Path -LiteralPath $Path)) {
-        return
+        return $true
     }
 
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
@@ -152,14 +189,53 @@ function Wait-ForFileUnlock {
             $stream = [System.IO.File]::Open($Path, 'Open', 'ReadWrite', 'None')
             $stream.Close()
             $stream.Dispose()
-            return
+            return $true
         }
         catch {
             Start-Sleep -Milliseconds 500
         }
     }
 
-    Write-Warning "File still locked after $TimeoutSeconds s: $Path. Proceeding anyway; robocopy will retry."
+    Write-Warning "File still locked after $TimeoutSeconds s: $Path"
+    return $false
+}
+
+function Stop-IisAppPool {
+    # Force the worker process holding API.dll to exit. This briefly takes that node's site down; it is
+    # the proven remedy when the app_offline.htm hand-off does not release the file in time.
+    # Returns the resulting pool state so the caller can report what really happened.
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Server,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Pool
+    )
+
+    Invoke-Command -ComputerName $Server -ScriptBlock {
+        param($PoolName)
+        Import-Module WebAdministration -ErrorAction Stop
+        Stop-WebAppPool -Name $PoolName -ErrorAction Stop
+        (Get-Item "IIS:\AppPools\$PoolName").State
+    } -ArgumentList $Pool
+}
+
+function Start-IisAppPool {
+    # Counterpart of Stop-IisAppPool. Returns the resulting pool state.
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Server,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Pool
+    )
+
+    Invoke-Command -ComputerName $Server -ScriptBlock {
+        param($PoolName)
+        Import-Module WebAdministration -ErrorAction Stop
+        Start-WebAppPool -Name $PoolName -ErrorAction Stop
+        (Get-Item "IIS:\AppPools\$PoolName").State
+    } -ArgumentList $Pool
 }
 
 function Test-DeploymentHealth {
@@ -248,13 +324,57 @@ foreach ($configFile in $backendConfigFiles) {
 
 New-Item -ItemType Directory -Force -Path $BackendTarget | Out-Null
 
+# A 'publish' folder inside the site root is the signature of someone publishing manually into the
+# live folder: the new code lands in <root>\publish\publish\... and the site silently keeps serving
+# the old build. This script never writes there, so the folder is safe to delete.
+if (Test-Path -LiteralPath (Join-Path $BackendTarget 'publish')) {
+    Write-Warning "A stray 'publish' folder exists inside '$BackendTarget'. That is left over from a manual publish into the site root; it is unused and can be deleted."
+}
+
 # Take the backend offline (release the API.dll lock), copy, then bring it back online.
-# The finally block guarantees the site is brought back up even if the copy fails.
+# The finally block guarantees that app_offline.htm is removed and that EVERY pool we stopped is
+# started again, even when the copy (or the whole deploy) fails.
+$apiDllPath = Join-Path $BackendTarget 'API.dll'
 $appOfflinePath = Join-Path $BackendTarget 'app_offline.htm'
+$stoppedPools = New-Object System.Collections.Generic.List[string]
 try {
     Write-Host "Taking backend offline: $appOfflinePath"
     Set-Content -LiteralPath $appOfflinePath -Value $AppOfflineHtml -Encoding UTF8
-    Wait-ForFileUnlock -Path (Join-Path $BackendTarget 'API.dll')
+
+    Write-Host "Waiting up to ${UnlockTimeoutSeconds}s for the app to release API.dll..."
+    $unlocked = Wait-ForFileUnlock -Path $apiDllPath -TimeoutSeconds $UnlockTimeoutSeconds
+
+    if (-not $unlocked -and $AppPoolName -and @($IisServer).Count -gt 0) {
+        Write-Warning "API.dll is still locked. Stopping app pool '$AppPoolName' on each node that serves this share (brief downtime on each):"
+
+        foreach ($server in @($IisServer)) {
+            try {
+                $state = Stop-IisAppPool -Server $server -Pool $AppPoolName
+                $stoppedPools.Add($server)
+                Write-Host ("    {0,-34} stopped (pool state: {1})" -f $server, $state)
+            }
+            catch {
+                Write-Warning ("    {0,-34} could NOT be stopped: {1}" -f $server, $_.Exception.Message)
+            }
+        }
+
+        if ($stoppedPools.Count -eq 0) {
+            Write-Warning "No app pool could be stopped. A node that cannot be reached from here may be the one holding API.dll (see the failure runbook in the Production Deployment agent)."
+        }
+
+        Write-Host 'Waiting up to 60s for the lock to clear...'
+        $unlocked = Wait-ForFileUnlock -Path $apiDllPath -TimeoutSeconds 60
+    }
+
+    # Verify before copying: a half-updated site is worse than a failed deploy, and the finally block
+    # puts every stopped pool back online either way.
+    if (-not $unlocked) {
+        $stoppedText = if ($stoppedPools.Count -gt 0) { $stoppedPools -join ', ' } else { 'none' }
+        throw ("API.dll is still locked, so nothing was copied - the site is unchanged. " +
+            "Pools stopped: $stoppedText. Holder is a node that could not be stopped; candidates: " +
+            "$(@($IisServer) -join ', '). Stop that node's '$AppPoolName' pool (IIS Manager over WMSVC " +
+            "port 8172 works without WinRM) and re-run the deploy.")
+    }
 
     Write-Host "Copying backend files to: $BackendTarget"
     Invoke-Robocopy -Source $publishOutput -Destination $BackendTarget -ExcludeFiles @('appsettings.json', 'appsettings.*.json', 'app_offline.htm')
@@ -263,6 +383,18 @@ finally {
     if (Test-Path -LiteralPath $appOfflinePath) {
         Write-Host 'Bringing backend online (removing app_offline.htm)...'
         Remove-Item -LiteralPath $appOfflinePath -Force -ErrorAction SilentlyContinue
+    }
+
+    foreach ($server in $stoppedPools) {
+        Write-Host "Restarting app pool '$AppPoolName' on '$server'..."
+        try {
+            $state = Start-IisAppPool -Server $server -Pool $AppPoolName
+            Write-Host ("    {0,-34} started (pool state: {1})" -f $server, $state)
+        }
+        catch {
+            Write-Warning ("    {0,-34} could NOT be restarted: {1}" -f $server, $_.Exception.Message)
+            Write-Warning "    START app pool '$AppPoolName' on '$server' MANUALLY before walking away."
+        }
     }
 }
 
