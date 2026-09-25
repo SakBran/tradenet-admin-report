@@ -173,6 +173,14 @@ namespace API.Service.ExcelExport
         /// <summary>Data rows only — preamble, header, section and footer rows are excluded.</summary>
         public long TotalDataRows => _totalDataRows;
 
+        /// <summary>
+        /// The count a reader gives the sheet: the groups of a grouped table (one merged block
+        /// and one "No" per group — companies on Company Profile), otherwise the data rows.
+        /// This is what the export job records as its row count, so the Exports drive agrees
+        /// with the grid's total instead of counting the director rows inside each block.
+        /// </summary>
+        public long ReportedRowCount => _groupKey != null ? _groupOrdinal : _totalDataRows;
+
         private bool HasSections => _sections.Length > 0;
 
         private bool IsLayoutMode => _columns != null || HasSections;

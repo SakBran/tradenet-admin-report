@@ -240,11 +240,19 @@ const CompanyProfile = () => {
   const companies = useMemo(() => groupByCompany(page?.data ?? []), [page]);
 
   const generateExcel = useCallback(async () => {
-    let values: CompanyProfileFormValues;
-    try {
-      values = await form.validateFields();
-    } catch {
-      return;
+    // The sheet must hold exactly what the grid shows (complaint 2026-09-25: "UI 6, Excel
+    // 37"), so once a Filter has been applied the export uses those applied filters, not
+    // whatever the form currently holds. Before the first Filter click there is nothing
+    // applied, and the form's (validated) values are the only filter there is.
+    let applied: CompanyProfileFilters;
+    if (hasAppliedFilters) {
+      applied = filters;
+    } else {
+      try {
+        applied = toFilters(await form.validateFields());
+      } catch {
+        return;
+      }
     }
 
     setExcelLoading(true);
@@ -252,9 +260,8 @@ const CompanyProfile = () => {
 
     try {
       // The endpoint REJECTS a request that carries no presentation spec, which is why this
-      // export always failed. buildCompanyProfileExcelSpec describes this page's hand-built
-      // Myanmar columns (the generic builder would describe the nav-only config instead).
-      const applied = toFilters(values);
+      // export once failed. buildCompanyProfileExcelSpec is the column contract of this
+      // page's hand-built layout (the generic builder would describe the nav-only config).
       await enqueueExcelExport(
         EXCEL_ROUTE,
         buildRequest(applied, { pageIndex, pageSize }),
@@ -266,7 +273,7 @@ const CompanyProfile = () => {
     } finally {
       setExcelLoading(false);
     }
-  }, [form, pageIndex, pageSize]);
+  }, [filters, form, hasAppliedFilters, pageIndex, pageSize]);
 
   const applyFilters = (values: CompanyProfileFormValues) => {
     setFilters(toFilters(values));

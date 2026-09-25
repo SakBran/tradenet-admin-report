@@ -915,6 +915,41 @@ public sealed class StreamingExcelWriterTests
     }
 
     [Fact]
+    public void A_grouped_table_reports_its_groups_as_the_row_count()
+    {
+        long reported = -1;
+        long physical = -1;
+
+        WriteGrouped(
+        [
+            [Director("1", "A"), Director("1", "B"), Director("1", "C")],
+            [Director("2", "D"), Director("2", "E")],
+        ],
+        beforeFinish: writer =>
+        {
+            reported = writer.ReportedRowCount;
+            physical = writer.TotalDataRows;
+        });
+
+        // The job (and the Exports drive) says "2", like the grid's total of two companies;
+        // the sheet still holds the five director rows inside those two merged blocks.
+        Assert.Equal(2, reported);
+        Assert.Equal(5, physical);
+    }
+
+    [Fact]
+    public void An_ungrouped_layout_reports_every_data_row()
+    {
+        using var ms = new MemoryStream();
+        using var writer = new StreamingExcelWriter(ms, "Account Summary Report", AccountSummaryLayout());
+        writer.AppendRows(new[] { AccountRow(1, 5), AccountRow(2, 5), AccountRow(3, 5) });
+        writer.Finish();
+
+        Assert.Equal(3, writer.ReportedRowCount);
+        Assert.Equal(writer.TotalDataRows, writer.ReportedRowCount);
+    }
+
+    [Fact]
     public void A_group_split_by_a_sheet_rollover_reprints_its_values_and_number()
     {
         // 4 rows per sheet = 2 header rows + 2 data rows; company 1 has three directors.
