@@ -16,7 +16,8 @@
       "key": "Date",
       "dataIndex": "date",
       "title": "Date",
-      "dataType": "date"
+      "dataType": "date",
+      "dateFormat": "DD/MM/YYYY"
     },
     {
       "key": "CompanyRegistrationNo",
@@ -72,7 +73,8 @@
       "key": "VoucherDate",
       "dataIndex": "voucherDate",
       "title": "Voucher Date",
-      "dataType": "date"
+      "dataType": "date",
+      "dateFormat": "DD/MM/YYYY"
     }
   ]
 }

@@ -660,6 +660,15 @@ const registrationDateRangeSubtitle = (filters: Record<string, unknown>) =>
     filters.ToDate
   )})`;
 
+// Legacy RegistrationByVoucher header1: "<Family> <ApplyType> List (From) To (To)"
+// (e.g. "Whole Sale " + model.ApplyType + " List (...)", ReportsController.cs:1088 on
+// origin/master).
+const registrationVoucherSubtitle =
+  (listName: string) => (filters: Record<string, unknown>) =>
+    reportDateRangeSubtitle(
+      `${listName} ${String(filters.ApplyType ?? '').trim()} List`
+    )(filters);
+
 const resolveImportLicenceVoucherColumns = (
   filters: Record<string, unknown>,
   columns: ReportColumnConfig[]
@@ -13630,6 +13639,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         fromLabel: 'From Date',
         toLabel: 'To Date',
         required: true,
+        displayFormat: 'DD/MM/YYYY',
       },
       {
         name: 'PaymentType',
@@ -13664,6 +13674,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'date',
         title: 'Date',
         dataType: 'date',
+        dateFormat: 'DD/MM/YYYY',
       },
       {
         key: 'CompanyRegistrationNo',
@@ -13710,6 +13721,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'voucherDate',
         title: 'Voucher Date',
         dataType: 'date',
+        dateFormat: 'DD/MM/YYYY',
       },
     ],
   },
@@ -13830,9 +13842,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelRoute: 'WholeSaleRegistrationByVoucher/Excel',
     excelFileName: 'WholeSaleRegistrationByVoucher.xlsx',
     reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
-    reportSubtitle: registrationDateRangeSubtitle,
+    reportSubtitle: registrationVoucherSubtitle('Whole Sale'),
     initialSortColumn: 'Date',
     showRowNumber: true,
+    rowNumberTitle: 'No.',
     filters: [
       {
         name: 'dateRange',
@@ -13843,13 +13856,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         fromLabel: 'From Date',
         toLabel: 'To Date',
         required: true,
-      },
-      {
-        name: 'PaymentType',
-        label: 'Payment Type',
-        type: 'select',
-        defaultValue: '',
-        options: voucherPaymentTypeOptions,
+        displayFormat: 'DD/MM/YYYY',
       },
       {
         name: 'ApplyType',
@@ -13858,9 +13865,22 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 'New',
         options: registrationApplyTypeOptions,
       },
+      {
+        name: 'PaymentType',
+        label: 'Payment Type',
+        type: 'select',
+        defaultValue: '',
+        options: voucherPaymentTypeOptions,
+      },
     ],
     columns: [
-      { key: 'Date', dataIndex: 'date', title: 'Date', dataType: 'date' },
+      {
+        key: 'Date',
+        dataIndex: 'date',
+        title: 'Date',
+        dataType: 'date',
+        dateFormat: 'DD/MM/YYYY',
+      },
       {
         key: 'CompanyRegistrationNo',
         dataIndex: 'companyRegistrationNo',
@@ -13916,6 +13936,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'voucherDate',
         title: 'Voucher Date',
         dataType: 'date',
+        dateFormat: 'DD/MM/YYYY',
       },
     ],
   },
@@ -14036,9 +14057,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelRoute: 'RetailRegistrationByVoucher/Excel',
     excelFileName: 'RetailRegistrationByVoucher.xlsx',
     reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
-    reportSubtitle: registrationDateRangeSubtitle,
+    reportSubtitle: registrationVoucherSubtitle('Retail'),
     initialSortColumn: 'Date',
     showRowNumber: true,
+    rowNumberTitle: 'No.',
     filters: [
       {
         name: 'dateRange',
@@ -14049,13 +14071,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         fromLabel: 'From Date',
         toLabel: 'To Date',
         required: true,
-      },
-      {
-        name: 'PaymentType',
-        label: 'Payment Type',
-        type: 'select',
-        defaultValue: '',
-        options: voucherPaymentTypeOptions,
+        displayFormat: 'DD/MM/YYYY',
       },
       {
         name: 'ApplyType',
@@ -14064,9 +14080,22 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 'New',
         options: registrationApplyTypeOptions,
       },
+      {
+        name: 'PaymentType',
+        label: 'Payment Type',
+        type: 'select',
+        defaultValue: '',
+        options: voucherPaymentTypeOptions,
+      },
     ],
     columns: [
-      { key: 'Date', dataIndex: 'date', title: 'Date', dataType: 'date' },
+      {
+        key: 'Date',
+        dataIndex: 'date',
+        title: 'Date',
+        dataType: 'date',
+        dateFormat: 'DD/MM/YYYY',
+      },
       {
         key: 'CompanyRegistrationNo',
         dataIndex: 'companyRegistrationNo',
@@ -14122,6 +14151,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'voucherDate',
         title: 'Voucher Date',
         dataType: 'date',
+        dateFormat: 'DD/MM/YYYY',
       },
     ],
   },
@@ -14242,9 +14272,10 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
     excelRoute: 'WholeSaleAndRetailRegistrationByVoucher/Excel',
     excelFileName: 'WholeSaleAndRetailRegistrationByVoucher.xlsx',
     reportHeading: ['Ministry of Commerce', 'Directorate of Trade'],
-    reportSubtitle: registrationDateRangeSubtitle,
+    reportSubtitle: registrationVoucherSubtitle('Whole Sale & Retail'),
     initialSortColumn: 'Date',
     showRowNumber: true,
+    rowNumberTitle: 'No.',
     filters: [
       {
         name: 'dateRange',
@@ -14255,13 +14286,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         fromLabel: 'From Date',
         toLabel: 'To Date',
         required: true,
-      },
-      {
-        name: 'PaymentType',
-        label: 'Payment Type',
-        type: 'select',
-        defaultValue: '',
-        options: voucherPaymentTypeOptions,
+        displayFormat: 'DD/MM/YYYY',
       },
       {
         name: 'ApplyType',
@@ -14270,9 +14295,22 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         defaultValue: 'New',
         options: registrationApplyTypeOptions,
       },
+      {
+        name: 'PaymentType',
+        label: 'Payment Type',
+        type: 'select',
+        defaultValue: '',
+        options: voucherPaymentTypeOptions,
+      },
     ],
     columns: [
-      { key: 'Date', dataIndex: 'date', title: 'Date', dataType: 'date' },
+      {
+        key: 'Date',
+        dataIndex: 'date',
+        title: 'Date',
+        dataType: 'date',
+        dateFormat: 'DD/MM/YYYY',
+      },
       {
         key: 'CompanyRegistrationNo',
         dataIndex: 'companyRegistrationNo',
@@ -14328,6 +14366,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         dataIndex: 'voucherDate',
         title: 'Voucher Date',
         dataType: 'date',
+        dateFormat: 'DD/MM/YYYY',
       },
     ],
   },
