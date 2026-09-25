@@ -64,10 +64,18 @@ const voucherApplyTypeFilter: ReportFilterConfig = {
   options: registrationApplyTypeOptions,
 };
 
+// The voucher reports' picker prints dd/MM/yyyy, like their grid dates and the old
+// filter box (01/01/2026). Display only: the request still posts ISO dates.
+const voucherDateRangeFilter: ReportFilterConfig = {
+  ...dateRangeFilter,
+  displayFormat: 'DD/MM/YYYY',
+};
+
+// Every old RegistrationByVoucher form asks Apply Type before Payment Type.
 const voucherFilters: ReportFilterConfig[] = [
-  dateRangeFilter,
-  voucherPaymentTypeFilter,
+  voucherDateRangeFilter,
   voucherApplyTypeFilter,
+  voucherPaymentTypeFilter,
 ];
 
 // Form Type dropdowns. Values are the exact DB `RegistrationType` strings
@@ -163,6 +171,14 @@ const addressColumn = (
 // (FL11/FL4/FL5NRCNo are unaffected — the digit breaks the acronym run.)
 const nrcColumn: ReportColumnConfig = { ...column('NRCNo', 'NRC No'), dataIndex: 'nrcNo' };
 
+// The old voucher RDLCs print sDate / sVoucherDate, pre-formatted dd/MM/yyyy strings
+// (06/01/2026), not the grid's default YYYY-MM-DD. The Excel sheet already prints
+// date cells as dd/mm/yyyy.
+const legacyDateColumn = (key: string, title: string): ReportColumnConfig => ({
+  ...column(key, title, 'date'),
+  dateFormat: 'DD/MM/YYYY',
+});
+
 // --- Legacy RDLC in-grid report header (centered lines above the grid) ---
 const formatLegacyReportDate = (value: unknown) => {
   const parsed = dayjs(String(value ?? ''));
@@ -174,10 +190,15 @@ const dateRangeSubtitle = (filters: Record<string, unknown>) =>
 
 // Legacy RegistrationByVoucher header1: "<Family> <ApplyType> List (From) To (To)" —
 // e.g. "Business Service Agency " + model.ApplyType + " List (...)" (ReportsController.cs
-// :2956 on origin/master).
+// :2956 on origin/master). The Sale Center / Show Room family printed the selected
+// model.RegistrationType instead (:2125, :2342, :2549, :2755); '--- All ---', which the
+// old form did not offer, falls back to the family name.
 const registrationVoucherSubtitle =
-  (listName: string) => (filters: Record<string, unknown>) =>
-    `${listName} ${String(filters.ApplyType ?? '').trim()} List ${dateRangeSubtitle(filters)}`;
+  (listName: string) => (filters: Record<string, unknown>) => {
+    const formType = String(filters.FormType ?? '').trim();
+    const applyType = String(filters.ApplyType ?? '').trim();
+    return `${formType || listName} ${applyType} List ${dateRangeSubtitle(filters)}`;
+  };
 
 // FormType-driven reports (Show Room / Sale Center): prefix the selected sub-type
 // (blank when '--- All ---'), matching the legacy per-FormType report title.
@@ -232,7 +253,7 @@ const paymentColumns = [
   { ...column('TotalAmount', 'Total Amount', 'number'), numberFormat: '#,##0.0000' },
   column('PaymentType', 'Payment Type'),
   column('VoucherNo', 'Voucher No'),
-  column('VoucherDate', 'Voucher Date', 'date'),
+  legacyDateColumn('VoucherDate', 'Voucher Date'),
 ];
 
 const reportConfig = (
@@ -298,9 +319,9 @@ const voucherConfig = (
   title: string,
   family: string,
   columns: ReportColumnConfig[],
-  subtitle: SubtitleFn = dateRangeSubtitle
-) =>
-  reportConfig(
+  subtitle: SubtitleFn = registrationVoucherSubtitle(family)
+): ReportPageConfig => ({
+  ...reportConfig(
     controllerName,
     title,
     voucherFilters,
@@ -308,7 +329,10 @@ const voucherConfig = (
     'Date',
     voucherHeading(family),
     subtitle
-  );
+  ),
+  // The old voucher RDLCs head the row-number column "No.".
+  rowNumberTitle: 'No.',
+});
 
 // Column sets trimmed to match the old Tradenet 2.0 RDLCs' DISPLAYED columns
 // (order + header text). The row-number "No." column is provided by showRowNumber.
@@ -337,7 +361,7 @@ const wineDetailColumns = [
 ];
 
 const wineVoucherColumns = [
-  column('Date', 'Date', 'date'),
+  legacyDateColumn('Date', 'Date'),
   companyColumns[0],
   companyColumns[1],
   companyColumns[2],
@@ -364,7 +388,7 @@ const dutyFreeDetailColumns = [
 ];
 
 const dutyFreeVoucherColumns = [
-  column('Date', 'Date', 'date'),
+  legacyDateColumn('Date', 'Date'),
   companyColumns[0],
   companyColumns[1],
   column('Name', 'Name'),
@@ -396,7 +420,7 @@ const businessServiceAgencyDetailColumns = [
 ];
 
 const businessServiceAgencyVoucherColumns = [
-  column('Date', 'Date', 'date'),
+  legacyDateColumn('Date', 'Date'),
   companyColumns[0],
   companyColumns[1],
   companyColumns[2],
@@ -422,7 +446,7 @@ const saleCenterDetailColumns = [
 ];
 
 const saleCenterVoucherColumns = [
-  column('Date', 'Date', 'date'),
+  legacyDateColumn('Date', 'Date'),
   companyColumns[0],
   companyColumns[1],
   column('Name', 'Name'),
@@ -447,7 +471,7 @@ const showRoomDetailColumns = [
 ];
 
 const showRoomVoucherColumns = [
-  column('Date', 'Date', 'date'),
+  legacyDateColumn('Date', 'Date'),
   companyColumns[0],
   companyColumns[1],
   column('Name', 'Name'),
@@ -566,19 +590,12 @@ export const newReportConfigs: Record<string, ReportPageConfig> = {
     'Business Representative',
     businessServiceAgencyDetailColumns
   ),
-  BusinessServiceAgencyRegistrationByVoucher: {
-    ...voucherConfig(
-      'BusinessServiceAgencyRegistrationByVoucher',
-      'Business Service Agency Registration By Voucher',
-      'Business Representative',
-      businessServiceAgencyVoucherColumns,
-      registrationVoucherSubtitle('Business Service Agency')
-    ),
-    // The old filter form asks Apply Type before Payment Type, and the RDLC's
-    // row-number header is "No.".
-    filters: [dateRangeFilter, voucherApplyTypeFilter, voucherPaymentTypeFilter],
-    rowNumberTitle: 'No.',
-  },
+  BusinessServiceAgencyRegistrationByVoucher: voucherConfig(
+    'BusinessServiceAgencyRegistrationByVoucher',
+    'Business Service Agency Registration By Voucher',
+    'Business Service Agency',
+    businessServiceAgencyVoucherColumns
+  ),
   SaleCenterSummaryReport: withFormType(
     summaryConfig(
       'SaleCenterSummaryReport',
@@ -603,8 +620,7 @@ export const newReportConfigs: Record<string, ReportPageConfig> = {
       'SaleCenterRegistrationByVoucher',
       'Sale Center Registration By Voucher',
       'Sale Center',
-      saleCenterVoucherColumns,
-      formTypeSubtitle
+      saleCenterVoucherColumns
     ),
     saleCenterFormTypeFilter
   ),
@@ -632,8 +648,7 @@ export const newReportConfigs: Record<string, ReportPageConfig> = {
       'ShowRoomRegistrationByVoucher',
       'Show Room Registration By Voucher',
       'Show Room',
-      showRoomVoucherColumns,
-      formTypeSubtitle
+      showRoomVoucherColumns
     ),
     showRoomFormTypeFilter
   ),

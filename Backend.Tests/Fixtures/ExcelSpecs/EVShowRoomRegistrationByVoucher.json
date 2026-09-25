@@ -7,16 +7,17 @@
   "headerLines": [
     "Ministry of Commerce",
     "Directorate of Trade",
-    "(01/02/2026) To (28/02/2026)"
+    "Show Room for Electric Vehicles New List (01/02/2026) To (28/02/2026)"
   ],
   "showRowNumber": true,
-  "rowNumberTitle": "No",
+  "rowNumberTitle": "No.",
   "columns": [
     {
       "key": "Date",
       "dataIndex": "date",
       "title": "Date",
-      "dataType": "date"
+      "dataType": "date",
+      "dateFormat": "DD/MM/YYYY"
     },
     {
       "key": "CompanyRegistrationNo",
@@ -142,7 +143,8 @@
       "key": "VoucherDate",
       "dataIndex": "voucherDate",
       "title": "Voucher Date",
-      "dataType": "date"
+      "dataType": "date",
+      "dateFormat": "DD/MM/YYYY"
     }
   ]
 }
