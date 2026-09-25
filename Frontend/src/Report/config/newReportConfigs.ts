@@ -48,22 +48,26 @@ const detailFilters: ReportFilterConfig[] = [
   },
 ];
 
+const voucherPaymentTypeFilter: ReportFilterConfig = {
+  name: 'PaymentType',
+  label: 'Payment Type',
+  type: 'select',
+  defaultValue: '',
+  options: voucherPaymentTypeOptions,
+};
+
+const voucherApplyTypeFilter: ReportFilterConfig = {
+  name: 'ApplyType',
+  label: 'Apply Type',
+  type: 'select',
+  defaultValue: 'New',
+  options: registrationApplyTypeOptions,
+};
+
 const voucherFilters: ReportFilterConfig[] = [
   dateRangeFilter,
-  {
-    name: 'PaymentType',
-    label: 'Payment Type',
-    type: 'select',
-    defaultValue: '',
-    options: voucherPaymentTypeOptions,
-  },
-  {
-    name: 'ApplyType',
-    label: 'Apply Type',
-    type: 'select',
-    defaultValue: 'New',
-    options: registrationApplyTypeOptions,
-  },
+  voucherPaymentTypeFilter,
+  voucherApplyTypeFilter,
 ];
 
 // Form Type dropdowns. Values are the exact DB `RegistrationType` strings
@@ -167,6 +171,13 @@ const formatLegacyReportDate = (value: unknown) => {
 
 const dateRangeSubtitle = (filters: Record<string, unknown>) =>
   `(${formatLegacyReportDate(filters.FromDate)}) To (${formatLegacyReportDate(filters.ToDate)})`;
+
+// Legacy RegistrationByVoucher header1: "<Family> <ApplyType> List (From) To (To)" —
+// e.g. "Business Service Agency " + model.ApplyType + " List (...)" (ReportsController.cs
+// :2956 on origin/master).
+const registrationVoucherSubtitle =
+  (listName: string) => (filters: Record<string, unknown>) =>
+    `${listName} ${String(filters.ApplyType ?? '').trim()} List ${dateRangeSubtitle(filters)}`;
 
 // FormType-driven reports (Show Room / Sale Center): prefix the selected sub-type
 // (blank when '--- All ---'), matching the legacy per-FormType report title.
@@ -391,7 +402,10 @@ const businessServiceAgencyVoucherColumns = [
   companyColumns[2],
   column('BusinessServiceAgencyNo', 'BSA No'),
   column('AuthorizeCompany', 'Agent of Authorize Company'),
-  ...paymentColumns,
+  // 2026-09-25, BSA: "ဒသမနောက်က သုညလေးလုံး ဖြုတ်ပေးပါရန်". The old RDLC prints
+  // TotalAmount with no Format at all, so it reads as stored: 260000, not 260000.0000.
+  { ...paymentColumns[0], numberFormat: '0.####' },
+  ...paymentColumns.slice(1),
 ];
 
 const saleCenterDetailColumns = [
@@ -552,12 +566,19 @@ export const newReportConfigs: Record<string, ReportPageConfig> = {
     'Business Representative',
     businessServiceAgencyDetailColumns
   ),
-  BusinessServiceAgencyRegistrationByVoucher: voucherConfig(
-    'BusinessServiceAgencyRegistrationByVoucher',
-    'Business Service Agency Registration By Voucher',
-    'Business Representative',
-    businessServiceAgencyVoucherColumns
-  ),
+  BusinessServiceAgencyRegistrationByVoucher: {
+    ...voucherConfig(
+      'BusinessServiceAgencyRegistrationByVoucher',
+      'Business Service Agency Registration By Voucher',
+      'Business Representative',
+      businessServiceAgencyVoucherColumns,
+      registrationVoucherSubtitle('Business Service Agency')
+    ),
+    // The old filter form asks Apply Type before Payment Type, and the RDLC's
+    // row-number header is "No.".
+    filters: [dateRangeFilter, voucherApplyTypeFilter, voucherPaymentTypeFilter],
+    rowNumberTitle: 'No.',
+  },
   SaleCenterSummaryReport: withFormType(
     summaryConfig(
       'SaleCenterSummaryReport',
