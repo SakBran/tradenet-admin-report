@@ -67,10 +67,33 @@ describe('Border Import Licence report configs', () => {
     ]);
   });
 
-  it('Pending Detail matches the old RDLC date headers and filter shape', () => {
+  it('Pending Detail adds the Company List registration lookup without changing Detail', () => {
     const cfg = reportConfigs.BorderImportLicenceDetailReportPending;
 
     expect(cfg.filters.map((f) => f.name)).toEqual([
+      'dateRange',
+      'SakhanId',
+      'PaThaKaTypeId',
+      'ExportImportSectionId',
+      'ExportImportMethodId',
+      'ExportImportIncotermId',
+      'CompanyRegistrationNo',
+      'CompanyName',
+    ]);
+
+    expect(cfg.filters.find((f) => f.name === 'CompanyRegistrationNo')).toMatchObject({
+      label: 'Company Registration No',
+      type: 'text',
+      defaultValue: '',
+    });
+
+    expect(cfg.filters.find((f) => f.name === 'CompanyName')).toMatchObject({
+      type: 'readonlyText',
+      populateFromCompanyRegistrationNo: true,
+      excludeFromRequest: true,
+    });
+
+    expect(reportConfigs.BorderImportLicenceDetailReport.filters.map((f) => f.name)).toEqual([
       'dateRange',
       'SakhanId',
       'PaThaKaTypeId',

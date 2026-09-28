@@ -102,4 +102,44 @@ describe('Import Licence report configs', () => {
     // Sr.No. is the grid's own row-number column, not a config column.
     expect(reportConfigs.ImportLicenceDetailReport.showRowNumber).toBe(true);
   });
+
+  it('Pending Detail adds the Company List registration lookup without changing Detail', () => {
+    expect(reportConfigs.ImportLicenceDetailReportPending.filters.map((filter) => filter.name)).toEqual([
+      'dateRange',
+      'Type',
+      'PaThaKaTypeId',
+      'ExportImportSectionId',
+      'ExportImportMethodId',
+      'ExportImportIncotermId',
+      'CompanyRegistrationNo',
+      'CompanyName',
+    ]);
+    expect(
+      reportConfigs.ImportLicenceDetailReportPending.filters.find(
+        (filter) => filter.name === 'CompanyRegistrationNo'
+      )
+    ).toMatchObject({
+      label: 'Company Registration No',
+      type: 'text',
+      defaultValue: '',
+    });
+    expect(
+      reportConfigs.ImportLicenceDetailReportPending.filters.find(
+        (filter) => filter.name === 'CompanyName'
+      )
+    ).toMatchObject({
+      type: 'readonlyText',
+      populateFromCompanyRegistrationNo: true,
+      excludeFromRequest: true,
+    });
+
+    expect(reportConfigs.ImportLicenceDetailReport.filters.map((filter) => filter.name)).toEqual([
+      'dateRange',
+      'Type',
+      'PaThaKaTypeId',
+      'ExportImportSectionId',
+      'ExportImportMethodId',
+      'ExportImportIncotermId',
+    ]);
+  });
 });
