@@ -119,6 +119,7 @@ import ImportPermitDailyReportNewPermitReport from './Page/ImportPermitDailyRepo
 import ImportPermitDetailReport from './Page/ImportPermitDetailReport';
 import ImportPermitExtensionReport from './Page/ImportPermitExtensionReport';
 import ImportPermitNewReportNewReport from './Page/ImportPermitNewReportNewReport';
+import ImportPermitTotalValuePermitsReport from './Page/ImportPermitTotalValuePermitsReport';
 import ImportPermitVoucherReport from './Page/ImportPermitVoucherReport';
 import ListOfCompany from './Page/ListOfCompany';
 import ListOfDirectorsByCompanyRegistrationNo from './Page/ListOfDirectorsByCompanyRegistrationNo';
@@ -303,6 +304,7 @@ export const reportRoutes = [
   { path: 'ImportPermitDetailReport', element: <ImportPermitDetailReport /> },
   { path: 'ImportPermitExtensionReport', element: <ImportPermitExtensionReport /> },
   { path: 'ImportPermitNewReportNewReport', element: <ImportPermitNewReportNewReport /> },
+  { path: 'ImportPermitTotalValuePermitsReport', element: <ImportPermitTotalValuePermitsReport /> },
   { path: 'ImportPermitVoucherReport', element: <ImportPermitVoucherReport /> },
   { path: 'ListOfCompany', element: <ListOfCompany /> },
   { path: 'ListOfDirectorsByCompanyRegistrationNo', element: <ListOfDirectorsByCompanyRegistrationNo /> },

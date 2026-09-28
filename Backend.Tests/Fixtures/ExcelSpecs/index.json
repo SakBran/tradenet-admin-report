@@ -2665,6 +2665,21 @@
       "columnCount": 11
     },
     {
+      "configKey": "ImportPermitTotalValuePermitsReport",
+      "controllerName": "ImportPermitTotalValuePermitsReport",
+      "file": "ImportPermitTotalValuePermitsReport.json",
+      "variant": null,
+      "hasDateRange": true,
+      "hasSingleDate": false,
+      "hasCurrencyTotalsColumns": false,
+      "showRowNumber": true,
+      "rowNumberTitle": "No",
+      "isBespokePage": true,
+      "isComposite": false,
+      "hasExcelButton": true,
+      "columnCount": 2
+    },
+    {
       "configKey": "ImportPermitVoucherReport",
       "controllerName": "ImportPermitVoucherReport",
       "file": "ImportPermitVoucherReport.ApplyType-Actual_Amend.json",

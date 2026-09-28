@@ -48,6 +48,24 @@ public sealed class ImportPermitSystemTests : IClassFixture<ImportPermitSystemTe
     }
 
     [Fact]
+    public async Task ImportPermit_TotalValuePermits_endpoint_is_routed_and_requires_authentication()
+    {
+        var client = _factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/ImportPermitTotalValuePermitsReport",
+            new
+            {
+                FromDate = "2026-04-01T00:00:00",
+                ToDate = "2026-04-28T23:59:59",
+                PaThaKaTypeId = 0,
+                ExportImportSectionId = 0,
+            });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Unknown_route_returns_404_confirming_the_host_booted()
     {
         var client = _factory.CreateClient();

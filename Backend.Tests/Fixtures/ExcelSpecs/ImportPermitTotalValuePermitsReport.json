@@ -1,0 +1,28 @@
+{
+  "formatVersion": 1,
+  "configKey": "ImportPermitTotalValuePermitsReport",
+  "controllerName": "ImportPermitTotalValuePermitsReport",
+  "title": "Import Permit Total Value & Permits Report",
+  "fileName": "ImportPermitTotalValuePermitsReport.xlsx",
+  "headerLines": [
+    "Ministry of Commerce",
+    "Directorate of Trade",
+    "Import Permits Total Value & Permits (01/02/2026) To (28/02/2026)"
+  ],
+  "showRowNumber": true,
+  "rowNumberTitle": "No",
+  "columns": [
+    {
+      "key": "TotalValue",
+      "dataIndex": "totalValue",
+      "title": "Total Value",
+      "dataType": "number",
+      "numberFormat": "#,##0.0000"
+    },
+    {
+      "key": "Currency",
+      "dataIndex": "currency",
+      "title": "Currency"
+    }
+  ]
+}

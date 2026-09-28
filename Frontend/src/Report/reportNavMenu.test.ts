@@ -96,4 +96,19 @@ describe('report sidebar menu', () => {
     // summary key must still be present — exactly once (asserted above).
     expect(keys).toContain('BorderImportLicenceByHSCodeReport');
   });
+
+  it('lists the Total Value & Permits report in the Import Permit menu family', () => {
+    const importPermitGroup = reportNavItems.find(
+      (item) =>
+        item && typeof item === 'object' && item.key === 'report-import-permit'
+    );
+    const keys =
+      importPermitGroup &&
+      'children' in importPermitGroup &&
+      Array.isArray(importPermitGroup.children)
+        ? collectLeafKeys(importPermitGroup.children as NavItems)
+        : [];
+
+    expect(keys).toContain('ImportPermitTotalValuePermitsReport');
+  });
 });
