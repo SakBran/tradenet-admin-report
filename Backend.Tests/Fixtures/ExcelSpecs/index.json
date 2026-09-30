@@ -2377,7 +2377,7 @@
       "isBespokePage": false,
       "isComposite": false,
       "hasExcelButton": true,
-      "columnCount": 11
+      "columnCount": 15
     },
     {
       "configKey": "ImportLicencePendingReport",

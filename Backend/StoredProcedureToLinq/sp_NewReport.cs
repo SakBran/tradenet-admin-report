@@ -28,6 +28,10 @@ public sealed class sp_NewReportResult
     public string? OldLicenceNo { get; set; }
     public string? LicenceNo { get; set; }
     public string? SDate { get; set; }
+    public string? ApplicationNo { get; set; }
+    public DateTime? ApplicationDate { get; set; }
+    public DateTime? LicenceDate { get; set; }
+    public string? Remark { get; set; }
     public string? CompanyRegistrationNo { get; set; }
     public string? CompanyName { get; set; }
     public string? UnitLevel { get; set; }
@@ -55,6 +59,10 @@ public sealed class sp_NewReportRow
     public string? OldLicenceNo { get; set; }
     public string? LicenceNo { get; set; }
     public string? SDate { get; set; }
+    public string? ApplicationNo { get; set; }
+    public DateTime? ApplicationDate { get; set; }
+    public DateTime? LicenceDate { get; set; }
+    public string? Remark { get; set; }
     public string? CompanyRegistrationNo { get; set; }
     public string? CompanyName { get; set; }
     public string? UnitLevel { get; set; }
@@ -82,6 +90,10 @@ public sealed class sp_NewReportRow
         OldLicenceNo = OldLicenceNo,
         LicenceNo = LicenceNo,
         SDate = SDate,
+        ApplicationNo = ApplicationNo,
+        ApplicationDate = ApplicationDate,
+        LicenceDate = LicenceDate,
+        Remark = Remark,
         CompanyRegistrationNo = CompanyRegistrationNo,
         CompanyName = CompanyName,
         UnitLevel = UnitLevel,
@@ -324,6 +336,10 @@ public static class sp_NewReport
                     + licence.LastDate.Value.Month.ToString()
                     + "/"
                     + licence.LastDate.Value.Year.ToString(),
+                ApplicationNo = licence.ApplicationNo,
+                ApplicationDate = licence.ApplicationDate,
+                LicenceDate = licence.IssuedDate,
+                Remark = licence.Remark,
                 CompanyRegistrationNo = paThaKa.CompanyRegistrationNo,
                 CompanyName = paThaKa.CompanyName,
                 UnitLevel = paThaKa.UnitLevel,
