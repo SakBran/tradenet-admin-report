@@ -1,6 +1,6 @@
 # Database Connection Notes
 
-Updated: 2026-08-26
+Updated: 2026-09-30
 
 Use `Backend/appsettings.json` -> `ConnectionStrings:TradeNetDBTest` for report database checks, stored procedure comparisons, and LINQ verification against the TradeNet database.
 
@@ -22,4 +22,10 @@ $builder = [System.Data.SqlClient.SqlConnectionStringBuilder]::new($connectionSt
 
 # Example: use $connectionString with SqlConnection in PowerShell/C# scripts.
 ```
+
+## Stored Procedure Deployment
+
+Use **Windows Authentication** when deploying or replacing stored procedures on `TradeNetDB`. Connect to `tn2db.myanmartradenet.com,14133`, select `TradeNetDB`, and verify that SQL Server reports the target instance as `tn2db\PRODUCTION` before making changes.
+
+The `tn2db` SQL login stored in `Backend/appsettings.json` is for application access and read-only verification. It does not have `VIEW DEFINITION` or `ALTER` permission on stored procedures and must not be used for deployments. The Windows account performing a deployment must have those permissions on the target procedure.
 

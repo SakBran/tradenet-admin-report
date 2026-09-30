@@ -13,6 +13,8 @@ This package updates `dbo.sp_NewReport_pagination` so **Import Licence New Repor
 
 ## Deployment
 
+Connect to `tn2db.myanmartradenet.com,14133` / `TradeNetDB` using **Windows Authentication**. Confirm that the target instance is `tn2db\PRODUCTION`. Do not use the `tn2db` application SQL login from `Backend/appsettings.json`; it cannot view or alter stored-procedure definitions.
+
 1. Run `CaptureRollback.sql` against the target database and save its result before changing the procedure.
 2. Run `00_RunAll.sql` against `TradeNetDB`.
 3. Run `VerifyDeployment.sql` and confirm that every definition check returns `1`, the raw sample values are sensible, and the stored-procedure sample returns the four columns.
