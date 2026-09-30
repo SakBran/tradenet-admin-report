@@ -1,4 +1,10 @@
-﻿CREATE OR ALTER PROCEDURE [dbo].[sp_NewReport_pagination]
+﻿USE [TradeNetDB];
+GO
+SET QUOTED_IDENTIFIER ON;
+GO
+SET ANSI_NULLS ON;
+GO
+CREATE OR ALTER PROCEDURE [dbo].[sp_NewReport_pagination]
     @FormType nvarchar(50) = N'',
     @FromDate datetime = NULL,
     @ToDate datetime = NULL,

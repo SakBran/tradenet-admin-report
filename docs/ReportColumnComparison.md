@@ -955,9 +955,11 @@ Extra in new (0): _None_
 Title: Import Licence New Report (New Report )
 Old source: `NewLicenceReport.rdlc`
 Old columns (12): `No.`, `Section`, `Licence No`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `Commodity Type`, `HSCode`, `quota`, `auto`
-New columns (12): `No`, `Section`, `Licence No`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `Commodity Type`, `HSCode`, `quota`, `auto`
+New columns (16): `No`, `Section`, `Licence No`, `Online No`, `Online Date`, `Licence Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `Commodity Type`, `HSCode`, `quota`, `auto`, `Remark`
 Need in new (0): _None_
-Extra in new (0): _None_
+Extra in new (4): `Online No`, `Online Date`, `Licence Date`, `Remark`
+
+The four extra columns are a requested extension beyond the old RDLC layout. They map to `ImportLicence.ApplicationNo`, `ImportLicence.ApplicationDate`, `ImportLicence.IssuedDate`, and `ImportLicence.Remark`. `Licence Date` intentionally uses the issued/date-of-issue value shown in Tradenet 2.0 rather than the similarly named database `LicenceDate` timestamp. The existing filter set and values are unchanged.
 
 ### ImportLicencePendingReport
 

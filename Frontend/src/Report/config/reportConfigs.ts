@@ -10825,6 +10825,25 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         title: 'Licence No',
       },
       {
+        key: 'ApplicationNo',
+        dataIndex: 'applicationNo',
+        title: 'Online No',
+      },
+      {
+        key: 'ApplicationDate',
+        dataIndex: 'applicationDate',
+        title: 'Online Date',
+        dataType: 'date',
+        dateFormat: 'DD/MM/YYYY',
+      },
+      {
+        key: 'LicenceDate',
+        dataIndex: 'licenceDate',
+        title: 'Licence Date',
+        dataType: 'date',
+        dateFormat: 'DD/MM/YYYY',
+      },
+      {
         key: 'CompanyRegistrationNo',
         dataIndex: 'companyRegistrationNo',
         title: 'Company Registration No',
@@ -10878,6 +10897,11 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
         key: 'Auto',
         dataIndex: 'auto',
         title: 'auto',
+      },
+      {
+        key: 'Remark',
+        dataIndex: 'remark',
+        title: 'Remark',
       },
     ],
   },

@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Controllers.Report
 {
+    [ExcelFormatVersion(2)]
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
