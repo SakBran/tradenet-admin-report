@@ -20,7 +20,8 @@ namespace Backend.Controllers.Report
     [Route("api/[controller]")]
     // 2: the export now carries the per-currency Total footer. The job cache keys on the request
     // payload + this version, so an unchanged filter set would keep serving the footer-less .xlsx.
-    [ExcelFormatVersion(2)]
+    // 3: add Licence Date after Licence No.
+    [ExcelFormatVersion(3)]
     public class ExportLicenceNewReportNewReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ExportLicenceNewReportNewReport";

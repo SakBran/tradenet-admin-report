@@ -45,3 +45,17 @@ an assignment branch is completed or work moves back to `main`, add or update an
 with the branch name, commit hash, scope, verification, deployment/merge status, and
 important operational notes. Never describe a branch as merged, pushed, or deployed
 unless that action was actually completed and verified.
+
+## Project terminology: all application
+
+When the user says **all application**, treat it as the following eight report
+families unless they explicitly narrow the scope:
+
+1. Import Licence
+2. Import Permit
+3. Export Licence
+4. Export Permit
+5. Border Import Licence
+6. Border Import Permit
+7. Border Export Licence
+8. Border Export Permit

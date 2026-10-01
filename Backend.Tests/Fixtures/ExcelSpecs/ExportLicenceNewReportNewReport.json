@@ -21,6 +21,13 @@
       "title": "Licence No"
     },
     {
+      "key": "LicenceDate",
+      "dataIndex": "licenceDate",
+      "title": "Licence Date",
+      "dataType": "date",
+      "dateFormat": "DD/MM/YYYY"
+    },
+    {
       "key": "CompanyRegistrationNo",
       "dataIndex": "companyRegistrationNo",
       "title": "Company Registration No"

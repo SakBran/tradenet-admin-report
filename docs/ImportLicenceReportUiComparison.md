@@ -81,7 +81,7 @@ The current frontend still uses `BasicTable`, but Import Licence reports now ren
 
 Implemented table-header fix:
 
-- `ReportColumnComparison.md` now shows `Need in new (0)` and `Extra in new (0)` for every non-border `ImportLicence*` report.
+- `ReportColumnComparison.md` shows the old RDLC parity result plus documented intentional extensions. `ImportLicenceNewReportNewReport` has one intentional extra column: `Licence Date`.
 - `ImportLicenceVoucherReport` now matches the old visible `VoucherReport.rdlc` column list and order. It includes the old `Licence No`, `Application Date`, dynamic number header, `Application No`, dynamic date header, company, licence value, currency, voucher, approved user, commodity, CIF, exchange rate, and amount columns.
 - `ImportLicenceVoucherReport` changes the two dynamic RDLC headers by `ApplyType`:
   - New: `Licence No`, `Licence Date`
@@ -100,6 +100,7 @@ Intentional result UI differences for this pass:
 
 - `ImportLicenceByHSCodeReport` now accepts `ExportImportSectionId`, matching the old HS Code screen. If Section is `All`, the existing aggregate stored procedure path is preserved. If a specific Section is selected, the existing LINQ aggregate path is used so the filter actually applies.
 - `ImportLicenceNewReportNewReport` now accepts `Quota`. If Quota is not selected, the existing paged stored procedure path is preserved. If Quota is selected, the existing LINQ query path is used and filters `ImportLicence.Quota`.
+- `ImportLicenceNewReportNewReport` displays `Licence Date` from `ImportLicence.IssuedDate`. The previously added `Online No`, `Online Date`, and `Remark` fields remain available in the shared backend result shape for compatibility but are no longer visible in the table or Excel output.
 - `sp_NewReport.ImportLicenceQuery` now also honors `Auto` and `Quota` when the LINQ path is used.
 - `ReportLookups/company-name` returns the current PaThaKa company name for the entered `CompanyRegistrationNo`, allowing the frontend to match the old readonly Company Name filter field without changing report request models.
 
@@ -121,7 +122,7 @@ Import Licence result:
 - `ImportLicenceDetailReport`: 0 missing, 0 extra.
 - `ImportLicenceDetailReportPending`: 0 missing, 0 extra.
 - `ImportLicenceExtensionReport`: 0 missing, 0 extra.
-- `ImportLicenceNewReportNewReport`: 0 missing, 0 extra.
+- `ImportLicenceNewReportNewReport`: 0 missing, 1 intentional extra (`Licence Date`).
 - `ImportLicencePendingReport`: 0 missing, 0 extra.
 - `ImportLicenceTotalValueLicencesReport`: 0 missing, 0 extra.
 - `ImportLicenceVoucherReport`: 0 missing, 0 extra.

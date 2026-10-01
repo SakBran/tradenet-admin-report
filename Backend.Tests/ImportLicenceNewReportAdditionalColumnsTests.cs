@@ -1,58 +1,99 @@
 using API.StoredProcedureToLinq;
+using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Tests;
 
 public sealed class ImportLicenceNewReportAdditionalColumnsTests
 {
     [Fact]
-    public void Result_mapping_preserves_the_requested_online_licence_and_remark_fields()
+    public void Result_mapping_preserves_licence_date()
     {
-        var onlineDate = new DateTime(2026, 9, 30, 7, 27, 59);
         var licenceDate = new DateTime(2026, 9, 30, 7, 28, 57);
         var row = new sp_NewReportRow
         {
-            ApplicationNo = "OIL-1-000001-2026",
-            ApplicationDate = onlineDate,
             LicenceDate = licenceDate,
-            Remark = "Customer-facing application remark",
         };
 
         var result = row.ToResult();
 
-        Assert.Equal("OIL-1-000001-2026", result.ApplicationNo);
-        Assert.Equal(onlineDate, result.ApplicationDate);
         Assert.Equal(licenceDate, result.LicenceDate);
-        Assert.Equal("Customer-facing application remark", result.Remark);
     }
 
     [Fact]
-    public void Import_licence_sql_sources_licence_date_from_issued_date()
+    public void All_application_sql_branches_source_licence_date_from_issued_date()
     {
         var script = File.ReadAllText(Path.Combine(
             RepositoryRoot,
             "StoredProcedureMigrations",
             "sp_NewReport_pagination.sql"));
-        var branchStart = script.IndexOf("-- Import Licence New listing.", StringComparison.Ordinal);
-
-        // Every other form type served by this shared procedure must still expose
-        // the same result shape so EF Core can materialize sp_NewReportRow.
+        // ApplicationNo, ApplicationDate, and Remark remain typed placeholders in
+        // branches that do not source them so the shared row shape stays compatible.
         Assert.Equal(9, CountOccurrences(script, "CAST(NULL AS nvarchar(50)) ApplicationNo"));
         Assert.Equal(9, CountOccurrences(script, "CAST(NULL AS datetime) ApplicationDate"));
-        Assert.Equal(9, CountOccurrences(script, "CAST(NULL AS datetime) LicenceDate"));
         Assert.Equal(9, CountOccurrences(script, "CAST(NULL AS nvarchar(max)) Remark"));
+        Assert.DoesNotContain("CAST(NULL AS datetime) LicenceDate", script, StringComparison.Ordinal);
 
-        Assert.True(branchStart >= 0, "The Import Licence New branch marker is missing.");
-        var importLicenceBranch = script[branchStart..];
+        Assert.Equal(1, CountExactLines(script, "ImportLicence.IssuedDate LicenceDate,"));
+        Assert.Equal(1, CountExactLines(script, "ImportPermit.IssuedDate LicenceDate,"));
+        Assert.Equal(1, CountExactLines(script, "ExportLicence.IssuedDate LicenceDate,"));
+        Assert.Equal(1, CountExactLines(script, "ExportPermit.IssuedDate LicenceDate,"));
+        Assert.Equal(2, CountExactLines(script, "BorderImportLicence.IssuedDate LicenceDate,"));
+        Assert.Equal(1, CountExactLines(script, "BorderImportPermit.IssuedDate LicenceDate,"));
+        Assert.Equal(2, CountExactLines(script, "BorderExportLicence.IssuedDate LicenceDate,"));
+        Assert.Equal(1, CountExactLines(script, "BorderExportPermit.IssuedDate LicenceDate,"));
+    }
 
-        Assert.Contains("ImportLicence.ApplicationNo", importLicenceBranch, StringComparison.Ordinal);
-        Assert.Contains("ImportLicence.ApplicationDate", importLicenceBranch, StringComparison.Ordinal);
-        Assert.Contains("ImportLicence.IssuedDate LicenceDate", importLicenceBranch, StringComparison.Ordinal);
-        Assert.Contains("ImportLicence.Remark", importLicenceBranch, StringComparison.Ordinal);
-        Assert.DoesNotContain("ImportLicence.LicenceDate LicenceDate", importLicenceBranch, StringComparison.Ordinal);
+    [Theory]
+    [InlineData("Import Licence")]
+    [InlineData("Import Permit")]
+    [InlineData("Export Licence")]
+    [InlineData("Export Permit")]
+    [InlineData("Border Import Licence")]
+    [InlineData("Border Import Permit")]
+    [InlineData("Border Export Licence")]
+    [InlineData("Border Export Permit")]
+    public void All_application_linq_branches_project_issued_date(string formType)
+    {
+        using var db = ReportTestHelper.CreateSqlServerDbContext();
+        var sql = sp_NewReport.Query(db, new sp_NewReportRequest
+        {
+            FormType = formType,
+            FromDate = new DateTime(2026, 1, 1),
+            ToDate = new DateTime(2026, 1, 31, 23, 59, 59),
+        }).ToQueryString();
+
+        Assert.Contains("IssuedDate", sql, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("ImportLicenceNewReportNewReportController.cs", 3)]
+    [InlineData("ImportPermitNewReportNewReportController.cs", 2)]
+    [InlineData("ExportLicenceNewReportNewReportController.cs", 3)]
+    [InlineData("ExportPermitNewReportNewReportController.cs", 3)]
+    [InlineData("BorderImportLicenceNewReportNewReportController.cs", 2)]
+    [InlineData("BorderImportPermitNewReportNewReportController.cs", 3)]
+    [InlineData("BorderExportLicenceNewReportNewReportController.cs", 2)]
+    [InlineData("BorderExportPermitNewReportNewReportController.cs", 2)]
+    public void All_application_excel_versions_invalidate_older_column_layouts(
+        string controllerFile,
+        int expectedVersion)
+    {
+        var source = File.ReadAllText(Path.Combine(
+            RepositoryRoot,
+            "Backend",
+            "Controllers",
+            "Report",
+            controllerFile));
+
+        Assert.Contains($"[ExcelFormatVersion({expectedVersion})]", source, StringComparison.Ordinal);
     }
 
     private static int CountOccurrences(string value, string searchValue) =>
         value.Split(searchValue, StringSplitOptions.None).Length - 1;
+
+    private static int CountExactLines(string value, string expectedLine) =>
+        value.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+            .Count(line => string.Equals(line.Trim(), expectedLine, StringComparison.Ordinal));
 
     private static string RepositoryRoot
     {

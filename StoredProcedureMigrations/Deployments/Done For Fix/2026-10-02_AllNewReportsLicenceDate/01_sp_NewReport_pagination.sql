@@ -1,4 +1,4 @@
-﻿CREATE OR ALTER PROCEDURE [dbo].[sp_NewReport_pagination]
+CREATE OR ALTER PROCEDURE [dbo].[sp_NewReport_pagination]
     @FormType nvarchar(50) = N'',
     @FromDate datetime = NULL,
     @ToDate datetime = NULL,
@@ -653,3 +653,4 @@ ImportLicence.Id AS __k_Id
 
     EXEC sp_executesql @sql, N'@FormType nvarchar(50), @FromDate datetime, @ToDate datetime, @ExportImportSectionId int, @CompanyRegistrationNo nvarchar(50), @SakhanId int, @auto nvarchar(50), @quota nvarchar(50), @off bigint, @ps bigint', @FormType=@FormType, @FromDate=@FromDate, @ToDate=@ToDate, @ExportImportSectionId=@ExportImportSectionId, @CompanyRegistrationNo=@CompanyRegistrationNo, @SakhanId=@SakhanId, @auto=@auto, @quota=@quota, @off=@off, @ps=@ps;
 END
+

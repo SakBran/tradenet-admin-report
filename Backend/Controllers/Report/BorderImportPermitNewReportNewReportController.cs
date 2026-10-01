@@ -21,7 +21,8 @@ namespace Backend.Controllers.Report
     // v2: the legacy per-currency TOTAL block (BorderNewReport.rdlc's second tablix) is now
     // returned, so the .xlsx gains footer rows. The export cache keys on the request payload,
     // so without this bump an unchanged payload would keep serving the footer-less workbook.
-    [ExcelFormatVersion(2)]
+    // v3: add Licence Date after Licence No.
+    [ExcelFormatVersion(3)]
     public class BorderImportPermitNewReportNewReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "BorderImportPermitNewReportNewReport";

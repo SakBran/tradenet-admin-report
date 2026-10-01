@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { reportConfigs } from './reportConfigs';
 
 describe('Import Licence report configs', () => {
-  it('New Report exposes the requested online and licence fields without changing filters', () => {
+  it('New Report exposes only Licence Date from the requested date-field set without changing filters', () => {
     const config = reportConfigs.ImportLicenceNewReportNewReport;
 
     expect(config.filters.map((filter) => filter.name)).toEqual([
@@ -18,8 +18,6 @@ describe('Import Licence report configs', () => {
     expect(config.columns.map((column) => column.title)).toEqual([
       'Section',
       'Licence No',
-      'Online No',
-      'Online Date',
       'Licence Date',
       'Company Registration No',
       'Company Name',
@@ -30,29 +28,17 @@ describe('Import Licence report configs', () => {
       'hsCode',
       'quota',
       'auto',
-      'Remark',
     ]);
 
-    expect(config.columns.find((column) => column.key === 'ApplicationNo')).toMatchObject({
-      dataIndex: 'applicationNo',
-      title: 'Online No',
-    });
-    expect(config.columns.find((column) => column.key === 'ApplicationDate')).toMatchObject({
-      dataIndex: 'applicationDate',
-      title: 'Online Date',
-      dataType: 'date',
-      dateFormat: 'DD/MM/YYYY',
-    });
+    expect(config.columns.find((column) => column.key === 'ApplicationNo')).toBeUndefined();
+    expect(config.columns.find((column) => column.key === 'ApplicationDate')).toBeUndefined();
     expect(config.columns.find((column) => column.key === 'LicenceDate')).toMatchObject({
       dataIndex: 'licenceDate',
       title: 'Licence Date',
       dataType: 'date',
       dateFormat: 'DD/MM/YYYY',
     });
-    expect(config.columns.find((column) => column.key === 'Remark')).toMatchObject({
-      dataIndex: 'remark',
-      title: 'Remark',
-    });
+    expect(config.columns.find((column) => column.key === 'Remark')).toBeUndefined();
   });
 
   it('Daily report uses global pagination and the standard row-number column', () => {

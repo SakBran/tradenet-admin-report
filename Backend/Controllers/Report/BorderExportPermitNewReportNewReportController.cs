@@ -18,6 +18,7 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    [ExcelFormatVersion(2)]
     public class BorderExportPermitNewReportNewReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "BorderExportPermitNewReportNewReport";

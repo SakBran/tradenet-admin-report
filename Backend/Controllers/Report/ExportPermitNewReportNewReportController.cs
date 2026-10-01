@@ -20,7 +20,8 @@ namespace Backend.Controllers.Report
     [Route("api/[controller]")]
     // Bumped 2026-09-06: the Export Permit item key moved to (HSCodeId, ItemNo), so Currency /
     // HS Code / Total Value change value for multi-item permits, and Total Value now prints 4 dp.
-    [ExcelFormatVersion(2)]
+    // Version 3 adds Licence Date after Licence No.
+    [ExcelFormatVersion(3)]
     public class ExportPermitNewReportNewReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "ExportPermitNewReportNewReport";

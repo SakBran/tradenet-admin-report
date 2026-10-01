@@ -141,9 +141,11 @@ Extra in new (0): _None_
 Title: Border Export Licence New Report (New Report )
 Old source: `BorderNewReport.rdlc`
 Old columns (10): `No.`, `Sakhan`, `Section`, `Licence No`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `auto`
-New columns (10): `No`, `Sakhan`, `Section`, `Licence No`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `auto`
+New columns (11): `No`, `Sakhan`, `Section`, `Licence No`, `Licence Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `auto`
 Need in new (0): _None_
-Extra in new (0): _None_
+Extra in new (1): `Licence Date`
+
+`Licence Date` is an intentional all-application extension and maps to `BorderExportLicence.IssuedDate`.
 
 ### BorderExportLicenceTotalValueLicencesReport
 
@@ -281,9 +283,11 @@ Extra in new (0): _None_
 Title: Border Export Permit New Report (New Report )
 Old source: `BorderNewReport.rdlc`
 Old columns (10): `No.`, `Sakhan`, `Section`, `Licence No`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `auto`
-New columns (10): `No`, `Sakhan`, `Section`, `Licence No`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `auto`
+New columns (11): `No`, `Sakhan`, `Section`, `Licence No`, `Licence Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `auto`
 Need in new (0): _None_
-Extra in new (0): _None_
+Extra in new (1): `Licence Date`
+
+`Licence Date` is an intentional all-application extension and maps to `BorderExportPermit.IssuedDate`.
 
 ### BorderExportPermitVoucherReport
 
@@ -416,9 +420,11 @@ Extra in new (0): _None_
 Title: Border Import Licence New Report (New Report )
 Old source: `BorderNewReport.rdlc`
 Old columns (10): `No.`, `Sakhan`, `Section`, `Licence No`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `auto`
-New columns (10): `No`, `Sakhan`, `Section`, `Licence No`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `auto`
+New columns (11): `No`, `Sakhan`, `Section`, `Licence No`, `Licence Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `auto`
 Need in new (0): _None_
-Extra in new (0): _None_
+Extra in new (1): `Licence Date`
+
+`Licence Date` is an intentional all-application extension and maps to `BorderImportLicence.IssuedDate`.
 
 ### BorderImportLicencePendingReport
 
@@ -544,9 +550,11 @@ Extra in new (0): _None_
 Title: Border Import Permit New Report (New Report )
 Old source: `BorderNewReport.rdlc`
 Old columns (10): `No.`, `Sakhan`, `Section`, `Licence No`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `auto`
-New columns (10): `No`, `Sakhan`, `Section`, `Licence No`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `auto`
+New columns (11): `No`, `Sakhan`, `Section`, `Licence No`, `Licence Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `auto`
 Need in new (0): _None_
-Extra in new (0): _None_
+Extra in new (1): `Licence Date`
+
+`Licence Date` is an intentional all-application extension and maps to `BorderImportPermit.IssuedDate`.
 
 ### BorderImportPermitVoucherReport
 
@@ -708,9 +716,11 @@ Extra in new (0): _None_
 Title: Export Licence New Report (New Report )
 Old source: `NewLicenceReport.rdlc`
 Old columns (12): `No.`, `Section`, `Licence No`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `Commodity Type`, `HSCode`, `quota`, `auto`
-New columns (12): `No`, `Section`, `Licence No`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `Commodity Type`, `HSCode`, `quota`, `auto`
+New columns (13): `No`, `Section`, `Licence No`, `Licence Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `Commodity Type`, `HSCode`, `quota`, `auto`
 Need in new (0): _None_
-Extra in new (0): _None_
+Extra in new (1): `Licence Date`
+
+`Licence Date` is an intentional all-application extension and maps to `ExportLicence.IssuedDate`.
 
 ### ExportLicenceTotalValueLicencesReport
 
@@ -827,9 +837,11 @@ Extra in new (0): _None_
 Title: Export Permit New Report (New Report )
 Old source: `NewLicenceReport.rdlc`
 Old columns (12): `No.`, `Section`, `Licence No`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `Commodity Type`, `HSCode`, `quota`, `auto`
-New columns (12): `No`, `Section`, `Licence No`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `Commodity Type`, `HSCode`, `quota`, `auto`
+New columns (13): `No`, `Section`, `Licence No`, `Licence Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `Commodity Type`, `HSCode`, `quota`, `auto`
 Need in new (0): _None_
-Extra in new (0): _None_
+Extra in new (1): `Licence Date`
+
+`Licence Date` is an intentional all-application extension and maps to `ExportPermit.IssuedDate`.
 
 ### ExportPermitVoucherReport
 
@@ -955,11 +967,11 @@ Extra in new (0): _None_
 Title: Import Licence New Report (New Report )
 Old source: `NewLicenceReport.rdlc`
 Old columns (12): `No.`, `Section`, `Licence No`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `Commodity Type`, `HSCode`, `quota`, `auto`
-New columns (16): `No`, `Section`, `Licence No`, `Online No`, `Online Date`, `Licence Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `Commodity Type`, `HSCode`, `quota`, `auto`, `Remark`
+New columns (13): `No`, `Section`, `Licence No`, `Licence Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `Commodity Type`, `HSCode`, `quota`, `auto`
 Need in new (0): _None_
-Extra in new (4): `Online No`, `Online Date`, `Licence Date`, `Remark`
+Extra in new (1): `Licence Date`
 
-The four extra columns are a requested extension beyond the old RDLC layout. They map to `ImportLicence.ApplicationNo`, `ImportLicence.ApplicationDate`, `ImportLicence.IssuedDate`, and `ImportLicence.Remark`. `Licence Date` intentionally uses the issued/date-of-issue value shown in Tradenet 2.0 rather than the similarly named database `LicenceDate` timestamp. The existing filter set and values are unchanged.
+`Licence Date` is the requested all-application extension beyond the old RDLC layout. It maps to `ImportLicence.IssuedDate`, the issued/date-of-issue value shown in Tradenet 2.0, rather than the similarly named database `LicenceDate` timestamp. The previously added `Online No`, `Online Date`, and `Remark` columns were removed from the visible table and Excel output. The existing filter set and values are unchanged.
 
 ### ImportLicencePendingReport
 
@@ -1099,9 +1111,11 @@ Extra in new (0): _None_
 Title: Import Permit New Report (New Report )
 Old source: `NewLicenceReport.rdlc`
 Old columns (12): `No.`, `Section`, `Licence No`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `Commodity Type`, `HSCode`, `quota`, `auto`
-New columns (12): `No`, `Section`, `Licence No`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `Commodity Type`, `HSCode`, `quota`, `auto`
+New columns (13): `No`, `Section`, `Licence No`, `Licence Date`, `Company Registration No`, `Company Name`, `Company Address`, `Curency`, `Total Value`, `Commodity Type`, `HSCode`, `quota`, `auto`
 Need in new (0): _None_
-Extra in new (0): _None_
+Extra in new (1): `Licence Date`
+
+`Licence Date` is an intentional all-application extension and maps to `ImportPermit.IssuedDate`.
 
 ### ImportPermitVoucherReport
 

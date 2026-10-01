@@ -249,6 +249,7 @@ public static class sp_NewReport
                 SectionName = section.Name,
                 OldLicenceNo = licence.OldExportLicenceNo,
                 LicenceNo = licence.ExportLicenceNo,
+                LicenceDate = licence.IssuedDate,
                 SDate = licence.LastDate == null
                     ? null
                     : (licence.LastDate.Value.Day < 10 ? "0" : string.Empty)
@@ -409,6 +410,7 @@ public static class sp_NewReport
                 SectionName = section.Name,
                 OldLicenceNo = permit.OldExportPermitNo,
                 LicenceNo = permit.ExportPermitNo,
+                LicenceDate = permit.IssuedDate,
                 SDate = permit.LastDate == null
                     ? null
                     : (permit.LastDate.Value.Day < 10 ? "0" : string.Empty)
@@ -484,6 +486,7 @@ public static class sp_NewReport
                 SectionName = section.Name,
                 OldLicenceNo = permit.OldImportPermitNo,
                 LicenceNo = permit.ImportPermitNo,
+                LicenceDate = permit.IssuedDate,
                 SDate = permit.LastDate == null
                     ? null
                     : (permit.LastDate.Value.Day < 10 ? "0" : string.Empty)
@@ -564,6 +567,7 @@ public static class sp_NewReport
                 SectionName = section.Name,
                 OldLicenceNo = licence.OldExportLicenceNo,
                 LicenceNo = licence.ExportLicenceNo,
+                LicenceDate = licence.IssuedDate,
                 SDate = licence.CreatedDate == null
                     ? null
                     : (licence.CreatedDate.Value.Day < 10 ? "0" : string.Empty)
@@ -617,6 +621,7 @@ public static class sp_NewReport
                 SectionName = section.Name,
                 OldLicenceNo = licence.OldExportLicenceNo,
                 LicenceNo = licence.ExportLicenceNo,
+                LicenceDate = licence.IssuedDate,
                 SDate = licence.CreatedDate == null
                     ? null
                     : (licence.CreatedDate.Value.Day < 10 ? "0" : string.Empty)
@@ -701,6 +706,7 @@ public static class sp_NewReport
                 SectionName = section.Name,
                 OldLicenceNo = licence.OldImportLicenceNo,
                 LicenceNo = licence.ImportLicenceNo,
+                LicenceDate = licence.IssuedDate,
                 SDate = licence.CreatedDate == null
                     ? null
                     : (licence.CreatedDate.Value.Day < 10 ? "0" : string.Empty)
@@ -754,6 +760,7 @@ public static class sp_NewReport
                 SectionName = section.Name,
                 OldLicenceNo = licence.OldImportLicenceNo,
                 LicenceNo = licence.ImportLicenceNo,
+                LicenceDate = licence.IssuedDate,
                 SDate = licence.CreatedDate == null
                     ? null
                     : (licence.CreatedDate.Value.Day < 10 ? "0" : string.Empty)
@@ -838,6 +845,7 @@ public static class sp_NewReport
                 SectionName = section.Name,
                 OldLicenceNo = permit.OldExportPermitNo,
                 LicenceNo = permit.ExportPermitNo,
+                LicenceDate = permit.IssuedDate,
                 SDate = permit.CreatedDate == null
                     ? null
                     : (permit.CreatedDate.Value.Day < 10 ? "0" : string.Empty)
@@ -918,6 +926,7 @@ public static class sp_NewReport
                 SectionName = section.Name,
                 OldLicenceNo = permit.OldImportPermitNo,
                 LicenceNo = permit.ImportPermitNo,
+                LicenceDate = permit.IssuedDate,
                 SDate = permit.CreatedDate == null
                     ? null
                     : (permit.CreatedDate.Value.Day < 10 ? "0" : string.Empty)
