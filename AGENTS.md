@@ -37,3 +37,11 @@ New:
 `docs/ReportColumnComparison.md` already tracks column parity for ~134 reports against
 the old RDLC sources. Cross-check / extend it (and verify filters) when handling a
 complaint.
+
+## Branch assignment journal
+
+Keep `docs/BranchWorkLog.md` as the durable record of assignment branches. Whenever
+an assignment branch is completed or work moves back to `main`, add or update an entry
+with the branch name, commit hash, scope, verification, deployment/merge status, and
+important operational notes. Never describe a branch as merged, pushed, or deployed
+unless that action was actually completed and verified.
