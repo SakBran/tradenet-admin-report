@@ -34,6 +34,14 @@ The database procedure must be deployed before the site. Deploying the site alon
 will make seven reports request a column that the old procedure returns as null.
 No table data is inserted, updated, or deleted by this package.
 
+## Deployment status
+
+`dbo.sp_NewReport_pagination` was deployed on 2026-10-02 to
+`tn2db\\PRODUCTION / TradeNetDB` using Windows Authentication. The previous
+definition is stored in `RollbackCaptured.sql`. Post-deployment calls for all
+eight form types returned the complete shared result shape and sample rows with
+non-null `Licence Date` values. The matching site has not been deployed.
+
 ## Rollback
 
 Re-run the procedure definition captured in step 1, then roll back the matching

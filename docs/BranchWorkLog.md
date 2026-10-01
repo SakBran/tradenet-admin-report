@@ -8,8 +8,10 @@ merge/deployment state. Add the newest assignment first.
 - Assignment date: 2026-10-02
 - Base commit: `0a6d8e6`
 - Feature commit: `15b1632` (`feat: add licence date to all new reports`)
-- Status: Completed and committed locally on the feature branch. Not merged into
-  `main`, not pushed, and not deployed.
+- Status: Completed and committed locally on the feature branch. The database
+  procedure was deployed to `tn2db\\PRODUCTION / TradeNetDB` on 2026-10-02 using
+  Windows Authentication. The site was not deployed. The branch is not merged
+  into `main` and not pushed.
 
 ### Scope completed
 
@@ -31,6 +33,9 @@ merge/deployment state. Add the newest assignment first.
 - Frontend production build passed (existing large-chunk warning only).
 - SQL parse-only validation passed against `TradeNetDB` using Windows
   Authentication; no database object or data was changed.
+- Post-deployment execution checks passed for all eight form types over the
+  2018-2026 range: every result shape was complete and every sample row had a
+  non-null `Licence Date`.
 - Read-only schema validation confirmed `IssuedDate` exists on all eight target
   application tables.
 - Static backend projection, deployment-bundle parity, and checksum checks passed.
@@ -41,9 +46,10 @@ merge/deployment state. Add the newest assignment first.
 
 ### Deployment note
 
-Use Windows Authentication for database work. Deploy and verify
-`dbo.sp_NewReport_pagination` first, then deploy the matching site. Neither step
-has been performed from this branch.
+Use Windows Authentication for database work. `dbo.sp_NewReport_pagination` has
+been deployed and verified. The pre-deployment definition is preserved as
+`RollbackCaptured.sql` in the deployment package. The matching site deployment
+still remains to be performed after merge.
 
 ## `feature/import-pending-status-filters`
 
