@@ -39,8 +39,9 @@ merge/deployment state. Add the newest assignment first.
 - Read-only schema validation confirmed `IssuedDate` exists on all eight target
   application tables.
 - Static backend projection, deployment-bundle parity, and checksum checks passed.
-- Backend tests could not run because the machine's installed .NET 8 SDK is
-  incomplete: `C:\Program Files\dotnet\sdk\8.0.302\dotnet.dll` is missing.
+- Installed the complete x64 .NET SDK `8.0.425`, pinned the repository to .NET 8
+  with `global.json`, and successfully rebuilt the backend with that SDK.
+- Focused backend tests passed: 18 passed, 0 failed.
 - Frontend lint could not run because the repository uses ESLint 9 without an
   `eslint.config.js`/`.mjs`/`.cjs` configuration file.
 
