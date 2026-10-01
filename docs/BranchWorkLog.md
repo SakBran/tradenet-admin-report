@@ -3,6 +3,48 @@
 This journal records which assignment was implemented on each branch and its actual
 merge/deployment state. Add the newest assignment first.
 
+## `feature/all-new-reports-licence-date`
+
+- Assignment date: 2026-10-02
+- Base commit: `0a6d8e6`
+- Feature commit: `15b1632` (`feat: add licence date to all new reports`)
+- Status: Completed and committed locally on the feature branch. Not merged into
+  `main`, not pushed, and not deployed.
+
+### Scope completed
+
+- Defined **all application** as Import/Export/Border Import/Border Export, each
+  covering both Licence and Permit (eight report families total).
+- Added `Licence Date` immediately after `Licence No` in all eight New Report
+  (New Report) tables and Excel exports.
+- Mapped the visible value to each application table's `IssuedDate` field.
+- Removed `Online No`, `Online Date`, and `Remark` from the visible Import Licence
+  New Report table and Excel export, leaving only `Licence Date` from that field set.
+- Kept the shared backend result fields for compatibility with the already deployed
+  result shape.
+- Added a database-first deployment package at
+  `StoredProcedureMigrations/Deployments/Done For Fix/2026-10-02_AllNewReportsLicenceDate`.
+
+### Verification completed
+
+- Focused frontend and Excel fixture tests: 25 passed.
+- Frontend production build passed (existing large-chunk warning only).
+- SQL parse-only validation passed against `TradeNetDB` using Windows
+  Authentication; no database object or data was changed.
+- Read-only schema validation confirmed `IssuedDate` exists on all eight target
+  application tables.
+- Static backend projection, deployment-bundle parity, and checksum checks passed.
+- Backend tests could not run because the machine's installed .NET 8 SDK is
+  incomplete: `C:\Program Files\dotnet\sdk\8.0.302\dotnet.dll` is missing.
+- Frontend lint could not run because the repository uses ESLint 9 without an
+  `eslint.config.js`/`.mjs`/`.cjs` configuration file.
+
+### Deployment note
+
+Use Windows Authentication for database work. Deploy and verify
+`dbo.sp_NewReport_pagination` first, then deploy the matching site. Neither step
+has been performed from this branch.
+
 ## `feature/import-pending-status-filters`
 
 - Assignment date: 2026-09-30
