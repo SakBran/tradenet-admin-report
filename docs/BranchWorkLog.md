@@ -3,6 +3,54 @@
 This journal records which assignment was implemented on each branch and its actual
 merge/deployment state. Add the newest assignment first.
 
+## `feature/all-pending-reports-licence-date`
+
+- Assignment date: 2026-10-02
+- Base branch: `feature/all-new-reports-licence-date`
+- Base commit: `423adde`
+- Feature commit: `08e681c` (`feat: add licence date to pending reports`)
+- Status: Completed and committed locally on the feature branch. The stored
+  procedure and site are not deployed. The branch is not merged into `main` and
+  not pushed.
+
+### Scope completed
+
+- Confirmed there are four Pending report menus: Import Licence Pending Report,
+  Border Import Licence Pending Report, and their two Detail Report (Pending)
+  counterparts.
+- Confirmed both Detail Report (Pending) menus already displayed `Licence Date`.
+- Added `Licence Date` after `Application Date` to the two plain Pending report
+  tables and Excel exports.
+- Mapped the value to the nullable `IssuedDate` field for Import Licence, Export
+  Licence, and Border Import Licence LINQ branches and for both stored-procedure
+  branches.
+- Incremented the two changed Excel export format versions to invalidate files
+  cached with the old column layout.
+- Added a database-first deployment package at
+  `StoredProcedureMigrations/Deployments/Done For Fix/2026-10-02_PendingReportsLicenceDate`.
+
+### Verification completed
+
+- Focused Pending config tests: 6 passed.
+- Focused backend behavior tests: 7 passed.
+- Pending/Excel integration contract tests: 1,321 passed.
+- Frontend production build passed (existing large-chunk warning only).
+- Backend build passed with 0 errors.
+- SQL Server parse-only validation passed against `TradeNetDB` using Windows
+  Authentication; no database object or data was changed.
+- Repository-wide frontend tests: 1,849 passed and 7 unrelated parity tests failed.
+- Repository-wide backend tests: 2,550 passed and 350 unrelated baseline tests
+  failed, primarily because `TradeNetDBTest` or unrelated stored procedures are
+  unavailable and because older config-source extractors do not parse the current
+  configuration shape.
+
+### Deployment note
+
+Use Windows Authentication for database work. Deploy
+`dbo.sp_PendingReport_pagination` from this branch before deploying the site, then
+verify all four Pending menus in the grid and Excel. This branch is based on and
+therefore includes the unmerged `feature/all-new-reports-licence-date` work.
+
 ## `feature/all-new-reports-licence-date`
 
 - Assignment date: 2026-10-02
