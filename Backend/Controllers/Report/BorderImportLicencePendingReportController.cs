@@ -17,6 +17,7 @@ namespace Backend.Controllers.Report
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    [ExcelFormatVersion(2)]
     public class BorderImportLicencePendingReportController : ControllerBase, IStreamingExcelReport
     {
         private const string ReportKey = "BorderImportLicencePendingReport";

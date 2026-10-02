@@ -1012,7 +1012,7 @@
       "isBespokePage": false,
       "isComposite": false,
       "hasExcelButton": true,
-      "columnCount": 12
+      "columnCount": 13
     },
     {
       "configKey": "BorderImportLicenceTotalValueLicencesReport",
@@ -2392,7 +2392,7 @@
       "isBespokePage": false,
       "isComposite": false,
       "hasExcelButton": true,
-      "columnCount": 12
+      "columnCount": 13
     },
     {
       "configKey": "ImportLicenceTotalValueLicencesReport",

@@ -21,6 +21,7 @@ public sealed class sp_PendingReportResult
     public string Status { get; set; } = null!;
     public string ApplyType { get; set; } = null!;
     public DateTime ApplicationDate { get; set; }
+    public DateTime? LicenceDate { get; set; }
     public string ApplicationNo { get; set; } = null!;
     public string SectionCode { get; set; } = null!;
     public string SectionName { get; set; } = null!;
@@ -38,6 +39,7 @@ public sealed class sp_PendingReportRow
     public string? Status { get; set; }
     public string? ApplyType { get; set; }
     public DateTime? ApplicationDate { get; set; }
+    public DateTime? LicenceDate { get; set; }
     public string? ApplicationNo { get; set; }
     public string? SectionCode { get; set; }
     public string? SectionName { get; set; }
@@ -55,6 +57,7 @@ public sealed class sp_PendingReportRow
         Status = Status ?? string.Empty,
         ApplyType = ApplyType ?? string.Empty,
         ApplicationDate = ApplicationDate ?? default,
+        LicenceDate = LicenceDate,
         ApplicationNo = ApplicationNo ?? string.Empty,
         SectionCode = SectionCode ?? string.Empty,
         SectionName = SectionName ?? string.Empty,
@@ -205,6 +208,7 @@ public static class sp_PendingReport
                  Status = licence.Status,
                  ApplyType = licence.ApplyType,
                  ApplicationDate = licence.ApplicationDate,
+                 LicenceDate = licence.IssuedDate,
                  ApplicationNo = licence.ApplicationNo,
                  SectionCode = section.Code,
                  SectionName = section.Name,
@@ -236,6 +240,7 @@ public static class sp_PendingReport
                 Status = licence.Status,
                 ApplyType = licence.ApplyType,
                 ApplicationDate = licence.ApplicationDate,
+                LicenceDate = licence.IssuedDate,
                 ApplicationNo = licence.ApplicationNo,
                 SectionCode = section.Code,
                 SectionName = section.Name,
@@ -295,6 +300,7 @@ public static class sp_PendingReport
                 Status = licence.Status,
                 ApplyType = licence.ApplyType,
                 ApplicationDate = licence.ApplicationDate,
+                LicenceDate = licence.IssuedDate,
                 ApplicationNo = licence.ApplicationNo,
                 SectionCode = section.Code,
                 SectionName = section.Name,
