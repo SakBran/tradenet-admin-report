@@ -27,6 +27,14 @@ The procedure must be deployed before the site. The new backend maps a nullable
 `LicenceDate` result column, so rows without an issued date remain blank. No table
 data is inserted, updated, or deleted by this package.
 
+## Deployment status
+
+`dbo.sp_PendingReport_pagination` was deployed on 2026-10-02 to
+`tn2db\\PRODUCTION / TradeNetDB` using Windows Authentication. The previous
+definition is stored in `RollbackCaptured.sql`. Definition checks and execution
+checks for both Import Licence and Border Import Licence passed. The matching site
+has not been deployed; local runtime testing remains in progress.
+
 ## Rollback
 
 Run the definition captured in step 1, then roll back the matching site deployment.

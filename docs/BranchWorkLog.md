@@ -10,8 +10,9 @@ merge/deployment state. Add the newest assignment first.
 - Base commit: `423adde`
 - Feature commit: `08e681c` (`feat: add licence date to pending reports`)
 - Status: Completed and committed locally on the feature branch. The stored
-  procedure and site are not deployed. The branch is not merged into `main` and
-  not pushed.
+  procedure was deployed to `tn2db\\PRODUCTION / TradeNetDB` on 2026-10-02 using
+  Windows Authentication. The site is not deployed. The branch is not merged into
+  `main` and not pushed.
 
 ### Scope completed
 
@@ -38,6 +39,10 @@ merge/deployment state. Add the newest assignment first.
 - Backend build passed with 0 errors.
 - SQL Server parse-only validation passed against `TradeNetDB` using Windows
   Authentication; no database object or data was changed.
+- Post-deployment definition and execution checks passed for both Import Licence
+  and Border Import Licence procedure branches. All current Pending/Reject rows
+  have a null `IssuedDate`, so their visible `Licence Date` cells are expected to
+  be blank until an issued date exists.
 - Repository-wide frontend tests: 1,849 passed and 7 unrelated parity tests failed.
 - Repository-wide backend tests: 2,550 passed and 350 unrelated baseline tests
   failed, primarily because `TradeNetDBTest` or unrelated stored procedures are
@@ -46,10 +51,11 @@ merge/deployment state. Add the newest assignment first.
 
 ### Deployment note
 
-Use Windows Authentication for database work. Deploy
-`dbo.sp_PendingReport_pagination` from this branch before deploying the site, then
-verify all four Pending menus in the grid and Excel. This branch is based on and
-therefore includes the unmerged `feature/all-new-reports-licence-date` work.
+Use Windows Authentication for database work. `dbo.sp_PendingReport_pagination`
+has been deployed and verified, and its previous definition is preserved as
+`RollbackCaptured.sql`. Deploy the site next, then verify all four Pending menus
+in the grid and Excel. This branch is based on and therefore includes the unmerged
+`feature/all-new-reports-licence-date` work.
 
 ## `feature/all-new-reports-licence-date`
 
