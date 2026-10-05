@@ -3,6 +3,51 @@
 This journal records which assignment was implemented on each branch and its actual
 merge/deployment state. Add the newest assignment first.
 
+## `feature/role-scoped-report-menus`
+
+- Assignment date: 2026-10-05
+- Base branch: `feature/all-pending-reports-licence-date`
+- Base commit: `9de75d7`
+- Feature commit: `67401fe` (`feat: scope report menus and APIs by user assignment`)
+- Status: Completed and committed locally. Not merged into `main`, not pushed,
+  and not deployed. No database object or data was changed.
+
+### Scope completed
+
+- Resolve the current login user's active TradeNet account and `UserDetail`
+  `Type`/`SubType` assignments. Super Administrator sees all reports; Report,
+  Check User, and Approve User see only assigned report families. Account User
+  retains Payment reports; other roles receive no general report access.
+- Apply the same family policy to the sidebar, direct report routes, and all
+  report controller APIs (including Excel requests). Advance Search follows
+  the assigned application families. Data Import and Activity Log are admin-only.
+- Keep Home and Logout available to signed-in users. Non-admin Home no longer
+  renders the unrestricted eight-family report summary.
+- Show non-admin users only their own saved exports for currently permitted
+  reports; prevent cross-user reuse of queued/completed export jobs. Admins can
+  see every export.
+- Authorization uses current database assignments on each request. It does
+  not filter report rows by `UserDetail.Section`; that was outside this
+  menu-family assignment and needs a separate data-scope decision if required.
+
+### Verification completed
+
+- Focused backend policy/export tests: 7 passed. An ownership-check mutation
+  caused the expected test failure, then was restored and the suite passed.
+- Frontend report-menu tests: 14 passed.
+- Frontend production build passed with the pre-existing large-chunk warning.
+- Backend build passed through the focused test run. `git diff --check` passed.
+- No live login-role or browser walkthrough was performed; verify with one
+  Super Administrator and assigned/unassigned Report, Check, and Approve users
+  before deployment.
+
+### Deployment note
+
+This branch includes its unmerged parent feature work; merge in dependency order
+or merge this branch as the cumulative change. It needs a site deployment only
+for this assignment, not a new stored procedure. Database connections in this
+environment use Windows Authentication.
+
 ## `feature/all-pending-reports-licence-date`
 
 - Assignment date: 2026-10-02
