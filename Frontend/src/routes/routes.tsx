@@ -14,7 +14,7 @@ import {
   WelcomePage,
 } from '../pages';
 import { DashboardLayout } from '../layouts';
-import React, { ReactNode, useEffect } from 'react';
+import React, { ReactNode, useContext, useEffect } from 'react';
 import ActivityLogList from '../pages/ActivityLog/ActivityLogList.tsx';
 import ProtectedRoute from './ProtectedRoute.tsx';
 import TimelinePage from '../pages/Timeline/Timeline.tsx';
@@ -22,6 +22,15 @@ import Certificate from '../pages/certificate/Certificate.tsx';
 import Test from '../pages/Test.tsx';
 import HowToUsePage from '../pages/Guide/HowToUse.tsx';
 import { reportRoutes } from '../Report/reportRoutes.tsx';
+import AuthContext from '../context/AuthContext.tsx';
+import AccessGate from './AccessGate.tsx';
+
+const HomePage = () => {
+  const auth = useContext(AuthContext);
+  if (!auth?.access) return <div>Loading permissions...</div>;
+  if (auth.access.isAdmin) return <HowToUsePage />;
+  return <div>Welcome to TradeNet reports. Choose an assigned report from the menu, or open your Exports.</div>;
+};
 
 // Custom scroll restoration function
 export const ScrollToTop: React.FC = () => {
@@ -108,7 +117,7 @@ const router = createBrowserRouter([
           {
             index: true,
             path: 'default',
-            element: <HowToUsePage />,
+            element: <HomePage />,
           },
         ],
       },
@@ -116,9 +125,11 @@ const router = createBrowserRouter([
       {
         path: `/ActivityLog`,
         element: (
-          <PageWrapper>
-            <DashboardLayout />
-          </PageWrapper>
+          <AccessGate adminOnly>
+            <PageWrapper>
+              <DashboardLayout />
+            </PageWrapper>
+          </AccessGate>
         ),
         errorElement: <ErrorPage />,
         children: [
@@ -137,7 +148,10 @@ const router = createBrowserRouter([
           </PageWrapper>
         ),
         errorElement: <ErrorPage />,
-        children: reportRoutes,
+        children: reportRoutes.map((route) => ({
+          ...route,
+          element: <AccessGate reportKey={route.path}>{route.element}</AccessGate>,
+        })),
       },
     ],
   },

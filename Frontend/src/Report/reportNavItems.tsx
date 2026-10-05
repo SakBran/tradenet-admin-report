@@ -276,3 +276,37 @@ export const reportNavItems: Required<MenuProps>['items'] = [
     .filter((config) => !getReportCategoryKey(config.controllerName))
     .map(createReportItem),
 ];
+
+export type ReportAccess = {
+  isAdmin: boolean;
+  categories: string[];
+};
+
+export const canAccessReportRoute = (
+  access: ReportAccess,
+  controllerName: string
+): boolean => {
+  if (access.isAdmin) return true;
+  if (controllerName === 'Exports') return true;
+  if (controllerName.endsWith('DataImport')) return false;
+
+  const familyName = controllerName.startsWith('AdvanceSearch')
+    ? controllerName.slice('AdvanceSearch'.length)
+    : controllerName;
+  const category = getReportCategoryKey(familyName);
+  return category !== undefined && access.categories.includes(category);
+};
+
+export const getReportNavItems = (
+  access: ReportAccess
+): Required<MenuProps>['items'] =>
+  reportNavItems.flatMap((item) => {
+    if (!item) return [];
+    if ('children' in item && Array.isArray(item.children)) {
+      const children = item.children.filter(
+        (child) => child && canAccessReportRoute(access, String(child.key))
+      );
+      return children.length ? [{ ...item, children }] : [];
+    }
+    return canAccessReportRoute(access, String(item.key)) ? [item] : [];
+  });

@@ -1,5 +1,6 @@
-import React, { createContext, useState, ReactNode } from 'react';
+import React, { createContext, useEffect, useState, ReactNode } from 'react';
 import axiosInstance from '../services/AxiosInstance';
+import type { ReportAccess } from '../Report/reportNavItems';
 
 interface User {
   id: string;
@@ -9,6 +10,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
+  access: ReportAccess | null;
   login: (name: string, password: string) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
@@ -32,6 +34,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [token, setToken] = useState<string | null>(() =>
     localStorage.getItem('token')
   );
+  const [access, setAccess] = useState<ReportAccess | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    let current = true;
+    setAccess(null);
+    axiosInstance.get<ReportAccess>('Auth/permissions')
+      .then((response) => {
+        if (current) setAccess(response.data);
+      })
+      .catch(() => {
+        if (!current) return;
+        localStorage.removeItem('token');
+        localStorage.removeItem('userid');
+        localStorage.removeItem('permission');
+        setToken(null);
+        setUser(null);
+        setAccess(null);
+      });
+    return () => { current = false; };
+  }, [token]);
 
   const login = async (name: string, password: string): Promise<boolean> => {
     // Replace with real API call
@@ -70,11 +93,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     localStorage.removeItem('permission');
     setToken(null);
     setUser(null);
+    setAccess(null);
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, token, login, logout, isAuthenticated: !!user }}
+      value={{ user, token, access, login, logout, isAuthenticated: !!user && !!token }}
     >
       {children}
     </AuthContext.Provider>

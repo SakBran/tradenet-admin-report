@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { reportConfigs } from './config/reportConfigs';
-import { reportNavItems } from './reportNavItems';
+import { canAccessReportRoute, getReportNavItems, reportNavItems } from './reportNavItems';
 
 type NavItems = NonNullable<typeof reportNavItems>;
 
@@ -35,6 +35,28 @@ const collectLeafKeys = (items: NavItems): string[] =>
   });
 
 describe('report sidebar menu', () => {
+  it('shows only assigned report families and safe shared entries', () => {
+    const access = { isAdmin: false, categories: ['report-border-import-licence'] };
+    const keys = collectMenuKeys(getReportNavItems(access));
+
+    expect(keys).toContain('Exports');
+    expect(keys).toContain('BorderImportLicencePendingReport');
+    expect(keys).toContain('AdvanceSearchBorderImportLicence');
+    expect(keys).not.toContain('ImportLicencePendingReport');
+    expect(keys).not.toContain('AdvanceSearchImportLicence');
+    expect(keys).not.toContain('DataImport');
+    expect(canAccessReportRoute(access, 'BorderImportLicencePendingReport')).toBe(true);
+    expect(canAccessReportRoute(access, 'ImportLicencePendingReport')).toBe(false);
+    expect(canAccessReportRoute(access, 'ImportLicenceDataImport')).toBe(false);
+  });
+
+  it('keeps admin access to every report and data import', () => {
+    const access = { isAdmin: true, categories: [] };
+    const keys = collectMenuKeys(getReportNavItems(access));
+    expect(keys).toContain('DataImport');
+    expect(canAccessReportRoute(access, 'MemberRegistrationReport')).toBe(true);
+  });
+
   // createReportItem keys the menu row off controllerName, and SideNav marks every row
   // whose key matches the current route as selected. Two leaves sharing a key therefore
   // render two identical, both-highlighted rows pointing at the same page — which is what

@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using API.DBContext;
 using API.Model.ExcelExport;
 using API.Service.ExcelExport;
+using API.Service.Reports;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -13,8 +15,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Backend.Controllers
 {
     /// <summary>
-    /// The shared "Exports drive": list every generated export, poll status,
-    /// download (auth-gated, verifies the file is on disk first), and delete.
+    /// The Exports drive: admins see every job; other users see only their own
+    /// jobs for currently assigned reports. Downloads verify the file is on disk.
     /// Enqueueing happens on each report controller's own [HttpPost("Excel")].
     /// </summary>
     [Authorize]
@@ -25,21 +27,29 @@ namespace Backend.Controllers
         private readonly ApplicationDbContext _db;
         private readonly IExcelExportFileStore _fileStore;
         private readonly TradeNetDbContext _tradeNet;
+        private readonly ReportAccessService _reportAccess;
 
-        public ExcelExportController(ApplicationDbContext db, IExcelExportFileStore fileStore, TradeNetDbContext tradeNet)
+        public ExcelExportController(ApplicationDbContext db, IExcelExportFileStore fileStore, TradeNetDbContext tradeNet, ReportAccessService reportAccess)
         {
             _db = db;
             _fileStore = fileStore;
             _tradeNet = tradeNet;
+            _reportAccess = reportAccess;
         }
 
-        /// <summary>All exports, newest first (shared visibility).</summary>
+        /// <summary>Visible exports, newest first.</summary>
         [HttpGet("jobs")]
         public async Task<ActionResult> GetJobs()
         {
-            var jobs = await _db.ExcelExportJobs
+            var access = await _reportAccess.GetAsync(User);
+            if (access == null) return Forbid();
+            var userId = User.FindFirstValue(ClaimTypes.Name);
+            var query = _db.ExcelExportJobs.AsNoTracking();
+            if (!access.IsAdmin) query = query.Where(j => j.RequestedByUserName == userId);
+            var jobs = await query
                 .OrderByDescending(j => j.CreatedAtUtc)
                 .ToListAsync();
+            jobs = jobs.Where(j => CanAccessJob(access, userId, j)).ToList();
 
             var names = await ResolveUserNamesAsync(jobs.Select(j => j.RequestedByUserName));
             return Ok(jobs.Select(j => ToDto(j, names)));
@@ -49,8 +59,10 @@ namespace Backend.Controllers
         [HttpGet("{id:guid}")]
         public async Task<ActionResult> GetJob(Guid id)
         {
+            var access = await _reportAccess.GetAsync(User);
+            if (access == null) return Forbid();
             var job = await _db.ExcelExportJobs.FirstOrDefaultAsync(j => j.Id == id);
-            if (job == null)
+            if (job == null || !CanAccessJob(access, User.FindFirstValue(ClaimTypes.Name), job))
             {
                 return NotFound();
             }
@@ -62,8 +74,10 @@ namespace Backend.Controllers
         [HttpGet("{id:guid}/download")]
         public async Task<IActionResult> Download(Guid id)
         {
+            var access = await _reportAccess.GetAsync(User);
+            if (access == null) return Forbid();
             var job = await _db.ExcelExportJobs.FirstOrDefaultAsync(j => j.Id == id);
-            if (job == null)
+            if (job == null || !CanAccessJob(access, User.FindFirstValue(ClaimTypes.Name), job))
             {
                 return NotFound();
             }
@@ -86,8 +100,10 @@ namespace Backend.Controllers
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> Delete(Guid id)
         {
+            var access = await _reportAccess.GetAsync(User);
+            if (access == null) return Forbid();
             var job = await _db.ExcelExportJobs.FirstOrDefaultAsync(j => j.Id == id);
-            if (job == null)
+            if (job == null || !CanAccessJob(access, User.FindFirstValue(ClaimTypes.Name), job))
             {
                 return NotFound();
             }
@@ -98,6 +114,12 @@ namespace Backend.Controllers
             await _db.SaveChangesAsync();
             return NoContent();
         }
+
+        public static bool CanAccessJob(ReportAccessPolicy access, string? userId, ExcelExportJob job) =>
+            access.IsAdmin ||
+            (!string.IsNullOrEmpty(userId) &&
+             job.RequestedByUserName == userId &&
+             access.CanAccess(job.ReportKey));
 
         /// <summary>
         /// The four wire statuses. <see cref="ExcelExportJobStatus.QueuedV2"/> and

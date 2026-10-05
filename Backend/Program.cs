@@ -50,7 +50,9 @@ public class Program
     private static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        builder.Services.AddControllers();
+        builder.Services.AddControllers(options => options.Filters.Add<API.Service.Reports.ReportAccessFilter>());
+        builder.Services.AddScoped<API.Service.Reports.ReportAccessService>();
+        builder.Services.AddScoped<API.Service.Reports.ReportAccessFilter>();
 
         #region Cors
         // One default policy, registered here instead of being built inline in UseCors, so

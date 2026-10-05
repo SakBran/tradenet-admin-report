@@ -6,7 +6,7 @@ import React, {
   useState,
 } from 'react';
 import { ConfigProvider, Layout, Menu, MenuProps, SiderProps } from 'antd';
-import { HistoryOutlined } from '@ant-design/icons';
+import { HistoryOutlined, HomeOutlined } from '@ant-design/icons';
 import { Logo } from '../../components';
 import { Link, useLocation } from 'react-router-dom';
 import { PATH_DASHBOARD } from '../../constants';
@@ -14,8 +14,8 @@ import { COLOR } from '../../App.tsx';
 import { useMediaQuery } from 'react-responsive';
 import {
   getReportCategoryKey,
+  getReportNavItems,
   reportCategoryKeys,
-  reportNavItems,
 } from '../../Report/reportNavItems.tsx';
 import AuthContext from '../../context/AuthContext.tsx';
 import './SideNav.css';
@@ -38,18 +38,26 @@ const SideNav = ({ setCollapse, className, ...others }: SideNavProps) => {
 
   // The activity-log view is admin-only; show its menu entry just for admins.
   const items = useMemo<MenuProps['items']>(() => {
-    if (auth?.user?.permission === 'Admin') {
+    if (!auth?.access) return [];
+    const permittedReports = getReportNavItems(auth.access);
+    const home = {
+      key: 'default',
+      icon: <HomeOutlined />,
+      label: <Link to={PATH_DASHBOARD.default}>Home</Link>,
+    };
+    if (auth.access.isAdmin) {
       return [
+        home,
         {
           key: 'activity-log',
           icon: <HistoryOutlined />,
           label: <Link to="/ActivityLog/List">Activity Log</Link>,
         },
-        ...reportNavItems,
+        ...permittedReports,
       ];
     }
-    return reportNavItems;
-  }, [auth?.user?.permission]);
+    return [home, ...permittedReports];
+  }, [auth?.access]);
 
   const onClick: MenuProps['onClick'] = (e) => {
     console.log('click ', e);

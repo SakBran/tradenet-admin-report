@@ -48,12 +48,7 @@ namespace API.Service
                 return null;
             }
 
-            var userRights = await _tradeNetDb.UserDetails
-                .AsNoTracking()
-                .Where(x => x.UserId == tempUser.Id)
-                .ToListAsync();
-
-            var permission = GetPermission(tempUser, userRights);
+            var permission = GetPermission(tempUser);
 
             var tokenHandler = new JwtSecurityTokenHandler();
             var tokenKey = Encoding.UTF8.GetBytes(iconfiguration["JWT:Key"] ?? "");
@@ -151,13 +146,9 @@ namespace API.Service
 
 
 
-        private static string GetPermission(API.Model.TradeNet.User user, IReadOnlyCollection<UserDetail> userRights)
+        private static string GetPermission(API.Model.TradeNet.User user)
         {
-            if (string.Equals(user.UserType, "Admin", StringComparison.OrdinalIgnoreCase) ||
-                userRights.Any(x =>
-                    string.Equals(x.Type, "Admin", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(x.SubType, "Admin", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(x.Section, "Admin", StringComparison.OrdinalIgnoreCase)))
+            if (string.Equals(user.UserType, "Super Administrator", StringComparison.OrdinalIgnoreCase))
             {
                 return "Admin";
             }

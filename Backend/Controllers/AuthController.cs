@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using API.Interface;
 using API.Model;
+using API.Service.Reports;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -15,9 +16,20 @@ namespace API.Controllers
     {
 
         private readonly IJWTManagerService _jWTManager;
-        public AuthController(IJWTManagerService jWTManager)
+        private readonly ReportAccessService _reportAccess;
+        public AuthController(IJWTManagerService jWTManager, ReportAccessService reportAccess)
         {
             this._jWTManager = jWTManager;
+            _reportAccess = reportAccess;
+        }
+
+        [Authorize]
+        [HttpGet("permissions")]
+        public async Task<IActionResult> Permissions()
+        {
+            var access = await _reportAccess.GetAsync(User);
+            if (access == null) return Forbid();
+            return Ok(new { isAdmin = access.IsAdmin, categories = access.Categories });
         }
 
         [AllowAnonymous]

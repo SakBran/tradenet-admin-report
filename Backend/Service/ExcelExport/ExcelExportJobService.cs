@@ -74,6 +74,7 @@ namespace API.Service.ExcelExport
             //    instead of reporting "already generating".
             var inFlight = await _db.ExcelExportJobs
                 .Where(j => j.FilterHash == filterHash
+                    && j.RequestedByUserName == requestedByUserName
                     && (j.Status == ExcelExportJobStatus.QueuedV2
                         || j.Status == ExcelExportJobStatus.ProcessingV2
                         || j.Status == ExcelExportJobStatus.Queued
@@ -98,6 +99,7 @@ namespace API.Service.ExcelExport
             {
                 var completed = await _db.ExcelExportJobs
                     .Where(j => j.FilterHash == filterHash
+                        && j.RequestedByUserName == requestedByUserName
                         && j.Status == ExcelExportJobStatus.Completed
                         && j.ExpiresAtUtc > now)
                     .OrderByDescending(j => j.CompletedAtUtc)

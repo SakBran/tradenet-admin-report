@@ -145,7 +145,7 @@ const columns: BasicTableColumn<AnyObject>[] = [
 const ActivityLogList = () => {
   const [form] = Form.useForm<FormValues>();
   const auth = useContext(AuthContext);
-  const isAdmin = auth?.user?.permission === 'Admin';
+  const isAdmin = auth?.access?.isAdmin === true;
 
   const initialValues = useMemo<FormValues>(
     () => ({

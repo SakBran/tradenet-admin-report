@@ -22,15 +22,18 @@ namespace API.Controllers
         private readonly IActivityLogQueue _queue;
         private readonly ApplicationDbContext _db;
         private readonly ActivityLogOptions _options;
+        private readonly ReportAccessService _reportAccess;
 
         public ActivityLogController(
             IActivityLogQueue queue,
             ApplicationDbContext db,
-            IOptions<ActivityLogOptions> options)
+            IOptions<ActivityLogOptions> options,
+            ReportAccessService reportAccess)
         {
             _queue = queue;
             _db = db;
             _options = options.Value;
+            _reportAccess = reportAccess;
         }
 
         /// <summary>
@@ -78,9 +81,11 @@ namespace API.Controllers
         /// <see cref="ApiResult{T}"/> the grid consumes, so it slots straight into BasicTable.
         /// </summary>
         [HttpPost("search")]
-        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ApiResult<ActivityLog>>> Search([FromBody] ActivityLogSearchRequest request)
         {
+            var access = await _reportAccess.GetAsync(User);
+            if (access?.IsAdmin != true) return Forbid();
+
             request ??= new ActivityLogSearchRequest();
 
             var query = _db.ActivityLogs.AsNoTracking();
