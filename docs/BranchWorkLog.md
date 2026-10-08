@@ -11,7 +11,8 @@ merge/deployment state. Add the newest assignment first.
 - Feature commit: `67401fe` (`feat: scope report menus and APIs by user assignment`)
 - Status: Completed and fast-forward merged into local `main` on 2026-10-08
   through branch tip `f12101e` (no conflicts). The feature branch is present
-  on `origin` at that tip; local `main` has not been pushed or deployed. No
+  on `origin` at that tip; `main` was pushed to `origin/main` on 2026-10-08
+  but the site has not been deployed. No
   database object or data was changed for this assignment.
 
 ### Scope completed
@@ -63,7 +64,8 @@ walkthrough remains outstanding before deployment.
   included in local `main` through the 2026-10-08 fast-forward of
   `feature/role-scoped-report-menus` at `f12101e`. The stored procedure was
   deployed to `tn2db\\PRODUCTION / TradeNetDB` on 2026-10-02 using Windows
-  Authentication. The site is not deployed, and local `main` has not been pushed.
+  Authentication. The site is not deployed; `main` was pushed to `origin/main`
+  on 2026-10-08.
 
 ### Scope completed
 
@@ -117,7 +119,8 @@ in the grid and Excel. This branch is based on and therefore includes the
   included in local `main` through the 2026-10-08 fast-forward of
   `feature/role-scoped-report-menus` at `f12101e`. The database procedure was
   deployed to `tn2db\\PRODUCTION / TradeNetDB` on 2026-10-02 using Windows
-  Authentication. The site was not deployed, and local `main` has not been pushed.
+  Authentication. The site was not deployed; `main` was pushed to `origin/main`
+  on 2026-10-08.
 
 ### Scope completed
 
