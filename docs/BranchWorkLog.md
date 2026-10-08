@@ -9,8 +9,10 @@ merge/deployment state. Add the newest assignment first.
 - Base branch: `feature/all-pending-reports-licence-date`
 - Base commit: `9de75d7`
 - Feature commit: `67401fe` (`feat: scope report menus and APIs by user assignment`)
-- Status: Completed and committed locally. Not merged into `main`, not pushed,
-  and not deployed. No database object or data was changed.
+- Status: Completed and fast-forward merged into local `main` on 2026-10-08
+  through branch tip `f12101e` (no conflicts). The feature branch is present
+  on `origin` at that tip; local `main` has not been pushed or deployed. No
+  database object or data was changed for this assignment.
 
 ### Scope completed
 
@@ -37,16 +39,19 @@ merge/deployment state. Add the newest assignment first.
 - Frontend report-menu tests: 14 passed.
 - Frontend production build passed with the pre-existing large-chunk warning.
 - Backend build passed through the focused test run. `git diff --check` passed.
+- Before the 2026-10-08 merge, focused backend checks passed 14/14 and
+  frontend menu/New/Pending report checks passed 36/36.
 - No live login-role or browser walkthrough was performed; verify with one
   Super Administrator and assigned/unassigned Report, Check, and Approve users
   before deployment.
 
 ### Deployment note
 
-This branch includes its unmerged parent feature work; merge in dependency order
-or merge this branch as the cumulative change. It needs a site deployment only
-for this assignment, not a new stored procedure. Database connections in this
-environment use Windows Authentication.
+This branch brought both parent feature assignments into local `main` as a
+cumulative fast-forward merge. It needs a site deployment only for this
+assignment, not a new stored procedure. Database connections in this
+environment use Windows Authentication. A live role-based login/browser
+walkthrough remains outstanding before deployment.
 
 ## `feature/all-pending-reports-licence-date`
 
@@ -54,10 +59,11 @@ environment use Windows Authentication.
 - Base branch: `feature/all-new-reports-licence-date`
 - Base commit: `423adde`
 - Feature commit: `08e681c` (`feat: add licence date to pending reports`)
-- Status: Completed and committed locally on the feature branch. The stored
-  procedure was deployed to `tn2db\\PRODUCTION / TradeNetDB` on 2026-10-02 using
-  Windows Authentication. The site is not deployed. The branch is not merged into
-  `main` and not pushed.
+- Status: Completed and committed locally on the feature branch. Its work was
+  included in local `main` through the 2026-10-08 fast-forward of
+  `feature/role-scoped-report-menus` at `f12101e`. The stored procedure was
+  deployed to `tn2db\\PRODUCTION / TradeNetDB` on 2026-10-02 using Windows
+  Authentication. The site is not deployed, and local `main` has not been pushed.
 
 ### Scope completed
 
@@ -99,18 +105,19 @@ environment use Windows Authentication.
 Use Windows Authentication for database work. `dbo.sp_PendingReport_pagination`
 has been deployed and verified, and its previous definition is preserved as
 `RollbackCaptured.sql`. Deploy the site next, then verify all four Pending menus
-in the grid and Excel. This branch is based on and therefore includes the unmerged
-`feature/all-new-reports-licence-date` work.
+in the grid and Excel. This branch is based on and therefore includes the
+`feature/all-new-reports-licence-date` work now present in local `main`.
 
 ## `feature/all-new-reports-licence-date`
 
 - Assignment date: 2026-10-02
 - Base commit: `0a6d8e6`
 - Feature commit: `15b1632` (`feat: add licence date to all new reports`)
-- Status: Completed and committed locally on the feature branch. The database
-  procedure was deployed to `tn2db\\PRODUCTION / TradeNetDB` on 2026-10-02 using
-  Windows Authentication. The site was not deployed. The branch is not merged
-  into `main` and not pushed.
+- Status: Completed and committed locally on the feature branch. Its work was
+  included in local `main` through the 2026-10-08 fast-forward of
+  `feature/role-scoped-report-menus` at `f12101e`. The database procedure was
+  deployed to `tn2db\\PRODUCTION / TradeNetDB` on 2026-10-02 using Windows
+  Authentication. The site was not deployed, and local `main` has not been pushed.
 
 ### Scope completed
 
