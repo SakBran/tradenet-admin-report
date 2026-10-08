@@ -12,8 +12,8 @@ merge/deployment state. Add the newest assignment first.
 - Status: Completed and fast-forward merged into local `main` on 2026-10-08
   through branch tip `f12101e` (no conflicts). The feature branch is present
   on `origin` at that tip; `main` was pushed to `origin/main` on 2026-10-08
-  but the site has not been deployed. No
-  database object or data was changed for this assignment.
+  and site commit `5ef1de9` was deployed on 2026-10-08. No database object
+  or data was changed for this assignment.
 
 ### Scope completed
 
@@ -44,15 +44,23 @@ merge/deployment state. Add the newest assignment first.
   frontend menu/New/Pending report checks passed 36/36.
 - No live login-role or browser walkthrough was performed; verify with one
   Super Administrator and assigned/unassigned Report, Check, and Approve users
-  before deployment.
+  after deployment.
+- The deployed API DLL reports `1.0.0+5ef1de9`; the public frontend index and
+  bundle match the built files. The API health endpoint returned 200 on eight
+  public probes, and the unauthenticated permissions endpoint returned 401.
 
 ### Deployment note
 
 This branch brought both parent feature assignments into local `main` as a
-cumulative fast-forward merge. It needs a site deployment only for this
-assignment, not a new stored procedure. Database connections in this
-environment use Windows Authentication. A live role-based login/browser
-walkthrough remains outstanding before deployment.
+cumulative fast-forward merge. The backend and frontend were deployed through
+`deploy.ps1 -NoGit` to `M:\T20-ADMIN-REPORT-BACKEND` and
+`M:\T20-ADMIN-REPORT-FRONTEND`; no new stored procedure was needed for this
+assignment. The previous site files were backed up under
+`.deploy/pre-deploy-20261008-231057`, excluding environment configuration.
+Database connections in this environment use Windows Authentication. A live
+role-based login/browser walkthrough remains outstanding. Frontend installation
+reported 67 dependency advisories (5 critical, 44 high) and Node engine
+compatibility warnings; dependency remediation was not part of this deployment.
 
 ## `feature/all-pending-reports-licence-date`
 
@@ -64,8 +72,8 @@ walkthrough remains outstanding before deployment.
   included in local `main` through the 2026-10-08 fast-forward of
   `feature/role-scoped-report-menus` at `f12101e`. The stored procedure was
   deployed to `tn2db\\PRODUCTION / TradeNetDB` on 2026-10-02 using Windows
-  Authentication. The site is not deployed; `main` was pushed to `origin/main`
-  on 2026-10-08.
+  Authentication. Site commit `5ef1de9` was deployed on 2026-10-08; `main`
+  was pushed to `origin/main` on 2026-10-08.
 
 ### Scope completed
 
@@ -106,8 +114,8 @@ walkthrough remains outstanding before deployment.
 
 Use Windows Authentication for database work. `dbo.sp_PendingReport_pagination`
 has been deployed and verified, and its previous definition is preserved as
-`RollbackCaptured.sql`. Deploy the site next, then verify all four Pending menus
-in the grid and Excel. This branch is based on and therefore includes the
+`RollbackCaptured.sql`. The site was deployed on 2026-10-08; verify all four
+Pending menus in the grid and Excel. This branch is based on and includes the
 `feature/all-new-reports-licence-date` work now present in local `main`.
 
 ## `feature/all-new-reports-licence-date`
@@ -119,8 +127,8 @@ in the grid and Excel. This branch is based on and therefore includes the
   included in local `main` through the 2026-10-08 fast-forward of
   `feature/role-scoped-report-menus` at `f12101e`. The database procedure was
   deployed to `tn2db\\PRODUCTION / TradeNetDB` on 2026-10-02 using Windows
-  Authentication. The site was not deployed; `main` was pushed to `origin/main`
-  on 2026-10-08.
+  Authentication. Site commit `5ef1de9` was deployed on 2026-10-08; `main`
+  was pushed to `origin/main` on 2026-10-08.
 
 ### Scope completed
 
@@ -159,7 +167,8 @@ in the grid and Excel. This branch is based on and therefore includes the
 Use Windows Authentication for database work. `dbo.sp_NewReport_pagination` has
 been deployed and verified. The pre-deployment definition is preserved as
 `RollbackCaptured.sql` in the deployment package. The matching site deployment
-still remains to be performed after merge.
+was completed on 2026-10-08; verify the eight New Report menus in the grid
+and Excel.
 
 ## `feature/import-pending-status-filters`
 
