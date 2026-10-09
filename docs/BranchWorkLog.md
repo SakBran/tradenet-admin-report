@@ -9,9 +9,10 @@ merge/deployment state. Add the newest assignment first.
 - Base branch: `main`
 - Base commit: `fcfcc83`
 - Feature commit: `c4bd9bf` (`feat: grant configured report users view-all report access`)
-- Status: Implemented and committed locally on this branch. Not merged, pushed,
-  or deployed. The grant is not active until the production backend config
-  contains `ReportAccess:ViewAllReportUserIds:0=1503` and the site code is deployed.
+- Status: Fast-forward merged into local `main` on 2026-10-09 with no conflicts.
+  Pushed to `origin/main` and deployed site commit `3e968f5` on 2026-10-09.
+  The production backend config now contains
+  `ReportAccess:ViewAllReportUserIds:0=1503`.
 
 ### Scope and verification
 
@@ -23,11 +24,20 @@ merge/deployment state. Add the newest assignment first.
   remain restricted. No database migration or stored procedure change.
 - Focused backend tests: 18 passed. Frontend report-menu tests: 15 passed.
   Frontend production build passed with its existing large-chunk warning.
-  `git diff --cached --check` passed. No live browser or production-account
-  verification performed yet.
+  `git diff --cached --check` passed. Three unrelated deployment-folder tests
+  still fail because they expect dated folders directly below `Deployments`.
+- Deployment completed via `deploy.ps1 -NoGit`. Published backend DLL and
+  frontend index/bundle hashes matched the deployed files. API health and
+  frontend returned HTTP 200; unauthenticated permissions returned HTTP 401.
+  The config grant was present and `app_offline.htm` absent after deployment.
+  No authenticated production-account/browser verification was performed.
+- `npm install` reported 67 dependency advisories (5 critical, 44 high).
+  No dependency changes were made for this assignment.
 - Activation, rollback, and verification steps are in `docs/ReportAccessGrant.md`.
-  The deployment script preserves server `appsettings*.json`, so code deploy
-  alone cannot enable the account grant.
+  The deployment script preserves server `appsettings*.json`; the setting was
+  added separately. Pre-deploy code is in
+  `.deploy/pre-deploy-20261009-report-grant`; the previous config is backed up
+  outside the repository under the operator's local profile.
 
 ## `feature/role-scoped-report-menus`
 
