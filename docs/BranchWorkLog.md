@@ -3,6 +3,32 @@
 This journal records which assignment was implemented on each branch and its actual
 merge/deployment state. Add the newest assignment first.
 
+## `feature/report-user-all-reports-grant`
+
+- Assignment date: 2026-10-09
+- Base branch: `main`
+- Base commit: `fcfcc83`
+- Feature commit: `c4bd9bf` (`feat: grant configured report users view-all report access`)
+- Status: Implemented and committed locally on this branch. Not merged, pushed,
+  or deployed. The grant is not active until the production backend config
+  contains `ReportAccess:ViewAllReportUserIds:0=1503` and the site code is deployed.
+
+### Scope and verification
+
+- Verified `knyeinthu_Rpt` has TradeNet `dbo.Users.Id = 1503` (the Users-list
+  row number 433 is not the database ID). Kept the user type as `Report`.
+- Added an opt-in, report-only view-all permission for configured, active
+  `Report` users. Other roles and unconfigured users keep their existing
+  assigned-family limits. Data Import, Activity Log, and other users' exports
+  remain restricted. No database migration or stored procedure change.
+- Focused backend tests: 18 passed. Frontend report-menu tests: 15 passed.
+  Frontend production build passed with its existing large-chunk warning.
+  `git diff --cached --check` passed. No live browser or production-account
+  verification performed yet.
+- Activation, rollback, and verification steps are in `docs/ReportAccessGrant.md`.
+  The deployment script preserves server `appsettings*.json`, so code deploy
+  alone cannot enable the account grant.
+
 ## `feature/role-scoped-report-menus`
 
 - Assignment date: 2026-10-05
