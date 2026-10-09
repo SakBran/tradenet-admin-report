@@ -57,6 +57,24 @@ describe('report sidebar menu', () => {
     expect(canAccessReportRoute(access, 'MemberRegistrationReport')).toBe(true);
   });
 
+  it('shows every report to a view-all report user, without admin tools', () => {
+    const access = { isAdmin: false, canViewAllReports: true, categories: [] };
+    const keys = collectMenuKeys(getReportNavItems(access));
+
+    expect(keys).toContain('ImportLicencePendingReport');
+    expect(keys).toContain('BorderExportPermitDetailReport');
+    expect(keys).toContain('MemberRegistrationReport');
+    expect(keys).toContain('Exports');
+    expect(keys).not.toContain('DataImport');
+    expect(keys).toEqual(
+      collectMenuKeys(getReportNavItems({ isAdmin: true, categories: [] })).filter(
+        (key) => key !== 'DataImport'
+      )
+    );
+    expect(canAccessReportRoute(access, 'AdvanceSearchImportLicence')).toBe(true);
+    expect(canAccessReportRoute(access, 'ImportLicenceDataImport')).toBe(false);
+  });
+
   // createReportItem keys the menu row off controllerName, and SideNav marks every row
   // whose key matches the current route as selected. Two leaves sharing a key therefore
   // render two identical, both-highlighted rows pointing at the same page — which is what

@@ -9,19 +9,21 @@ public sealed class ReportAccessPolicy
 {
     private readonly HashSet<string> _categories;
 
-    private ReportAccessPolicy(bool isAdmin, HashSet<string> categories)
+    private ReportAccessPolicy(bool isAdmin, bool canViewAllReports, HashSet<string> categories)
     {
         IsAdmin = isAdmin;
+        CanViewAllReports = canViewAllReports;
         _categories = categories;
     }
 
     public bool IsAdmin { get; }
+    public bool CanViewAllReports { get; }
     public IReadOnlyCollection<string> Categories => _categories;
 
-    public static ReportAccessPolicy Create(string? userType, IEnumerable<UserDetail> details)
+    public static ReportAccessPolicy Create(string? userType, IEnumerable<UserDetail> details, bool viewAllReports = false)
     {
         if (string.Equals(userType, "Super Administrator", StringComparison.OrdinalIgnoreCase))
-            return new ReportAccessPolicy(true, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+            return new ReportAccessPolicy(true, false, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
 
         var categories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (string.Equals(userType, "Account User", StringComparison.OrdinalIgnoreCase))
@@ -35,13 +37,16 @@ public sealed class ReportAccessPolicy
             }
         }
 
-        return new ReportAccessPolicy(false, categories);
+        return new ReportAccessPolicy(false,
+            viewAllReports && string.Equals(userType, "Report", StringComparison.OrdinalIgnoreCase), categories);
     }
 
     public bool CanAccess(string controllerName)
     {
         if (IsAdmin) return true;
+        if (controllerName.EndsWith("DataImport", StringComparison.Ordinal)) return false;
         var category = CategoryForController(controllerName);
+        if (CanViewAllReports) return category != null;
         return category != null && _categories.Contains(category);
     }
 

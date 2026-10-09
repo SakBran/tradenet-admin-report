@@ -62,6 +62,44 @@ public class ReportAccessPolicyTests
     }
 
     [Fact]
+    public void View_all_reports_grant_is_not_admin_and_excludes_data_import()
+    {
+        var access = ReportAccessPolicy.Create("Report", Array.Empty<UserDetail>(), viewAllReports: true);
+
+        Assert.False(access.IsAdmin);
+        Assert.True(access.CanViewAllReports);
+        Assert.True(access.CanAccess("ImportLicencePendingReport"));
+        Assert.True(access.CanAccess("BorderExportPermitDetailReport"));
+        Assert.True(access.CanAccess("MemberRegistrationReport"));
+        Assert.False(access.CanAccess("UnknownNewReport"));
+        Assert.False(access.CanAccess("ImportLicenceDataImport"));
+        Assert.False(access.CanAccess("DataImport"));
+    }
+
+    [Fact]
+    public void View_all_reports_grant_cannot_elevate_another_user_type()
+    {
+        var access = ReportAccessPolicy.Create("Check User", Array.Empty<UserDetail>(), viewAllReports: true);
+
+        Assert.False(access.CanViewAllReports);
+        Assert.False(access.CanAccess("ImportLicencePendingReport"));
+    }
+
+    [Fact]
+    public void View_all_reports_grant_covers_every_report_controller_except_data_import()
+    {
+        var access = ReportAccessPolicy.Create("Report", Array.Empty<UserDetail>(), viewAllReports: true);
+        var reportControllers = ReportTestHelper.ControllerTypes
+            .Select(type => type.Name.Replace("Controller", "", StringComparison.Ordinal))
+            .ToArray();
+
+        Assert.All(reportControllers.Where(name => !name.EndsWith("DataImport", StringComparison.Ordinal)),
+            name => Assert.True(access.CanAccess(name), name));
+        Assert.All(reportControllers.Where(name => name.EndsWith("DataImport", StringComparison.Ordinal)),
+            name => Assert.False(access.CanAccess(name), name));
+    }
+
+    [Fact]
     public void Every_report_controller_has_an_explicit_category_or_is_data_import()
     {
         var unmapped = ReportTestHelper.ControllerTypes

@@ -32,4 +32,16 @@ public class ExcelExportAccessTests
         var job = new ExcelExportJob { RequestedByUserName = "42", ReportKey = "ImportLicencePendingReport" };
         Assert.True(ExcelExportController.CanAccessJob(access, "43", job));
     }
+
+    [Fact]
+    public void View_all_reports_user_can_access_any_report_but_only_own_exports()
+    {
+        var access = ReportAccessPolicy.Create("Report", Array.Empty<UserDetail>(), viewAllReports: true);
+        var job = new ExcelExportJob { RequestedByUserName = "1503", ReportKey = "ExportPermitPendingReport" };
+
+        Assert.True(ExcelExportController.CanAccessJob(access, "1503", job));
+        Assert.False(ExcelExportController.CanAccessJob(access, "another-user", job));
+        job.ReportKey = "ImportLicenceDataImport";
+        Assert.False(ExcelExportController.CanAccessJob(access, "1503", job));
+    }
 }

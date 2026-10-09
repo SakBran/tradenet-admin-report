@@ -29,7 +29,7 @@ namespace API.Controllers
         {
             var access = await _reportAccess.GetAsync(User);
             if (access == null) return Forbid();
-            return Ok(new { isAdmin = access.IsAdmin, categories = access.Categories });
+            return Ok(new { isAdmin = access.IsAdmin, canViewAllReports = access.CanViewAllReports, categories = access.Categories });
         }
 
         [AllowAnonymous]
