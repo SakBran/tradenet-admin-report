@@ -3,6 +3,35 @@
 This journal records which assignment was implemented on each branch and its actual
 merge/deployment state. Add the newest assignment first.
 
+## `revert/report-user-all-reports-grant`
+
+- Assignment date: 2026-10-13
+- Base branch: `main`; base commit: `a365c7d`
+- Revert commit: `ff8b7dd` (`revert: remove report-wide user grant`)
+- Status: Fast-forward merged into `main` without conflicts, pushed to
+  `origin/main`, and deployed from commit `ff8b7dd` on 2026-10-13.
+
+### Scope and verification
+
+- Reverted the report-wide permission for configured Report users. The report
+  policy, API permissions response, sidebar menu, and related tests now match
+  their pre-grant code. Other role-scoped report access remains in place.
+- Removed `ReportAccess.ViewAllReportUserIds` from the production backend config;
+  the only configured value had been database user ID `1503`. No database role,
+  migration, stored procedure, or user record was changed.
+- Focused backend tests: 7 passed. Frontend menu tests: 14 passed. Backend and
+  frontend production builds passed. The frontend install reported Node engine
+  compatibility warnings; dependencies were not changed by this revert.
+- Deployed backend DLL, frontend index, and active bundle hashes match the
+  build. The active bundle has no `canViewAllReports` flag, the server config
+  has no grant setting, and `app_offline.htm` is absent. Public API health and
+  frontend returned HTTP 200; unauthenticated permissions returned HTTP 401.
+  No authenticated production-account menu walkthrough was performed.
+- Previous site code is backed up in
+  `.deploy/pre-deploy-20261013-report-grant-revert` (environment config excluded).
+  Previous production config is backed up outside the repository under the
+  operator's local profile.
+
 ## `feature/report-user-all-reports-grant`
 
 - Assignment date: 2026-10-09
@@ -11,8 +40,8 @@ merge/deployment state. Add the newest assignment first.
 - Feature commit: `c4bd9bf` (`feat: grant configured report users view-all report access`)
 - Status: Fast-forward merged into local `main` on 2026-10-09 with no conflicts.
   Pushed to `origin/main` and deployed site commit `3e968f5` on 2026-10-09.
-  The production backend config now contains
-  `ReportAccess:ViewAllReportUserIds:0=1503`.
+  Subsequently reverted, removed from production config, and redeployed on
+  2026-10-13 by `revert/report-user-all-reports-grant` (`ff8b7dd`).
 
 ### Scope and verification
 
@@ -33,9 +62,9 @@ merge/deployment state. Add the newest assignment first.
   No authenticated production-account/browser verification was performed.
 - `npm install` reported 67 dependency advisories (5 critical, 44 high).
   No dependency changes were made for this assignment.
-- Activation, rollback, and verification steps are in `docs/ReportAccessGrant.md`.
+- The original activation and rollback guide was removed by the revert.
   The deployment script preserves server `appsettings*.json`; the setting was
-  added separately. Pre-deploy code is in
+  originally added separately. Pre-deploy code is in
   `.deploy/pre-deploy-20261009-report-grant`; the previous config is backed up
   outside the repository under the operator's local profile.
 
