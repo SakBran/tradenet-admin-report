@@ -279,7 +279,6 @@ export const reportNavItems: Required<MenuProps>['items'] = [
 
 export type ReportAccess = {
   isAdmin: boolean;
-  canViewAllReports?: boolean;
   categories: string[];
 };
 
@@ -290,7 +289,6 @@ export const canAccessReportRoute = (
   if (access.isAdmin) return true;
   if (controllerName === 'Exports') return true;
   if (controllerName.endsWith('DataImport')) return false;
-  if (access.canViewAllReports) return true;
 
   const familyName = controllerName.startsWith('AdvanceSearch')
     ? controllerName.slice('AdvanceSearch'.length)

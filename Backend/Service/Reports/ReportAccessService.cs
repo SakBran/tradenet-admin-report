@@ -1,25 +1,18 @@
-using System;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using API.DBContext;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 
 namespace API.Service.Reports;
 
 public sealed class ReportAccessService
 {
     private readonly TradeNetDbContext _db;
-    private readonly IConfiguration _configuration;
     private bool _resolved;
     private ReportAccessPolicy? _access;
 
-    public ReportAccessService(TradeNetDbContext db, IConfiguration configuration)
-    {
-        _db = db;
-        _configuration = configuration;
-    }
+    public ReportAccessService(TradeNetDbContext db) => _db = db;
 
     public async Task<ReportAccessPolicy?> GetAsync(ClaimsPrincipal principal)
     {
@@ -38,10 +31,7 @@ public sealed class ReportAccessService
         var details = await _db.UserDetails.AsNoTracking()
             .Where(x => x.UserId == userId)
             .ToListAsync();
-        var viewAllReports = _configuration.GetSection("ReportAccess:ViewAllReportUserIds")
-            .GetChildren()
-            .Any(entry => int.TryParse(entry.Value, out var configuredId) && configuredId == userId);
-        _access = ReportAccessPolicy.Create(user.UserType, details, viewAllReports);
+        _access = ReportAccessPolicy.Create(user.UserType, details);
         return _access;
     }
 }
