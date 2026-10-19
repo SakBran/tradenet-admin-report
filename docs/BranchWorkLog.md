@@ -3,6 +3,35 @@
 This journal records which assignment was implemented on each branch and its actual
 merge/deployment state. Add the newest assignment first.
 
+## `feature/report-user-oga-recommendation`
+
+- Assignment date: 2026-10-19
+- Base branch: `main`; base commit: `0036894`
+- Feature commit: `32ab430` (`feat: allow report users to open OGA recommendation reports`)
+- Status: Implemented and committed on the local feature branch. Not merged,
+  pushed, or deployed.
+
+### Scope and verification
+
+- Active users with the `Report` user type now receive the existing
+  `report-oga-recommendation` category without a `UserDetail` assignment.
+  This opens both OGA Recommendation report pages, their APIs, and their Excel
+  exports. Other user types keep their existing access rules.
+- Limited the backend category mapping to `OGARecommendationReport` and
+  `OGARecommendationHistoryReport`, so future similarly named controllers do
+  not receive this grant automatically.
+- This grants access to OGA report data, not only the menu. The list defaults
+  to all OGA departments; the history report accepts a reference number.
+  No database migration, stored procedure, user record, or production config
+  was changed.
+- The new backend access tests failed before the change and passed afterward.
+  Focused backend tests: 9 passed. Frontend menu tests: 15 passed. Backend
+  Release and frontend production builds passed; the frontend build retained
+  its existing large-chunk warning. No authenticated login was tested.
+- The deployment still needs the backend and frontend from this commit, then
+  a Report-user menu/API/Excel walkthrough. The previous deployed site remains
+  unchanged until that release.
+
 ## `revert/report-user-all-reports-grant`
 
 - Assignment date: 2026-10-13
