@@ -28,6 +28,7 @@ public sealed class ReportAccessPolicy
             categories.Add("report-payment");
         else if (userType is "Report" or "Check User" or "Approve User")
         {
+            if (userType == "Report") categories.Add("report-oga-recommendation");
             foreach (var detail in details)
             {
                 var category = CategoryForDetail(detail.Type, detail.SubType);
@@ -92,7 +93,8 @@ public sealed class ReportAccessPolicy
         if (PathakaControllers.Contains(controllerName)) return "report-pathaka";
         if (PaymentControllers.Contains(controllerName)) return "report-payment";
         if (controllerName == "MemberRegistrationReport") return "report-member";
-        if (controllerName.StartsWith("OGARecommendation", StringComparison.Ordinal)) return "report-oga-recommendation";
+        if (controllerName is "OGARecommendationReport" or "OGARecommendationHistoryReport")
+            return "report-oga-recommendation";
         if (controllerName.StartsWith("EICC", StringComparison.Ordinal)) return "report-eicc";
         return null;
     }

@@ -32,4 +32,19 @@ public class ExcelExportAccessTests
         var job = new ExcelExportJob { RequestedByUserName = "42", ReportKey = "ImportLicencePendingReport" };
         Assert.True(ExcelExportController.CanAccessJob(access, "43", job));
     }
+
+    [Fact]
+    public void Report_user_can_access_only_their_oga_recommendation_exports_without_assignment()
+    {
+        var access = ReportAccessPolicy.Create("Report", Array.Empty<UserDetail>());
+        var job = new ExcelExportJob
+        {
+            RequestedByUserName = "42", ReportKey = "OGARecommendationHistoryReport",
+        };
+
+        Assert.True(ExcelExportController.CanAccessJob(access, "42", job));
+        Assert.False(ExcelExportController.CanAccessJob(access, "43", job));
+        job.ReportKey = "ImportLicencePendingReport";
+        Assert.False(ExcelExportController.CanAccessJob(access, "42", job));
+    }
 }

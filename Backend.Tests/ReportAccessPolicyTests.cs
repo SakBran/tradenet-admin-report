@@ -24,6 +24,19 @@ public class ReportAccessPolicyTests
     }
 
     [Fact]
+    public void Report_user_can_access_both_oga_recommendation_reports_without_assignment()
+    {
+        var access = ReportAccessPolicy.Create("Report", Array.Empty<UserDetail>());
+
+        Assert.Contains("report-oga-recommendation", access.Categories);
+        Assert.True(access.CanAccess("OGARecommendationReport"));
+        Assert.True(access.CanAccess("OGARecommendationHistoryReport"));
+        Assert.False(access.CanAccess("OGARecommendationAdministrationReport"));
+        Assert.False(access.CanAccess("ImportLicenceDetailReport"));
+        Assert.False(access.CanAccess("DataImport"));
+    }
+
+    [Fact]
     public void Check_and_approve_users_follow_the_same_assignments()
     {
         var assignment = new[] { new UserDetail { Type = "Export Permit", SubType = "Oversea", Section = "1" } };
@@ -33,6 +46,8 @@ public class ReportAccessPolicyTests
             var access = ReportAccessPolicy.Create(userType, assignment);
             Assert.True(access.CanAccess("ExportPermitDetailReport"));
             Assert.False(access.CanAccess("BorderExportPermitDetailReport"));
+            Assert.False(access.CanAccess("OGARecommendationReport"));
+            Assert.False(access.CanAccess("OGARecommendationHistoryReport"));
         }
     }
 
@@ -47,12 +62,14 @@ public class ReportAccessPolicyTests
         Assert.True(admin.CanAccess("DataImport"));
         Assert.True(account.CanAccess("MPUReport"));
         Assert.False(account.CanAccess("ImportLicenceDetailReport"));
+        Assert.False(account.CanAccess("OGARecommendationReport"));
     }
 
     [Fact]
     public void Unassigned_and_unknown_roles_fail_closed()
     {
-        Assert.Empty(ReportAccessPolicy.Create("Report", Array.Empty<UserDetail>()).Categories);
+        Assert.Equal(new[] { "report-oga-recommendation" },
+            ReportAccessPolicy.Create("Report", Array.Empty<UserDetail>()).Categories);
         Assert.False(ReportAccessPolicy.Create("Report", Array.Empty<UserDetail>()).CanAccess("ImportLicenceDetailReport"));
         Assert.False(ReportAccessPolicy.Create("Sakhan User", new[]
         {

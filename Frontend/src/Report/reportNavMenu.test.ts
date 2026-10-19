@@ -57,6 +57,19 @@ describe('report sidebar menu', () => {
     expect(canAccessReportRoute(access, 'MemberRegistrationReport')).toBe(true);
   });
 
+  it('shows both OGA Recommendation pages when the API grants only that category', () => {
+    const access = { isAdmin: false, categories: ['report-oga-recommendation'] };
+    const keys = collectMenuKeys(getReportNavItems(access));
+
+    expect(keys).toContain('report-oga-recommendation');
+    expect(keys).toContain('OGARecommendationReport');
+    expect(keys).toContain('OGARecommendationHistoryReport');
+    expect(keys).not.toContain('ImportLicencePendingReport');
+    expect(keys).not.toContain('DataImport');
+    expect(canAccessReportRoute(access, 'OGARecommendationReport')).toBe(true);
+    expect(canAccessReportRoute(access, 'OGARecommendationHistoryReport')).toBe(true);
+  });
+
   // createReportItem keys the menu row off controllerName, and SideNav marks every row
   // whose key matches the current route as selected. Two leaves sharing a key therefore
   // render two identical, both-highlighted rows pointing at the same page — which is what
