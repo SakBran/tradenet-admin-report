@@ -8,8 +8,9 @@ merge/deployment state. Add the newest assignment first.
 - Assignment date: 2026-10-19
 - Base branch: `main`; base commit: `0036894`
 - Feature commit: `32ab430` (`feat: allow report users to open OGA recommendation reports`)
-- Status: Implemented and committed on the local feature branch. Not merged,
-  pushed, or deployed.
+- Status: Fast-forward merged into `main` without conflicts on 2026-10-19.
+  `main` was pushed to `origin/main`, and site commit `5269bd5` was deployed
+  via `deploy.ps1 -NoGit` on 2026-10-19.
 
 ### Scope and verification
 
@@ -28,9 +29,15 @@ merge/deployment state. Add the newest assignment first.
   Focused backend tests: 9 passed. Frontend menu tests: 15 passed. Backend
   Release and frontend production builds passed; the frontend build retained
   its existing large-chunk warning. No authenticated login was tested.
-- The deployment still needs the backend and frontend from this commit, then
-  a Report-user menu/API/Excel walkthrough. The previous deployed site remains
-  unchanged until that release.
+- Deployed backend DLL, frontend index, and active bundle hashes match the
+  build. Backend version is `1.0.0+5269bd5`. Public API health and frontend
+  returned HTTP 200; unauthenticated permissions returned HTTP 401. The old
+  all-report grant setting is absent and `app_offline.htm` is absent.
+- Previous site files are backed up under
+  `.deploy/pre-deploy-20261019-report-user-oga`, excluding environment config.
+  The dependency audit reported 67 pre-existing advisories (5 critical,
+  44 high); no dependencies changed. Node engine warnings remain.
+- A signed-in Report-user menu/API/Excel walkthrough remains outstanding.
 
 ## `revert/report-user-all-reports-grant`
 
