@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Button, Modal, Space, Table, Typography } from 'antd';
+import { Alert, Button, Space, Table, Typography } from 'antd';
 import dayjs from 'dayjs';
 import axiosInstance from '../../services/AxiosInstance';
 import { AnyObject } from '../../types/AnyObject';
@@ -63,8 +63,17 @@ const ImportLicenceTurndownReport = ({
       TurndownCount: (value, row) => (
         <Button
           type="link"
-          onClick={() => void loadHistory(row)}
+          onClick={() => {
+            if (selected?.id === row.id) {
+              pending.current?.abort();
+              setSelected(null);
+            } else {
+              void loadHistory(row);
+            }
+          }}
           aria-label={`View ${String(value)} turndowns for ${String(row.applicationNo)}`}
+          aria-expanded={selected?.id === row.id}
+          aria-controls={`turndown-history-${String(row.id)}`}
         >
           {String(value)}
         </Button>
@@ -72,91 +81,98 @@ const ImportLicenceTurndownReport = ({
       TurndownRemark: (value) =>
         String(value ?? '').trim() || 'Remark unavailable',
     }),
-    [loadHistory]
+    [loadHistory, selected?.id]
   );
 
-  const closeHistory = () => {
-    pending.current?.abort();
-    setSelected(null);
-  };
-
   return (
-    <>
-      <GenericReportPage
-        key={config.controllerName}
-        config={config}
-        cellRenderers={cellRenderers}
-      />
-      <Modal
-        title={`Turndown History — ${String(selected?.applicationNo ?? '')}`}
-        open={selected !== null}
-        onCancel={closeHistory}
-        footer={null}
-        width={850}
-      >
-        <Space direction="vertical" style={{ width: '100%' }} size="middle">
-          <Typography.Text>
-            Complete history across all dates. Recorded count:{' '}
-            {String(selected?.turndownCount ?? 0)}.
-          </Typography.Text>
-          {error ? (
-            <Alert
-              type="error"
-              showIcon
-              message="Could not load turndown history."
-              action={
-                <Button onClick={() => selected && void loadHistory(selected)}>
-                  Retry
-                </Button>
-              }
-            />
-          ) : (
-            <Table<HistoryRow>
-              rowKey="id"
-              dataSource={history}
-              loading={loading}
-              pagination={false}
-              scroll={{ x: 600, y: 440 }}
-              locale={{ emptyText: 'No turndown history found.' }}
-              columns={[
-                {
-                  title: 'No.',
-                  width: 60,
-                  render: (_value, _row, index) => index + 1,
-                },
-                {
-                  title: 'Turndown Date / Created Date',
-                  dataIndex: 'createdDate',
-                  width: 210,
-                  render: (value: string | null) =>
-                    value
-                      ? dayjs(value).format('DD/MM/YYYY HH:mm:ss')
-                      : 'Date unavailable',
-                },
-                {
-                  title: 'Remark',
-                  dataIndex: 'remark',
-                  render: (value: string | null) => (
-                    <span
-                      style={{
-                        whiteSpace: 'pre-wrap',
-                        overflowWrap: 'anywhere',
-                      }}
+    <GenericReportPage
+      key={config.controllerName}
+      config={config}
+      cellRenderers={cellRenderers}
+      renderExpandedRow={(row) =>
+        selected?.id === row.id ? (
+          <div
+            id={`turndown-history-${String(row.id)}`}
+            role="region"
+            aria-label={`Turndown history for ${String(row.applicationNo)}`}
+            style={{
+              position: 'sticky',
+              left: 0,
+              width: 850,
+              maxWidth: 'calc(100vw - 80px)',
+              padding: 16,
+            }}
+          >
+            <Space direction="vertical" style={{ width: '100%' }} size="middle">
+              <Typography.Title level={5} style={{ margin: 0 }}>
+                Turndown History — {String(row.applicationNo)}
+              </Typography.Title>
+              <Typography.Text>
+                Complete history across all dates. Recorded count:{' '}
+                {String(selected?.turndownCount ?? 0)}.
+              </Typography.Text>
+              {error ? (
+                <Alert
+                  type="error"
+                  showIcon
+                  message="Could not load turndown history."
+                  action={
+                    <Button
+                      onClick={() => selected && void loadHistory(selected)}
                     >
-                      {value?.trim() || 'Remark unavailable'}
-                    </span>
-                  ),
-                },
-              ]}
-            />
-          )}
-          <Typography.Text type="secondary">
-            Some historical remarks were cleared by the old system and are
-            unavailable.
-          </Typography.Text>
-        </Space>
-      </Modal>
-    </>
+                      Retry
+                    </Button>
+                  }
+                />
+              ) : (
+                <Table<HistoryRow>
+                  rowKey="id"
+                  dataSource={history}
+                  loading={loading}
+                  pagination={false}
+                  scroll={{ x: 600, y: 440 }}
+                  locale={{ emptyText: 'No turndown history found.' }}
+                  columns={[
+                    {
+                      title: 'No.',
+                      width: 60,
+                      render: (_value, _row, index) => index + 1,
+                    },
+                    {
+                      title: 'Turndown Date / Created Date',
+                      dataIndex: 'createdDate',
+                      width: 210,
+                      render: (value: string | null) =>
+                        value
+                          ? dayjs(value).format('DD/MM/YYYY HH:mm:ss')
+                          : 'Date unavailable',
+                    },
+                    {
+                      title: 'Remark',
+                      dataIndex: 'remark',
+                      render: (value: string | null) => (
+                        <span
+                          style={{
+                            whiteSpace: 'pre-wrap',
+                            overflowWrap: 'anywhere',
+                          }}
+                        >
+                          {value?.trim() || 'Remark unavailable'}
+                        </span>
+                      ),
+                    },
+                  ]}
+                />
+              )}
+              <Typography.Text type="secondary">
+                Some historical remarks were cleared by the old system and are
+                unavailable.
+              </Typography.Text>
+            </Space>
+          </div>
+        ) : null
+      }
+    />
   );
 };
 

@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Button,
@@ -618,9 +625,14 @@ const renderFilter = (
 interface GenericReportPageProps {
   config: ReportPageConfig;
   cellRenderers?: Record<string, BasicTableColumn<AnyObject>['render']>;
+  renderExpandedRow?: (row: AnyObject) => ReactNode;
 }
 
-const GenericReportPage = ({ config, cellRenderers }: GenericReportPageProps) => {
+const GenericReportPage = ({
+  config,
+  cellRenderers,
+  renderExpandedRow,
+}: GenericReportPageProps) => {
   const [form] = Form.useForm<FilterFormValues>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -1184,6 +1196,7 @@ const GenericReportPage = ({ config, cellRenderers }: GenericReportPageProps) =>
         reportHeaderLines={reportHeaderLines}
         currencyTotalsColumns={config.currencyTotalsColumns}
         onDrill={handleDrill}
+        renderExpandedRow={renderExpandedRow}
         tableId={`${config.controllerName}Table`}
         columns={tableColumns}
         fetchData={fetchRows}

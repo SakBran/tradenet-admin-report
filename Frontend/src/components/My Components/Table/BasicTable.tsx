@@ -123,6 +123,8 @@ interface PropsType<T extends AnyObject = AnyObject> {
    * the target report with the mapped filters seeded.
    */
   onDrill?: (drilldown: ReportColumnDrilldown, row: AnyObject) => void;
+  /** Optional content rendered in a full-width row beneath its parent record. */
+  renderExpandedRow?: (row: T) => React.ReactNode;
   /**
    * Placement for the currency-grouped summary footer when the response carries
    * `currencyTotals`. `labelColumnKey` is the column.key under which the
@@ -197,6 +199,7 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
   legacyReportViewer = false,
   reportHeaderLines,
   onDrill,
+  renderExpandedRow,
   currencyTotalsColumns,
 }: PropsType<T>) => {
   const normalizedColumns = useMemo<BasicTableColumn<T>[]>(() => {
@@ -696,34 +699,51 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
             {!loading && (
               <tbody>
                 {data.data?.length ? (
-                  data.data.map((row, index) => (
-                    <tr key={getRowKey(row, index)}>
-                      {showRowNumber && (
-                        <td>{index + 1 + query.pageIndex * pageSize}</td>
-                      )}
-                      {normalizedColumns.map((column) => (
-                        <td
-                          key={column.key.toString()}
-                          className={
-                            isNumericColumn(column.dataType) ? 'col-numeric' : undefined
-                          }
-                        >
-                          {renderCell(column, row, index)}
-                        </td>
-                      ))}
-                      {shouldShowActions && (
-                        <td className="action-column-cell">
-                          {actionComponent ? (
-                            React.createElement(actionComponent, {
-                              id: row['id'],
-                            })
-                          ) : (
-                            <TableAction id={row['id']} />
+                  data.data.map((row, index) => {
+                    const expanded = renderExpandedRow?.(row);
+                    return (
+                      <React.Fragment key={getRowKey(row, index)}>
+                        <tr>
+                          {showRowNumber && (
+                            <td>{index + 1 + query.pageIndex * pageSize}</td>
                           )}
-                        </td>
-                      )}
-                    </tr>
-                  ))
+                          {normalizedColumns.map((column) => (
+                            <td
+                              key={column.key.toString()}
+                              className={
+                                isNumericColumn(column.dataType)
+                                  ? 'col-numeric'
+                                  : undefined
+                              }
+                            >
+                              {renderCell(column, row, index)}
+                            </td>
+                          ))}
+                          {shouldShowActions && (
+                            <td className="action-column-cell">
+                              {actionComponent ? (
+                                React.createElement(actionComponent, {
+                                  id: row['id'],
+                                })
+                              ) : (
+                                <TableAction id={row['id']} />
+                              )}
+                            </td>
+                          )}
+                        </tr>
+                        {expanded != null && (
+                          <tr className="report-expanded-row">
+                            <td
+                              colSpan={columnCount}
+                              style={{ padding: 0, background: '#fafafa' }}
+                            >
+                              {expanded}
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td colSpan={columnCount}>
@@ -773,7 +793,9 @@ export const BasicTable = <T extends AnyObject = AnyObject>({
                           <td
                             key={key}
                             className={
-                              isNumericColumn(column.dataType) ? 'col-numeric' : undefined
+                              isNumericColumn(column.dataType)
+                                ? 'col-numeric'
+                                : undefined
                             }
                             style={{ fontWeight: 700 }}
                           >

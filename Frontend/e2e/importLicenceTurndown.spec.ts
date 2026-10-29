@@ -109,18 +109,27 @@ for (const border of [false, true]) {
       CompanyName: 'Example',
     });
     await count.click();
-    const dialog = page.getByRole('dialog');
+    const details = page.getByRole('region', {
+      name: 'Turndown history for APP-001',
+    });
+    await expect(count).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(
-      dialog.getByText('Could not load turndown history.')
-    ).toBeVisible();
-    await dialog.getByRole('button', { name: 'Retry' }).click();
-    await expect(dialog.getByText('29/10/2026 14:38:05')).toBeVisible();
-    await expect(dialog.getByText('01/09/2026 09:00:00')).toBeVisible();
+      details.locator('xpath=ancestor::tr[1]/preceding-sibling::tr[1]')
+    ).toContainText('APP-001');
     await expect(
-      dialog.getByText('Remark unavailable', { exact: true })
+      details.getByText('Could not load turndown history.')
     ).toBeVisible();
-    await expect(dialog.locator('tbody tr.ant-table-row')).toHaveCount(2);
-    await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+    await details.getByRole('button', { name: 'Retry' }).click();
+    await expect(details.getByText('29/10/2026 14:38:05')).toBeVisible();
+    await expect(details.getByText('01/09/2026 09:00:00')).toBeVisible();
+    await expect(
+      details.getByText('Remark unavailable', { exact: true })
+    ).toBeVisible();
+    await expect(details.locator('tbody tr.ant-table-row')).toHaveCount(2);
+    await count.click();
+    await expect(details).toHaveCount(0);
+    await expect(count).toHaveAttribute('aria-expanded', 'false');
     await page.getByRole('button', { name: /Excel$/ }).click();
     await expect.poll(() => excelBody).toBeDefined();
     expect(excelBody).toMatchObject({
