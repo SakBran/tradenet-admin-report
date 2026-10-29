@@ -13,6 +13,32 @@ interface HistoryRow {
   remark: string | null;
 }
 
+const TurndownRemark = ({
+  value,
+  width,
+}: {
+  value: unknown;
+  width?: number;
+}) => (
+  <Typography.Paragraph
+    className="turndown-remark"
+    ellipsis={{
+      rows: 3,
+      expandable: 'collapsible',
+      symbol: (expanded) => (expanded ? 'Show less' : 'Show more'),
+    }}
+    style={{
+      width,
+      maxWidth: '100%',
+      margin: 0,
+      whiteSpace: 'pre-wrap',
+      overflowWrap: 'anywhere',
+    }}
+  >
+    {String(value ?? '').trim() || 'Remark unavailable'}
+  </Typography.Paragraph>
+);
+
 const ImportLicenceTurndownReport = ({
   border = false,
 }: {
@@ -78,8 +104,7 @@ const ImportLicenceTurndownReport = ({
           {String(value)}
         </Button>
       ),
-      TurndownRemark: (value) =>
-        String(value ?? '').trim() || 'Remark unavailable',
+      TurndownRemark: (value) => <TurndownRemark value={value} width={280} />,
     }),
     [loadHistory, selected?.id]
   );
@@ -151,22 +176,7 @@ const ImportLicenceTurndownReport = ({
                       title: 'Remark',
                       dataIndex: 'remark',
                       render: (value: string | null) => (
-                        <Typography.Paragraph
-                          className="turndown-remark"
-                          ellipsis={{
-                            rows: 3,
-                            expandable: 'collapsible',
-                            symbol: (expanded) =>
-                              expanded ? 'Show less' : 'Show more',
-                          }}
-                          style={{
-                            margin: 0,
-                            whiteSpace: 'pre-wrap',
-                            overflowWrap: 'anywhere',
-                          }}
-                        >
-                          {value?.trim() || 'Remark unavailable'}
-                        </Typography.Paragraph>
+                        <TurndownRemark value={value} />
                       ),
                     },
                   ]}

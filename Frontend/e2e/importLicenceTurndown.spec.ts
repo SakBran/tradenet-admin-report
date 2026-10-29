@@ -53,7 +53,7 @@ for (const border of [false, true]) {
               amount: 20,
               turndownCount: 2,
               turndownDate: '2026-10-29T14:38:05',
-              turndownRemark: 'Latest remark',
+              turndownRemark: longRemark,
             },
           ],
           pageIndex: 0,
@@ -111,6 +111,27 @@ for (const border of [false, true]) {
       CompanyRegistrationNo: '12345',
       CompanyName: 'Example',
     });
+    const mainRemark = page.locator('.turndown-remark').first();
+    const mainShowMore = mainRemark
+      .locator('button')
+      .filter({ hasText: 'Show more' });
+    await expect(mainShowMore).toBeVisible();
+    const mainHeight = await mainRemark.evaluate(
+      (element) => element.getBoundingClientRect().height
+    );
+    const mainLineHeight = await mainRemark.evaluate((element) =>
+      parseFloat(getComputedStyle(element).lineHeight)
+    );
+    expect(mainHeight).toBeLessThanOrEqual(mainLineHeight * 3 + 2);
+    await mainShowMore.click();
+    await expect(mainRemark).toContainText('Final remark line.');
+    expect(
+      await mainRemark.evaluate(
+        (element) => element.getBoundingClientRect().height
+      )
+    ).toBeGreaterThan(mainHeight);
+    await mainRemark.locator('button').filter({ hasText: 'Show less' }).click();
+    await expect(mainShowMore).toBeVisible();
     await count.click();
     const details = page.getByRole('region', {
       name: 'Turndown history for APP-001',
