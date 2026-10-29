@@ -8,6 +8,7 @@ merge/deployment state. Add the newest assignment first.
 - Assignment date: 2026-10-29
 - Base branch: `main`; base commit: `af518fa`.
 - Backend/SQL commit: `eaa34ad`; frontend commit: `6096006`.
+- Inline-history follow-up commit: `2969341`.
 - Status: Implemented and committed locally. The three new procedures were deployed
   to the configured `TradeNetDB` on 2026-10-29 with user approval. Backend and
   frontend are running locally for testing. Not merged, pushed, or site-deployed.
@@ -19,8 +20,9 @@ merge/deployment state. Add the newest assignment first.
   Apply Type filters. Existing family access permissions cover both routes.
 - Applications qualify when a history event falls within the selected dates.
   The displayed latest event and clickable count use complete history, including
-  events outside that range. Clicking the count opens dated remarks with retry
-  and loading states. Identifiable `Re Open` events are excluded throughout.
+  events outside that range. Clicking the count expands dated remarks beneath
+  the selected row; clicking again collapses them. Retry and loading states are
+  shown inline. Identifiable `Re Open` events are excluded throughout.
 - Added three procedures in
   `StoredProcedureMigrations/sp_ImportLicenceTurndownReport.sql`: paginated report,
   application history, and Apply Type options. Grid and queued Excel use the same
@@ -36,6 +38,12 @@ merge/deployment state. Add the newest assignment first.
   remarks, and Excel submission. Used temporary Node 22.17.0 and installed Chrome
   (`E2E_BROWSER_CHANNEL=chrome`); system Node 18.17.1 cannot load Playwright's ESM
   configuration.
+- Inline-history follow-up: replaced the modal with an expanded table row on
+  both reports. The two updated browser tests passed, checking row adjacency,
+  absence of a dialog, loading failure/retry, history contents, collapse, and
+  Excel submission. Eight focused shared-table/presentation tests, TypeScript
+  checking, and the frontend production build also passed. No backend or
+  database change was needed for this follow-up.
 - Executed the report procedure body read-only against the configured database
   for 2026-10-28: 402 oversea applications (~1.9 seconds) and 10 border applications
   (~0.5 seconds). Each first-page result had the expected 19 API fields. This
