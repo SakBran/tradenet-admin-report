@@ -10,6 +10,7 @@ merge/deployment state. Add the newest assignment first.
 - Backend/SQL commit: `eaa34ad`; frontend commit: `6096006`.
 - Inline-history follow-up commit: `2969341`.
 - Three-line remark preview follow-up commit: `b254124`.
+- Main-table Turn Down Remark preview follow-up commit: `9628c62`.
 - Status: Implemented and committed locally. The three new procedures were deployed
   to the configured `TradeNetDB` on 2026-10-29 with user approval. Backend and
   frontend are running locally for testing. Not merged, pushed, or site-deployed.
@@ -51,6 +52,12 @@ merge/deployment state. Add the newest assignment first.
   the collapsed height and checking expansion, full text, collapse, and missing
   remarks on both report families. The frontend production build also passed
   with the existing bundle-size warning.
+- Main-table remark follow-up: applied the same three-line preview to the
+  `Turn Down Remark` column, using one shared renderer for main and history
+  remarks. Both browser tests passed with long main-row messages, verifying
+  preview height, full-text expansion, collapse, and the existing history flow.
+  API, stored procedures, and Excel text were unchanged. The frontend production
+  build passed with the existing bundle-size warning.
 - Executed the report procedure body read-only against the configured database
   for 2026-10-28: 402 oversea applications (~1.9 seconds) and 10 border applications
   (~0.5 seconds). Each first-page result had the expected 19 API fields. This
