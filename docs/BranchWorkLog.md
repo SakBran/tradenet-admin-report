@@ -8,7 +8,9 @@ merge/deployment state. Add the newest assignment first.
 - Assignment date: 2026-10-29
 - Base branch: `main`; base commit: `af518fa`.
 - Backend/SQL commit: `eaa34ad`; frontend commit: `6096006`.
-- Status: Implemented and committed locally. Not merged, pushed, or deployed.
+- Status: Implemented and committed locally. The three new procedures were deployed
+  to the configured `TradeNetDB` on 2026-10-29 with user approval. Backend and
+  frontend are running locally for testing. Not merged, pushed, or site-deployed.
 
 ### Scope and verification
 
@@ -41,8 +43,23 @@ merge/deployment state. Add the newest assignment first.
 
 ### Deployment and data notes
 
-- Deploy the three new procedures from the SQL file before deploying the backend
-  and frontend. No production database or site deployment was performed.
+- The three new procedures from the SQL file were deployed on 2026-10-29 using
+  Windows Authentication after explicit user approval. The application SQL login
+  lacked `CREATE PROCEDURE`, and that initial transaction rolled back without
+  changes. Windows Authentication had the required permissions. Deployment used
+  `CREATE PROCEDURE` after verifying all three names were absent, preventing
+  replacement of existing procedures. No existing tables, data, or procedures
+  were changed, and no extra permissions needed to be granted.
+- Executed all three installed procedures through the application's SQL login.
+  For 2026-10-28, oversea returned 402 applications (~633 ms) and border returned
+  10 (~304 ms). Sample report counts matched the full-history results: 2 oversea
+  events and 4 border events. Both Apply Type lookups returned all five stored
+  types. The application login has EXECUTE permission on all three procedures.
+- Local frontend: `http://localhost:5173`; local API:
+  `http://localhost:8001` (health checks returned HTTP 200). Runtime-only settings
+  use the separate LocalDB database `TradeNet_Report_LocalTest_20261029_Turndown`
+  for login tokens, test exports, and activity logs; report queries use the
+  configured shared `TradeNetDB`. No site deployment was performed.
 - Legacy code clears history remarks after checking. Missing remarks display as
   `Remark unavailable`; original text cannot be recovered from these rows.
   Cleared reopen remarks also prevent exact historical event classification, so
