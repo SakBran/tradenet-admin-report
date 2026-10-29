@@ -55,6 +55,17 @@ namespace Backend.Controllers
         {
             var key = lookupName.ToLowerInvariant();
 
+            // These values come from application data rather than a fixed vocabulary.
+            // Read them fresh so a newly introduced apply type is immediately available.
+            if (key is "importlicenceturndownapplytypes" or "borderimportlicenceturndownapplytypes")
+            {
+                var formType = key == "importlicenceturndownapplytypes" ? "Import Licence" : "Border Import Licence";
+                var types = await API.StoredProcedureToLinq.sp_ImportLicenceTurndownReport
+                    .ApplyTypes(_context, formType).ToListAsync();
+                return Ok(types.Select((item, index) =>
+                    new ReportLookupOption(index + 1, string.Empty, item.Value, item.Value)).ToList());
+            }
+
             Func<Task<List<ReportLookupOption>>>? loadOptions = key switch
             {
                 "amendremarks" => GetAmendRemarks,
