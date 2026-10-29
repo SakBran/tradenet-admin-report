@@ -7,6 +7,7 @@ import {
 } from './reportTypes';
 import { newReportConfigs } from './newReportConfigs';
 import { advanceSearchConfigs } from './advanceSearchConfigs';
+import { turndownReportConfigs } from './turndownReportConfigs';
 
 // Shared PaThaKa State/Status filter options. '--- All ---' = no filter ('').
 const pathakaStateFilterOptions: ReportFilterOption[] = [
@@ -14491,6 +14492,7 @@ export const reportConfigs: Record<string, ReportPageConfig> = {
   ...newReportConfigs,
   ...eiccReportConfigs,
   ...advanceSearchConfigs,
+  ...turndownReportConfigs,
 };
 
 export const reportConfigList = Object.values(reportConfigs);

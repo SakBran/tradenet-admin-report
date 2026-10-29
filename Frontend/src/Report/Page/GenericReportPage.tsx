@@ -617,9 +617,10 @@ const renderFilter = (
 
 interface GenericReportPageProps {
   config: ReportPageConfig;
+  cellRenderers?: Record<string, BasicTableColumn<AnyObject>['render']>;
 }
 
-const GenericReportPage = ({ config }: GenericReportPageProps) => {
+const GenericReportPage = ({ config, cellRenderers }: GenericReportPageProps) => {
   const [form] = Form.useForm<FilterFormValues>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -714,8 +715,12 @@ const GenericReportPage = ({ config }: GenericReportPageProps) => {
     [config, filters]
   );
   const tableColumns = useMemo(
-    () => resolvedColumns.map(toTableColumn),
-    [resolvedColumns]
+    () => resolvedColumns.map((column) => {
+      const mapped = toTableColumn(column);
+      const render = cellRenderers?.[column.key];
+      return render ? { ...mapped, render } : mapped;
+    }),
+    [resolvedColumns, cellRenderers]
   );
   const legacyReportViewer = isLegacyReportViewer(config);
 
