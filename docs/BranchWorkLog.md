@@ -3,6 +3,53 @@
 This journal records which assignment was implemented on each branch and its actual
 merge/deployment state. Add the newest assignment first.
 
+## `feature/import-licence-turndown-reports`
+
+- Assignment date: 2026-10-29
+- Base branch: `main`; base commit: `af518fa`.
+- Backend/SQL commit: `eaa34ad`; frontend commit: `6096006`.
+- Status: Implemented and committed locally. Not merged, pushed, or deployed.
+
+### Scope and verification
+
+- Added Import Licence and Border Import Licence Turndown reports, with turndown
+  date range, Import Section, Company Registration No, Company Name, and database
+  Apply Type filters. Existing family access permissions cover both routes.
+- Applications qualify when a history event falls within the selected dates.
+  The displayed latest event and clickable count use complete history, including
+  events outside that range. Clicking the count opens dated remarks with retry
+  and loading states. Identifiable `Re Open` events are excluded throughout.
+- Added three procedures in
+  `StoredProcedureMigrations/sp_ImportLicenceTurndownReport.sql`: paginated report,
+  application history, and Apply Type options. Grid and queued Excel use the same
+  procedure and filters, with database sorting, searching, and paging.
+- Focused backend checks passed: 7 new SQL/validation tests and 18 existing Excel
+  registration, row-type, layout, and access tests. SQL tests used disposable
+  LocalDB databases, without altering the configured application database.
+- Focused frontend checks passed: 1,547 tests covering menu access and Excel
+  presentation. Frontend production build passed with the existing bundle-size
+  warning.
+- Both Playwright browser tests passed against mocked API responses, covering
+  database-provided Apply Types, history errors/retry, full history, missing
+  remarks, and Excel submission. Used temporary Node 22.17.0 and installed Chrome
+  (`E2E_BROWSER_CHANNEL=chrome`); system Node 18.17.1 cannot load Playwright's ESM
+  configuration.
+- Executed the report procedure body read-only against the configured database
+  for 2026-10-28: 402 oversea applications (~1.9 seconds) and 10 border applications
+  (~0.5 seconds). Each first-page result had the expected 19 API fields. This
+  check used temporary tables and did not deploy procedures or change source data.
+
+### Deployment and data notes
+
+- Deploy the three new procedures from the SQL file before deploying the backend
+  and frontend. No production database or site deployment was performed.
+- Legacy code clears history remarks after checking. Missing remarks display as
+  `Remark unavailable`; original text cannot be recovered from these rows.
+  Cleared reopen remarks also prevent exact historical event classification, so
+  old counts can include reopen events that are no longer identifiable.
+- Existing unrelated `Frontend/README.md` changes were preserved and excluded
+  from assignment commits. Local `.project-graph` artifacts remain untracked.
+
 ## `feature/report-user-oga-recommendation`
 
 - Assignment date: 2026-10-19
