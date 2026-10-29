@@ -10,6 +10,9 @@ for (const border of [false, true]) {
     page,
   }) => {
     const id = 'b574a666-5c6e-4dd2-bd47-d51b28c8419e';
+    const longRemark =
+      'Please provide the corrected application documents.\n'.repeat(12) +
+      'Final remark line.';
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.addInitScript(() => {
@@ -73,7 +76,7 @@ for (const border of [false, true]) {
           {
             id: 'latest',
             createdDate: '2026-10-29T14:38:05',
-            remark: 'Latest remark',
+            remark: longRemark,
           },
           { id: 'earlier', createdDate: '2026-09-01T09:00:00', remark: null },
         ];
@@ -127,6 +130,26 @@ for (const border of [false, true]) {
       details.getByText('Remark unavailable', { exact: true })
     ).toBeVisible();
     await expect(details.locator('tbody tr.ant-table-row')).toHaveCount(2);
+    const remark = details.locator('.turndown-remark').first();
+    const showMore = remark.locator('button').filter({ hasText: 'Show more' });
+    await expect(showMore).toBeVisible();
+    const collapsedHeight = await remark.evaluate(
+      (element) => element.getBoundingClientRect().height
+    );
+    const lineHeight = await remark.evaluate((element) =>
+      parseFloat(getComputedStyle(element).lineHeight)
+    );
+    expect(collapsedHeight).toBeLessThanOrEqual(lineHeight * 3 + 2);
+    await showMore.click();
+    await expect(remark).toContainText('Final remark line.');
+    expect(
+      await remark.evaluate((element) => element.getBoundingClientRect().height)
+    ).toBeGreaterThan(collapsedHeight);
+    await remark.locator('button').filter({ hasText: 'Show less' }).click();
+    await expect(showMore).toBeVisible();
+    await expect(
+      details.locator('button').filter({ hasText: 'Show more' })
+    ).toHaveCount(1);
     await count.click();
     await expect(details).toHaveCount(0);
     await expect(count).toHaveAttribute('aria-expanded', 'false');

@@ -151,14 +151,22 @@ const ImportLicenceTurndownReport = ({
                       title: 'Remark',
                       dataIndex: 'remark',
                       render: (value: string | null) => (
-                        <span
+                        <Typography.Paragraph
+                          className="turndown-remark"
+                          ellipsis={{
+                            rows: 3,
+                            expandable: 'collapsible',
+                            symbol: (expanded) =>
+                              expanded ? 'Show less' : 'Show more',
+                          }}
                           style={{
+                            margin: 0,
                             whiteSpace: 'pre-wrap',
                             overflowWrap: 'anywhere',
                           }}
                         >
                           {value?.trim() || 'Remark unavailable'}
-                        </span>
+                        </Typography.Paragraph>
                       ),
                     },
                   ]}
