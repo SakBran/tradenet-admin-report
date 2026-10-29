@@ -12,8 +12,9 @@ merge/deployment state. Add the newest assignment first.
 - Three-line remark preview follow-up commit: `b254124`.
 - Main-table Turn Down Remark preview follow-up commit: `9628c62`.
 - Status: Implemented and committed locally. The three new procedures were deployed
-  to the configured `TradeNetDB` on 2026-10-29 with user approval. Backend and
-  frontend are running locally for testing. Not merged, pushed, or site-deployed.
+  to the configured `TradeNetDB` on 2026-10-29 with user approval. Local backend
+  and frontend were stopped at the user's request; ports 8001 and 5173 were
+  verified closed. Not merged, pushed, or site-deployed.
 
 ### Scope and verification
 
