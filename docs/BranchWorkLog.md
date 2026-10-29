@@ -14,7 +14,12 @@ merge/deployment state. Add the newest assignment first.
 - Status: Implemented and committed locally. The three new procedures were deployed
   to the configured `TradeNetDB` on 2026-10-29 with user approval. Local backend
   and frontend were stopped at the user's request; ports 8001 and 5173 were
-  verified closed. Not merged, pushed, or site-deployed.
+  verified closed. Feature branch pushed and fast-forward merged into `main` at
+  `b2ef610` on 2026-10-29. Both remote branch heads were verified at that commit
+  after pushing `main`. No site deployment was run during this merge.
+- Publication note: GitHub redirected the existing `origin` URL from
+  `SakBran/tradenet-admin-report` to `Shwe-Digits/tradenet-admin-report` and accepted
+  both pushes. The configured remote URL was preserved.
 
 ### Scope and verification
 
