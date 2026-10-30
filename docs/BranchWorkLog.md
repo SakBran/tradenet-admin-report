@@ -16,7 +16,8 @@ merge/deployment state. Add the newest assignment first.
   and frontend were stopped at the user's request; ports 8001 and 5173 were
   verified closed. Feature branch pushed and fast-forward merged into `main` at
   `b2ef610` on 2026-10-29. Both remote branch heads were verified at that commit
-  after pushing `main`. No site deployment was run during this merge.
+  after pushing `main`. Site commit `32d52c2` was subsequently deployed and
+  verified on 2026-10-30 using `deploy.ps1 -NoGit`, with explicit user approval.
 - Publication note: GitHub redirected the existing `origin` URL from
   `SakBran/tradenet-admin-report` to `Shwe-Digits/tradenet-admin-report` and accepted
   both pushes. The configured remote URL was preserved.
@@ -71,6 +72,34 @@ merge/deployment state. Add the newest assignment first.
 
 ### Deployment and data notes
 
+- Site deployment on 2026-10-30: stopped local servers and verified ports 5173
+  and 8001 closed, confirmed `main` matched `origin/main`, then deployed commit
+  `32d52c2` to `M:\T20-ADMIN-REPORT-BACKEND` and
+  `M:\T20-ADMIN-REPORT-FRONTEND` using `deploy.ps1 -NoGit`.
+- Rollback backup: `.deploy/pre-turndown-deploy-20261030-101023`, with separate
+  backend and frontend folders. Backend backup excludes user-uploaded images.
+  Deployment transcript: `.deploy/turndown-deployment-20261030.log`.
+- Backend Release build and publish passed (existing compiler warnings, zero
+  errors). Backend and frontend copy operations returned Robocopy code 3
+  (success). The script restored the backend online and reported
+  `DEPLOY OK - health check returned 200.` No app-pool fallback was required.
+- Verified live backend `API.dll` SHA-256 matches the publish output and reports
+  product version `1.0.0+32d52c2`. Existing `appsettings.json` SHA-256 remained
+  unchanged; `app_offline.htm` was absent after deployment. All three procedures
+  remained installed and executable by the live application database login.
+- Verified `https://reportapi.myanmartradenet.com/health` and
+  `https://report.myanmartradenet.com/` returned HTTP 200. Both new report POST
+  endpoints returned HTTP 401 without credentials, confirming protected routes.
+  No authenticated production session was used for these endpoint checks.
+- Public frontend index references `/assets/index-BI4BVRGT.js`. Both deployed
+  frontend files and the publicly downloaded bundle match the local production
+  build by SHA-256. Bundle contains both report routes, remark previews, and the
+  production API URL. Local servers remain stopped.
+- Frontend dependency installation left the package lock unchanged. It reported
+  existing Node engine warnings and 44 dependency audit findings (4 low,
+  13 moderate, 21 high, 6 critical). These findings were not triaged or fixed in
+  this deployment. Frontend production build passed with its existing large
+  bundle warning; no dependencies were changed as part of the assignment.
 - The three new procedures from the SQL file were deployed on 2026-10-29 using
   Windows Authentication after explicit user approval. The application SQL login
   lacked `CREATE PROCEDURE`, and that initial transaction rolled back without
@@ -87,7 +116,8 @@ merge/deployment state. Add the newest assignment first.
   `http://localhost:8001` (health checks returned HTTP 200). Runtime-only settings
   use the separate LocalDB database `TradeNet_Report_LocalTest_20261029_Turndown`
   for login tokens, test exports, and activity logs; report queries use the
-  configured shared `TradeNetDB`. No site deployment was performed.
+  configured shared `TradeNetDB`. No site deployment was performed during that
+  local-testing setup; the later site deployment is recorded above.
 - Legacy code clears history remarks after checking. Missing remarks display as
   `Remark unavailable`; original text cannot be recovered from these rows.
   Cleared reopen remarks also prevent exact historical event classification, so
